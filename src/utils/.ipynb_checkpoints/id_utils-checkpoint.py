@@ -1,20 +1,13 @@
 import numpy as np
 import pandas as pd
 from .error_utils import load_file
-
-fps = 30 # frames per second the video was recorded at
-
-# somewhat guessed numbers for the location of lever / mag
-levx = 135
-loc2y = 200
-loc1y = 440
-magx = 1260
+from .global_utils import fps, levx, loc2y, loc1y, magx
+from .global_utils import ROOTDIR, TESTDIR, TRAINDIR
 
 # given a row of the data frame from PredLoader, will add the rat id to each lever and mag
 # event or return that a lever / mag file doesn't exist for this trial
 def get_lever_mag(row):
-    rootdir = '/gpfs/radev/pi/saxena/aj764/'
-    tt = 'PairedTestingSessions/' if row['test/train'] == 'test' else 'Training_COOPERATION/'
+    tt = TESTDIR if row['test/train'] == 'test' else TRAINDIR
     behav = '/Behavioral/processed/' if row['test/train'] == 'test' else '/Behavioral/'
     session = row['session']
     if row['test/train'] == 'test': 
@@ -27,18 +20,18 @@ def get_lever_mag(row):
         
     lever_exists, mag_exists = True, True
     try:
-        lever = pd.read_csv(rootdir + tt + session + behav + 'lever/' +  vid + '_lever.csv')
+        lever = pd.read_csv(ROOTDIR + tt + session + behav + 'lever/' +  vid + '_lever.csv')
         if row['pred'] == True:
             lever = get_rat_id(lever, locations, 'lever')
-            lever.to_csv(rootdir + tt + session + behav + 'lever/' +  vid + '_lever.csv', index=False)
+            lever.to_csv(ROOTDIR + tt + session + behav + 'lever/' +  vid + '_lever.csv', index=False)
     except FileNotFoundError:
         lever_exists = False
         
     try:
-        mag = pd.read_csv(rootdir + tt + session + behav + 'mag/' + vid + '_mag.csv')
+        mag = pd.read_csv(ROOTDIR + tt + session + behav + 'mag/' + vid + '_mag.csv')
         if row['pred'] == True:
             mag = get_rat_id(mag, locations, 'mag')
-            mag.to_csv(rootdir + tt + session + behav + 'mag/' +  vid + '_mag.csv', index=False)
+            mag.to_csv(ROOTDIR + tt + session + behav + 'mag/' +  vid + '_mag.csv', index=False)
     except FileNotFoundError:
         mag_exists = False 
 

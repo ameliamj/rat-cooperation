@@ -3,10 +3,9 @@ import matplotlib.pyplot as plt
 import statsmodels.api as sm
 import h5py
 
-# MAGIC NUBMERS
-MAX_VEL = 200 # pixels per frames that is max rat velocity
-SMOOTHING = 10 # number of frames before and after nan value to use for smoothing
-BAD_NAN = .30 # percent of initial nan at which point, don't consider correcting
+from .global_utils import MAX_VEL, SMOOTHING, BAD_NAN
+from .global_utils import ROOTDIR, TESTDIR, TRAINDIR
+
 
 # gets rid of any predictions of nodes that travel faster than max rat velocity
 def high_vel_nan(locations):
@@ -87,17 +86,32 @@ def get_vs(key, vid):
     s = sesh_split[1]
     return v,s
 
-# gets the color pairing of a multi-anmial video given the video name
-# and whether the video is in PairedTestingSessions or Training_COOPERATION
-def get_color(vid, trial_type):
-    if trial_type == 'test':
-        trial_color = [vid[-12], vid[-5]]
-    elif trial_type == 'train':
-        parsed = vid.split('-')
-        trial_color = [parsed[0][-1], parsed[1][5]]
-    else:
-        raise Exception("didn't specify valid trial type boooo")
-    
+# given a multi animal video and the possible cohorts it could be in 
+# will return the cohort of each animal
+def get_cohort(vid, cohorts):
+    first_coh = None
+    for coh in cohorts:
+        if vid.count(coh) == 2:
+            return (coh, coh)
+        elif vid.count(coh) == 1:
+            if first_coh is None:
+                first_coh = coh
+            else:
+                return (first_coh, coh)
+    return (first_coh, None)
+
+def get_color(vid, coh):
+    parse = vid.replace('.', '_')
+    parse = parse.split('_')
+    coh_index = np.argmin([vid.find(coh[0]), vid.find(coh[1])])
+    try:
+        # animal_ids = [x for x in parse if x.startswith(coh[coh_index])][0]
+        animal_ids = [x for x in parse if (coh[coh_index] in x)][0]
+    except:
+        print(vid)
+    parsed_II = animal_ids.split('-')
+    trial_color = [parsed_II[0][-1], parsed_II[1][-1]]
+
     trial_key = ''
     if 'R' in trial_color:
         trial_key += 'R'
@@ -112,11 +126,11 @@ def get_color(vid, trial_type):
 # given a row of the data frame from PredLoader, will load the h5 files and return 
 # the predicted locations
 def load_file(row):
-    t = 'PairedTestingSessions' if row['test/train'] == 'test' else 'Training_COOPERATION'
+    t = TESTDIR if row['test/train'] == 'test' else TRAINDIR
     session = row['session']
     vid = row['vid']
     try: 
-        with h5py.File(f'/gpfs/radev/pi/saxena/aj764/{t}/' + session + '/Tracking/h5/' + vid + '.predictions.h5','r') as f:
+        with h5py.File(ROOTDIR + t + session + '/Tracking/h5/' + vid + '.predictions.h5','r') as f:
             locations = f["tracks"][:].T
         return locations
     except FileNotFoundError:
@@ -125,9 +139,9 @@ def load_file(row):
 # given a row of the data frame from PredLoader and the corrected locations, will save
 # the corrected locations over the old predicted locations
 def save_file(row, locations):
-    t = 'PairedTestingSessions' if row['test/train'] == 'test' else 'Training_COOPERATION'
+    t = TESTDIR if row['test/train'] == 'test' else TRAINDIR
     session = row['session']
     vid = row['vid']
-    f = h5py.File(f'/gpfs/radev/pi/saxena/aj764/{t}/' + session + '/Tracking/h5/' + vid + '.predictions.h5','r+')
+    f = h5py.File(ROOTDIR + t + session + '/Tracking/h5/' + vid + '.predictions.h5','r+')
     f["tracks"][:] = locations.T
     f.close()

@@ -2,9 +2,13 @@ import sys
 sys.path.append('../../')
 
 import pandas as pd
-from src.utils.error_utils import get_vs, get_color, load_file, get_nan_prec, nan_good, high_vel_nan, lowess_fill, save_file
-from src.utils.id_utils import get_lever_mag
 from tqdm import tqdm
+import os
+
+from src.utils.error_utils import get_vs, get_color, get_cohort, load_file, get_nan_prec, nan_good, high_vel_nan, lowess_fill, save_file
+from src.utils.id_utils import get_lever_mag
+from src.utils.global_utils import DYED_COHORTS, COLLAR_COHORTS
+from src.utils.global_utils import ROOTDIR, TESTDIR, TRAINDIR
 
 class PredLoader:
 
@@ -14,7 +18,14 @@ class PredLoader:
 
     # creates a pred loader object from a vid loader object, takes a while!
     @classmethod
-    def from_vids(cls, vid_loader, filename='preds_df.csv'):
+    def from_vids(cls, color_type, vid_loader, filename='preds_df.csv'):
+        if not (color_type == 'dyed' or color_type == 'collar'):
+            raise Exception("didn't specify a valid color type (dyed or collar). boo.")
+        if color_type == 'dyed':
+            cohorts = DYED_COHORTS
+        else: # color_type == 'collar':
+            cohorts = COLLAR_COHORTS
+        
         df = pd.DataFrame(columns=['vid', 'session', 'single/multi', 'test/train', 'pred',
                                       'color pair', 'initial nan',  'vel nan', 'correct', 'final nan'])
         # gathers all of the pred files from a vid loader object
@@ -27,20 +38,21 @@ class PredLoader:
         for key, value in vid_loader.pts_multi_vids.items():
             for vid in value:
                 v,s = get_vs(key, vid)
-                cp = get_color(vid, 'test')
+                coh = get_cohort(vid, cohorts)
+                cp = get_color(vid, coh)
                 df.loc[i] = [v, s, 'multi','test', False, cp, -1, -1, False, -1]
                 i += 1
         for key, value in vid_loader.tc_multi_vids.items():
             for vid in value:
                 v,s = get_vs(key, vid)
-                cp = get_color(vid, 'train')
+                coh = get_cohort(vid, cohorts)
+                cp = get_color(vid, coh)
                 df.loc[i] = [v, s, 'multi','train', False, cp, -1, -1, False, -1]
                 i += 1
 
         # fill in initial nan, vel nan, correction true/false
         for index, row in df.iterrows():
             locations = load_file(row)
-            print(row)
             if locations is not None:
                 df.at[index, 'pred'] = True
                 initial_nan = get_nan_prec(locations)
@@ -50,8 +62,23 @@ class PredLoader:
                 df.at[index, 'vel nan'] = vel_nan
 
                 df.at[index, 'correct'] = nan_good(initial_nan, vel_nan)
-        df.to_csv(filename, index=False)
-        return cls(filename)
+        df.to_csv(color_type + '_' + filename, index=False)
+        return cls(color_type + '_' + filename)
+
+    # get initial and velocity nan
+    def get_nan(self):
+        for index, row in df.iterrows():
+            locations = load_file(row)
+            if locations is not None:
+                df.at[index, 'pred'] = True
+                initial_nan = get_nan_prec(locations)
+                df.at[index, 'initial nan'] = initial_nan
+                locations = high_vel_nan(locations)
+                vel_nan = get_nan_prec(locations)
+                df.at[index, 'vel nan'] = vel_nan
+
+                df.at[index, 'correct'] = nan_good(initial_nan, vel_nan)
+        df.to_csv(color_type + '_' + self.filename, index=False)
 
     # correct files and get final nan
     def correct(self):
@@ -65,7 +92,7 @@ class PredLoader:
                 self.df.at[index, 'final nan'] = get_nan_prec(locations)
                 
                 save_file(row, locations)
-        self.df.to_csv(self.filename, index=False)
+        self.df.to_csv(color_type + '_' + self.filename, index=False)
 
     # fill in the rat id for each lever and mag event
     def get_event_ids(self):
@@ -77,7 +104,7 @@ class PredLoader:
             mags.append(mag)
         self.df['levers'] = levers
         self.df['mags'] = mags
-        self.df.to_csv(self.filename, index=False)
+        self.df.to_csv(color_type + '_' + self.filename, index=False)
 
     # get the trial type (coop, ineq, comp) for multi animal test vids
     def get_trial_types(self):
@@ -90,7 +117,7 @@ class PredLoader:
                 self.df.at[index, 'trial type'] = 'comp'
             elif 'Ineq' in row['vid']:
                 self.df.at[index, 'trial type'] = 'ineq'
-        self.df.to_csv(self.filename, index=False)
+        self.df.to_csv(color_type + '_' + self.filename, index=False)
 
     # get familiaritiy level (TP, UF, CM) for multi animal test vids
     def get_familiar(self):
@@ -103,10 +130,10 @@ class PredLoader:
         
         missing_count = 0
         for sesh in sessions:
-            files = os.listdir(rootdir + sesh)
+            files = os.listdir(ROOTDIR + sesh)
             for file in files:
                 if file.endswith('.xlsx'):
-                    excel_df = pd.read_excel(rootdir + sesh + '/' + file, engine='openpyxl')
+                    excel_df = pd.read_excel(ROOTDIR + sesh + '/' + file, engine='openpyxl')
                     excel_df = excel_df[excel_df['Cond'] == 'Coop']
         
                     # count number of different cooperative pairs
@@ -137,3 +164,14 @@ class PredLoader:
         print(f'there are {preds.df[(preds.df['familiarity'] == 'UF')].shape[0]} unfamiliar pair trials that have videos') 
 
         self.df.to_csv(self.filename, index=False)
+
+    # finds whether or not there is a fiber photometery file associated
+    # with the video
+    def get_fiber_pho(self):
+        self.df['fiber pho'] = False
+        multi_test = self.df[(self.df['test/train'] == 'test')]
+        fiber_pho = multi_test[multi_test['session'].str.contains('FiberPho')]    
+        for index, row in fiber_pho.iterrows():
+            if os.path.isfile(ROOTDIR + TESTDIR + row['session'] + '/Neuronal/' + row['vid'] + '.mat'):
+                self.df.at[index, 'fiber pho'] = True
+        self.df.to_csv(color_type + '_' + self.filename, index=False)
