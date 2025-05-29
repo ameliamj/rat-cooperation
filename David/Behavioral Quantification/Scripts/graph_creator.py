@@ -337,8 +337,8 @@ class multiFileGraphs:
             actual_cats = list(exp.mag.data.columns)
             if actual_cats == expected_cats:
                 filtered_experiments.append(exp)
-            else:
-                print(f"Excluding {exp.mag.filename} due to mismatched columns.\nExpected: {expected_cats}\nGot: {actual_cats}")
+            #else:
+                #print(f"Excluding {exp.mag.filename} due to mismatched columns.\nExpected: {expected_cats}\nGot: {actual_cats}")
     
         if not filtered_experiments:
             raise ValueError("No experiments with matching mag columns were found.")
@@ -371,6 +371,7 @@ class multiFileGraphs:
             plt.text(bar.get_x() + bar.get_width() / 2, y - 5, f'{y:.1f}%', ha='center', va='bottom')
         plt.tight_layout()
         plt.show()
+        plt.savefig('mag_data_availability.png')
         
     def levFileDataAvailabilityGraph(self):
         # Expected column structure
@@ -416,6 +417,7 @@ class multiFileGraphs:
             plt.text(bar.get_x()+bar.get_width()/2, y-5, f'{y:.1f}%', ha='center')
         plt.tight_layout()
         plt.show()
+        plt.savefig('lev_data_availability.png')
     
     def interpressIntervalPlot(self):
         # concat all lev data
@@ -435,6 +437,7 @@ class multiFileGraphs:
         plt.title("Histogram of Inter-Press Intervals (All Rats)")
         plt.tight_layout()
         plt.show()
+        plt.savefig('IPI_histogram.png')
         
         # Boxplot
         plt.figure(figsize=(10,6))
@@ -445,6 +448,7 @@ class multiFileGraphs:
         plt.xticks(rotation=45)
         plt.tight_layout()
         plt.show()
+        plt.savefig('IPI_boxplot.png')
         
         # Time series
         plt.figure(figsize=(12,6))
@@ -456,6 +460,7 @@ class multiFileGraphs:
         plt.legend(title="RatID", bbox_to_anchor=(1.05,1), loc='upper left')
         plt.tight_layout()
         plt.show()
+        plt.savefig('IPI_timeseries.png')
     
     
     def interpressIntervalSuccessPlot(self):
@@ -493,6 +498,7 @@ class multiFileGraphs:
         plt.ylabel("Count")
         plt.tight_layout()
         plt.show()
+        plt.savefig('IPI_firstpress_to_success.png')
         
         # Plot 2
         plt.figure(figsize=(8,6))
@@ -502,6 +508,7 @@ class multiFileGraphs:
         plt.ylabel("Count")
         plt.tight_layout()
         plt.show()
+        plt.savefig('IPI_lastpress_to_success.png')
         
         # Plot 3
         plt.figure(figsize=(10,5))
@@ -511,6 +518,7 @@ class multiFileGraphs:
         plt.ylabel("IPI (s)")
         plt.tight_layout()
         plt.show()
+        plt.savefig('Timeseries_IPI_firstpress_to_success.png')
         
         # Plot 4
         plt.figure(figsize=(10,5))
@@ -520,6 +528,7 @@ class multiFileGraphs:
         plt.ylabel("IPI (s)")
         plt.tight_layout()
         plt.show()
+        plt.savefig('Timeseries_IPI_lastpress_to_success.png')
         
         # Plot 5
         counts = pd.Series(first_rats).value_counts()
@@ -528,6 +537,7 @@ class multiFileGraphs:
         plt.title("Who Presses First")
         plt.tight_layout()
         plt.show()
+        plt.savefig('Who_Presses_First.png')
         
         # Plot 6
         sc = pd.Series(success_counts)
@@ -536,6 +546,7 @@ class multiFileGraphs:
         plt.title("Successful Cooperative Trials by Rat")
         plt.tight_layout()
         plt.show()
+        plt.savefig('Successful Cooperative Trials by Rat.png')
     
             
 #Testing Multi File Graphs
