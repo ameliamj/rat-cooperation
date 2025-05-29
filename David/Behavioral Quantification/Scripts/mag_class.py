@@ -119,7 +119,7 @@ class magLoader:
             if self.data is None:
                 raise ValueError("No data loaded.")
             if column not in self.data.columns:
-                raise ValueError(f"Column '{column}' not found in data.")
+                raise ValueError(f"Column '{column}' not found in mag data from file '{self.filename}'.")
             return self.data[column].isna().sum()
 
     def getTrialNum(self, row_idx): #returns the trial number for row_idx of the data

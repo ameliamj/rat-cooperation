@@ -13,6 +13,9 @@ from lev_class import levLoader
 
 class singleExperiment:
     def __init__(self, mag_file, lev_file, pos_file):
+        self.mag_file = mag_file
+        self.lev_file = lev_file
+        self.pos_file = pos_file
         self.mag = magLoader(mag_file)
         self.lev = levLoader(lev_file)
     

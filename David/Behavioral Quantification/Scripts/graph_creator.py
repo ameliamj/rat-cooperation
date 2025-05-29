@@ -335,6 +335,7 @@ class multiFileGraphs:
         
         # Sum nulls across exps
         for exp in self.experiments:
+            print("Cats: ", cats)
             for cat in cats:
                 nulls_per_cat[cat] += exp.mag.countNullsinColumn(cat)
         
