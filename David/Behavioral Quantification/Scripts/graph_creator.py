@@ -265,15 +265,15 @@ class singleFileGraphs:
 #
 #
 
-mag_file = "/Users/david/Documents/Research/Saxena Lab/Behavioral Quantification/Example Data Files/ExampleMagFile.csv"
-lev_file = "/Users/david/Documents/Research/Saxena Lab/Behavioral Quantification/Example Data Files/ExampleLevFile.csv"
-pos_file = "/Users/david/Documents/Research/Saxena Lab/Behavioral Quantification/Example Data Files/ExampleTrackingCoop.h5"
+'''mag_file = "/Users/david/Documents/Research/Saxena Lab/rat-cooperation/David/Behavioral Quantification/Example Data Files/magData.csv"
+lev_file = "/Users/david/Documents/Research/Saxena Lab/rat-cooperation/David/Behavioral Quantification/Example Data Files/leverData.csv"
+pos_file = "/Users/david/Documents/Research/Saxena Lab/rat-cooperation/David/Behavioral Quantification/Example Data Files/ExampleTrackingCoop.h5"
 
 experiment = singleFileGraphs(mag_file, lev_file, pos_file)
 experiment.magFileDataAvailabilityGraph()
 experiment.levFileDataAvailabilityGraph()
 experiment.interpressIntervalPlot()
-experiment.interpressIntervalSuccessPlot()
+experiment.interpressIntervalSuccessPlot()'''
 
 
 # ---------------------------------------------------------------------------------------------------------
@@ -379,7 +379,6 @@ class multiFileGraphs:
             plt.text(bar.get_x()+bar.get_width()/2, y-5, f'{y:.1f}%', ha='center')
         plt.tight_layout()
         plt.show()
-    
     
     def interpressIntervalPlot(self):
         # concat all lev data
@@ -506,8 +505,15 @@ class multiFileGraphs:
 #
 #
 
+arr = getAllValid()
+lev_files = arr[0]
+mag_files = arr[1]
 
-            
+experiment = multiFileGraphs(mag_files, lev_files, mag_files)
+experiment.magFileDataAvailabilityGraph()
+experiment.levFileDataAvailabilityGraph()
+experiment.interpressIntervalPlot()
+experiment.interpressIntervalSuccessPlot()
         
         
 

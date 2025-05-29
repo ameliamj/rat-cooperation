@@ -233,9 +233,9 @@ only_transparent = "/Users/david/Documents/Research/Saxena Lab/rat-cooperation/D
 only_unfamiliar = "/Users/david/Documents/Research/Saxena Lab/rat-cooperation/David/Behavioral Quantification/Sorted Data Files/only_unfamiliar_partners.csv"
 only_trainingpartners = "/Users/david/Documents/Research/Saxena Lab/rat-cooperation/David/Behavioral Quantification/Sorted Data Files/only_training_partners.csv"
 
-fe = fileExtractor(information_path)
-fe.deleteInvalid()
-print(fe.getMagsDatapath())
+#fe = fileExtractor(information_path)
+#fe.deleteInvalid()
+#print(fe.getMagsDatapath())
 
 
 

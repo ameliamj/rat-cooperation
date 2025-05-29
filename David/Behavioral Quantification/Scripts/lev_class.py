@@ -129,5 +129,5 @@ class levLoader:
 #
 #
 
-file1 = "/Users/david/Documents/Research/Saxena Lab/Behavioral Quantification/Example Data Files/ExampleLevFile.csv"
-lev1 = levLoader(file1)
+#file1 = "/Users/david/Documents/Research/Saxena Lab/Behavioral Quantification/Example Data Files/ExampleLevFile.csv"
+#lev1 = levLoader(file1)
