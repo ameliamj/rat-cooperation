@@ -374,16 +374,16 @@ class multiFileGraphs:
         
     def levFileDataAvailabilityGraph(self):
         # Expected column structure
-        expected_cats = self.experiments[0].mag.categories
+        expected_cats = self.experiments[0].lev.categories
     
         # Filter only experiments with correct columns
         filtered_experiments = []
         for exp in self.experiments:
-            actual_cats = list(exp.mag.data.columns)
+            actual_cats = list(exp.lev.data.columns)
             if actual_cats == expected_cats:
                 filtered_experiments.append(exp)
-            else:
-                print(f"Excluding {exp.mag.filename} due to mismatched columns.\nExpected: {expected_cats}\nGot: {actual_cats}")
+            #else:
+                #print(f"Excluding {exp.lev.filename} due to mismatched columns.\nExpected: {expected_cats}\nGot: {actual_cats}")
     
         if not filtered_experiments:
             raise ValueError("No experiments with matching mag columns were found.")
@@ -392,13 +392,13 @@ class multiFileGraphs:
         self.experiments = filtered_experiments
     
         # Compute total rows and initialize null counter
-        total_rows = sum(exp.mag.getNumRows() for exp in filtered_experiments)
+        total_rows = sum(exp.lev.getNumRows() for exp in filtered_experiments)
         nulls_per_cat = {cat: 0 for cat in expected_cats}
     
         # Count nulls
         for exp in filtered_experiments:
             for cat in expected_cats:
-                nulls_per_cat[cat] += exp.mag.countNullsinColumn(cat)
+                nulls_per_cat[cat] += exp.lev.countNullsinColumn(cat)
     
         # Compute non-null percentages
         pct = [(total_rows - nulls_per_cat[cat]) / total_rows * 100 for cat in expected_cats]
@@ -562,7 +562,7 @@ experiment.interpressIntervalSuccessPlot()
 #
         
 class multiFileGraphsCategories:
-    def __init__(self, magFiles: List[[str]], levFiles: List[[str]], posFiles: List[[str]], numCategories: int):
+    def __init__(self, magFiles: List[List[str]], levFiles: List[List[str]], posFiles: List[List[str]], numCategories: int):
         self.allFileGroupExperiments = []
         
         if (len(magFiles) != len(levFiles) or len(magFiles) != len(posFiles)):
