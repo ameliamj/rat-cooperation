@@ -328,72 +328,84 @@ class multiFileGraphs:
             self.experiments.append(exp)
     
     def magFileDataAvailabilityGraph(self):
-        # Get initial category reference
-        cats_init = self.experiments[0].mag.categories
+        # Expected column structure
+        expected_cats = self.experiments[0].mag.categories
     
-        # Filter experiments that match the expected categories
-        filtered_experiments = [exp for exp in self.experiments if list(exp.mag.columns) == cats_init]
+        # Filter only experiments with correct columns
+        filtered_experiments = []
+        for exp in self.experiments:
+            actual_cats = list(exp.mag.data.columns)
+            if actual_cats == expected_cats:
+                filtered_experiments.append(exp)
+            else:
+                print(f"Excluding {exp.mag.filename} due to mismatched columns.\nExpected: {expected_cats}\nGot: {actual_cats}")
     
         if not filtered_experiments:
-            raise ValueError("No experiments with matching mag categories found.")
+            raise ValueError("No experiments with matching mag columns were found.")
     
-        # Update experiments (optional: depends if you want to keep only valid ones permanently)
+        # Optional: update self.experiments to only valid ones
         self.experiments = filtered_experiments
     
-        # Sum total rows and nulls
+        # Compute total rows and initialize null counter
         total_rows = sum(exp.mag.getNumRows() for exp in filtered_experiments)
-        nulls_per_cat = {cat: 0 for cat in cats_init}
+        nulls_per_cat = {cat: 0 for cat in expected_cats}
     
+        # Count nulls
         for exp in filtered_experiments:
-            for cat in cats_init:
+            for cat in expected_cats:
                 nulls_per_cat[cat] += exp.mag.countNullsinColumn(cat)
     
-        # Compute percentage of non-null values per category
-        pct = [(total_rows - nulls_per_cat[cat]) / total_rows * 100 for cat in cats_init]
+        # Compute non-null percentages
+        pct = [(total_rows - nulls_per_cat[cat]) / total_rows * 100 for cat in expected_cats]
     
         # Plot
         plt.figure(figsize=(10, 6))
-        bars = plt.bar(cats_init, pct, color='skyblue')
+        bars = plt.bar(expected_cats, pct, color='steelblue')
         plt.xlabel('Categories')
         plt.ylabel('Percentage of Non-Null Data (%)')
         plt.title('Aggregated Data Availability in Mag Files')
         plt.xticks(rotation=45, ha='right')
         plt.ylim(0, 100)
-    
         for bar in bars:
             y = bar.get_height()
             plt.text(bar.get_x() + bar.get_width() / 2, y - 5, f'{y:.1f}%', ha='center', va='bottom')
-    
         plt.tight_layout()
         plt.show()
         
     def levFileDataAvailabilityGraph(self):
-        # Get initial category reference
-        cats_init = self.experiments[0].lev.categories
+        # Expected column structure
+        expected_cats = self.experiments[0].mag.categories
     
-        # Filter experiments that match the expected categories
-        filtered_experiments = [exp for exp in self.experiments if list(exp.mag.columns) == cats_init]
+        # Filter only experiments with correct columns
+        filtered_experiments = []
+        for exp in self.experiments:
+            actual_cats = list(exp.mag.data.columns)
+            if actual_cats == expected_cats:
+                filtered_experiments.append(exp)
+            else:
+                print(f"Excluding {exp.mag.filename} due to mismatched columns.\nExpected: {expected_cats}\nGot: {actual_cats}")
     
         if not filtered_experiments:
-            raise ValueError("No experiments with matching mag categories found.")
+            raise ValueError("No experiments with matching mag columns were found.")
     
-        # Update experiments (optional: depends if you want to keep only valid ones permanently)
+        # Optional: update self.experiments to only valid ones
         self.experiments = filtered_experiments
     
-        # Sum total rows and nulls
+        # Compute total rows and initialize null counter
         total_rows = sum(exp.mag.getNumRows() for exp in filtered_experiments)
-        nulls_per_cat = {cat: 0 for cat in cats_init}
+        nulls_per_cat = {cat: 0 for cat in expected_cats}
     
+        # Count nulls
         for exp in filtered_experiments:
-            for cat in cats_init:
-                nulls_per_cat[cat] += exp.lev.countNullsinColumn(cat)
+            for cat in expected_cats:
+                nulls_per_cat[cat] += exp.mag.countNullsinColumn(cat)
     
-        # Compute percentage of non-null values per category
-        pct = [(total_rows - nulls_per_cat[cat]) / total_rows * 100 for cat in cats_init]
-        
-        #Plot
-        plt.figure(figsize=(10,6))
-        bars = plt.bar(cats_init, pct)
+        # Compute non-null percentages
+        pct = [(total_rows - nulls_per_cat[cat]) / total_rows * 100 for cat in expected_cats]
+    
+        # Plot
+        plt.figure(figsize=(10, 6))
+        bars = plt.bar(expected_cats, pct, color='steelblue')
         plt.xlabel('Categories')
         plt.ylabel('Percentage of Non-Null Data (%)')
         plt.title('Aggregated Data Availability in Lev Files')
