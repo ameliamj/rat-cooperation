@@ -328,59 +328,72 @@ class multiFileGraphs:
             self.experiments.append(exp)
     
     def magFileDataAvailabilityGraph(self):
-        # Gather totals
+        # Get initial category reference
         cats_init = self.experiments[0].mag.categories
-        total_rows = sum(exp.mag.getNumRows() for exp in self.experiments)
+    
+        # Filter experiments that match the expected categories
+        filtered_experiments = [exp for exp in self.experiments if list(exp.mag.columns) == cats_init]
+    
+        if not filtered_experiments:
+            raise ValueError("No experiments with matching mag categories found.")
+    
+        # Update experiments (optional: depends if you want to keep only valid ones permanently)
+        self.experiments = filtered_experiments
+    
+        # Sum total rows and nulls
+        total_rows = sum(exp.mag.getNumRows() for exp in filtered_experiments)
         nulls_per_cat = {cat: 0 for cat in cats_init}
-        
-        # Sum nulls across exps
-        for i, exp in enumerate(self.experiments):
-            cats = exp.mag.categories
-            if (cats != cats_init):
-                self.experiments.pop(i)
-                continue
-                
-            for cat in cats:
+    
+        for exp in filtered_experiments:
+            for cat in cats_init:
                 nulls_per_cat[cat] += exp.mag.countNullsinColumn(cat)
-        
-        # Compute percentages
-        pct = [ (total_rows * len(cats) - nulls_per_cat[cat]) / total_rows * 100
-                for cat in cats ]
-        
+    
+        # Compute percentage of non-null values per category
+        pct = [(total_rows - nulls_per_cat[cat]) / total_rows * 100 for cat in cats_init]
+    
         # Plot
-        plt.figure(figsize=(10,6))
-        bars = plt.bar(cats, pct)
+        plt.figure(figsize=(10, 6))
+        bars = plt.bar(cats_init, pct, color='skyblue')
         plt.xlabel('Categories')
         plt.ylabel('Percentage of Non-Null Data (%)')
         plt.title('Aggregated Data Availability in Mag Files')
         plt.xticks(rotation=45, ha='right')
-        plt.ylim(0,100)
+        plt.ylim(0, 100)
+    
         for bar in bars:
             y = bar.get_height()
-            plt.text(bar.get_x()+bar.get_width()/2, y-5, f'{y:.1f}%', ha='center')
+            plt.text(bar.get_x() + bar.get_width() / 2, y - 5, f'{y:.1f}%', ha='center', va='bottom')
+    
         plt.tight_layout()
         plt.show()
         
     def levFileDataAvailabilityGraph(self):
+        # Get initial category reference
         cats_init = self.experiments[0].lev.categories
-        total_rows = sum(exp.lev.getNumRows() for exp in self.experiments)
+    
+        # Filter experiments that match the expected categories
+        filtered_experiments = [exp for exp in self.experiments if list(exp.mag.columns) == cats_init]
+    
+        if not filtered_experiments:
+            raise ValueError("No experiments with matching mag categories found.")
+    
+        # Update experiments (optional: depends if you want to keep only valid ones permanently)
+        self.experiments = filtered_experiments
+    
+        # Sum total rows and nulls
+        total_rows = sum(exp.mag.getNumRows() for exp in filtered_experiments)
         nulls_per_cat = {cat: 0 for cat in cats_init}
-        
-        for i, exp in enumerate(self.experiments):
-            cats = exp.lev.categories
-            
-            if (cats != cats_init):
-                self.experiments.pop(i)
-                continue
-        
-            for cat in cats:
+    
+        for exp in filtered_experiments:
+            for cat in cats_init:
                 nulls_per_cat[cat] += exp.lev.countNullsinColumn(cat)
+    
+        # Compute percentage of non-null values per category
+        pct = [(total_rows - nulls_per_cat[cat]) / total_rows * 100 for cat in cats_init]
         
-        pct = [ (total_rows * len(cats) - nulls_per_cat[cat]) / total_rows * 100
-                for cat in cats ]
-        
+        #Plot
         plt.figure(figsize=(10,6))
-        bars = plt.bar(cats, pct)
+        bars = plt.bar(cats_init, pct)
         plt.xlabel('Categories')
         plt.ylabel('Percentage of Non-Null Data (%)')
         plt.title('Aggregated Data Availability in Lev Files')
