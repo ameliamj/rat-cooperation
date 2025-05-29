@@ -336,7 +336,7 @@ class multiFileGraphs:
         # Sum nulls across exps
         for i, exp in enumerate(self.experiments):
             cats = exp.mag.categories
-            if (len(cats) != len(cats_init)):
+            if (cats != cats_init):
                 self.experiments.pop(i)
                 continue
                 
@@ -369,7 +369,7 @@ class multiFileGraphs:
         for i, exp in enumerate(self.experiments):
             cats = exp.lev.categories
             
-            if (len(cats) != len(cats_init)):
+            if (cats != cats_init):
                 self.experiments.pop(i)
                 continue
         
