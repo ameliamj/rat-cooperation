@@ -329,12 +329,15 @@ class multiFileGraphs:
     
     def magFileDataAvailabilityGraph(self):
         # Gather totals
-        cats = self.experiments[0].mag.categories
+        cats_init = self.experiments[0].mag.categories
         total_rows = sum(exp.mag.getNumRows() for exp in self.experiments)
-        nulls_per_cat = {cat: 0 for cat in cats}
+        nulls_per_cat = {cat: 0 for cat in cats_init}
         
         # Sum nulls across exps
-        for exp in self.experiments:
+        for i, exp in enumerate(self.experiments):
+            cats = exp.mag.categories
+            if (len(cats) != len(cats_init)):
+                self.experiments.pop(i)
             print("Cats: ", cats)
             for cat in cats:
                 nulls_per_cat[cat] += exp.mag.countNullsinColumn(cat)
@@ -358,11 +361,16 @@ class multiFileGraphs:
         plt.show()
         
     def levFileDataAvailabilityGraph(self):
-        cats = self.experiments[0].lev.categories
+        cats_init = self.experiments[0].lev.categories
         total_rows = sum(exp.lev.getNumRows() for exp in self.experiments)
-        nulls_per_cat = {cat: 0 for cat in cats}
+        nulls_per_cat = {cat: 0 for cat in cats_init}
         
-        for exp in self.experiments:
+        for i, exp in enumerate(self.experiments):
+            cats = exp.lev.categories
+            
+            if (len(cats) != len(cats_init)):
+                self.experiments.pop(i)
+        
             for cat in cats:
                 nulls_per_cat[cat] += exp.lev.countNullsinColumn(cat)
         
