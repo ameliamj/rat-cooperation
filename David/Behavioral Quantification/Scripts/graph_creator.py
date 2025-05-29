@@ -338,7 +338,8 @@ class multiFileGraphs:
             cats = exp.mag.categories
             if (len(cats) != len(cats_init)):
                 self.experiments.pop(i)
-            print("Cats: ", cats)
+                continue
+                
             for cat in cats:
                 nulls_per_cat[cat] += exp.mag.countNullsinColumn(cat)
         
@@ -370,6 +371,7 @@ class multiFileGraphs:
             
             if (len(cats) != len(cats_init)):
                 self.experiments.pop(i)
+                continue
         
             for cat in cats:
                 nulls_per_cat[cat] += exp.lev.countNullsinColumn(cat)
