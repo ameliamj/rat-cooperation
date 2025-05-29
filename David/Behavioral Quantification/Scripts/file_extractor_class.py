@@ -165,13 +165,13 @@ class fileExtractor:
           each sublist corresponds to all magfiles for a given mice pair.
     
         Path format:
-        /gpfs/radev/pi/saxena/aj764/{folderName}/{sessionName}/Behavioral/Processed/mag/{vidName}.csv
+        /gpfs/radev/pi/saxena/aj764/{folderName}/{sessionName}/Behavioral/Processed/mag/{vidName}_mag.csv
         """
         base_path = "/gpfs/radev/pi/saxena/aj764"
     
         def construct_path(row):
             folder = "PairedTestingSessions" if row["test/train"] == "test" else "Training_COOPERATION"
-            return f"{base_path}/{folder}/{row['session']}/Behavioral/processed/mag/{row['vid']}.csv" if pd.isna(row["vid"]) == False and pd.isna(row["session"]) == False else None
+            return f"{base_path}/{folder}/{row['session']}/Behavioral/processed/mag/{row['vid']}_mag.csv" if pd.isna(row["vid"]) == False and pd.isna(row["session"]) == False else None
     
         if not grouped:
             return [
@@ -197,13 +197,13 @@ class fileExtractor:
           each sublist corresponds to all levFiles for a given mice pair.
     
         Path format:
-        /gpfs/radev/pi/saxena/aj764/{folderName}/{sessionName}/Behavioral/Processed/lever/{vidName}.csv
+        /gpfs/radev/pi/saxena/aj764/{folderName}/{sessionName}/Behavioral/Processed/lever/{vidName}_lever.csv
         """
         base_path = "/gpfs/radev/pi/saxena/aj764"
     
         def construct_path(row):
             folder = "PairedTestingSessions" if row["test/train"] == "test" else "Training_COOPERATION"
-            return f"{base_path}/{folder}/{row['session']}/Behavioral/processed/lever/{row['vid']}.csv" if pd.isna(row["vid"]) == False and pd.isna(row["session"]) == False else None
+            return f"{base_path}/{folder}/{row['session']}/Behavioral/processed/lever/{row['vid']}_lever.csv" if pd.isna(row["vid"]) == False and pd.isna(row["session"]) == False else None
     
         if not grouped:
             return [
