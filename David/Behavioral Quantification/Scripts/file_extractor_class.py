@@ -171,7 +171,8 @@ class fileExtractor:
     
         def construct_path(row):
             folder = "PairedTestingSessions" if row["test/train"] == "test" else "Training_COOPERATION"
-            return f"{base_path}/{folder}/{row['session']}/Behavioral/processed/mag/{row['vid']}_mag.csv" if pd.isna(row["vid"]) == False and pd.isna(row["session"]) == False else None
+            processed = "/processed" if row["test/train"] == "test" else ""
+            return f"{base_path}/{folder}/{row['session']}/Behavioral{processed}/mag/{row['vid']}_mag.csv" if pd.isna(row["vid"]) == False and pd.isna(row["session"]) == False else None
     
         if not grouped:
             return [
@@ -203,7 +204,8 @@ class fileExtractor:
     
         def construct_path(row):
             folder = "PairedTestingSessions" if row["test/train"] == "test" else "Training_COOPERATION"
-            return f"{base_path}/{folder}/{row['session']}/Behavioral/processed/lever/{row['vid']}_lever.csv" if pd.isna(row["vid"]) == False and pd.isna(row["session"]) == False else None
+            processed = "/processed" if row["test/train"] == "test" else ""
+            return f"{base_path}/{folder}/{row['session']}/Behavioral{processed}/lever/{row['vid']}_lever.csv" if pd.isna(row["vid"]) == False and pd.isna(row["session"]) == False else None
     
         if not grouped:
             return [
@@ -225,9 +227,7 @@ class fileExtractor:
 #information_path = "/Users/david/Documents/Research/Saxena Lab/rat-cooperation/David/Behavioral Quantification/Sorted Data Files/dyed_preds_df_fixed.csv"
 information_path = "/Users/david/Documents/Research/Saxena Lab/rat-cooperation/David/Behavioral Quantification/Sorted Data Files/dyed_preds_fixed_expanded.csv"
 
-#all_valid = "/Users/david/Documents/Research/Saxena Lab/rat-cooperation/David/Behavioral Quantification/Sorted Data Files/dyed_preds_all_valid.csv"
-all_valid = "/gpfs/radev/home/drb83/project/rat-cooperation/David/Behavioral Quantification/Sorted Data Files/dyed_preds_all_valid.csv"
-
+all_valid = "/Users/david/Documents/Research/Saxena Lab/rat-cooperation/David/Behavioral Quantification/Sorted Data Files/dyed_preds_all_valid.csv"
 only_opaque = "/Users/david/Documents/Research/Saxena Lab/rat-cooperation/David/Behavioral Quantification/Sorted Data Files/only_opaque_sessions.csv"
 only_training = "/Users/david/Documents/Research/Saxena Lab/rat-cooperation/David/Behavioral Quantification/Sorted Data Files/only_training_partners.csv"
 only_translucent = "/Users/david/Documents/Research/Saxena Lab/rat-cooperation/David/Behavioral Quantification/Sorted Data Files/only_translucent_sessions.csv"
