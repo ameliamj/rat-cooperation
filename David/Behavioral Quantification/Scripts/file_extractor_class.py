@@ -156,6 +156,24 @@ class fileExtractor:
 
         return grouped
     
+    def getCorrectFileNames(self):
+        def correct_name(row):
+            if row['test/train'] == 'test':
+                return row['vid']
+            elif row['test/train'] == 'train':
+                original = row['vid']
+                if len(original) < 41:
+                    return original  # fallback for malformed or short vids
+                # First 7 chars
+                part1 = original[:7]
+                # Skip 21 characters (from index 7 to 28), take next 13 (index 28 to 41)
+                part2 = original[28:41]
+                return part1 + part2
+            else:
+                return None  # or raise an error/log
+
+        self.data['correct_name'] = self.data.apply(correct_name, axis=1)
+    
     def getMagsDatapath(self, grouped = False):
         """
         Return a list of datapaths to mag files for each row in self.data.
@@ -168,11 +186,13 @@ class fileExtractor:
         /gpfs/radev/pi/saxena/aj764/{folderName}/{sessionName}/Behavioral/Processed/mag/{vidName}_mag.csv
         """
         base_path = "/gpfs/radev/pi/saxena/aj764"
-    
+        
+        self.getCorrectFileNames()
+        
         def construct_path(row):
             folder = "PairedTestingSessions" if row["test/train"] == "test" else "Training_COOPERATION"
             processed = "/processed" if row["test/train"] == "test" else ""
-            return f"{base_path}/{folder}/{row['session']}/Behavioral{processed}/mag/{row['vid']}_mag.csv" if pd.isna(row["vid"]) == False and pd.isna(row["session"]) == False else None
+            return f"{base_path}/{folder}/{row['session']}/Behavioral{processed}/mag/{row['correct_name']}_mag.csv" if pd.isna(row["vid"]) == False and pd.isna(row["session"]) == False else None
     
         if not grouped:
             return [
@@ -201,11 +221,13 @@ class fileExtractor:
         /gpfs/radev/pi/saxena/aj764/{folderName}/{sessionName}/Behavioral/Processed/lever/{vidName}_lever.csv
         """
         base_path = "/gpfs/radev/pi/saxena/aj764"
-    
+        
+        self.getCorrectFileNames()
+        
         def construct_path(row):
             folder = "PairedTestingSessions" if row["test/train"] == "test" else "Training_COOPERATION"
             processed = "/processed" if row["test/train"] == "test" else ""
-            return f"{base_path}/{folder}/{row['session']}/Behavioral{processed}/lever/{row['vid']}_lever.csv" if pd.isna(row["vid"]) == False and pd.isna(row["session"]) == False else None
+            return f"{base_path}/{folder}/{row['session']}/Behavioral{processed}/lever/{row['correct_name']}_lever.csv" if pd.isna(row["vid"]) == False and pd.isna(row["session"]) == False else None
     
         if not grouped:
             return [
@@ -235,9 +257,9 @@ only_transparent = "/Users/david/Documents/Research/Saxena Lab/rat-cooperation/D
 only_unfamiliar = "/Users/david/Documents/Research/Saxena Lab/rat-cooperation/David/Behavioral Quantification/Sorted Data Files/only_unfamiliar_partners.csv"
 only_trainingpartners = "/Users/david/Documents/Research/Saxena Lab/rat-cooperation/David/Behavioral Quantification/Sorted Data Files/only_training_partners.csv"
 
-#fe = fileExtractor(information_path)
+fe = fileExtractor(all_valid)
 #fe.deleteInvalid()
-#print(fe.getMagsDatapath())
+print(fe.getMagsDatapath())
 
 
 
