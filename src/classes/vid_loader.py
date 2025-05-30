@@ -74,8 +74,19 @@ class VidLoader:
             files = os.listdir(vids)
             cut_vids = vids[len(ROOTDIR):]
             tc_multi_vids[cut_vids] = []
+            if '020625_COOPTRAIN_LARGEARENA_NF020B-NF020Y_Camera4.mp4' in vids:
+                continue # this is like on weird folder with some single animal vids, I'm ignoring it
             for file in files:
                 if file.endswith('.mp4') and self.in_date_range(file):
+                    
+                    # coh_count = 0
+                    # for coh in self.cohorts:
+                    #     coh_count += file.count(coh) 
+                    # if coh_count == 2:
+                    #     tc_multi_vids[cut_vids].append(file)
+                    # else:
+                    #     print(cut_vids, file)
+                        
                     tc_multi_vids[cut_vids].append(file)
             if len(tc_multi_vids[cut_vids]) == 0:
                 tc_multi_vids.pop(cut_vids) 

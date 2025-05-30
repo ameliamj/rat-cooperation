@@ -4,7 +4,7 @@ import statsmodels.api as sm
 import h5py
 
 from .global_utils import MAX_VEL, SMOOTHING, BAD_NAN
-from .global_utils import ROOTDIR, TESTDIR, TRAINDIR
+from .global_utils import ROOTDIR, TESTDIR, TRAINDIR, LADIR
 
 
 # gets rid of any predictions of nodes that travel faster than max rat velocity
@@ -98,6 +98,7 @@ def get_cohort(vid, cohorts):
                 first_coh = coh
             else:
                 return (first_coh, coh)
+    print(vid)
     return (first_coh, None)
 
 def get_color(vid, coh):
@@ -126,12 +127,16 @@ def get_color(vid, coh):
 # given a row of the data frame from PredLoader, will load the h5 files and return 
 # the predicted locations
 def load_file(row):
-    t = TESTDIR if row['test/train'] == 'test' else TRAINDIR
+    tt = TESTDIR if row['test/train'] == 'test' else (TRAINDIR if row['test/train'] == 'train' else LADIR)
     session = row['session']
     vid = row['vid']
     try: 
-        with h5py.File(ROOTDIR + t + session + '/Tracking/h5/' + vid + '.predictions.h5','r') as f:
-            locations = f["tracks"][:].T
+        if row['test/train'] == 'lg train':
+             with h5py.File(ROOTDIR + tt + session + '/Tracking/h5/' + vid + 'predictions.h5','r') as f:
+                locations = f["tracks"][:].T
+        else: 
+            with h5py.File(ROOTDIR + tt + session + '/Tracking/h5/' + vid + '.predictions.h5','r') as f:
+                locations = f["tracks"][:].T
         return locations
     except FileNotFoundError:
         return None
@@ -139,9 +144,12 @@ def load_file(row):
 # given a row of the data frame from PredLoader and the corrected locations, will save
 # the corrected locations over the old predicted locations
 def save_file(row, locations):
-    t = TESTDIR if row['test/train'] == 'test' else TRAINDIR
+    tt = TESTDIR if row['test/train'] == 'test' else (TRAINDIR if row['test/train'] == 'train' else LADIR)
     session = row['session']
     vid = row['vid']
-    f = h5py.File(ROOTDIR + t + session + '/Tracking/h5/' + vid + '.predictions.h5','r+')
+    if row['test/train'] == 'lg train':
+        f = h5py.File(ROOTDIR + tt+ session + '/Tracking/h5/' + vid + 'predictions.h5','r+')
+    else:
+        f = h5py.File(ROOTDIR + tt+ session + '/Tracking/h5/' + vid + '.predictions.h5','r+')
     f["tracks"][:] = locations.T
     f.close()

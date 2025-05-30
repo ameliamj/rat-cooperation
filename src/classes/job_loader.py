@@ -4,16 +4,26 @@ sys.path.append('../../')
 
 import os
 import pandas as pd
+from src.utils.error_utils import load_file
 from src.utils.global_utils import CENTROID, TOPDOWN, SINGLE
-from src.utils.global_utils import ROOTDIR, TESTDIR, TRAINDIR, JOBDIR
+from src.utils.global_utils import ROOTDIR, TESTDIR, TRAINDIR, JOBDIR, LADIR
 
 class JobLoader:
 
     def __init__(self, filename, color_type):
         self.df = pd.read_csv(filename)
         self.color_type = color_type
+        self.filename = filename
 
     def get_undone_vids(self, inst, color_pair=None):
+        # only try to update the rows that don't have a prediction
+        undone = self.df[self.df['pred'] == False]
+        for index, row in undone.iterrows():
+            locations = load_file(row)
+            if locations is not None:
+                self.df.at[index, 'pred'] = True
+        self.df.to_csv(self.filename, index=False)
+        # filter by instance and color pair    
         subset = self.df[(self.df['single/multi'] == inst)]
         if inst == 'multi' and color_pair is not None:
             subset = subset[(subset['color pair'] == color_pair)]
@@ -26,7 +36,7 @@ class JobLoader:
         start_command = f'module load miniconda; conda activate sleap; cd {ROOTDIR};'
         command_lines = ''
         for index, row in run.iterrows():
-            tt = TESTDIR if row['test/train'] == 'test' else TRAINDIR
+            tt = TESTDIR if row['test/train'] == 'test' else (TRAINDIR if row['test/train'] == 'train' else LADIR)
             output_path = ROOTDIR + tt + row['session'] + '/Tracking'
             # makes directory for tracking output if not already made
             if not os.path.isdir(output_path):

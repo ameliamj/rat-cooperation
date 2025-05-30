@@ -6,6 +6,7 @@ COLLAR_COHORTS = ['KL', 'EB', 'HF', 'KM', 'KF', 'NM', 'NF']
 ROOTDIR = '/gpfs/radev/pi/saxena/aj764/'
 TESTDIR = 'PairedTestingSessions/'
 TRAINDIR = 'Training_COOPERATION/'
+LADIR = 'Training_LARGEARENA_Individual/'
 JOBDIR = '/gpfs/radev/project/saxena/aj764/ood/projects/default/sleap_tracking'
 
 # models (needs to be the WHOLE file path!!)
@@ -49,6 +50,9 @@ BAD_NAN = .30 # percent of initial nan at which point, don't consider correcting
 fps = 30 # frames per second the video was recorded at
 # somewhat guessed numbers for the location of lever / mag
 levx = 135
-loc2y = 200
-loc1y = 440
-magx = 1260
+lev1y = 440
+lev2y = 200
+mag1y = 200
+mag2y = 440
+magx = 1280
+MAXDIST = 100
