@@ -251,14 +251,32 @@ class singleFileGraphs:
         plt.title("Who Presses First (by RatID)")
         plt.show()
 
-        # Plot 6: Pie Chart - Number of Trials with Successful Cooperation (by RatID)
-        success_counts = pd.Series(success_count_by_rat)
-        plt.figure(figsize=(6, 6))
-        plt.pie(success_counts, labels=success_counts.index, autopct='%1.1f%%', startangle=140)
-        plt.title("Number of Successful Cooperative Trials (by RatID)")
-        plt.show()
 
+    def percentSuccesfulTrials(self):
+        lev_data = self.experiment.lev.data.copy()
+        grouped = lev_data.groupby("TrialNum")
         
+        
+        totalTrials, countSuccess = 0, 0
+        for trial_num, trial_data in grouped:
+            if (trial_data.iloc[0]['coopSucc'] == 1):
+                countSuccess += 1
+            
+            totalTrials += 1
+        
+        countFail = totalTrials - countSuccess
+        labels = ['Successful', 'Unsuccessful']
+        sizes = [countSuccess, countFail]
+        colors = ['green', 'red']
+    
+        plt.figure(figsize=(6, 6))
+        plt.pie(sizes, labels=labels, colors=colors, autopct='%1.1f%%', startangle=140, textprops={'fontsize': 14})
+        plt.title('Successful Cooperative Trials (%)', fontsize=16)
+        plt.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle.
+        plt.tight_layout()
+        plt.show()
+                
+            
         
     
 #Testing Single File Graphs
@@ -270,10 +288,7 @@ lev_file = "/Users/david/Documents/Research/Saxena Lab/rat-cooperation/David/Beh
 pos_file = "/Users/david/Documents/Research/Saxena Lab/rat-cooperation/David/Behavioral Quantification/Example Data Files/ExampleTrackingCoop.h5"
 
 experiment = singleFileGraphs(mag_file, lev_file, pos_file)
-experiment.magFileDataAvailabilityGraph()
-experiment.levFileDataAvailabilityGraph()
-experiment.interpressIntervalPlot()
-experiment.interpressIntervalSuccessPlot()'''
+experiment.percentSuccesfulTrials()'''
 
 
 # ---------------------------------------------------------------------------------------------------------
@@ -538,17 +553,33 @@ class multiFileGraphs:
         plt.tight_layout()
         plt.show()
         plt.savefig('Who_Presses_First.png')
+    
+    
+    def percentSuccesfulTrials(self):
+        all_lev = pd.concat([exp.lev.data for exp in self.experiments], ignore_index=True)
         
-        # Plot 6
-        sc = pd.Series(success_counts)
-        plt.figure(figsize=(6,6))
-        plt.pie(sc, labels=sc.index, autopct='%1.1f%%', startangle=140)
-        plt.title("Successful Cooperative Trials by Rat")
+        succ = all_lev[all_lev["coopSucc"] == 1]
+        grouped = succ.groupby("TrialNum")
+        
+        totalTrials, countSuccess = 0, 0
+        for trial_num, trial_data in grouped:
+            if (trial_data.iloc[0]['coopSucc'] == 1):
+                countSuccess += 1
+            
+            totalTrials += 1
+        
+        countFail = totalTrials - countSuccess
+        labels = ['Successful', 'Unsuccessful']
+        sizes = [countSuccess, countFail]
+        colors = ['green', 'red']
+    
+        plt.figure(figsize=(6, 6))
+        plt.pie(sizes, labels=labels, colors=colors, autopct='%1.1f%%', startangle=140, textprops={'fontsize': 14})
+        plt.title('Successful Cooperative Trials (%)', fontsize=16)
+        plt.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle.
         plt.tight_layout()
         plt.show()
-        plt.savefig('Successful Cooperative Trials by Rat.png')
-    
-            
+
 #Testing Multi File Graphs
 #
 #
@@ -562,6 +593,7 @@ experiment.magFileDataAvailabilityGraph()
 experiment.levFileDataAvailabilityGraph()
 experiment.interpressIntervalPlot()
 experiment.interpressIntervalSuccessPlot()
+experiment.percentSuccessfulTrials()
         
         
 
