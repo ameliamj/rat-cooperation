@@ -1,12 +1,17 @@
 import numpy as np
 import pandas as pd
 from .error_utils import load_file
-from .global_utils import fps, levx, loc2y, loc1y, magx
+from .global_utils import fps, levx, lev1y, lev2y, mag1y, mag2y, magx, MAXDIST
 from .global_utils import ROOTDIR, TESTDIR, TRAINDIR
 
 # given a row of the data frame from PredLoader, will add the rat id to each lever and mag
 # event or return that a lever / mag file doesn't exist for this trial
-def get_lever_mag(row):
+def get_lever_mag(row, errors):
+
+    # Method 1: Appending rows using pd.concat
+    # new_row = pd.DataFrame([{'col1': 1, 'col2': 'A'}])
+    # df = pd.concat([df, new_row], ignore_index=True)
+    
     tt = TESTDIR if row['test/train'] == 'test' else TRAINDIR
     behav = '/Behavioral/processed/' if row['test/train'] == 'test' else '/Behavioral/'
     session = row['session']
@@ -22,39 +27,55 @@ def get_lever_mag(row):
     try:
         lever = pd.read_csv(ROOTDIR + tt + session + behav + 'lever/' +  vid + '_lever.csv')
         if row['pred'] == True:
-            lever = get_rat_id(lever, locations, 'lever')
+            lever, nan_count = get_rat_id(lever, locations, 'lever')
             lever.to_csv(ROOTDIR + tt + session + behav + 'lever/' +  vid + '_lever.csv', index=False)
+            if nan_count > lever.shape[0] / 3 and row['correct'] == True:
+                row['check'] = 'here'
+                print(row)
+                # new_row = pd.DataFrame(row)
+                errors = pd.concat([errors, row], ignore_index=True)
     except FileNotFoundError:
         lever_exists = False
         
     try:
         mag = pd.read_csv(ROOTDIR + tt + session + behav + 'mag/' + vid + '_mag.csv')
         if row['pred'] == True:
-            mag = get_rat_id(mag, locations, 'mag')
+            try:
+                mag, nan_count = get_rat_id(mag, locations, 'mag')
+            except:
+                print(row)
             mag.to_csv(ROOTDIR + tt + session + behav + 'mag/' +  vid + '_mag.csv', index=False)
+            if nan_count > mag.shape[0] / 3 and row['correct'] == True:
+                row['check'] = 'here'
+                errors = pd.concat([errors, row], ignore_index=True)
     except FileNotFoundError:
         mag_exists = False 
-
-    return lever_exists, mag_exists
+    return lever_exists, mag_exists, errors
     
 # for a given list of events and locations and event type (mag/lever), will add an 
 # additional column to events that has the identity of which rat particapted in the 
 # event given the rat locations
 def get_rat_id(events, locations, event_type):
     ratID = []
-
     for row in events.itertuples(index=False):
-        # Calculate the frame for every lever press
+
+        # check if there is an absolute time
+        # check if absolute time is within the frame length
+        # get both rat distances
+            # see if either rat is close enough (check for nan values)
+            # if both rats are close enough, check which one is closer
+
+        ratNum = -1
+        # is there an absolute time
         if np.isnan(row.AbsTime):
             ratNum = np.nan
-            ratID.append(ratNum)
-            continue
         else:
+            # calculate frame
             frame = int(row.AbsTime * fps)
+
+            # make sure frame is within the range of locations
             if frame > locations.shape[0]:
                 ratNum = np.nan
-                ratID.append(ratNum)
-                continue
             else:
                 # Get coordinates of both mice for the said frame
                 ratpos1 = locations[frame, 0, :, 0]
@@ -63,38 +84,42 @@ def get_rat_id(events, locations, event_type):
                 # Calculate the distances
                 if event_type == 'lever':
                     if row.LeverNum == 1:
-                        distance1 = np.sqrt((ratpos1[0] - levx)**2 + (ratpos1[1] - loc1y)**2)
-                        distance2 = np.sqrt((ratpos2[0] - levx)**2 + (ratpos2[1] - loc1y)**2)
+                        distance1 = np.sqrt((ratpos1[0] - levx)**2 + (ratpos1[1] - lev1y)**2)
+                        distance2 = np.sqrt((ratpos2[0] - levx)**2 + (ratpos2[1] - lev1y)**2)
                 
                     elif row.LeverNum == 2:
-                        distance1 = np.sqrt((ratpos1[0] - levx)**2 + (ratpos1[1] - loc2y)**2)
-                        distance2 = np.sqrt((ratpos2[0] - levx)**2 + (ratpos2[1] - loc2y)**2)
+                        distance1 = np.sqrt((ratpos1[0] - levx)**2 + (ratpos1[1] - lev2y)**2)
+                        distance2 = np.sqrt((ratpos2[0] - levx)**2 + (ratpos2[1] - lev2y)**2)
                     else:
                         ratNum = np.nan #assign number for Nan values
-                        ratID.append(ratNum)
-                        continue  # Skip if LeverNum is not 1 or 2
                 elif event_type == 'mag':
                     if row.MagNum == 1:
-                        distance1 = np.sqrt((ratpos1[0] - magx)**2 + (ratpos1[1] - loc1y)**2)
-                        distance2 = np.sqrt((ratpos2[0] - magx)**2 + (ratpos2[1] - loc1y)**2)
+                        distance1 = np.sqrt((ratpos1[0] - magx)**2 + (ratpos1[1] - mag1y)**2)
+                        distance2 = np.sqrt((ratpos2[0] - magx)**2 + (ratpos2[1] - mag1y)**2)
             
                     elif row.MagNum == 2:
-                        distance1 = np.sqrt((ratpos1[0] - magx)**2 + (ratpos1[1] - loc2y)**2)
-                        distance2 = np.sqrt((ratpos2[0] - magx)**2 + (ratpos2[1] - loc2y)**2)
+                        distance1 = np.sqrt((ratpos1[0] - magx)**2 + (ratpos1[1] - mag2y)**2)
+                        distance2 = np.sqrt((ratpos2[0] - magx)**2 + (ratpos2[1] - mag2y)**2)
                 
                     else:
                         ratNum = np.nan #assign number for Nan values
-                        ratID.append(ratNum)
-                        continue  # Skip if MagNum is not 1 or 2
                 else:
                     raise Exception("not a valid event type (yikes)")
             
-                # Assign the action to one of the mice
-                ratNum = 0 if distance1 < distance2 else 1
+                if not np.isnan(ratNum):
+                    if distance1 < MAXDIST and distance2 < MAXDIST:
+                        ratNum = 0 if distance1 < distance2 else 1
+                    elif distance1 < MAXDIST: # dist2 could be nan or non-plausible
+                        ratNum = 0
+                    elif distance2 < MAXDIST: # dist1 could be nan or non-plausible
+                        ratNum = 1
+                    else:
+                        ratNum = np.nan # neither distance is valid or plausible
             
-                # Add new element to the list
-                ratID.append(ratNum)
+        # Add new element to the list
+        ratID.append(ratNum)
     
     # Add new column to the dataframe
     events["RatID"] = ratID
-    return events
+    nan_count = events['RatID'].isna().sum()
+    return events, nan_count
