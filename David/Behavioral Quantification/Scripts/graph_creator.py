@@ -558,8 +558,7 @@ class multiFileGraphs:
     def percentSuccesfulTrials(self):
         all_lev = pd.concat([exp.lev.data for exp in self.experiments], ignore_index=True)
         
-        succ = all_lev[all_lev["coopSucc"] == 1]
-        grouped = succ.groupby("TrialNum")
+        grouped = all_lev.groupby("TrialNum")
         
         totalTrials, countSuccess = 0, 0
         for trial_num, trial_data in grouped:
@@ -579,6 +578,7 @@ class multiFileGraphs:
         plt.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle.
         plt.tight_layout()
         plt.show()
+        plt.savefig('Percent Successful.png')
 
 #Testing Multi File Graphs
 #
@@ -588,12 +588,15 @@ arr = getAllValid()
 lev_files = arr[0]
 mag_files = arr[1]
 
+#mag_files = ["/Users/david/Documents/Research/Saxena Lab/rat-cooperation/David/Behavioral Quantification/Example Data Files/magData.csv", "/Users/david/Documents/Research/Saxena Lab/rat-cooperation/David/Behavioral Quantification/Example Data Files/ExampleMagFile.csv"]
+#lev_files = ["/Users/david/Documents/Research/Saxena Lab/rat-cooperation/David/Behavioral Quantification/Example Data Files/leverData.csv", "/Users/david/Documents/Research/Saxena Lab/rat-cooperation/David/Behavioral Quantification/Example Data Files/ExampleLevFile.csv"]
+
 experiment = multiFileGraphs(mag_files, lev_files, mag_files)
-experiment.magFileDataAvailabilityGraph()
-experiment.levFileDataAvailabilityGraph()
-experiment.interpressIntervalPlot()
-experiment.interpressIntervalSuccessPlot()
-experiment.percentSuccessfulTrials()
+#experiment.magFileDataAvailabilityGraph()
+#experiment.levFileDataAvailabilityGraph()
+#experiment.interpressIntervalPlot()
+#experiment.interpressIntervalSuccessPlot()
+experiment.percentSuccesfulTrials()
         
         
 
