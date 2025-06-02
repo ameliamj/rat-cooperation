@@ -209,7 +209,8 @@ class fileExtractor:
         def construct_path(row):
             folder = "PairedTestingSessions" if row["test/train"] == "test" else "Training_COOPERATION"
             processed = "/processed" if row["test/train"] == "test" else ""
-            zero = "" if row["test/train"] == "test" else "0"
+            #zero = "" if row["test/train"] == "test" else "0"
+            zero = ""
             return f"{base_path}/{folder}/{zero}{row['session']}/Behavioral{processed}/mag/{row['correct_name']}_mag.csv" if pd.isna(row["vid"]) == False and pd.isna(row["session"]) == False else None
     
         if not grouped:
@@ -245,7 +246,8 @@ class fileExtractor:
         def construct_path(row):
             folder = "PairedTestingSessions" if row["test/train"] == "test" else "Training_COOPERATION"
             processed = "/processed" if row["test/train"] == "test" else ""
-            zero = "" if row["test/train"] == "test" else "0"
+            #zero = "" if row["test/train"] == "test" else "0"
+            zero = ""
             return f"{base_path}/{folder}/{zero}{row['session']}/Behavioral{processed}/lever/{row['correct_name']}_lever.csv" if pd.isna(row["vid"]) == False and pd.isna(row["session"]) == False else None
     
         if not grouped:
@@ -278,7 +280,8 @@ class fileExtractor:
                 
         def construct_path(row):
             folder = "PairedTestingSessions" if row["test/train"] == "test" else "Training_COOPERATION"
-            zero = "" if row["test/train"] == "test" else "0"
+            #zero = "" if row["test/train"] == "test" else "0" 
+            zero = ""
             return f"{base_path}/{folder}/{zero}{row['session']}/Tracking/h5/{row['vid']}.predictions.h5" if pd.isna(row["vid"]) == False and pd.isna(row["session"]) == False else None
         if not grouped:
             return [
@@ -310,9 +313,11 @@ only_transparent = "/Users/david/Documents/Research/Saxena Lab/rat-cooperation/D
 only_unfamiliar = "/Users/david/Documents/Research/Saxena Lab/rat-cooperation/David/Behavioral Quantification/Sorted Data Files/only_unfamiliar_partners.csv"
 only_trainingpartners = "/Users/david/Documents/Research/Saxena Lab/rat-cooperation/David/Behavioral Quantification/Sorted Data Files/only_training_partners.csv"
 
-#fe = fileExtractor(fixedExpanded)
-#fe.deleteInvalid()  
-#fe.getOpaqueSessions()
+fe = fileExtractor(fixedExpanded)
+fe.deleteInvalid()  
+fe.getTrainingCoopSessions()
+#fe.getPairedTestingSessions()
+print(fe.getLevsDatapath())
 
 
 def saveAllCSVs():
