@@ -22,10 +22,10 @@ class fileExtractor:
         Handles file not found or malformed CSV errors.
         """
         try:
-            self.data = pd.read_csv(self.filename, sep=',', na_values=[''])
+            self.data = pd.read_csv(self.filename, sep=',', na_values=[''], dtype = {'session' : str, 'vid' : str, 'single/multi' : str, 'test/train' : str})
             
-            # If you want to attempt type inference, use this instead:
-            self.data = self.data.convert_dtypes()
+            #self.data = pd.read_csv(self.filename, sep=',', na_values=[''])
+            #self.data = self.data.convert_dtypes()
     
         except FileNotFoundError:
             raise FileNotFoundError(f"CSV file not found at: {self.filename}")
@@ -39,7 +39,7 @@ class fileExtractor:
         - For trial type == 'coop', set color pair to last 13 chars of 'vid'
         - Add a new column 'dividers' for coop trials only, with values:
             'transparent', 'translucent', or 'opaque' based on 'session'
-        - Save result to 'fixed_file.csv'
+        - Save result to 'dyed_preds_fixed_expanded.csv'
         """
         df_copy = self.data.copy()
     
@@ -55,16 +55,16 @@ class fileExtractor:
         # Set 'color pair' from last 13 characters of 'vid' for coop rows
         df_copy.loc[coop_condition, 'color pair'] = df_copy.loc[coop_condition, 'vid'].str[-13:]
     
-        # Initialize 'dividers' as blank (object type)
-        df_copy['dividers'] = np.nan
+        # Initialize 'dividers' as an empty object (string-compatible) column
+        df_copy['dividers'] = pd.Series(dtype='object')
     
         # Safely cast 'session' to string
         session_col = df_copy['session'].astype(str)
     
         # Assign divider types only to coop rows
-        df_copy.loc[coop_condition & session_col.str.endswith('opaque'), 'dividers'] = 'opaque'
-        df_copy.loc[coop_condition & session_col.str.endswith('translucent'), 'dividers'] = 'translucent'
-        df_copy.loc[coop_condition & ~session_col.str.endswith(('opaque', 'translucent')), 'dividers'] = 'transparent'
+        df_copy.loc[coop_condition & session_col.str.endswith('Opaque'), 'dividers'] = 'opaque'
+        df_copy.loc[coop_condition & session_col.str.endswith('Translucent'), 'dividers'] = 'translucent'
+        df_copy.loc[coop_condition & ~session_col.str.endswith(('Opaque', 'Translucent')), 'dividers'] = 'transparent'
     
         # Save to file
         df_copy.to_csv("dyed_preds_fixed_expanded.csv", index=False)
@@ -130,7 +130,7 @@ class fileExtractor:
         (i.e., retain only transparent divider sessions).
         """
         self.data = self.data[
-            ~self.data['session'].str.endswith(('opaque', 'translucent'), na=False)
+            ~self.data['session'].str.endswith(('Opaque', 'Translucent'), na=False)
         ]
         df_copy = self.data.copy()
         df_copy.to_csv("only_transparent_sessions.csv", index=False)
@@ -140,7 +140,7 @@ class fileExtractor:
         Keep only rows where 'session' ends with 'translucent'.
         """
         self.data = self.data[
-            self.data['session'].str.endswith('translucent', na=False)
+            self.data['session'].str.endswith('Translucent', na=False)
         ]
         df_copy = self.data.copy()
         df_copy.to_csv("only_translucent_sessions.csv", index=False)
@@ -150,7 +150,7 @@ class fileExtractor:
         Keep only rows where 'session' ends with 'opaque'.
         """
         self.data = self.data[
-            self.data['session'].str.endswith('opaque', na=False)
+            self.data['session'].str.endswith('Opaque', na=False)
         ]
         df_copy = self.data.copy()
         df_copy.to_csv("only_opaque_sessions.csv", index=False)
@@ -209,7 +209,8 @@ class fileExtractor:
         def construct_path(row):
             folder = "PairedTestingSessions" if row["test/train"] == "test" else "Training_COOPERATION"
             processed = "/processed" if row["test/train"] == "test" else ""
-            return f"{base_path}/{folder}/{row['session']}/Behavioral{processed}/mag/{row['correct_name']}_mag.csv" if pd.isna(row["vid"]) == False and pd.isna(row["session"]) == False else None
+            zero = "" if row["test/train"] == "test" else "0"
+            return f"{base_path}/{folder}/{zero}{row['session']}/Behavioral{processed}/mag/{row['correct_name']}_mag.csv" if pd.isna(row["vid"]) == False and pd.isna(row["session"]) == False else None
     
         if not grouped:
             return [
@@ -244,7 +245,8 @@ class fileExtractor:
         def construct_path(row):
             folder = "PairedTestingSessions" if row["test/train"] == "test" else "Training_COOPERATION"
             processed = "/processed" if row["test/train"] == "test" else ""
-            return f"{base_path}/{folder}/{row['session']}/Behavioral{processed}/lever/{row['correct_name']}_lever.csv" if pd.isna(row["vid"]) == False and pd.isna(row["session"]) == False else None
+            zero = "" if row["test/train"] == "test" else "0"
+            return f"{base_path}/{folder}/{zero}{row['session']}/Behavioral{processed}/lever/{row['correct_name']}_lever.csv" if pd.isna(row["vid"]) == False and pd.isna(row["session"]) == False else None
     
         if not grouped:
             return [
@@ -276,7 +278,8 @@ class fileExtractor:
                 
         def construct_path(row):
             folder = "PairedTestingSessions" if row["test/train"] == "test" else "Training_COOPERATION"
-            return f"{base_path}/{folder}/{row['session']}/Tracking/h5/{row['vid']}.predictions.h5" if pd.isna(row["vid"]) == False and pd.isna(row["session"]) == False else None
+            zero = "" if row["test/train"] == "test" else "0"
+            return f"{base_path}/{folder}/{zero}{row['session']}/Tracking/h5/{row['vid']}.predictions.h5" if pd.isna(row["vid"]) == False and pd.isna(row["session"]) == False else None
         if not grouped:
             return [
                 construct_path(row)
@@ -295,7 +298,9 @@ class fileExtractor:
     
 #information_path = "/Users/david/Documents/Research/Saxena Lab/rat-cooperation/scripts/notebooks/dyed_preds_df.csv"
 #information_path = "/Users/david/Documents/Research/Saxena Lab/rat-cooperation/David/Behavioral Quantification/Sorted Data Files/dyed_preds_df_fixed.csv"
-information_path = "/Users/david/Documents/Research/Saxena Lab/rat-cooperation/David/Behavioral Quantification/Sorted Data Files/dyed_preds_fixed_expanded.csv"
+information_path = "/Users/david/Documents/Research/Saxena Lab/rat-cooperation/David/Behavioral Quantification/Sorted Data Files/originalFile.csv"
+
+fixedExpanded = "/Users/david/Documents/Research/Saxena Lab/rat-cooperation/David/Behavioral Quantification/Sorted Data Files/dyed_preds_fixed_expanded.csv"
 
 all_valid = "/Users/david/Documents/Research/Saxena Lab/rat-cooperation/David/Behavioral Quantification/Sorted Data Files/dyed_preds_all_valid.csv"
 only_opaque = "/Users/david/Documents/Research/Saxena Lab/rat-cooperation/David/Behavioral Quantification/Sorted Data Files/only_opaque_sessions.csv"
@@ -305,11 +310,34 @@ only_transparent = "/Users/david/Documents/Research/Saxena Lab/rat-cooperation/D
 only_unfamiliar = "/Users/david/Documents/Research/Saxena Lab/rat-cooperation/David/Behavioral Quantification/Sorted Data Files/only_unfamiliar_partners.csv"
 only_trainingpartners = "/Users/david/Documents/Research/Saxena Lab/rat-cooperation/David/Behavioral Quantification/Sorted Data Files/only_training_partners.csv"
 
+#fe = fileExtractor(fixedExpanded)
+#fe.deleteInvalid()  
+#fe.getOpaqueSessions()
 
-#fe = fileExtractor(all_valid)
-#fe.deleteInvalid()
 
+def saveAllCSVs():
+    methods_to_call = [
+        "writeNewFixedFile",
+        "getTrainingCoopSessions",
+        "getPairedTestingSessions",
+        "getTrainingPartner",
+        "getUnfamiliarPartners",
+        "getTransparentSessions",
+        "getTranslucentSessions",
+        "getOpaqueSessions",
+    ]
+    
+    for method_name in methods_to_call:
+        if (method_name == "writeNewFixedFile"):
+            fe = fileExtractor(fixedExpanded)
+            fe.writeNewFixedFile()
+        else:
+            fe = fileExtractor(fixedExpanded)
+            fe.deleteInvalid()  # ensure you start from the cleaned data
+            method = getattr(fe, method_name)
+            method()  # call the method
 
+#saveAllCSVs()
 
 #fe.sortByMicePairs()
 #print(fe.getPosDatapath())
