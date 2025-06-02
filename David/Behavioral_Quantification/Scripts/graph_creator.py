@@ -648,6 +648,7 @@ class multiFileGraphsCategories:
             self.endSaveName += f"_{cat}"
         
         self.endSaveName += ".png"
+        self.path = "/gpfs/radev/project/saxena/drb83/rat-cooperation/David/Behavioral_Quantification/Graphs/"
 
     def compareGazeEventsCategories(self):
         avg_events = []
@@ -738,7 +739,7 @@ class multiFileGraphsCategories:
         plt.title('Cumulative Gaze Events Over Time per Category')
         plt.legend()
         plt.tight_layout()
-        plt.savefig(f'GazeEventsoverTime{self.endSaveName}')
+        plt.savefig(f'{self.path}GazeEventsoverTime{self.endSaveName}')
         plt.show()
 
 
@@ -760,7 +761,7 @@ class multiFileGraphsCategories:
         plt.title('Success Probability per Category')
         plt.xticks(range(len(probs)), self.categoryNames)
         plt.ylim(0, 1)
-        plt.savefig(f'ProbofSuccesfulTrial_{self.endSaveName}')
+        plt.savefig(f'{self.path}ProbofSuccesfulTrial_{self.endSaveName}')
         plt.show()
 
     def compareIPI(self):
@@ -806,7 +807,7 @@ class multiFileGraphsCategories:
             plt.xlabel('Category')
             plt.ylabel('Time (s)')
             plt.title(title)
-            plt.savefig(f'{title}{self.endSaveName}')
+            plt.savefig(f'{self.path}{title}{self.endSaveName}')
             plt.show()
             
     def make_bar_plot(self, data, ylabel, title, saveFileName):
@@ -816,7 +817,7 @@ class multiFileGraphsCategories:
         plt.ylabel(ylabel)
         plt.title(title)
         plt.tight_layout()
-        plt.savefig(f'{saveFileName}{self.endSaveName}')
+        plt.savefig(f'{self.path}{saveFileName}{self.endSaveName}')
         plt.show()
     
     def printSummaryStats(self):
