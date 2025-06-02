@@ -633,7 +633,7 @@ class multiFileGraphsCategories:
         self.categoryNames = categoryNames
         self.numCategories = len(magFiles)
 
-        if not (len(magFiles) == len(levFiles) == len(posFiles) == len(categoryNames) == len(categoryNames)):
+        if not (len(magFiles) == len(levFiles) == len(posFiles) == len(categoryNames)):
             raise ValueError("Mismatch between number of categories and provided file lists or category names.")
 
         for c in range(self.numCategories):
@@ -648,8 +648,9 @@ class multiFileGraphsCategories:
             self.endSaveName += f"_{cat}"
         
         self.endSaveName += ".png"
-        self.path = "/gpfs/radev/project/saxena/drb83/rat-cooperation/David/Behavioral_Quantification/Graphs/"
-
+        #self.path = "/gpfs/radev/project/saxena/drb83/rat-cooperation/David/Behavioral_Quantification/Graphs/"
+        self.path = ""
+        
     def compareGazeEventsCategories(self):
         avg_events = []
         ts_data = []
@@ -750,7 +751,11 @@ class multiFileGraphsCategories:
             for exp in group:
                 lev = exp.lev.data
                 total = lev['TrialNum'].nunique()
-                succ = lev.groupby('TrialNum').first().query('coopSucc == 1').shape[0]
+
+                print("lev.columns:", lev.columns.tolist())
+                print("First few rows:\n", lev.head())
+                succ = lev[lev['coopSucc'] == 1]['TrialNum'].nunique()
+                
                 cat_probs.append(succ / total if total > 0 else 0)
             probs.append(np.mean(cat_probs))
 
@@ -880,20 +885,22 @@ class multiFileGraphsCategories:
         self.make_bar_plot(avg_mag_per_trial, 'Avg Mag Events per Trial', 'Mag Events per Trial per Category', "Avg_Mag_Events_perTrial")
         
 
-'''magFiles = [["/Users/david/Documents/Research/Saxena Lab/rat-cooperation/David/Behavioral Quantification/Example Data Files/042924_Cam1_TrNum9_Coop_KL006G-KL006R_mag.csv"], ["/Users/david/Documents/Research/Saxena Lab/rat-cooperation/David/Behavioral Quantification/Example Data Files/041624_Cam4_TrNum10_Coop_KL001B-KL001Y_mag.csv"]]
-levFiles = [["/Users/david/Documents/Research/Saxena Lab/rat-cooperation/David/Behavioral Quantification/Example Data Files/042924_Cam1_TrNum9_Coop_KL006G-KL006R_lever.csv"], ["/Users/david/Documents/Research/Saxena Lab/rat-cooperation/David/Behavioral Quantification/Example Data Files/041624_Cam4_TrNum10_Coop_KL001B-KL001Y_lever.csv"]]
-posFiles = [["/Users/david/Documents/Research/Saxena Lab/rat-cooperation/David/Behavioral Quantification/Example Data Files/042924_Cam1_TrNum9_Coop_KL006G-KL006R.predictions.h5"], ["/Users/david/Documents/Research/Saxena Lab/rat-cooperation/David/Behavioral Quantification/Example Data Files/041624_Cam4_TrNum10_Coop_KL001B-KL001Y.predictions.h5"]]'''
+'''magFiles = [["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv"], ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv"]]
+levFiles = [["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_mag.csv"], ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_mag.csv"]]
+posFiles = [["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G.predictions.h5"], ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.predictions.h5"]]                   
+categoryExperiments = multiFileGraphsCategories(levFiles, magFiles, posFiles, ["Paired_Testing", "Training_Cooperation"])'''
 
 
 
 #Paired Testing vs. Training Cooperation
-'''dataPT = getOnlyPairedTesting()
+dataPT = getOnlyPairedTesting()
 dataTC = getOnlyTrainingCoop()
 
 magFiles = [dataPT[0], dataTC[0]]
 levFiles = [dataPT[1], dataTC[1]]
 posFiles = [dataPT[2], dataTC[2]]
-categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["Paired_Testing", "Training_Cooperation"])'''
+categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["Paired_Testing", "Training_Cooperation"])
+
 
 
 ''' #Unfamiliar vs. Training Partners
@@ -921,13 +928,13 @@ categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["
 
 #Transparent vs. Translucent vs. Opaque
 #dataTransparent = getOnlyPairedTesting() #Transparent
-dataTranslucent = getonlyTranslucent() #Translucent
+'''dataTranslucent = getonlyTranslucent() #Translucent
 dataOpaque = getOnlyOpaque() #Opaque
 
 magFiles = [dataTranslucent[0], dataOpaque[0]]
 levFiles = [dataTranslucent[1], dataOpaque[1]]
 posFiles = [dataTranslucent[2], dataOpaque[2]]
-categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["Translucent", "Opaque"])
+categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["Translucent", "Opaque"])'''
 
 
 
@@ -935,5 +942,4 @@ categoryExperiments.compareGazeEventsCategories()
 categoryExperiments.compareSuccesfulTrials()
 categoryExperiments.compareIPI()
 categoryExperiments.printSummaryStats()
-        
         
