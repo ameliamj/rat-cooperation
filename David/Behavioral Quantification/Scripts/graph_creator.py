@@ -303,13 +303,13 @@ experiment.interpressIntervalSuccessPlot()'''
 all_valid = "/gpfs/radev/home/drb83/project/rat-cooperation/David/Behavioral Quantification/Sorted Data Files/dyed_preds_all_valid.csv"
 
 only_opaque = "/gpfs/radev/project/saxena/drb83/rat-cooperation/David/Behavioral Quantification/Sorted Data Files/only_opaque_sessions.csv"
-only_translucent = "/gpfs/radev/project/saxena/drb83/rat-cooperation/David/Behavioral Quantification/Sorted Data Files/Sorted Data Files/only_translucent_sessions.csv"
-only_transparent = "/gpfs/radev/project/saxena/drb83/rat-cooperation/David/Behavioral Quantification/Sorted Data Files/Sorted Data Files/only_transparent_sessions.csv"
+only_translucent = "/gpfs/radev/project/saxena/drb83/rat-cooperation/David/Behavioral Quantification/Sorted Data Files/only_translucent_sessions.csv"
+only_transparent = "/gpfs/radev/project/saxena/drb83/rat-cooperation/David/Behavioral Quantification/Sorted Data Files/only_transparent_sessions.csv"
 
-only_unfamiliar = "/gpfs/radev/project/saxena/drb83/rat-cooperation/David/Behavioral Quantification/Sorted Data Files/Sorted Data Files/only_unfamiliar_partners.csv"
+only_unfamiliar = "/gpfs/radev/project/saxena/drb83/rat-cooperation/David/Behavioral Quantification/Sorted Data Files/only_unfamiliar_partners.csv"
 only_trainingpartners = "/gpfs/radev/project/saxena/drb83/rat-cooperation/David/Behavioral Quantification/Sorted Data Files/only_training_partners.csv"
 
-only_PairedTesting = "/gpfs/radev/project/saxena/drb83/rat-cooperation/David/Behavioral Quantification/Sorted Data Files/Sorted Data Files/only_PairedTesting.csv"
+only_PairedTesting = "/gpfs/radev/project/saxena/drb83/rat-cooperation/David/Behavioral Quantification/Sorted Data Files/only_PairedTesting.csv"
 only_TrainingCoop = "/gpfs/radev/project/saxena/drb83/rat-cooperation/David/Behavioral Quantification/Sorted Data Files/only_TrainingCooperation.csv"
 
 
