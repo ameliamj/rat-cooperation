@@ -287,9 +287,9 @@ class singleFileGraphs:
 #
 #
 
-'''mag_file = "/Users/david/Documents/Research/Saxena Lab/rat-cooperation/David/Behavioral Quantification/Example Data Files/magData.csv"
-lev_file = "/Users/david/Documents/Research/Saxena Lab/rat-cooperation/David/Behavioral Quantification/Example Data Files/leverData.csv"
-pos_file = "/Users/david/Documents/Research/Saxena Lab/rat-cooperation/David/Behavioral Quantification/Example Data Files/ExampleTrackingCoop.h5"
+'''mag_file = "/Users/david/Documents/Research/Saxena Lab/rat-cooperation/David/Behavioral_Quantification/Example Data Files/magData.csv"
+lev_file = "/Users/david/Documents/Research/Saxena Lab/rat-cooperation/David/Behavioral_Quantification/Example Data Files/leverData.csv"
+pos_file = "/Users/david/Documents/Research/Saxena Lab/rat-cooperation/David/Behavioral_Quantification/Example Data Files/ExampleTrackingCoop.h5"
 
 experiment = singleFileGraphs(mag_file, lev_file, pos_file)
 experiment.percentSuccesfulTrials()
@@ -304,17 +304,17 @@ experiment.interpressIntervalSuccessPlot()'''
 #
 
 #all_valid = "/Users/david/Documents/Research/Saxena Lab/rat-cooperation/David/Behavioral Quantification/Sorted Data Files/dyed_preds_all_valid.csv"
-all_valid = "/gpfs/radev/home/drb83/project/rat-cooperation/David/Behavioral Quantification/Sorted Data Files/dyed_preds_all_valid.csv"
+all_valid = "/gpfs/radev/home/drb83/project/rat-cooperation/David/Behavioral_Quantification/Sorted_Data_Files/dyed_preds_all_valid.csv"
 
-only_opaque = "/gpfs/radev/project/saxena/drb83/rat-cooperation/David/Behavioral Quantification/Sorted Data Files/only_opaque_sessions.csv"
-only_translucent = "/gpfs/radev/project/saxena/drb83/rat-cooperation/David/Behavioral Quantification/Sorted Data Files/only_translucent_sessions.csv"
-only_transparent = "/gpfs/radev/project/saxena/drb83/rat-cooperation/David/Behavioral Quantification/Sorted Data Files/only_transparent_sessions.csv"
+only_opaque = "/gpfs/radev/project/saxena/drb83/rat-cooperation/David/Behavioral_Quantification/Sorted_Data_Files/only_opaque_sessions.csv"
+only_translucent = "/gpfs/radev/project/saxena/drb83/rat-cooperation/David/Behavioral_Quantification/Sorted_Data_Files/only_translucent_sessions.csv"
+only_transparent = "/gpfs/radev/project/saxena/drb83/rat-cooperation/David/Behavioral_Quantification/Sorted_Data_Files/only_transparent_sessions.csv"
 
-only_unfamiliar = "/gpfs/radev/project/saxena/drb83/rat-cooperation/David/Behavioral Quantification/Sorted Data Files/only_unfamiliar_partners.csv"
-only_trainingpartners = "/gpfs/radev/project/saxena/drb83/rat-cooperation/David/Behavioral Quantification/Sorted Data Files/only_training_partners.csv"
+only_unfamiliar = "/gpfs/radev/project/saxena/drb83/rat-cooperation/David/Behavioral_Quantification/Sorted_Data_Files/only_unfamiliar_partners.csv"
+only_trainingpartners = "/gpfs/radev/project/saxena/drb83/rat-cooperation/David/Behavioral_Quantification/Sorted_Data_Files/only_training_partners.csv"
 
-only_PairedTesting = "/gpfs/radev/project/saxena/drb83/rat-cooperation/David/Behavioral Quantification/Sorted Data Files/only_PairedTesting.csv"
-only_TrainingCoop = "/gpfs/radev/project/saxena/drb83/rat-cooperation/David/Behavioral Quantification/Sorted Data Files/only_TrainingCooperation.csv"
+only_PairedTesting = "/gpfs/radev/project/saxena/drb83/rat-cooperation/David/Behavioral_Quantification/Sorted_Data_Files/only_PairedTesting.csv"
+only_TrainingCoop = "/gpfs/radev/project/saxena/drb83/rat-cooperation/David/Behavioral_Quantification/Sorted_Data_Files/only_TrainingCooperation.csv"
 
 
 def getAllValid():

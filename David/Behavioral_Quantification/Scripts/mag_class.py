@@ -133,7 +133,7 @@ class magLoader:
 #
 #
 
-#file1 = "/Users/david/Documents/Research/Saxena Lab/Behavioral Quantification/Example Data Files/ExampleMagFile.csv"
+#file1 = "/Users/david/Documents/Research/Saxena Lab/Behavioral_Quantification/Example Data Files/ExampleMagFile.csv"
 #mag1 = magLoader(file1)
 
 #print(mag1.getTrialNum(0))
