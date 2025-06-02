@@ -14,6 +14,10 @@ from experiment_class import singleExperiment
 from typing import List
 from file_extractor_class import fileExtractor
 
+import sys
+sys.stdout.flush()
+sys.stderr.flush()
+
 #Class to create Graphs with data from a single file
 #
 #
