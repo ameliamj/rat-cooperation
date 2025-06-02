@@ -6,7 +6,7 @@
 #SBATCH --cpus-per-task=2
 
 # Load the Python module (make sure 3.8 exists — check with `module avail python`)
-module load python/3.8
+module load Python/3.10.8-GCCcore-12.2.0
 
 # Run your script
 python3 graph_creator.py
