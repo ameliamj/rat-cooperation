@@ -1,0 +1,7 @@
+matplotlib
+numpy
+pandas
+h5py
+scipy
+scikit-learn
+os-sys

@@ -886,22 +886,18 @@ posFiles = [["/Users/david/Documents/Research/Saxena Lab/rat-cooperation/David/B
 
 
 #Paired Testing vs. Training Cooperation
-dataPT = getOnlyPairedTesting()
+'''dataPT = getOnlyPairedTesting()
 dataTC = getOnlyTrainingCoop()
 
 magFiles = [dataPT[0], dataTC[0]]
 levFiles = [dataPT[1], dataTC[1]]
 posFiles = [dataPT[2], dataTC[2]]
-categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["Paired_Testing", "Training_Cooperation"])
+categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["Paired_Testing", "Training_Cooperation"])'''
 
-categoryExperiments.compareGazeEventsCategories()
-categoryExperiments.compareSuccesfulTrials()
-categoryExperiments.compareIPI()
-categoryExperiments.printSummaryStats()
 
 ''' #Unfamiliar vs. Training Partners
-dataUF = getOnlyPairedTesting() #Unfamiliar
-dataTP = getOnlyTrainingCoop() #Training Partners
+dataUF = getOnlyUnfamiliar() #Unfamiliar
+dataTP = getOnlyTrainingPartners() #Training Partners
 
 magFiles = [dataUF[0], dataTP[0]]
 levFiles = [dataUF[1], dataTP[1]]
@@ -911,9 +907,9 @@ categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["
 
 
 ''' #Transparent vs. Translucent vs. Opaque
-dataTransparent = getOnlyPairedTesting() #Transparent
-dataTranslucent = getOnlyTrainingCoop() #Translucent
-dataOpaque = getOnlyOpaque #Opaque
+dataTransparent = getOnlyTransparent() #Transparent
+dataTranslucent = getOnlyTranslucent() #Translucent
+dataOpaque = getOnlyOpaque() #Opaque
 
 magFiles = [dataTransparent[0], dataTranslucent[0], dataOpaque[0]]
 levFiles = [dataTransparent[1], dataTranslucent[1], dataOpaque[1]]
@@ -922,5 +918,21 @@ categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["
 '''
 
 
+#Transparent vs. Translucent vs. Opaque
+#dataTransparent = getOnlyPairedTesting() #Transparent
+dataTranslucent = getonlyTranslucent() #Translucent
+dataOpaque = getOnlyOpaque() #Opaque
+
+magFiles = [dataTranslucent[0], dataOpaque[0]]
+levFiles = [dataTranslucent[1], dataOpaque[1]]
+posFiles = [dataTranslucent[2], dataOpaque[2]]
+categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["Translucent", "Opaque"])
+
+
+
+categoryExperiments.compareGazeEventsCategories()
+categoryExperiments.compareSuccesfulTrials()
+categoryExperiments.compareIPI()
+categoryExperiments.printSummaryStats()
         
         
