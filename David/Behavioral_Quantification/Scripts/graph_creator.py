@@ -899,7 +899,7 @@ dataTC = getOnlyTrainingCoop()
 magFiles = [dataPT[0], dataTC[0]]
 levFiles = [dataPT[1], dataTC[1]]
 posFiles = [dataPT[2], dataTC[2]]
-categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["Paired_Testing", "Training_Cooperation"])
+categoryExperiments = multiFileGraphsCategories(levFiles, magFiles, posFiles, ["Paired_Testing", "Training_Cooperation"])
 
 
 
