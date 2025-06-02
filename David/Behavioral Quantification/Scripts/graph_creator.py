@@ -890,6 +890,10 @@ levFiles = [dataPT[1], dataTC[1]]
 posFiles = [dataPT[2], dataTC[2]]
 categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["Paired_Testing", "Training_Cooperation"])
 
+categoryExperiments.compareGazeEventsCategories()
+categoryExperiments.compareSuccesfulTrials()
+categoryExperiments.compareIPI()
+categoryExperiments.printSummaryStats()
 
 ''' #Unfamiliar vs. Training Partners
 dataUF = getOnlyPairedTesting() #Unfamiliar
@@ -914,9 +918,5 @@ categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["
 '''
 
 
-categoryExperiments.compareGazeEventsCategories()
-categoryExperiments.compareSuccesfulTrials()
-categoryExperiments.compareIPI()
-categoryExperiments.printSummaryStats()
         
         
