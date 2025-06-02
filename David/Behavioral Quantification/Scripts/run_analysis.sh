@@ -1,9 +1,3 @@
-"""
-Created on Mon Jun  2 12:49:50 2025
-
-@author: david
-"""
-
 #!/bin/bash
 #SBATCH --job-name=rat_analysis
 #SBATCH --output=rat_analysis_%j.out
