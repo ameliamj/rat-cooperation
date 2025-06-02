@@ -85,12 +85,29 @@ class fileExtractor:
         self.data = self.data[
             (self.data['trial type'] == 'coop') &
             (self.data['levers'] == True) &
-            (self.data['mags'] == True)
+            (self.data['mags'] == True) &
+            (self.data['correct'] == True)
         ]
         
         df_copy = self.data.copy()
         df_copy.to_csv("dyed_preds_all_valid.csv", index=False)
 
+    def getTrainingCoopSessions(self):
+        """
+        Keep only rows where test/train == 'train'
+        """
+        self.data = self.data[self.data['test/train'] == 'train']
+        df_copy = self.data.copy()
+        df_copy.to_csv("only_TrainingCooperation.csv", index=False)
+        
+    def getPairedTestingSessions(self):
+        """
+        Keep only rows where test/train == 'test'
+        """
+        self.data = self.data[self.data['test/train'] == 'test']
+        df_copy = self.data.copy()
+        df_copy.to_csv("only_PairedTesting.csv", index=False)
+        
     def getTrainingPartner(self): # gets rid of all rows where familiarity != TP
         """
         Keep only rows where familiarity == 'TP'
@@ -243,6 +260,37 @@ class fileExtractor:
                     group_paths.append(construct_path(row))
                 grouped_paths.append(group_paths)
             return grouped_paths
+        
+    def getPosDatapath(self, grouped = False):
+        """
+        Return a list of datapaths to pos files for each row in self.data.
+        
+        - If grouped=False: return a flat list.
+        - If grouped=True: use sortBySameMicePairs to return a nested list where
+          each sublist corresponds to all levFiles for a given mice pair.
+    
+        Path format:
+        /gpfs/radev/pi/saxena/aj764/{folderName}/{sessionName}/
+        """
+        base_path = "/gpfs/radev/pi/saxena/aj764"
+                
+        def construct_path(row):
+            folder = "PairedTestingSessions" if row["test/train"] == "test" else "Training_COOPERATION"
+            return f"{base_path}/{folder}/{row['session']}/Tracking/h5/{row['vid']}.predictions.h5" if pd.isna(row["vid"]) == False and pd.isna(row["session"]) == False else None
+        if not grouped:
+            return [
+                construct_path(row)
+                for _, row in self.data.iterrows()
+            ]
+        else:
+            grouped_rows = self.sortByMicePairs()
+            grouped_paths = []
+            for group in grouped_rows:
+                group_paths = []
+                for _, row in group.iterrows():
+                    group_paths.append(construct_path(row))
+                grouped_paths.append(group_paths)
+            return grouped_paths
     
     
 #information_path = "/Users/david/Documents/Research/Saxena Lab/rat-cooperation/scripts/notebooks/dyed_preds_df.csv"
@@ -257,9 +305,14 @@ only_transparent = "/Users/david/Documents/Research/Saxena Lab/rat-cooperation/D
 only_unfamiliar = "/Users/david/Documents/Research/Saxena Lab/rat-cooperation/David/Behavioral Quantification/Sorted Data Files/only_unfamiliar_partners.csv"
 only_trainingpartners = "/Users/david/Documents/Research/Saxena Lab/rat-cooperation/David/Behavioral Quantification/Sorted Data Files/only_training_partners.csv"
 
+
 #fe = fileExtractor(all_valid)
 #fe.deleteInvalid()
-#print(fe.getMagsDatapath())
+
+
+
+#fe.sortByMicePairs()
+#print(fe.getPosDatapath())
 
 
 

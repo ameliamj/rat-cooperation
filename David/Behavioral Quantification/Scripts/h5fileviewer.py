@@ -8,16 +8,37 @@ Created on Tue May 27 15:43:01 2025
 
 import h5py
 import pandas as pd
+import numpy as np
 
 # 🔧 SET YOUR FILE PATH HERE
-file_path = r'/Users/david/Documents/Research/Saxena Lab/Behavioral Quantification/Example Data Files/ExampleTrackingCoop.h5'  
+file_path = r"/Users/david/Documents/Research/Saxena Lab/rat-cooperation/David/Behavioral Quantification/Example Data Files/041624_Cam4_TrNum10_Coop_KL001B-KL001Y.predictions.h5" 
 
 dataset_path = '/point_scores'          # <- Set the dataset path here
+
+def count_nans_in_tracks(file_path):
+    with h5py.File(file_path, 'r') as f:
+        if 'tracks' not in f:
+            print("❌ Dataset 'tracks' not found in the file.")
+            return
+
+        # Load dataset into memory
+        data = f['tracks'][:]
+
+        # Check for NaNs
+        if not np.issubdtype(data.dtype, np.floating):
+            print("⚠️ Dataset is not floating-point. NaNs are unlikely.")
+            return
+
+        nan_count = np.isnan(data).sum()
+        total_elements = data.size
+        print(f"🔍 NaN count in 'tracks': {nan_count}")
+        print(f"📊 Total elements: {total_elements}")
+        print(f"📉 Percentage NaN: {100 * nan_count / total_elements:.4f}%")
 
 def try_display_dataset(dataset, max_rows=10):
     """Display dataset if possible, show shape and some slices."""
     data = dataset[()]  # Load full array
-    print(f"\n📊 Dataset '{dataset.name}'")
+    print(f"\nDataset '{dataset.name}'")
     print(f"Shape: {data.shape}, Dtype: {dataset.dtype}")
 
     if data.ndim == 1 or data.ndim == 2:
@@ -36,56 +57,25 @@ def view_specific_dataset(file_path, dataset_path):
             dataset = f[dataset_path]
             try_display_dataset(dataset)
         else:
-            print(f"❌ Dataset '{dataset_path}' not found in file.")
+            print(f"Dataset '{dataset_path}' not found in file.")
 
 # 🔍 Run the viewer
 view_specific_dataset(file_path, dataset_path)
+count_nans_in_tracks(file_path)
 
-'''def display_structure(h5file, path='/'):
-    """Recursively print the structure of the HDF5 file."""
-    for key in h5file[path]:
-        item = h5file[path + key]
-        if isinstance(item, h5py.Dataset):
-            print(f"[Dataset] {path + key} - shape: {item.shape}, dtype: {item.dtype}")
-        elif isinstance(item, h5py.Group):
-            print(f"[Group]   {path + key}/")
-            display_structure(h5file, path + key + '/')
+def explore_h5(file_path):
+    def visit(name, obj):
+        indent = '  ' * name.count('/')
+        if isinstance(obj, h5py.Dataset):
+            print(f"{indent} Dataset: {name}")
+            print(f"{indent}  Shape: {obj.shape}, Dtype: {obj.dtype}")
+        elif isinstance(obj, h5py.Group):
+            print(f"{indent} Group: {name}")
+        for key, value in obj.attrs.items():
+            print(f"{indent} Attribute - {key}: {value}")
 
-def try_display_dataset(dataset, max_rows=10):
-    """Attempt to display the dataset as a DataFrame if possible."""
-    try:
-        data = dataset[()]
-        if data.ndim == 1 or data.ndim == 2:
-            df = pd.DataFrame(data)
-            print(df.head(max_rows))
-        else:
-            print(f"Cannot display data with shape {data.shape}")
-    except Exception as e:
-        print(f"Could not load dataset: {e}")
-
-def first_dataset(group):
-    for key in group:
-        item = group[key]
-        if isinstance(item, h5py.Dataset):
-            return item
-        elif isinstance(item, h5py.Group):
-            ds = first_dataset(item)
-            if ds:
-                return ds
-    return None
-
-def view_h5_file(file_path):
     with h5py.File(file_path, 'r') as f:
-        print(f"\nStructure of '{file_path}':\n")
-        display_structure(f)
+        print(f"Exploring HDF5 file: {file_path}")
+        f.visititems(visit)
 
-        print("\nAttempting to display first dataset:\n")
-        dataset = first_dataset(f)
-        if dataset:
-            print(f"Displaying: {dataset.name}")
-            try_display_dataset(dataset)
-        else:
-            print("No datasets found.")
-
-# 🔍 Run the viewer
-view_h5_file(file_path)'''
+explore_h5(file_path)

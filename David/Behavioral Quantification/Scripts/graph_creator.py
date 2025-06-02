@@ -288,7 +288,8 @@ lev_file = "/Users/david/Documents/Research/Saxena Lab/rat-cooperation/David/Beh
 pos_file = "/Users/david/Documents/Research/Saxena Lab/rat-cooperation/David/Behavioral Quantification/Example Data Files/ExampleTrackingCoop.h5"
 
 experiment = singleFileGraphs(mag_file, lev_file, pos_file)
-experiment.percentSuccesfulTrials()'''
+experiment.percentSuccesfulTrials()
+experiment.interpressIntervalSuccessPlot()'''
 
 
 # ---------------------------------------------------------------------------------------------------------
@@ -300,35 +301,49 @@ experiment.percentSuccesfulTrials()'''
 
 #all_valid = "/Users/david/Documents/Research/Saxena Lab/rat-cooperation/David/Behavioral Quantification/Sorted Data Files/dyed_preds_all_valid.csv"
 all_valid = "/gpfs/radev/home/drb83/project/rat-cooperation/David/Behavioral Quantification/Sorted Data Files/dyed_preds_all_valid.csv"
+
 only_opaque = "/Users/david/Documents/Research/Saxena Lab/rat-cooperation/David/Behavioral Quantification/Sorted Data Files/only_opaque_sessions.csv"
 only_translucent = "/Users/david/Documents/Research/Saxena Lab/rat-cooperation/David/Behavioral Quantification/Sorted Data Files/only_translucent_sessions.csv"
 only_transparent = "/Users/david/Documents/Research/Saxena Lab/rat-cooperation/David/Behavioral Quantification/Sorted Data Files/only_transparent_sessions.csv"
+
 only_unfamiliar = "/Users/david/Documents/Research/Saxena Lab/rat-cooperation/David/Behavioral Quantification/Sorted Data Files/only_unfamiliar_partners.csv"
 only_trainingpartners = "/Users/david/Documents/Research/Saxena Lab/rat-cooperation/David/Behavioral Quantification/Sorted Data Files/only_training_partners.csv"
 
+only_PairedTesting = "/Users/david/Documents/Research/Saxena Lab/rat-cooperation/David/Behavioral Quantification/Sorted Data Files/only_PairedTesting.csv"
+only_TrainingCoop = "/Users/david/Documents/Research/Saxena Lab/rat-cooperation/David/Behavioral Quantification/Sorted Data Files/only_TrainingCooperation.csv"
+
 def getAllValid():
     fe = fileExtractor(all_valid)
-    return [fe.getLevsDatapath(), fe.getMagsDatapath()]
+    return [fe.getLevsDatapath(), fe.getMagsDatapath(), fe.getPosDatapath()]
     
 def getOnlyOpaque():
     fe = fileExtractor(all_valid)
-    return [fe.getLevsDatapath(), fe.getMagsDatapath()]
+    return [fe.getLevsDatapath(), fe.getMagsDatapath(), fe.getPosDatapath()]
 
 def getonlyTranslucent():
     fe = fileExtractor(all_valid)
-    return [fe.getLevsDatapath(), fe.getMagsDatapath()]
+    return [fe.getLevsDatapath(), fe.getMagsDatapath(), fe.getPosDatapath()]
 
 def getOnlyTransparent():
     fe = fileExtractor(all_valid)
-    return [fe.getLevsDatapath(), fe.getMagsDatapath()]
+    return [fe.getLevsDatapath(), fe.getMagsDatapath(), fe.getPosDatapath()]
 
 def getOnlyUnfamiliar():
     fe = fileExtractor(all_valid)
-    return [fe.getLevsDatapath(), fe.getMagsDatapath()]
+    return [fe.getLevsDatapath(), fe.getMagsDatapath(), fe.getPosDatapath()]
 
 def getOnlyTrainingPartners():
     fe = fileExtractor(all_valid)
-    return [fe.getLevsDatapath(), fe.getMagsDatapath()]
+    return [fe.getLevsDatapath(), fe.getMagsDatapath(), fe.getPosDatapath()]
+
+def getOnlyPairedTesting():
+    fe = fileExtractor(only_PairedTesting)
+    return [fe.getLevsDatapath(), fe.getMagsDatapath(), fe.getPosDatapath()]
+
+def getOnlyTrainingCoop():
+    fe = fileExtractor(only_TrainingCoop)
+    return [fe.getLevsDatapath(), fe.getMagsDatapath(), fe.getPosDatapath()]
+
 
 
 class multiFileGraphs:
@@ -584,19 +599,19 @@ class multiFileGraphs:
 #
 #
 
-arr = getAllValid()
-lev_files = arr[0]
-mag_files = arr[1]
+#arr = getAllValid()
+#lev_files = arr[0]
+#mag_files = arr[1]
 
 #mag_files = ["/Users/david/Documents/Research/Saxena Lab/rat-cooperation/David/Behavioral Quantification/Example Data Files/magData.csv", "/Users/david/Documents/Research/Saxena Lab/rat-cooperation/David/Behavioral Quantification/Example Data Files/ExampleMagFile.csv"]
 #lev_files = ["/Users/david/Documents/Research/Saxena Lab/rat-cooperation/David/Behavioral Quantification/Example Data Files/leverData.csv", "/Users/david/Documents/Research/Saxena Lab/rat-cooperation/David/Behavioral Quantification/Example Data Files/ExampleLevFile.csv"]
 
-experiment = multiFileGraphs(mag_files, lev_files, mag_files)
+#experiment = multiFileGraphs(mag_files, lev_files, mag_files)
 #experiment.magFileDataAvailabilityGraph()
 #experiment.levFileDataAvailabilityGraph()
 #experiment.interpressIntervalPlot()
 #experiment.interpressIntervalSuccessPlot()
-experiment.percentSuccesfulTrials()
+#experiment.percentSuccesfulTrials()
         
         
 
@@ -608,26 +623,299 @@ experiment.percentSuccesfulTrials()
 #
         
 class multiFileGraphsCategories:
-    def __init__(self, magFiles: List[List[str]], levFiles: List[List[str]], posFiles: List[List[str]], numCategories: int):
+    def __init__(self, magFiles: List[List[str]], levFiles: List[List[str]], posFiles: List[List[str]], categoryNames: List[str]):
         self.allFileGroupExperiments = []
+        self.categoryNames = categoryNames
+        self.numCategories = len(magFiles)
+
+        if not (len(magFiles) == len(levFiles) == len(posFiles) == len(categoryNames) == len(categoryNames)):
+            raise ValueError("Mismatch between number of categories and provided file lists or category names.")
+
+        for c in range(self.numCategories):
+            file_group = []
+            for mag, lev, pos in zip(magFiles[c], levFiles[c], posFiles[c]):
+                exp = singleExperiment(mag, lev, pos)
+                file_group.append(exp)
+            self.allFileGroupExperiments.append(file_group)
         
-        if (len(magFiles) != len(levFiles) or len(magFiles) != len(posFiles)):
-            raise ValueError("Different number of mag, lev, and pos files")
+        self.endSaveName = ""
+        for cat in categoryNames:    
+            self.endSaveName += f"_{cat}"
         
-        length = len(magFiles[0])
-        for i in numCategories:
-            if (length != magFiles[i] or length != levFiles[i] or length != posFiles[i]):
-                raise ValueError("Different number of mag, lev, and pos files at index ", i)
-        
-        for i in range(numCategories):
-            singleFileGroupExperiments = []
-            for j in range(len(magFiles)):
-                experiment = singleExperiment(magFiles[j], levFiles[j], posFiles[j])
-                singleFileGroupExperiments.append(experiment)
-            
-            self.allFileGroupExperiments.append(singleFileGroupExperiments)
-        
+        self.endSaveName += ".png"
+
+    def compareGazeEventsCategories(self):
+        avg_events = []
+        ts_data = []
+        cum_event_data = []
+        FRAME_WINDOW = 1800
     
+        for group in self.allFileGroupExperiments:
+            normalized_event_counts = []
+            smoothed_gaze_arrays = []
+            cumulative_event_arrays = []
+    
+            for exp in group:
+                loader = exp.pos
+                total_event_count = 0
+                combined_gaze = None
+                combined_cumulative = None
+    
+                for rat in [0, 1]:
+                    is_gazing = loader.returnIsGazing(rat).astype(bool)
+                    last_gaze = -5
+                    event_count = 0
+                    cumulative = np.zeros_like(is_gazing, dtype=int)
+    
+                    for i, gazing in enumerate(is_gazing):
+                        if gazing:
+                            if i - last_gaze >= 5:
+                                event_count += 1
+                            last_gaze = i
+                        cumulative[i] = event_count
+    
+                    total_event_count += event_count
+    
+                    if combined_gaze is None:
+                        combined_gaze = is_gazing.astype(float)
+                        combined_cumulative = cumulative.astype(float)
+                    else:
+                        combined_gaze += is_gazing.astype(float)
+                        combined_gaze = np.clip(combined_gaze, 0, 1)
+                        combined_cumulative += cumulative.astype(float)
+    
+                norm_count = total_event_count / len(combined_gaze) * FRAME_WINDOW
+                normalized_event_counts.append(norm_count)
+                smoothed_gaze_arrays.append(combined_gaze)
+                cumulative_event_arrays.append(combined_cumulative)
+    
+            avg_events.append(np.mean(normalized_event_counts))
+    
+            max_len = max(arr.shape[0] for arr in smoothed_gaze_arrays)
+            padded_smoothed = np.array([
+                np.pad(arr, (0, max_len - len(arr)), constant_values=np.nan) for arr in smoothed_gaze_arrays
+            ])
+            padded_cumulative = np.array([
+                np.pad(arr, (0, max_len - len(arr)), constant_values=np.nan) for arr in cumulative_event_arrays
+            ])
+            ts_data.append(np.nanmean(padded_smoothed, axis=0))
+            cum_event_data.append(np.nanmean(padded_cumulative, axis=0))
+    
+        # --- Plot 1: Bar chart of average gaze events per 1800 frames ---
+        plt.figure(figsize=(8, 6))
+        plt.bar(range(len(avg_events)), avg_events, color='skyblue')
+        plt.xlabel('Category')
+        plt.ylabel('Avg. Gaze Events per 1800 Frames')
+        plt.title('Average Gaze Events (per Minute) per Category')
+        plt.xticks(range(len(avg_events)), self.categoryNames)
+        plt.tight_layout()
+        plt.savefig(f'GazeEventsPerMinute{self.endSaveName}')
+        plt.show()
+    
+        # --- Plot 2: Smoothed gaze fraction over time ---
+        '''plt.figure(figsize=(10, 6))
+        for idx, series in enumerate(ts_data):
+            smooth = np.convolve(series, np.ones(100)/100, mode='same')
+            plt.plot(smooth, label=self.categoryNames[idx])
+        plt.xlabel('Frame')
+        plt.ylabel('Fraction of Experiments Gazing')
+        plt.title('Gaze Events Time Series per Category')
+        plt.legend()
+        plt.tight_layout()
+        plt.show()'''
+    
+        # --- Plot 3: Cumulative gaze events over time ---
+        plt.figure(figsize=(10, 6))
+        for idx, cum_series in enumerate(cum_event_data):
+            plt.plot(cum_series, label=self.categoryNames[idx])
+        plt.xlabel('Frame')
+        plt.ylabel('Cumulative Gaze Events')
+        plt.title('Cumulative Gaze Events Over Time per Category')
+        plt.legend()
+        plt.tight_layout()
+        plt.savefig(f'GazeEventsoverTime{self.endSaveName}')
+        plt.show()
+
+
+    def compareSuccesfulTrials(self):
+        probs = []
+        for group in self.allFileGroupExperiments:
+            cat_probs = []
+            for exp in group:
+                lev = exp.lev.data
+                total = lev['TrialNum'].nunique()
+                succ = lev.groupby('TrialNum').first().query('coopSucc == 1').shape[0]
+                cat_probs.append(succ / total if total > 0 else 0)
+            probs.append(np.mean(cat_probs))
+
+        plt.figure(figsize=(8, 6))
+        plt.bar(range(len(probs)), probs, color='green')
+        plt.xlabel('Category')
+        plt.ylabel('Probability of Successful Trials')
+        plt.title('Success Probability per Category')
+        plt.xticks(range(len(probs)), self.categoryNames)
+        plt.ylim(0, 1)
+        plt.savefig(f'ProbofSuccesfulTrial_{self.endSaveName}')
+        plt.show()
+
+    def compareIPI(self):
+        avg_ipi = []
+        avg_first_to = []
+        avg_last_to = []
+
+        for group in self.allFileGroupExperiments:
+            ipis, firsts, lasts = [], [], []
+            for exp in group:
+                lev = exp.lev.data.copy()
+                df = lev.sort_values(['RatID', 'AbsTime'])
+                df['IPI'] = df.groupby('RatID')['AbsTime'].diff()
+                ipis.extend(df['IPI'].dropna().tolist())
+
+                for _, trial in lev.groupby('TrialNum'):
+                    trial = trial.sort_values('AbsTime')
+                    if trial['coopSucc'].iloc[0] != 1:
+                        continue
+                    coop = trial.query('TrialEnd==1')
+                    if coop.empty:
+                        continue
+                    t_coop = coop['AbsTime'].iloc[0]
+                    first = trial.query('Hit==1')
+                    if not first.empty:
+                        t_first = first['AbsTime'].iloc[0]
+                        firsts.append(t_coop - t_first)
+                    before = trial[trial['AbsTime'] < t_coop]
+                    if not before.empty:
+                        t_last = before['AbsTime'].iloc[-1]
+                        lasts.append(t_coop - t_last)
+            avg_ipi.append(np.mean(ipis) if ipis else np.nan)
+            avg_first_to.append(np.mean(firsts) if firsts else np.nan)
+            avg_last_to.append(np.mean(lasts) if lasts else np.nan)
+
+        for title, data, color in zip(
+            ['Avg IPI per Category', 'Avg First->Success per Category', 'Avg Last->Success per Category'],
+            [avg_ipi, avg_first_to, avg_last_to],
+            ['blue', 'skyblue', 'salmon']):
+            plt.figure(figsize=(8, 6))
+            plt.bar(range(len(data)), data, color=color)
+            plt.xticks(range(len(data)), self.categoryNames)
+            plt.xlabel('Category')
+            plt.ylabel('Time (s)')
+            plt.title(title)
+            plt.savefig(f'{title}{self.endSaveName}')
+            plt.show()
+            
+    def make_bar_plot(self, data, ylabel, title, saveFileName):
+        plt.figure(figsize=(8, 5))
+        plt.bar(range(len(data)), data, color='skyblue')
+        plt.xticks(range(len(data)), self.categoryNames)
+        plt.ylabel(ylabel)
+        plt.title(title)
+        plt.tight_layout()
+        plt.savefig(f'{saveFileName}{self.endSaveName}')
+        plt.show()
+    
+    def printSummaryStats(self):
+        avg_gaze_lengths = []
+        avg_lever_per_trial = []
+        avg_mag_per_trial = []
         
+        for idx, group in enumerate(self.allFileGroupExperiments):
+            total_gaze_events = 0
+            total_frames = 0
+            total_trials = 0
+            successful_trials = 0
+            total_lever_presses = 0
+            total_mag_events = 0
+            total_gaze_frames = 0
+
+            for exp in group:
+                loader = exp.pos
+                g0 = loader.returnIsGazing(0)
+                g1 = loader.returnIsGazing(1)
+                combined = g0 | g1
+                total_gaze_events += loader.returnNumGazeEvents(0) + loader.returnNumGazeEvents(1)
+                total_gaze_frames += np.sum(combined) #Frames where at least 1 mouse was gazing
+                total_frames += combined.shape[0]
+                
+                lev = exp.lev.data
+                trials = lev['TrialNum'].nunique()
+                succ = lev.groupby('TrialNum').first().query('coopSucc == 1').shape[0]
+                total_trials += trials
+                successful_trials += succ
+                total_lever_presses += lev.shape[0]
+
+                mag = exp.mag.data
+                total_mag_events += mag.shape[0]
+            
+            avg_gaze_len = (total_gaze_frames / total_gaze_events) if total_gaze_events > 0 else 0
+            avg_lever = (total_lever_presses / total_trials) if total_trials > 0 else 0
+            avg_mag = (total_mag_events / total_trials) if total_trials > 0 else 0
+    
+            avg_gaze_lengths.append(avg_gaze_len)
+            avg_lever_per_trial.append(avg_lever)
+            avg_mag_per_trial.append(avg_mag)
+            
+            print(f"\nCategory: {self.categoryNames[idx]}")
+            print(f"  Total Frames: {total_frames}")
+            print(f"  Total Trials: {total_trials}")
+            print(f"  Successful Trials: {successful_trials}")
+            print(f"  Percent Successful: {successful_trials / total_trials:.2f}")
+            print(f"  Frames Gazing: {total_gaze_frames}")
+            print(f"  Total Gaze Events: {total_gaze_events}")
+            print(f"  Average Gaze Length: {total_gaze_frames / total_gaze_events:.2f}")
+            print(f"  Percent Gazing: {100 * total_gaze_events / total_frames:.2f}%")
+            print(f"  Avg Lever Presses per Trial: {total_lever_presses / total_trials:.2f}")
+            print(f"  Total Lever Presses: {total_lever_presses}")
+            print(f"  Avg Mag Events per Trial: {total_mag_events / total_trials:.2f}")
+            print(f"  Total Mag Events: {total_mag_events}")
+           
+        self.make_bar_plot(avg_gaze_lengths, 'Avg Gaze Length (frames)', 'Average Gaze Length per Category', "Avg_Gaze_Length")
+        self.make_bar_plot(avg_lever_per_trial, 'Avg Lever Presses per Trial', 'Lever Presses per Trial per Category', "Avg_Lev_Presses_perTrial")
+        self.make_bar_plot(avg_mag_per_trial, 'Avg Mag Events per Trial', 'Mag Events per Trial per Category', "Avg_Mag_Events_perTrial")
+        
+
+'''magFiles = [["/Users/david/Documents/Research/Saxena Lab/rat-cooperation/David/Behavioral Quantification/Example Data Files/042924_Cam1_TrNum9_Coop_KL006G-KL006R_mag.csv"], ["/Users/david/Documents/Research/Saxena Lab/rat-cooperation/David/Behavioral Quantification/Example Data Files/041624_Cam4_TrNum10_Coop_KL001B-KL001Y_mag.csv"]]
+levFiles = [["/Users/david/Documents/Research/Saxena Lab/rat-cooperation/David/Behavioral Quantification/Example Data Files/042924_Cam1_TrNum9_Coop_KL006G-KL006R_lever.csv"], ["/Users/david/Documents/Research/Saxena Lab/rat-cooperation/David/Behavioral Quantification/Example Data Files/041624_Cam4_TrNum10_Coop_KL001B-KL001Y_lever.csv"]]
+posFiles = [["/Users/david/Documents/Research/Saxena Lab/rat-cooperation/David/Behavioral Quantification/Example Data Files/042924_Cam1_TrNum9_Coop_KL006G-KL006R.predictions.h5"], ["/Users/david/Documents/Research/Saxena Lab/rat-cooperation/David/Behavioral Quantification/Example Data Files/041624_Cam4_TrNum10_Coop_KL001B-KL001Y.predictions.h5"]]'''
+
+
+
+#Paired Testing vs. Training Cooperation
+dataPT = getOnlyPairedTesting()
+dataTC = getOnlyTrainingCoop()
+
+magFiles = [dataPT[0], dataTC[0]]
+levFiles = [dataPT[1], dataTC[1]]
+posFiles = [dataPT[2], dataTC[2]]
+categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["Paired_Testing", "Training_Cooperation"])
+
+
+''' #Unfamiliar vs. Training Partners
+dataUF = getOnlyPairedTesting() #Unfamiliar
+dataTP = getOnlyTrainingCoop() #Training Partners
+
+magFiles = [dataUF[0], dataTP[0]]
+levFiles = [dataUF[1], dataTP[1]]
+posFiles = [dataUF[2], dataTP[2]]
+categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["Unfamiliar", "Training Partners"])
+'''
+
+
+''' #Transparent vs. Translucent vs. Opaque
+dataTransparent = getOnlyPairedTesting() #Transparent
+dataTranslucent = getOnlyTrainingCoop() #Translucent
+dataOpaque = getOnlyOpaque #Opaque
+
+magFiles = [dataTransparent[0], dataTranslucent[0], dataOpaque[0]]
+levFiles = [dataTransparent[1], dataTranslucent[1], dataOpaque[1]]
+posFiles = [dataTransparent[2], dataTranslucent[2], dataOpaque[2]]
+categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["Transparent", "Translucent", "Opaque"])
+'''
+
+
+categoryExperiments.compareGazeEventsCategories()
+categoryExperiments.compareSuccesfulTrials()
+categoryExperiments.compareIPI()
+categoryExperiments.printSummaryStats()
         
         
