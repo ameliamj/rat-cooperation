@@ -5,11 +5,9 @@
 #SBATCH --time=01:00:00 # Adjust time here
 #SBATCH --cpus-per-task=2
 
-# Load conda
-module load Miniconda3
-
-# Activate your conda environment
-source activate myenv
+# Activate conda environment manually
+source ~/.bashrc
+conda activate /gpfs/radev/home/drb83/.conda/envs/myenv
 
 # Load the Python module (make sure 3.8 exists — check with `module avail python`)
 #module load Python/3.10.8-GCCcore-12.2.0
