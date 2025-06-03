@@ -893,25 +893,23 @@ categoryExperiments = multiFileGraphsCategories(levFiles, magFiles, posFiles, ["
 
 
 #Paired Testing vs. Training Cooperation
-dataPT = getOnlyPairedTesting()
+'''dataPT = getOnlyPairedTesting()
 dataTC = getOnlyTrainingCoop()
 
-magFiles = [dataPT[0], dataTC[0]]
-levFiles = [dataPT[1], dataTC[1]]
+levFiles = [dataPT[0], dataTC[0]]
+magFiles = [dataPT[1], dataTC[1]]
 posFiles = [dataPT[2], dataTC[2]]
-categoryExperiments = multiFileGraphsCategories(levFiles, magFiles, posFiles, ["Paired_Testing", "Training_Cooperation"])
+categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["Paired_Testing", "Training_Cooperation"])'''
 
 
-
-''' #Unfamiliar vs. Training Partners
+#Unfamiliar vs. Training Partners
 dataUF = getOnlyUnfamiliar() #Unfamiliar
 dataTP = getOnlyTrainingPartners() #Training Partners
 
-magFiles = [dataUF[0], dataTP[0]]
-levFiles = [dataUF[1], dataTP[1]]
+levFiles = [dataUF[0], dataTP[0]]
+magFiles = [dataUF[1], dataTP[1]]
 posFiles = [dataUF[2], dataTP[2]]
-categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["Unfamiliar", "Training Partners"])
-'''
+categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["Unfamiliar", "Training Partners"]) 
 
 
 ''' #Transparent vs. Translucent vs. Opaque
@@ -919,8 +917,8 @@ dataTransparent = getOnlyTransparent() #Transparent
 dataTranslucent = getOnlyTranslucent() #Translucent
 dataOpaque = getOnlyOpaque() #Opaque
 
-magFiles = [dataTransparent[0], dataTranslucent[0], dataOpaque[0]]
-levFiles = [dataTransparent[1], dataTranslucent[1], dataOpaque[1]]
+levFiles = [dataTransparent[0], dataTranslucent[0], dataOpaque[0]]
+magFiles = [dataTransparent[1], dataTranslucent[1], dataOpaque[1]]
 posFiles = [dataTransparent[2], dataTranslucent[2], dataOpaque[2]]
 categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["Transparent", "Translucent", "Opaque"])
 '''
@@ -931,8 +929,8 @@ categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["
 '''dataTranslucent = getonlyTranslucent() #Translucent
 dataOpaque = getOnlyOpaque() #Opaque
 
-magFiles = [dataTranslucent[0], dataOpaque[0]]
-levFiles = [dataTranslucent[1], dataOpaque[1]]
+levFiles = [dataTranslucent[0], dataOpaque[0]]
+magFiles = [dataTranslucent[1], dataOpaque[1]]
 posFiles = [dataTranslucent[2], dataOpaque[2]]
 categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["Translucent", "Opaque"])'''
 
