@@ -912,7 +912,7 @@ posFiles = [dataUF[2], dataTP[2]]
 categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["Unfamiliar", "Training Partners"]) '''
 
 
-'''#Transparent vs. Translucent vs. Opaque
+#Transparent vs. Translucent vs. Opaque
 dataTransparent = getOnlyTransparent() #Transparent
 dataTranslucent = getOnlyTranslucent() #Translucent
 dataOpaque = getOnlyOpaque() #Opaque
@@ -920,19 +920,7 @@ dataOpaque = getOnlyOpaque() #Opaque
 levFiles = [dataTransparent[0], dataTranslucent[0], dataOpaque[0]]
 magFiles = [dataTransparent[1], dataTranslucent[1], dataOpaque[1]]
 posFiles = [dataTransparent[2], dataTranslucent[2], dataOpaque[2]]
-categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["Transparent", "Translucent", "Opaque"])'''
-
-
-
-#Transparent vs. Translucent vs. Opaque
-#dataTransparent = getOnlyPairedTesting() #Transparent
-dataTranslucent = getOnlyTranslucent() #Translucent
-dataOpaque = getOnlyOpaque() #Opaque
-
-levFiles = [dataTranslucent[0], dataOpaque[0]]
-magFiles = [dataTranslucent[1], dataOpaque[1]]
-posFiles = [dataTranslucent[2], dataOpaque[2]]
-categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["Translucent", "Opaque"])
+categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["Transparent", "Translucent", "Opaque"])
 
 
 categoryExperiments.compareGazeEventsCategories()
