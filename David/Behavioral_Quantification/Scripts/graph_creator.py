@@ -322,23 +322,23 @@ def getAllValid():
     return [fe.getLevsDatapath(), fe.getMagsDatapath(), fe.getPosDatapath()]
     
 def getOnlyOpaque():
-    fe = fileExtractor(all_valid)
+    fe = fileExtractor(only_opaque)
     return [fe.getLevsDatapath(), fe.getMagsDatapath(), fe.getPosDatapath()]
 
 def getOnlyTranslucent():
-    fe = fileExtractor(all_valid)
+    fe = fileExtractor(only_translucent)
     return [fe.getLevsDatapath(), fe.getMagsDatapath(), fe.getPosDatapath()]
 
 def getOnlyTransparent():
-    fe = fileExtractor(all_valid)
+    fe = fileExtractor(only_transparent)
     return [fe.getLevsDatapath(), fe.getMagsDatapath(), fe.getPosDatapath()]
 
 def getOnlyUnfamiliar():
-    fe = fileExtractor(all_valid)
+    fe = fileExtractor(only_unfamiliar)
     return [fe.getLevsDatapath(), fe.getMagsDatapath(), fe.getPosDatapath()]
 
 def getOnlyTrainingPartners():
-    fe = fileExtractor(all_valid)
+    fe = fileExtractor(only_trainingpartners)
     return [fe.getLevsDatapath(), fe.getMagsDatapath(), fe.getPosDatapath()]
 
 def getOnlyPairedTesting():
@@ -752,8 +752,8 @@ class multiFileGraphsCategories:
                 lev = exp.lev.data
                 total = lev['TrialNum'].nunique()
 
-                print("lev.columns:", lev.columns.tolist())
-                print("First few rows:\n", lev.head())
+                #print("lev.columns:", lev.columns.tolist())
+                #print("First few rows:\n", lev.head())
                 succ = lev[lev['coopSucc'] == 1]['TrialNum'].nunique()
                 
                 cat_probs.append(succ / total if total > 0 else 0)
@@ -912,7 +912,7 @@ posFiles = [dataUF[2], dataTP[2]]
 categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["Unfamiliar", "Training Partners"]) '''
 
 
-#Transparent vs. Translucent vs. Opaque
+'''#Transparent vs. Translucent vs. Opaque
 dataTransparent = getOnlyTransparent() #Transparent
 dataTranslucent = getOnlyTranslucent() #Translucent
 dataOpaque = getOnlyOpaque() #Opaque
@@ -920,20 +920,19 @@ dataOpaque = getOnlyOpaque() #Opaque
 levFiles = [dataTransparent[0], dataTranslucent[0], dataOpaque[0]]
 magFiles = [dataTransparent[1], dataTranslucent[1], dataOpaque[1]]
 posFiles = [dataTransparent[2], dataTranslucent[2], dataOpaque[2]]
-categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["Transparent", "Translucent", "Opaque"])
+categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["Transparent", "Translucent", "Opaque"])'''
 
 
 
 #Transparent vs. Translucent vs. Opaque
 #dataTransparent = getOnlyPairedTesting() #Transparent
-'''dataTranslucent = getOnlyTranslucent() #Translucent
+dataTranslucent = getOnlyTranslucent() #Translucent
 dataOpaque = getOnlyOpaque() #Opaque
 
 levFiles = [dataTranslucent[0], dataOpaque[0]]
 magFiles = [dataTranslucent[1], dataOpaque[1]]
 posFiles = [dataTranslucent[2], dataOpaque[2]]
-categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["Translucent", "Opaque"])'''
-
+categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["Translucent", "Opaque"])
 
 
 categoryExperiments.compareGazeEventsCategories()
