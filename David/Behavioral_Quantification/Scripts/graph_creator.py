@@ -449,10 +449,10 @@ posFiles = [dataTransparent[2], dataTranslucent[2], dataOpaque[2]]
 categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["Transparent", "Translucent", "Opaque"])'''
 
 
-#categoryExperiments.compareGazeEventsCategories()
+categoryExperiments.compareGazeEventsCategories()
 categoryExperiments.compareSuccesfulTrials()
-#categoryExperiments.compareIPI()
-#categoryExperiments.printSummaryStats()
+categoryExperiments.compareIPI()
+categoryExperiments.printSummaryStats()
 
 
 
