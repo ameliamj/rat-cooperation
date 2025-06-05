@@ -1273,11 +1273,12 @@ class multiFileGraphs:
 arr = getAllValid()
 lev_files = arr[0]
 mag_files = arr[1]
+pos_files = arr[2]
 
 #mag_files = ["/Users/david/Documents/Research/Saxena Lab/rat-cooperation/David/Behavioral Quantification/Example Data Files/magData.csv", "/Users/david/Documents/Research/Saxena Lab/rat-cooperation/David/Behavioral Quantification/Example Data Files/ExampleMagFile.csv"]
 #lev_files = ["/Users/david/Documents/Research/Saxena Lab/rat-cooperation/David/Behavioral Quantification/Example Data Files/leverData.csv", "/Users/david/Documents/Research/Saxena Lab/rat-cooperation/David/Behavioral Quantification/Example Data Files/ExampleLevFile.csv"]
 
-experiment = multiFileGraphs(mag_files, lev_files, mag_files)
+experiment = multiFileGraphs(mag_files, lev_files, pos_files)
 experiment.magFileDataAvailabilityGraph()
 experiment.levFileDataAvailabilityGraph()
 experiment.percentSuccesfulTrials()

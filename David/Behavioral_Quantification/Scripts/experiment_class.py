@@ -25,7 +25,7 @@ class singleExperiment:
         print("Mag Unit Tests")
         print("    Total Mag Events: ", self.mag.getTotalMagEvents())
         
-        print("\n Lev Unit Tests")
+        print("\n\n Lev Unit Tests")
         print("    Successful Trials: ", self.lev.returnNumSuccessfulTrials())
         print("    Total Trials: ", self.lev.returnNumTotalTrials())
         print("    Total Lever Presses: ", self.lev.returnTotalLeverPresses())
@@ -36,7 +36,7 @@ class singleExperiment:
         print("    First 5 IPIs Last->Success: ", self.lev.returnAvgIPI_LasttoSuccess(True))
         
         
-        print("\n Pos Unit Tests")
+        print("\n\n Pos Unit Tests")
         print("    When is Gazing: ", self.pos.returnIsGazing(0, True))
     
     
