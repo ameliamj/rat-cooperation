@@ -8,6 +8,7 @@ Created on Wed May 28 15:17:08 2025
 
 import pandas as pd
 import numpy as np
+import re
 
 class fileExtractor:
     def __init__(self, information_path):
@@ -168,23 +169,46 @@ class fileExtractor:
         if (saveFile):
             df_copy.to_csv("only_opaque_sessions.csv", index=False)
 
-    def sortByMicePairs(self, saveFile = False):
+    def sortByMicePairs(self, saveFile=False):
         """
-        Groups rows by mice pair (the last 13 characters of the 'vid' string).
-        Returns a list of DataFrames, each containing rows with the same pair.
+        Groups rows by mice pair using format-dependent parsing of 'vid',
+        and sorts primarily by date (first 6 characters of 'vid'), then TrNum (if present).
         """
-        # Extract mice pair key from 'vid' column
-        self.data['mice_pair'] = self.data['vid'].str[-13:]
-
-        # Group by this key and return a list of DataFrames (or lists, if preferred)
-        grouped = [group_df for _, group_df in self.data.groupby('mice_pair')]
-
-        # Drop the temporary 'mice_pair' column
-        self.data.drop(columns='mice_pair', inplace=True)
-        df_copy = self.data.copy()
-        if (saveFile):
-            df_copy.to_csv("group_mice_pairs.csv", index=False)
-
+        import re
+    
+        df = self.data.copy()
+    
+        def extract_mice_pair(row):
+            vid = row['vid']
+            category = row['test/train']
+            if category == 'test':
+                return vid[-13:]
+            elif category == 'train':
+                return vid[:-8][-13:]
+            else:
+                return "UNKNOWN"
+    
+        def extract_date(vid):
+            return int(vid[:6]) if vid[:6].isdigit() else float('inf')
+    
+        def extract_trnum(vid):
+            match = re.search(r'TrNum(\d+)', vid)
+            return int(match.group(1)) if match else float('inf')
+    
+        # Add helper columns
+        df['mice_pair'] = df.apply(extract_mice_pair, axis=1)
+        df['date'] = df['vid'].apply(extract_date)
+        df['trnum'] = df['vid'].apply(extract_trnum)
+    
+        grouped = []
+        for _, group_df in df.groupby('mice_pair'):
+            sorted_group = group_df.sort_values(by=['date', 'trnum'], ascending=True)
+            grouped.append(sorted_group.drop(columns=['date', 'trnum']))
+    
+        # Optional CSV save
+        if saveFile:
+            pd.concat(grouped).to_csv("group_mice_pairs.csv", index=False)
+    
         return grouped
     
     def getCorrectFileNames(self):
@@ -329,6 +353,9 @@ only_trainingpartners = "/Users/david/Documents/Research/Saxena Lab/rat-cooperat
 
 #fe = fileExtractor(fixedExpanded)
 #fe.deleteInvalid()  
+#fe.getPairedTestingSessions()
+#fe.sortByMicePairs(True)
+
 #fe.getOpaqueSessions()
 #fe.getTrainingCoopSessions()
 #fe.getPairedTestingSessions()

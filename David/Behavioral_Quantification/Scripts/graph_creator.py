@@ -867,6 +867,7 @@ class multiFileGraphsCategories:
             avg_mag_per_trial.append(avg_mag)
             
             print(f"\nCategory: {self.categoryNames[idx]}")
+            print(f"  Number of Files: {len(group)}")
             print(f"  Total Frames: {total_frames}")
             print(f"  Total Trials: {total_trials}")
             print(f"  Successful Trials: {successful_trials}")
@@ -903,13 +904,13 @@ categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["
 
 
 #Unfamiliar vs. Training Partners
-dataUF = getOnlyUnfamiliar() #Unfamiliar
+'''dataUF = getOnlyUnfamiliar() #Unfamiliar
 dataTP = getOnlyTrainingPartners() #Training Partners
 
 levFiles = [dataUF[0], dataTP[0]]
 magFiles = [dataUF[1], dataTP[1]]
 posFiles = [dataUF[2], dataTP[2]]
-categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["Unfamiliar", "Training Partners"])
+categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["Unfamiliar", "Training Partners"])'''
 
 
 '''#Transparent vs. Translucent vs. Opaque
@@ -923,8 +924,488 @@ posFiles = [dataTransparent[2], dataTranslucent[2], dataOpaque[2]]
 categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["Transparent", "Translucent", "Opaque"])'''
 
 
-categoryExperiments.compareGazeEventsCategories()
-categoryExperiments.compareSuccesfulTrials()
-categoryExperiments.compareIPI()
-categoryExperiments.printSummaryStats()
+#categoryExperiments.compareGazeEventsCategories()
+#categoryExperiments.compareSuccesfulTrials()
+#categoryExperiments.compareIPI()
+#categoryExperiments.printSummaryStats()
+
+
+
+
+# ---------------------------------------------------------------------------------------------------------
+
+
+##Class to create Graphs with data sorted by mice pairs
+#
+#
+
+
+class MicePairGraphs:
+    def __init__(self, magGroups, levGroups, posGroups):
+        assert len(magGroups) == len(levGroups) == len(posGroups), "Mismatched group lengths."
+        self.experimentGroups = []
+        for mag_list, lev_list, pos_list in zip(magGroups, levGroups, posGroups):
+            group_exps = [singleExperiment(mag, lev, pos) for mag, lev, pos in zip(mag_list, lev_list, pos_list)]
+            self.experimentGroups.append(group_exps)
+
+    def _extract_group_means(self, func):
+        means = []
+        for group in self.experimentGroups:
+            values = [func(exp) for exp in group if func(exp) is not None]
+            if values:
+                means.append(np.mean(values))
+        return means
+
+    def _make_boxplot(self, data, ylabel, title, filename):
+        plt.figure(figsize=(5, 5))
+        plt.boxplot(data, showfliers=False)
+        plt.ylabel(ylabel)
+        plt.title(title)
+        plt.xticks([])  # No x-axis labels since we’re not labeling each pair
+        plt.tight_layout()
+        plt.savefig(f"{filename}.png")
+        plt.show()
+
+    def _make_histogram(self, data, xlabel, title, filename):
+        plt.figure(figsize=(10, 5))
+        plt.hist(data, bins=20)
+        plt.xlabel(xlabel)
+        plt.title(title)
+        plt.tight_layout()
+        plt.savefig(f"{filename}_hist.png")
+        plt.show()
+
+    def boxplot_avg_gaze_length(self):
+        def gaze_length(exp):
+            g0 = exp.pos.returnIsGazing(0)
+            g1 = exp.pos.returnIsGazing(1)
+            combined = g0 | g1
+            events = exp.pos.returnNumGazeEvents(0) + exp.pos.returnNumGazeEvents(1)
+            return np.sum(combined) / events if events > 0 else None
+
+        data = self._extract_group_means(gaze_length)
+        self._make_boxplot(data, "Avg Gaze Length", "Gaze Length per Trial", "Box_Gaze_Length")
+        self._make_histogram(data, "Avg Gaze Length", "Gaze Length Distribution", "Hist_Gaze_Length")
+
+    def boxplot_lever_presses_per_trial(self):
+        def lever_rate(exp):
+            try:
+                trials = exp.lev.data['TrialNum'].nunique()
+                return len(exp.lev.data) / trials if trials > 0 else None
+            except: return None
+
+        data = self._extract_group_means(lever_rate)
+        self._make_boxplot(data, "Lever Presses per Trial", "Lever Presses per Trial", "Box_LeverPerTrial")
+        self._make_histogram(data, "Lever Presses per Trial", "Lever Press Distribution", "Hist_LeverPerTrial")
+
+    def boxplot_mag_events_per_trial(self):
+        def mag_rate(exp):
+            try:
+                trials = exp.lev.data['TrialNum'].nunique()
+                return len(exp.mag.data) / trials if trials > 0 else None
+            except: return None
+
+        data = self._extract_group_means(mag_rate)
+        self._make_boxplot(data, "Mag Events per Trial", "Mag Events per Trial", "Box_MagPerTrial")
+        self._make_histogram(data, "Mag Events per Trial", "Mag Event Distribution", "Hist_MagPerTrial")
+
+    def boxplot_percent_successful_trials(self):
+        def percent_success(exp):
+            try:
+                df = exp.lev.data
+                if 'coopSucc' in df.columns:
+                    successes = df[df['coopSucc'] == 1]['TrialNum'].nunique()
+                else:
+                    successes = df[df['Success'] == 1]['TrialNum'].nunique()
+                total = df['TrialNum'].nunique()
+                return successes / total * 100 if total > 0 else None
+            except:
+                return None
+
+        data = self._extract_group_means(percent_success)
+        self._make_boxplot(data, "% Success", "Success Rate per Pair", "Box_Success")
+        self._make_histogram(data, "% Success", "Success Rate Distribution", "Hist_Success")
+
+    def boxplot_gaze_events_per_minute(self):
+        FRAME_WINDOW = 1800  # or 60 seconds if frame rate is 30 fps
+
+        def gaze_events_per_min(exp):
+            try:
+                loader = exp.pos
+                total_event_count = 0
+                combined_gaze = None
+
+                for rat in [0, 1]:
+                    is_gazing = loader.returnIsGazing(rat).astype(bool)
+                    last_gaze = -5
+                    event_count = 0
+
+                    for i, gazing in enumerate(is_gazing):
+                        if gazing:
+                            if i - last_gaze >= 5:
+                                event_count += 1
+                            last_gaze = i
+
+                    total_event_count += event_count
+
+                num_frames = loader.returnIsGazing(0).shape[0]
+                return total_event_count / num_frames * FRAME_WINDOW if num_frames > 0 else None
+            except:
+                return None
+
+        data = self._extract_group_means(gaze_events_per_min)
+        self._make_boxplot(data, "Gaze Events / Min", "Gaze Rate per Pair", "Box_GazePerMin")
+        self._make_histogram(data, "Gaze Events / Min", "Gaze Rate Distribution", "Hist_GazePerMin")
+
+    def boxplot_ipi_metrics(self):
+        labels = ["Avg IPI", "First → Success", "Last → Success"]
+        metric_data = [[] for _ in labels]
+    
+        for group in self.experimentGroups:
+            ipis, first_to, last_to = [], [], []
+            for exp in group:
+                try:
+                    lev = exp.lev.data.copy()
+                    lev = lev.sort_values(['RatID', 'AbsTime'])
+                    lev['IPI'] = lev.groupby('RatID')['AbsTime'].diff()
+                    ipis.extend(lev['IPI'].dropna().tolist())
+    
+                    for _, trial in lev.groupby('TrialNum'):
+                        trial = trial.sort_values('AbsTime')
+                        if trial['coopSucc'].iloc[0] != 1:
+                            continue
+    
+                        coop = trial.query('TrialEnd == 1')
+                        if coop.empty:
+                            continue
+                        t_coop = coop['AbsTime'].iloc[0]
+    
+                        first = trial.query('Hit == 1')
+                        if not first.empty:
+                            t_first = first['AbsTime'].iloc[0]
+                            first_to.append(t_coop - t_first)
+    
+                        before = trial[trial['AbsTime'] < t_coop]
+                        if not before.empty:
+                            t_last = before['AbsTime'].iloc[-1]
+                            last_to.append(t_coop - t_last)
+                except:
+                    continue
+    
+            if ipis:
+                metric_data[0].append(np.mean(ipis))
+            if first_to:
+                metric_data[1].append(np.mean(first_to))
+            if last_to:
+                metric_data[2].append(np.mean(last_to))
+    
+        for i, label in enumerate(labels):
+            self._make_boxplot(metric_data[i], label, f"{label} per Pair", f"Box_{label.replace(' ', '_')}")
+            self._make_histogram(metric_data[i], label, f"{label} Distribution", f"Hist_{label.replace(' ', '_')}")
+
+    def difference_last_vs_first(self):
+        FRAME_WINDOW = 1800  # Normalization constant for converting to events/minute
+    
+        def percent_success(exp):
+            try:
+                df = exp.lev.data
+                if 'coopSucc' in df.columns:
+                    successes = df[df['coopSucc'] == 1]['TrialNum'].nunique()
+                else:
+                    successes = df[df['Success'] == 1]['TrialNum'].nunique()
+                total = df['TrialNum'].nunique()
+                return successes / total * 100 if total > 0 else None
+            except:
+                return None
+    
+        def gaze_events_per_min(exp):
+            try:
+                loader = exp.pos
+                total_event_count = 0
+    
+                for rat in [0, 1]:
+                    is_gazing = loader.returnIsGazing(rat).astype(bool)
+                    last_gaze = -5
+                    event_count = 0
+    
+                    for i, gazing in enumerate(is_gazing):
+                        if gazing and (i - last_gaze >= 5):
+                            event_count += 1
+                            last_gaze = i
+    
+                    total_event_count += event_count
+    
+                num_frames = loader.returnIsGazing(0).shape[0]
+                return total_event_count / num_frames * FRAME_WINDOW if num_frames > 0 else None
+            except:
+                return None
+    
+        def avg_ipi(exp):
+            lev = exp.lev.data
+            if lev.empty:
+                return None
+            return lev.sort_values(['RatID', 'AbsTime']).groupby('RatID')['AbsTime'].diff().dropna().mean()
+    
+        def first_to_success(exp):
+            lev = exp.lev.data
+            values = []
+            for _, trial in lev.groupby('TrialNum'):
+                trial = trial.sort_values('AbsTime')
+                if trial['coopSucc'].iloc[0] != 1:
+                    continue
+                coop = trial.query('TrialEnd == 1')
+                if coop.empty:
+                    continue
+                t_coop = coop['AbsTime'].iloc[0]
+                first = trial.query('Hit == 1')
+                if not first.empty:
+                    t_first = first['AbsTime'].iloc[0]
+                    values.append(t_coop - t_first)
+            return np.mean(values) if values else None
+    
+        def last_to_success(exp):
+            lev = exp.lev.data
+            values = []
+            for _, trial in lev.groupby('TrialNum'):
+                trial = trial.sort_values('AbsTime')
+                if trial['coopSucc'].iloc[0] != 1:
+                    continue
+                coop = trial.query('TrialEnd == 1')
+                if coop.empty:
+                    continue
+                t_coop = coop['AbsTime'].iloc[0]
+                before = trial[trial['AbsTime'] < t_coop]
+                if not before.empty:
+                    t_last = before['AbsTime'].iloc[-1]
+                    values.append(t_coop - t_last)
+            return np.mean(values) if values else None
+    
+        metrics = {
+            "Gaze Length": lambda exp: (
+                (np.sum(exp.pos.returnIsGazing(0) | exp.pos.returnIsGazing(1)) /
+                 (exp.pos.returnNumGazeEvents(0) + exp.pos.returnNumGazeEvents(1)))
+                if (exp.pos.returnNumGazeEvents(0) + exp.pos.returnNumGazeEvents(1)) > 0 else None
+            ),
+            "Lever Rate": lambda exp: (
+                len(exp.lev.data) / exp.lev.data['TrialNum'].nunique()
+                if exp.lev.data['TrialNum'].nunique() > 0 else None
+            ),
+            "Mag Rate": lambda exp: (
+                len(exp.mag.data) / exp.lev.data['TrialNum'].nunique()
+                if exp.lev.data['TrialNum'].nunique() > 0 else None
+            ),
+            "% Success": percent_success,
+            "Gaze Rate": gaze_events_per_min,
+            "Avg IPI": avg_ipi,
+            "First → Success": first_to_success,
+            "Last → Success": last_to_success
+        }
+    
+        diffs = {name: [] for name in metrics}
+    
+        for group in self.experimentGroups:
+            if len(group) < 5:
+                continue
+            first, last = group[0], group[-1]
+            for name, func in metrics.items():
+                try:
+                    v1, v2 = func(first), func(last)
+                    if v1 is not None and v2 is not None:
+                        diffs[name].append(v2 - v1)
+                except:
+                    continue
+    
+        for name, values in diffs.items():
+            plt.figure(figsize=(10, 4))
+            plt.hist(values, bins=15)
+            plt.title(f"Change in {name} (Last Session - 1st Session)")
+            plt.xlabel(f"Δ {name}")
+            plt.tight_layout()
+            plt.savefig(f"Diff_{name.replace(' ', '_')}.png")
+            plt.show()
+            
+    def difference_last_vs_first_bar_graph(self):
+        FRAME_WINDOW = 1800  # Normalization constant for converting to events/minute
+    
+        def percent_success(exp):
+            try:
+                df = exp.lev.data
+                if 'coopSucc' in df.columns:
+                    successes = df[df['coopSucc'] == 1]['TrialNum'].nunique()
+                else:
+                    successes = df[df['Success'] == 1]['TrialNum'].nunique()
+                total = df['TrialNum'].nunique()
+                return successes / total * 100 if total > 0 else None
+            except:
+                return None
+    
+        def gaze_events_per_min(exp):
+            try:
+                loader = exp.pos
+                total_event_count = 0
+                for rat in [0, 1]:
+                    is_gazing = loader.returnIsGazing(rat).astype(bool)
+                    last_gaze = -5
+                    event_count = 0
+                    for i, gazing in enumerate(is_gazing):
+                        if gazing and (i - last_gaze >= 5):
+                            event_count += 1
+                            last_gaze = i
+                    total_event_count += event_count
+                num_frames = loader.returnIsGazing(0).shape[0]
+                return total_event_count / num_frames * FRAME_WINDOW if num_frames > 0 else None
+            except:
+                return None
+    
+        def avg_ipi(exp):
+            lev = exp.lev.data
+            if lev.empty:
+                return None
+            return lev.sort_values(['RatID', 'AbsTime']).groupby('RatID')['AbsTime'].diff().dropna().mean()
+    
+        def first_to_success(exp):
+            lev = exp.lev.data
+            values = []
+            for _, trial in lev.groupby('TrialNum'):
+                trial = trial.sort_values('AbsTime')
+                if trial['coopSucc'].iloc[0] != 1:
+                    continue
+                coop = trial.query('TrialEnd == 1')
+                if coop.empty:
+                    continue
+                t_coop = coop['AbsTime'].iloc[0]
+                first = trial.query('Hit == 1')
+                if not first.empty:
+                    t_first = first['AbsTime'].iloc[0]
+                    values.append(t_coop - t_first)
+            return np.mean(values) if values else None
+    
+        def last_to_success(exp):
+            lev = exp.lev.data
+            values = []
+            for _, trial in lev.groupby('TrialNum'):
+                trial = trial.sort_values('AbsTime')
+                if trial['coopSucc'].iloc[0] != 1:
+                    continue
+                coop = trial.query('TrialEnd == 1')
+                if coop.empty:
+                    continue
+                t_coop = coop['AbsTime'].iloc[0]
+                before = trial[trial['AbsTime'] < t_coop]
+                if not before.empty:
+                    t_last = before['AbsTime'].iloc[-1]
+                    values.append(t_coop - t_last)
+            return np.mean(values) if values else None
+    
+        metrics = {
+            "Gaze Length": lambda exp: (
+                (np.sum(exp.pos.returnIsGazing(0) | exp.pos.returnIsGazing(1)) /
+                 (exp.pos.returnNumGazeEvents(0) + exp.pos.returnNumGazeEvents(1)))
+                if (exp.pos.returnNumGazeEvents(0) + exp.pos.returnNumGazeEvents(1)) > 0 else None
+            ),
+            "Lever Rate": lambda exp: (
+                len(exp.lev.data) / exp.lev.data['TrialNum'].nunique()
+                if exp.lev.data['TrialNum'].nunique() > 0 else None
+            ),
+            "Mag Rate": lambda exp: (
+                len(exp.mag.data) / exp.lev.data['TrialNum'].nunique()
+                if exp.lev.data['TrialNum'].nunique() > 0 else None
+            ),
+            "% Success": percent_success,
+            "Gaze Rate": gaze_events_per_min,
+            "Avg IPI": avg_ipi,
+            "First → Success": first_to_success,
+            "Last → Success": last_to_success
+        }
+    
+        diffs = {name: [] for name in metrics}
+    
+        for group in self.experimentGroups:
+            if len(group) < 5:
+                continue
+            first, last = group[0], group[-1]  
+            for name, func in metrics.items():
+                try:
+                    v1, v2 = func(first), func(last)
+                    if v1 is not None and v2 is not None:
+                        diffs[name].append(v2 - v1)
+                except:
+                    continue
+    
+        # Plot individual bar graphs
+        for name, values in diffs.items():
+            if not values:
+                continue
+            avg_diff = np.mean(values)
+            error = np.std(values) / np.sqrt(len(values))
         
+            plt.figure(figsize=(5, 6))
+            
+            # Plot the bar
+            bar = plt.bar([0], [avg_diff], width=0.3, yerr=[error], capsize=10, 
+                          color='lightgreen', edgecolor='black')
+            
+            # Draw horizontal line at 0
+            plt.axhline(0, color='gray', linestyle='--', linewidth=1)
+            
+            # Set x-ticks to the metric name
+            plt.xticks([0], [name], fontsize=10)
+            
+            # Add vertical padding to y-limits
+            ymin = min(0, avg_diff - error)
+            ymax = max(0, avg_diff + error)
+            yrange = ymax - ymin
+            plt.ylim(ymin - 0.1 * yrange, ymax + 0.1 * yrange)
+            
+            plt.xlim(-0.4, 0.4)
+            
+            # Clean labels and layout
+            plt.ylabel(f"Δ {name} (Last - First)", fontsize=12)
+            plt.title(f"Avg Change in {name}", fontsize=14)
+            plt.tight_layout()
+        
+            filename = f"Bar_Change_{name.replace(' ', '_').replace('→', 'to')}.png"
+            plt.savefig(filename)
+            plt.show()
+
+
+
+groupMicePairs = "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Sorted_Data_Files/group_mice_pairs.csv"
+
+def getGroupMicePairs():
+    fe = fileExtractor(groupMicePairs)
+    return [fe.getLevsDatapath(grouped = True), fe.getMagsDatapath(grouped = True), fe.getPosDatapath(grouped = True)]
+
+
+data = getGroupMicePairs()
+
+pairGraphs = MicePairGraphs(data[0], data[1], data[2])
+
+
+'''magFiles = [["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv"], ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv"]]
+levFiles = [["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_mag.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_mag.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_mag.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_mag.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_mag.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_mag.csv"], ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_mag.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_mag.csv"]]
+posFiles = [["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.predictions.h5"], ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.predictions.h5"]]                   
+pairGraphs = MicePairGraphs(levFiles, magFiles, posFiles)'''
+
+
+pairGraphs.boxplot_avg_gaze_length()
+pairGraphs.boxplot_lever_presses_per_trial()
+pairGraphs.boxplot_mag_events_per_trial()
+pairGraphs.boxplot_percent_successful_trials()
+pairGraphs.boxplot_gaze_events_per_minute()
+pairGraphs.boxplot_ipi_metrics()
+pairGraphs.difference_last_vs_first()
+pairGraphs.difference_last_vs_first_bar_graph()
+
+
+
+
+
+
+
+
+
+
+
+
+
