@@ -183,7 +183,7 @@ class multiFileGraphsCategories:
             totalTrials = 0
     
             # Iterate through each experiment in the group
-            for exp in group:
+            for j, exp in enumerate(group):
                 loader = exp.lev
                 # Add to totals for computing the average success rate across the category
                 num_succ = loader.returnNumSuccessfulTrials()
@@ -194,9 +194,14 @@ class multiFileGraphsCategories:
     
                 # Store individual success probability for this experiment
                 if num_total > 0:
+                    print("\n\nProb: ", num_succ / num_total)
+                    print("Num Trials: ", num_total)
+                    print("Lev File: ", self.allFileGroupExperiments[i][j][1])
                     individual_datapoints[i].append(num_succ / num_total)
                 else:
                     individual_datapoints[i].append(np.nan)
+                    print("\n\nTotal Trials was 0")
+                    print("Lev File: ", self.allFileGroupExperiments[i][j][1])
     
             # Compute overall success probability for the category
             prob = totalSucc / totalTrials if totalTrials > 0 else 0
