@@ -1367,6 +1367,137 @@ class MicePairGraphs:
             filename = f"Bar_Change_{name.replace(' ', '_').replace('→', 'to')}.png"
             plt.savefig(filename)
             plt.show()
+        
+        
+    def average_progression_line_graph(self):
+        FRAME_WINDOW = 1800  # Normalization for events per minute
+    
+        def percent_success(exp):
+            try:
+                df = exp.lev.data
+                if 'coopSucc' in df.columns:
+                    successes = df[df['coopSucc'] == 1]['TrialNum'].nunique()
+                else:
+                    successes = df[df['Success'] == 1]['TrialNum'].nunique()
+                total = df['TrialNum'].nunique()
+                return successes / total * 100 if total > 0 else None
+            except:
+                return None
+    
+        def gaze_events_per_min(exp):
+            try:
+                loader = exp.pos
+                total_event_count = 0
+                for rat in [0, 1]:
+                    is_gazing = loader.returnIsGazing(rat).astype(bool)
+                    last_gaze = -5
+                    event_count = 0
+                    for i, gazing in enumerate(is_gazing):
+                        if gazing and (i - last_gaze >= 5):
+                            event_count += 1
+                            last_gaze = i
+                    total_event_count += event_count
+                num_frames = loader.returnIsGazing(0).shape[0]
+                return total_event_count / num_frames * FRAME_WINDOW if num_frames > 0 else None
+            except:
+                return None
+    
+        def avg_ipi(exp):
+            lev = exp.lev.data
+            if lev.empty:
+                return None
+            return lev.sort_values(['RatID', 'AbsTime']).groupby('RatID')['AbsTime'].diff().dropna().mean()
+    
+        def first_to_success(exp):
+            lev = exp.lev.data
+            values = []
+            for _, trial in lev.groupby('TrialNum'):
+                trial = trial.sort_values('AbsTime')
+                if trial['coopSucc'].iloc[0] != 1:
+                    continue
+                coop = trial.query('TrialEnd == 1')
+                if coop.empty:
+                    continue
+                t_coop = coop['AbsTime'].iloc[0]
+                first = trial.query('Hit == 1')
+                if not first.empty:
+                    t_first = first['AbsTime'].iloc[0]
+                    values.append(t_coop - t_first)
+            return np.mean(values) if values else None
+    
+        def last_to_success(exp):
+            lev = exp.lev.data
+            values = []
+            for _, trial in lev.groupby('TrialNum'):
+                trial = trial.sort_values('AbsTime')
+                if trial['coopSucc'].iloc[0] != 1:
+                    continue
+                coop = trial.query('TrialEnd == 1')
+                if coop.empty:
+                    continue
+                t_coop = coop['AbsTime'].iloc[0]
+                before = trial[trial['AbsTime'] < t_coop]
+                if not before.empty:
+                    t_last = before['AbsTime'].iloc[-1]
+                    values.append(t_coop - t_last)
+            return np.mean(values) if values else None
+    
+        metrics = {
+            "Gaze Length": lambda exp: (
+                (np.sum(exp.pos.returnIsGazing(0) | exp.pos.returnIsGazing(1)) /
+                 (exp.pos.returnNumGazeEvents(0) + exp.pos.returnNumGazeEvents(1)))
+                if (exp.pos.returnNumGazeEvents(0) + exp.pos.returnNumGazeEvents(1)) > 0 else None
+            ),
+            "Lever Rate": lambda exp: (
+                len(exp.lev.data) / exp.lev.data['TrialNum'].nunique()
+                if exp.lev.data['TrialNum'].nunique() > 0 else None
+            ),
+            "Mag Rate": lambda exp: (
+                len(exp.mag.data) / exp.lev.data['TrialNum'].nunique()
+                if exp.lev.data['TrialNum'].nunique() > 0 else None
+            ),
+            "% Success": percent_success,
+            "Gaze Rate": gaze_events_per_min,
+            "Avg IPI": avg_ipi,
+            "First → Success": first_to_success,
+            "Last → Success": last_to_success
+        }
+    
+        # Track values across sessions per metric
+        max_sessions = max(len(group) for group in self.experimentGroups)
+        metric_over_sessions = {name: [[] for _ in range(max_sessions)] for name in metrics}
+    
+        # Fill values by session
+        for group in self.experimentGroups:
+            for i, exp in enumerate(group):
+                for name, func in metrics.items():
+                    try:
+                        val = func(exp)
+                        if val is not None:
+                            metric_over_sessions[name][i].append(val)
+                    except:
+                        continue
+    
+        # Average and plot
+        for name, session_lists in metric_over_sessions.items():
+            averages = [np.mean(vals) if vals else None for vals in session_lists]
+            session_indices = [i+1 for i, v in enumerate(averages) if v is not None]
+            y_values = [v for v in averages if v is not None]
+    
+            if not y_values:
+                continue
+    
+            plt.figure(figsize=(6, 4))
+            plt.plot(session_indices, y_values, marker='o', linestyle='-', color='steelblue')
+            plt.title(f"Avg {name} Over Sessions")
+            plt.xlabel("Session Index")
+            plt.ylabel(name)
+            plt.grid(True)
+            plt.tight_layout()
+    
+            filename = f"Line_Progression_{name.replace(' ', '_').replace('→', 'to')}.png"
+            plt.savefig(filename)
+            plt.show()
 
 
 
@@ -1396,6 +1527,7 @@ pairGraphs.boxplot_gaze_events_per_minute()
 pairGraphs.boxplot_ipi_metrics()
 pairGraphs.difference_last_vs_first()
 pairGraphs.difference_last_vs_first_bar_graph()
+pairGraphs.average_progression_line_graph()
 
 
 
