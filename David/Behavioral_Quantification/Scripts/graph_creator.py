@@ -670,60 +670,26 @@ class multiFileGraphsCategories:
         
     def compareGazeEventsCategories(self):
         avg_events = []
-        ts_data = []
-        cum_event_data = []
+        #cum_event_data = []
         FRAME_WINDOW = 1800
     
         for group in self.allFileGroupExperiments:
-            normalized_event_counts = []
-            smoothed_gaze_arrays = []
-            cumulative_event_arrays = []
+            sumEvents = 0
+            sumFrames = 0
     
             for exp in group:
                 loader = exp.pos
-                total_event_count = 0
-                combined_gaze = None
-                combined_cumulative = None
     
-                for rat in [0, 1]:
-                    is_gazing = loader.returnIsGazing(rat).astype(bool)
-                    last_gaze = -5
-                    event_count = 0
-                    cumulative = np.zeros_like(is_gazing, dtype=int)
-    
-                    for i, gazing in enumerate(is_gazing):
-                        if gazing:
-                            if i - last_gaze >= 5:
-                                event_count += 1
-                            last_gaze = i
-                        cumulative[i] = event_count
-    
-                    total_event_count += event_count
-    
-                    if combined_gaze is None:
-                        combined_gaze = is_gazing.astype(float)
-                        combined_cumulative = cumulative.astype(float)
-                    else:
-                        combined_gaze += is_gazing.astype(float)
-                        combined_gaze = np.clip(combined_gaze, 0, 1)
-                        combined_cumulative += cumulative.astype(float)
-    
-                norm_count = total_event_count / len(combined_gaze) * FRAME_WINDOW
-                normalized_event_counts.append(norm_count)
-                smoothed_gaze_arrays.append(combined_gaze)
-                cumulative_event_arrays.append(combined_cumulative)
-    
-            avg_events.append(np.mean(normalized_event_counts))
-    
-            max_len = max(arr.shape[0] for arr in smoothed_gaze_arrays)
-            padded_smoothed = np.array([
-                np.pad(arr, (0, max_len - len(arr)), constant_values=np.nan) for arr in smoothed_gaze_arrays
-            ])
-            padded_cumulative = np.array([
-                np.pad(arr, (0, max_len - len(arr)), constant_values=np.nan) for arr in cumulative_event_arrays
-            ])
-            ts_data.append(np.nanmean(padded_smoothed, axis=0))
-            cum_event_data.append(np.nanmean(padded_cumulative, axis=0))
+                countEvents0 = loader.returnNumGazeEvents(0)
+                countEvents1 = loader.returnNumGazeEvents(1)
+                numFrames = exp.pos.returnNumFrames()
+                
+                if countEvents0 is not None and countEvents1 is not None and numFrames is not None:
+                    sumEvents += countEvents0 + countEvents1
+                    sumFrames += numFrames
+            
+            if sumFrames > 0:
+                avg_events.append(sumEvents / numFrames * FRAME_WINDOW)
     
         # --- Plot 1: Bar chart of average gaze events per 1800 frames ---
         plt.figure(figsize=(8, 6))
@@ -737,20 +703,8 @@ class multiFileGraphsCategories:
         plt.show()
         plt.close()
     
-        # --- Plot 2: Smoothed gaze fraction over time ---
+        # --- Plot 2: Cumulative gaze events over time ---
         '''plt.figure(figsize=(10, 6))
-        for idx, series in enumerate(ts_data):
-            smooth = np.convolve(series, np.ones(100)/100, mode='same')
-            plt.plot(smooth, label=self.categoryNames[idx])
-        plt.xlabel('Frame')
-        plt.ylabel('Fraction of Experiments Gazing')
-        plt.title('Gaze Events Time Series per Category')
-        plt.legend()
-        plt.tight_layout()
-        plt.show()'''
-    
-        # --- Plot 3: Cumulative gaze events over time ---
-        plt.figure(figsize=(10, 6))
         for idx, cum_series in enumerate(cum_event_data):
             plt.plot(cum_series, label=self.categoryNames[idx])
         plt.xlabel('Frame')
@@ -760,23 +714,19 @@ class multiFileGraphsCategories:
         plt.tight_layout()
         plt.savefig(f'{self.path}GazeEventsoverTime{self.endSaveName}')
         plt.show()
-        plt.close()
-
+        plt.close()'''
 
     def compareSuccesfulTrials(self):
         probs = []
         for group in self.allFileGroupExperiments:
-            cat_probs = []
+            totalSucc = 0
+            totalTrials = 0
             for exp in group:
-                lev = exp.lev.data
-                total = lev['TrialNum'].nunique()
-
-                #print("lev.columns:", lev.columns.tolist())
-                #print("First few rows:\n", lev.head())
-                succ = lev[lev['coopSucc'] == 1]['TrialNum'].nunique()
-                
-                cat_probs.append(succ / total if total > 0 else 0)
-            probs.append(np.mean(cat_probs))
+                loader = exp.lev
+                totalSucc += loader.returnNumSuccessfulTrials()
+                totalTrials += loader.returnNumTotalTrials()
+            
+            probs.append(totalSucc / totalTrials)
 
         plt.figure(figsize=(8, 6))
         plt.bar(range(len(probs)), probs, color='green')
@@ -795,32 +745,32 @@ class multiFileGraphsCategories:
         avg_last_to = []
 
         for group in self.allFileGroupExperiments:
-            ipis, firsts, lasts = [], [], []
+            totalPresses = 0
+            totalSucc = 0
+            totalFirsttoSuccTime = 0
+            totalLasttoSuccTime = 0
+            totalIPITime = 0
+            
             for exp in group:
-                lev = exp.lev.data.copy()
-                df = lev.sort_values(['RatID', 'AbsTime'])
-                df['IPI'] = df.groupby('RatID')['AbsTime'].diff()
-                ipis.extend(df['IPI'].dropna().tolist())
-
-                for _, trial in lev.groupby('TrialNum'):
-                    trial = trial.sort_values('AbsTime')
-                    if trial['coopSucc'].iloc[0] != 1:
-                        continue
-                    coop = trial.query('TrialEnd==1')
-                    if coop.empty:
-                        continue
-                    t_coop = coop['AbsTime'].iloc[0]
-                    first = trial.query('Hit==1')
-                    if not first.empty:
-                        t_first = first['AbsTime'].iloc[0]
-                        firsts.append(t_coop - t_first)
-                    before = trial[trial['AbsTime'] < t_coop]
-                    if not before.empty:
-                        t_last = before['AbsTime'].iloc[-1]
-                        lasts.append(t_coop - t_last)
-            avg_ipi.append(np.mean(ipis) if ipis else np.nan)
-            avg_first_to.append(np.mean(firsts) if firsts else np.nan)
-            avg_last_to.append(np.mean(lasts) if lasts else np.nan)
+                loader = exp.lev
+                
+                ipiSum = loader.returnAvgIPI()
+                numPresses = loader.returnTotalLeverPresses()
+                if ipiSum and numPresses > 0:
+                    totalIPITime += ipiSum * numPresses
+                    totalPresses += numPresses
+                
+                succ = loader.returnNumSuccessfulTrials()
+                avgIPIFirst_to_Sucess = loader.returnAvgIPI_FirsttoSuccess()
+                avgIPILast_to_Sucess = loader.returnAvgIPI_LasttoSuccess()
+                
+                totalFirsttoSuccTime += succ * avgIPIFirst_to_Sucess
+                totalLasttoSuccTime += succ * avgIPILast_to_Sucess
+                totalSucc += succ
+                
+            avg_ipi.append(totalIPITime / totalPresses)
+            avg_first_to.append(totalFirsttoSuccTime / totalSucc)
+            avg_last_to.append(totalLasttoSuccTime / totalSucc)
 
         for title, data, color in zip(
             ['Avg IPI per Category', 'Avg First->Success per Category', 'Avg Last->Success per Category'],
@@ -865,10 +815,9 @@ class multiFileGraphsCategories:
                 loader = exp.pos
                 g0 = loader.returnIsGazing(0)
                 g1 = loader.returnIsGazing(1)
-                combined = g0 | g1
                 total_gaze_events += loader.returnNumGazeEvents(0) + loader.returnNumGazeEvents(1)
-                total_gaze_frames += np.sum(combined) #Frames where at least 1 mouse was gazing
-                total_frames += combined.shape[0]
+                total_gaze_frames += np.sum(g0) + np.sum(g1) #Frames where at least 1 mouse was gazing
+                total_frames += g0.shape[0]
                 
                 lev = exp.lev.data
                 trials = lev['TrialNum'].nunique()
@@ -926,13 +875,13 @@ categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["
 
 
 #Unfamiliar vs. Training Partners
-'''dataUF = getOnlyUnfamiliar() #Unfamiliar
+dataUF = getOnlyUnfamiliar() #Unfamiliar
 dataTP = getOnlyTrainingPartners() #Training Partners
 
 levFiles = [dataUF[0], dataTP[0]]
 magFiles = [dataUF[1], dataTP[1]]
 posFiles = [dataUF[2], dataTP[2]]
-categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["Unfamiliar", "Training Partners"])'''
+categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["Unfamiliar", "Training Partners"])
 
 
 '''#Transparent vs. Translucent vs. Opaque
@@ -946,10 +895,10 @@ posFiles = [dataTransparent[2], dataTranslucent[2], dataOpaque[2]]
 categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["Transparent", "Translucent", "Opaque"])'''
 
 
-#categoryExperiments.compareGazeEventsCategories()
-#categoryExperiments.compareSuccesfulTrials()
-#categoryExperiments.compareIPI()
-#categoryExperiments.printSummaryStats()
+categoryExperiments.compareGazeEventsCategories()
+categoryExperiments.compareSuccesfulTrials()
+categoryExperiments.compareIPI()
+categoryExperiments.printSummaryStats()
 
 
 
@@ -1042,17 +991,15 @@ class MicePairGraphs:
         # For each pair, compute weighted average IPI across experiments
         for group in self.experimentGroups:
             sum_weighted_ipi = 0.0
-            sum_trials = 0
+            sum_presses = 0
             for exp in group:
-                ipi_list = exp.lev.returnAvgIPI()
-                n_trials = exp.lev.returnNumTotalTrials()
-                if ipi_list and n_trials > 0:
-                    # ipi_list is list of all IPIs in this session
-                    mean_ipi = np.mean(ipi_list)
-                    sum_weighted_ipi += mean_ipi * n_trials
-                    sum_trials += n_trials
-            if sum_trials > 0:
-                vals.append(sum_weighted_ipi / sum_trials)
+                mean_ipi = exp.lev.returnAvgIPI()
+                n_presses = exp.lev.returnTotalLeverPresses()
+                if mean_ipi and n_presses > 0:
+                    sum_weighted_ipi += mean_ipi * n_presses
+                    sum_presses += n_presses
+            if sum_presses > 0:
+                vals.append(sum_weighted_ipi / sum_presses)
                 
         self._make_boxplot(vals, "IPI (s)", "Avg Inter-Press Interval", "Box_IPI")
         self._make_histogram(vals, "IPI (s)", "IPI Distribution", "Hist_IPI")
@@ -1305,14 +1252,14 @@ class MicePairGraphs:
 
 groupMicePairs = "/gpfs/radev/project/saxena/drb83/rat-cooperation/David/Behavioral_Quantification/Sorted_Data_Files/group_mice_pairs.csv"
 
-def getGroupMicePairs():
+'''def getGroupMicePairs():
     fe = fileExtractor(groupMicePairs)
     return [fe.getLevsDatapath(grouped = True), fe.getMagsDatapath(grouped = True), fe.getPosDatapath(grouped = True)]
 
 
 data = getGroupMicePairs()
 
-pairGraphs = MicePairGraphs(data[0], data[1], data[2])
+pairGraphs = MicePairGraphs(data[0], data[1], data[2])'''
 
 
 '''magFiles = [["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv"], ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv"]]
@@ -1321,7 +1268,7 @@ posFiles = [["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/B
 pairGraphs = MicePairGraphs(levFiles, magFiles, posFiles)'''
 
 
-pairGraphs.boxplot_avg_gaze_length()
+'''pairGraphs.boxplot_avg_gaze_length()
 pairGraphs.boxplot_lever_presses_per_trial()
 pairGraphs.boxplot_mag_events_per_trial()
 pairGraphs.boxplot_percent_successful_trials()
@@ -1329,7 +1276,7 @@ pairGraphs.boxplot_gaze_events_per_minute()
 pairGraphs.boxplot_avg_IPI()
 pairGraphs.boxplot_IPI_first_to_success()
 pairGraphs.boxplot_IPI_last_to_success()
-pairGraphs.difference_last_vs_first()
+pairGraphs.difference_last_vs_first()'''
 
 
 
