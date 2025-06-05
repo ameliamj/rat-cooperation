@@ -189,7 +189,7 @@ class posLoader:
         return gaze_line.intersects(body_poly)
     
     
-    def returnIsGazing(self, mouseID):
+    def returnIsGazing(self, mouseID, test = False):
         #determine whether mouse mouseID is gazing at the other mouse where a gaze is defined by a mouse standingStill for the self.minFramesStill and the gazeVector passing through the body of the other mouse (estimate of the body using the 5 body parts tracked)  
         """
         Return boolean array where True means that mouseID is still and gazing at the other mouse.
@@ -214,7 +214,7 @@ class posLoader:
             if self._gaze_intersects_body(gaze_origin, gaze_vec, target):
                 result[t] = True
 
-        return result
+        return np.where(result)[0] if test else result
     
     
     #Graph Stuff

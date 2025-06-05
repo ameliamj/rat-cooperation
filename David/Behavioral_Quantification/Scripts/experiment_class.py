@@ -22,5 +22,27 @@ class singleExperiment:
         self.pos = posLoader(pos_file)
     
     def unitTest(self):
-        placeholder = "Hi"
+        print("Mag Unit Tests")
+        print("    Total Mag Events: ", self.mag.getTotalMagEvents())
         
+        print("\n Lev Unit Tests")
+        print("    Total Trials: ", self.lev.returnNumSuccessfulTrials())
+        print("    Successful Trials: ", self.lev.returnNumSuccessfulTrials())
+        print("    Total Trials: ", self.lev.returnNumTotalTrials())
+        print("    Total Lever Presses: ", self.lev.returnTotalLeverPresses())
+        print("    First 5 IPIs: ", self.lev.returnAvgIPI(True))
+        print("    First 5 IPIs First->Success: ", self.lev.returnAvgIPI_FirsttoSuccess(True))
+        print("    First 5 IPIs Last->Success: ", self.lev.returnAvgIPI_LasttoSuccess(True))
+        
+        
+        print("\n Pos Unit Tests")
+        print("    When is Gazing: ", self.pos.returnIsGazing(0, True))
+    
+    
+mag = "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_mag.csv"
+lev = "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv"
+pos = "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G.predictions.h5"
+
+test = singleExperiment(mag, lev, pos)
+
+test.unitTest()
