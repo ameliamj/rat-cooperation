@@ -141,7 +141,7 @@ class levLoader:
         return succ
     
         
-    def returnAvgIPI(self, test = False):
+    def returnAvgIPI(self, test = False, returnList = False):
         """Compute IPI (time between all consecutive lever presses)."""
         
         df = self.data.copy()
@@ -152,11 +152,16 @@ class levLoader:
             return []
     
         ipis = [t2 - t1 for t1, t2 in zip(times[:-1], times[1:])]
+        
         if (test == True):
             return ipis[:5]
+        
+        if (returnList == True):
+            return ipis
+        
         return sum(ipis)/len(ipis)
     
-    def returnAvgIPI_FirsttoSuccess(self, test = False):
+    def returnAvgIPI_FirsttoSuccess(self, test = False, returnList = False):
         '''Time between first press and successful press (second rat press) in successful trials.'''
         
         df = self.data.copy()
@@ -190,6 +195,8 @@ class levLoader:
         numSuccessfulTrials = len(ipis)
         if (test == True):
             return ipis[:5]
+        if (returnList == True):
+            return ipis
         return sumTimes/numSuccessfulTrials
     
     def returnAvgIPI_LasttoSuccess(self, test = False):

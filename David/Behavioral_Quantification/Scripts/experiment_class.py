@@ -26,12 +26,13 @@ class singleExperiment:
         print("    Total Mag Events: ", self.mag.getTotalMagEvents())
         
         print("\n Lev Unit Tests")
-        print("    Total Trials: ", self.lev.returnNumSuccessfulTrials())
         print("    Successful Trials: ", self.lev.returnNumSuccessfulTrials())
         print("    Total Trials: ", self.lev.returnNumTotalTrials())
         print("    Total Lever Presses: ", self.lev.returnTotalLeverPresses())
-        print("    First 5 IPIs: ", self.lev.returnAvgIPI(True))
+        print("    First 5 IPIs: ", self.lev.returnAvgIPI(test = True))
+        print("    Len (IPIs): ", len(self.lev.returnAvgIPI(returnList = True)))
         print("    First 5 IPIs First->Success: ", self.lev.returnAvgIPI_FirsttoSuccess(True))
+        print("    Len (IPIs First->Success): ", len(self.lev.returnAvgIPI_FirsttoSuccess(returnList = True)))
         print("    First 5 IPIs Last->Success: ", self.lev.returnAvgIPI_LasttoSuccess(True))
         
         
@@ -39,10 +40,10 @@ class singleExperiment:
         print("    When is Gazing: ", self.pos.returnIsGazing(0, True))
     
     
-mag = "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_mag.csv"
-lev = "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv"
-pos = "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G.predictions.h5"
+#mag = "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_mag.csv"
+#lev = "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv"
+#pos = "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G.predictions.h5"
 
-test = singleExperiment(mag, lev, pos)
+#test = singleExperiment(mag, lev, pos)
 
-test.unitTest()
+#test.unitTest()
