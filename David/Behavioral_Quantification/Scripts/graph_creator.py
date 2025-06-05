@@ -194,7 +194,7 @@ class multiFileGraphsCategories:
     
                 # Store individual success probability for this experiment
                 if num_total > 0:
-                    print("\n\nProb: ", num_succ / num_total)
+                    print("\n\nProb: ",  num_succ / num_total)
                     print("Num Trials: ", num_total)
                     print("Lev File: ", self.allFileGroupExperiments[i][j][1])
                     individual_datapoints[i].append(num_succ / num_total)
@@ -444,20 +444,20 @@ categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["
 
 
 #Transparent vs. Translucent vs. Opaque
-dataTransparent = getOnlyTransparent() #Transparent
+'''dataTransparent = getOnlyTransparent() #Transparent
 dataTranslucent = getOnlyTranslucent() #Translucent
 dataOpaque = getOnlyOpaque() #Opaque
 
 levFiles = [dataTransparent[0], dataTranslucent[0], dataOpaque[0]]
 magFiles = [dataTransparent[1], dataTranslucent[1], dataOpaque[1]]
 posFiles = [dataTransparent[2], dataTranslucent[2], dataOpaque[2]]
-categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["Transparent", "Translucent", "Opaque"])
+categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["Transparent", "Translucent", "Opaque"])'''
 
 
-categoryExperiments.compareGazeEventsCategories()
-categoryExperiments.compareSuccesfulTrials()
-categoryExperiments.compareIPI()
-categoryExperiments.printSummaryStats()
+#categoryExperiments.compareGazeEventsCategories()
+#categoryExperiments.compareSuccesfulTrials()
+#categoryExperiments.compareIPI()
+#categoryExperiments.printSummaryStats()
 
 
 
@@ -472,24 +472,28 @@ categoryExperiments.printSummaryStats()
 
 class MicePairGraphs:
     def __init__(self, magGroups, levGroups, posGroups):
+        print("Initializing MicePairGraphs")
         assert len(magGroups) == len(levGroups) == len(posGroups), "Mismatched group lengths."
         self.experimentGroups = []
         for mag_list, lev_list, pos_list in zip(magGroups, levGroups, posGroups):
+            print(f"Creating group for {len(mag_list)} files")
             group_exps = [singleExperiment(mag, lev, pos) for mag, lev, pos in zip(mag_list, lev_list, pos_list)]
             self.experimentGroups.append(group_exps)
 
     def _make_boxplot(self, data, ylabel, title, filename):
+        print(f"Creating boxplot: {title}")
         plt.figure(figsize=(5, 5))
         plt.boxplot(data, showfliers=False)
         plt.ylabel(ylabel)
         plt.title(title)
-        plt.xticks([])  # No x-axis labels since we’re not labeling each pair
+        plt.xticks([])
         plt.tight_layout()
         plt.savefig(f"{filename}.png")
         plt.show()
         plt.close()
 
     def _make_histogram(self, data, xlabel, title, filename):
+        print(f"Creating histogram: {title}")
         plt.figure(figsize=(10, 5))
         plt.hist(data, bins=20)
         plt.xlabel(xlabel)
@@ -500,150 +504,161 @@ class MicePairGraphs:
         plt.close()
 
     def boxplot_avg_gaze_length(self):
+        print("\n\nGenerating average gaze length boxplot")
         all_vals = []
         for group in self.experimentGroups:
-            # for each pair, average the two mice's average gaze lengths
             pair_vals = []
             for exp in group:
                 l0 = exp.pos.returnAverageGazeLength(0)
                 l1 = exp.pos.returnAverageGazeLength(1)
+                print(f"Gaze lengths: {l0}, {l1}")
                 if l0 is not None and l1 is not None:
-                    pair_vals.append((l0 + l1)/2)
+                    pair_vals.append((l0 + l1) / 2)
             if pair_vals:
                 all_vals.append(np.mean(pair_vals))
-        
+        print(f"All values: {all_vals}")
         self._make_boxplot(all_vals, "Frames per Gaze Event", "Avg Gaze Length per Pair", "Box_Gaze_Length")
         self._make_histogram(all_vals, "Frames per Gaze Event", "Gaze Length Distribution", "Hist_Gaze_Length")
 
     def boxplot_lever_presses_per_trial(self):
+        print("\n\nGenerating lever presses per trial boxplot")
         vals = []
         for group in self.experimentGroups:
             pair_rates = []
             for exp in group:
                 trials = exp.lev.returnNumTotalTrials()
                 presses = exp.lev.returnTotalLeverPresses()
+                print(f"Trials: {trials}, Presses: {presses}")
                 if trials > 0:
                     pair_rates.append(presses / trials)
             if pair_rates:
                 vals.append(np.mean(pair_rates))
-        
+        print(f"All values: {vals}")
         self._make_boxplot(vals, "Presses / Trial", "Lever Presses per Trial", "Box_LeverPerTrial")
         self._make_histogram(vals, "Presses / Trial", "Lever Press Distribution", "Hist_LeverPerTrial")
 
     def boxplot_mag_events_per_trial(self):
+        print("\n\nGenerating mag events per trial boxplot")
         vals = []
         for group in self.experimentGroups:
             pair_rates = []
             for exp in group:
                 trials = exp.lev.returnNumTotalTrials()
                 mags = exp.mag.getTotalMagEvents()
+                print(f"Trials: {trials}, Mag Events: {mags}")
                 if trials > 0:
                     pair_rates.append(mags / trials)
             if pair_rates:
                 vals.append(np.mean(pair_rates))
-        
+        print(f"All values: {vals}")
         self._make_boxplot(vals, "Mag Events / Trial", "Mag Events per Trial", "Box_MagPerTrial")
         self._make_histogram(vals, "Mag Events / Trial", "Mag Event Distribution", "Hist_MagPerTrial")
 
     def boxplot_avg_IPI(self):
+        print("\n\nRunning boxplot_avg_IPI...")
         vals = []
-        # For each pair, compute weighted average IPI across experiments
         for group in self.experimentGroups:
             sum_weighted_ipi = 0.0
             sum_presses = 0
             for exp in group:
                 mean_ipi = exp.lev.returnAvgIPI()
                 n_presses = exp.lev.returnTotalLeverPresses()
+                print(f"Avg IPI: {mean_ipi}, Presses: {n_presses}")
                 if mean_ipi and n_presses > 0:
                     sum_weighted_ipi += mean_ipi * n_presses
                     sum_presses += n_presses
+            print(f"Sum Weighted IPI: {sum_weighted_ipi}, Total Presses: {sum_presses}")
             if sum_presses > 0:
                 vals.append(sum_weighted_ipi / sum_presses)
-                
+        print(f"Avg IPI per group: {vals}\n")
         self._make_boxplot(vals, "IPI (s)", "Avg Inter-Press Interval", "Box_IPI")
         self._make_histogram(vals, "IPI (s)", "IPI Distribution", "Hist_IPI")
 
     def boxplot_IPI_first_to_success(self):
+        print("\n\nRunning boxplot_IPI_first_to_success...")
         vals = []
-        
-        # Weighted by number of successful trials
         for group in self.experimentGroups:
             sum_weighted = 0.0
             sum_success = 0
             for exp in group:
                 v = exp.lev.returnAvgIPI_FirsttoSuccess()
                 n_succ = exp.lev.returnNumSuccessfulTrials()
+                print(f"First→Success IPI: {v}, Successes: {n_succ}")
                 if v is not None and n_succ > 0:
                     sum_weighted += v * n_succ
                     sum_success += n_succ
             if sum_success > 0:
                 vals.append(sum_weighted / sum_success)
-                
+        print(f"First→Success IPI per group: {vals}\n")
         self._make_boxplot(vals, "Time (s)", "IPI: First→Success", "Box_IPI_First")
         self._make_histogram(vals, "Time (s)", "First→Success Distribution", "Hist_IPI_First")
 
     def boxplot_IPI_last_to_success(self):
+        print("\n\nRunning boxplot_IPI_last_to_success...")
         vals = []
-        # Weighted by number of successful trials
         for group in self.experimentGroups:
             sum_weighted = 0.0
             sum_success = 0
             for exp in group:
                 v = exp.lev.returnAvgIPI_LasttoSuccess()
                 n_succ = exp.lev.returnNumSuccessfulTrials()
+                print(f"Last→Success IPI: {v}, Successes: {n_succ}")
                 if v is not None and n_succ > 0:
                     sum_weighted += v * n_succ
                     sum_success += n_succ
             if sum_success > 0:
                 vals.append(sum_weighted / sum_success)
-                
+        print(f"Last→Success IPI per group: {vals}\n")
         self._make_boxplot(vals, "Time (s)", "IPI: Last→Success", "Box_IPI_Last")
         self._make_histogram(vals, "Time (s)", "Last→Success Distribution", "Hist_IPI_Last")
         
     def boxplot_gaze_events_per_minute(self): 
-        #A minute is defined as 1800 Frames
+        print("\n\nRunning boxplot_gaze_events_per_minute...")
         FRAME_WINDOW = 1800
-        
         vals = []
         for group in self.experimentGroups:
             sumEvents = 0
             sumFrames = 0
-            
             for exp in group:
                 countEvents0 = exp.pos.returnNumGazeEvents(0)
                 countEvents1 = exp.pos.returnNumGazeEvents(1)
                 numFrames = exp.pos.returnNumFrames()
-                
+                print(f"Gaze0: {countEvents0}, Gaze1: {countEvents1}, Frames: {numFrames}")
                 if countEvents0 is not None and countEvents1 is not None and numFrames is not None:
                     sumEvents += countEvents0 + countEvents1
                     sumFrames += numFrames
             if sumFrames > 0:
-                vals.append(sumEvents / numFrames * FRAME_WINDOW)
-        
+                rate = sumEvents / sumFrames * FRAME_WINDOW
+                print(f"Gaze Rate: {rate}")
+                vals.append(rate)
+        print(f"Gaze per minute values: {vals}\n")
         self._make_boxplot(vals, "Gaze Events / Min", "Gaze Rate per Pair", "Box_GazePerMin")
         self._make_histogram(vals, "Gaze Events / Min", "Gaze Rate Distribution", "Hist_GazePerMin")
      
     def boxplot_percent_successful_trials(self):
+        print("\n\nRunning boxplot_percent_successful_trials...")
         vals = []
-        
-        # Weighted by number of successful trials
         for group in self.experimentGroups:
             sum_tot = 0
             sum_success = 0
             for exp in group:
                 tot = exp.lev.returnNumTotalTrials()
                 n_succ = exp.lev.returnNumSuccessfulTrials()
+                print(f"Total Trials: {tot}, Successful Trials: {n_succ}")
                 if n_succ is not None and tot > 0:
                     sum_tot += tot
                     sum_success += n_succ
-            if sum_success > 0:
-                vals.append(sum_success / sum_tot)
-                
+            if sum_tot > 0:
+                ratio = sum_success / sum_tot
+                print(f"Success Rate: {ratio}")
+                vals.append(ratio)
+        print(f"Success rates: {vals}\n")
         self._make_boxplot(vals, "% Success", "Success Rate per Pair", "Box_Success")
         self._make_histogram(vals, "% Success", "Success Rate Distribution", "Hist_Success")
         
     def difference_last_vs_first(self):
-    
+        print("\n\n Running difference_last_vs_first...")
+        
         def gaze_length(exp):
             df = exp.pos
             countEvents0 = df.returnNumGazeEvents(0)
@@ -699,8 +714,9 @@ class MicePairGraphs:
     
         diffs = {name: [] for name in metrics}
     
-        for group in self.experimentGroups:
+        for idx, group in enumerate(self.experimentGroups):
             if len(group) < 5:
+                print(f"Skipping group {idx}: only {len(group)} session(s)")
                 continue
             first, last = group[0], group[-1]
             for name, func in metrics.items():
@@ -712,20 +728,32 @@ class MicePairGraphs:
                     continue
                 
         #Plot individual histograms
+        print("Generating histograms for session differences...")
+
+        print("Diffs.item(): ")
+        print(diffs.items())
+        
         for name, values in diffs.items():
+            print(f"  [Histogram] Metric: {name} — Number of values: {len(values)}")
             plt.figure(figsize=(10, 4))
             plt.hist(values, bins=15)
             plt.title(f"Change in {name} (Last Session - 1st Session)")
             plt.xlabel(f"Δ {name}")
             plt.tight_layout()
-            plt.savefig(f"Diff_{name.replace(' ', '_')}.png")
+            filename = f"Diff_{name.replace(' ', '_')}.png"
+            print(f" Saving histogram to {filename}")
+            plt.savefig(filename)
             plt.show()
             plt.close()    
         
         # Plot individual bar graphs
+        print("\nGenerating bar plots for average session differences...")
         for name, values in diffs.items():
+            print(f"  [Bar] Metric: {name}")
             if not values:
+                print(f"    Skipping {name} — No data.")
                 continue
+            
             avg_diff = np.mean(values)
             error = np.std(values) / np.sqrt(len(values))
         
@@ -755,29 +783,39 @@ class MicePairGraphs:
             plt.tight_layout()
         
             filename = f"Bar_Change_{name.replace(' ', '_').replace('→', 'to')}.png"
+            print(f"    Saving bar plot to {filename}")
             plt.savefig(filename)
             plt.show()
             plt.close()
         
         #Plot Individual Line Graphs
+        print("\nPreparing line graphs showing metric progression across sessions...")
+
         
         # Track values across sessions per metric
         max_sessions = max(len(group) for group in self.experimentGroups)
+        print(f"  Max sessions in any group: {max_sessions}")
+        
         metric_over_sessions = {name: [[] for _ in range(max_sessions)] for name in metrics}
         
         # Fill values by session
-        for group in self.experimentGroups:
+        for idx, group in enumerate(self.experimentGroups):
+            print(f"  [Group {idx}] Processing {len(group)} sessions")
             for i, exp in enumerate(group):
                 for name, func in metrics.items():
                     try:
                         val = func(exp)
                         if val is not None:
                             metric_over_sessions[name][i].append(val)
+                            print(f"    [Session {i}] {name}: {val}")
+                        else:
+                            print(f"    [Session {i}] {name}: None")
                     except Exception as e:
                         print(f"Error computing {name} for session {i} in group: {e}")
                         continue  # Optional: track or log failures more thoroughly
         
-        # Average and plot
+        # Average and plot averages per session
+        print("\nPlotting average progression for each metric...")
         for name, session_lists in metric_over_sessions.items():
             averages = [np.mean(vals) if vals else None for vals in session_lists]
             counts = [len(vals) for vals in session_lists]
@@ -788,8 +826,11 @@ class MicePairGraphs:
             y_counts = [counts[i] for i, v in enumerate(averages) if v is not None]
         
             if not y_values:
+                print(f"  Skipping {name} — No valid session data.")
                 continue
-        
+            
+            print(f"  Plotting {name} — {len(y_values)} sessions with valid data")
+            
             plt.figure(figsize=(6, 4))
             plt.plot(session_indices, y_values, marker='o', linestyle='-', color='steelblue')
         
@@ -804,6 +845,7 @@ class MicePairGraphs:
             plt.tight_layout()
         
             filename = f"Line_Progression_{name.replace(' ', '_').replace('→', 'to')}.png"
+            print(f"    Saving line plot to {filename}")
             plt.savefig(filename)
             plt.show()
             plt.close()
@@ -811,14 +853,13 @@ class MicePairGraphs:
 
 groupMicePairs = "/gpfs/radev/project/saxena/drb83/rat-cooperation/David/Behavioral_Quantification/Sorted_Data_Files/group_mice_pairs.csv"
 
-'''def getGroupMicePairs():
+def getGroupMicePairs():
     fe = fileExtractor(groupMicePairs)
     return [fe.getLevsDatapath(grouped = True), fe.getMagsDatapath(grouped = True), fe.getPosDatapath(grouped = True)]
 
 
 data = getGroupMicePairs()
-
-pairGraphs = MicePairGraphs(data[0], data[1], data[2])'''
+pairGraphs = MicePairGraphs(data[0], data[1], data[2])
 
 '''
 magFiles = [["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv"],
@@ -831,7 +872,7 @@ posFiles = [["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/B
 pairGraphs = MicePairGraphs(levFiles, magFiles, posFiles)'''
 
 
-'''pairGraphs.boxplot_avg_gaze_length()
+pairGraphs.boxplot_avg_gaze_length()
 pairGraphs.boxplot_lever_presses_per_trial()
 pairGraphs.boxplot_mag_events_per_trial()
 pairGraphs.boxplot_percent_successful_trials()
@@ -839,7 +880,7 @@ pairGraphs.boxplot_gaze_events_per_minute()
 pairGraphs.boxplot_avg_IPI()
 pairGraphs.boxplot_IPI_first_to_success()
 pairGraphs.boxplot_IPI_last_to_success()
-pairGraphs.difference_last_vs_first()'''
+pairGraphs.difference_last_vs_first()
 
 
 
