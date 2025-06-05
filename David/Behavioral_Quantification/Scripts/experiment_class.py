@@ -21,3 +21,6 @@ class singleExperiment:
         self.lev = levLoader(lev_file)
         self.pos = posLoader(pos_file)
     
+    def unitTest(self):
+        placeholder = "Hi"
+        

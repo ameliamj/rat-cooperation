@@ -885,20 +885,20 @@ categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["
 
 
 #Transparent vs. Translucent vs. Opaque
-dataTransparent = getOnlyTransparent() #Transparent
+'''dataTransparent = getOnlyTransparent() #Transparent
 dataTranslucent = getOnlyTranslucent() #Translucent
 dataOpaque = getOnlyOpaque() #Opaque
 
 levFiles = [dataTransparent[0], dataTranslucent[0], dataOpaque[0]]
 magFiles = [dataTransparent[1], dataTranslucent[1], dataOpaque[1]]
 posFiles = [dataTransparent[2], dataTranslucent[2], dataOpaque[2]]
-categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["Transparent", "Translucent", "Opaque"])
+categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["Transparent", "Translucent", "Opaque"])'''
 
 
-categoryExperiments.compareGazeEventsCategories()
+'''categoryExperiments.compareGazeEventsCategories()
 categoryExperiments.compareSuccesfulTrials()
 categoryExperiments.compareIPI()
-categoryExperiments.printSummaryStats()
+categoryExperiments.printSummaryStats()'''
 
 
 

@@ -146,7 +146,7 @@ def normalize_video(
             left_or_right_mask = np.zeros_like(proximity_mask1, dtype=bool)
 
         # Apply different thresholds based on proximity
-        threshold_near = threshold + 0    # Threshold for pixels near previously colored pixels
+        threshold_near = threshold + 4    # Threshold for pixels near previously colored pixels
         mask1 = np.where(proximity_mask1, dist1 < threshold_near, dist1 < threshold) & (dist1 < dist2) & (~bright_mask) #& (~static_mask)
         mask2 = np.where(proximity_mask2, dist2 < threshold_near, dist2 < threshold) & (dist2 < dist1) & (~bright_mask) #& (~static_mask)
         mask3 = np.where(proximity_mask1, dist3 < threshold_near, dist3 < threshold) & (dist3 < dist2) & (~bright_mask) #& (~static_mask)
