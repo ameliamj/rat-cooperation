@@ -128,6 +128,12 @@ class magLoader:
     def getMagNum(self, row_idx): #returns the mag num for row_idx of the data
         return self.get_value(row_idx, 1)
 
+    #Graph Stuff: 
+    
+    def getTotalMagEvents(self):
+        total_mag_events = self.data.shape[0]
+        return total_mag_events
+
 
 #Testing
 #

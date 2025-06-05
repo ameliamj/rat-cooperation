@@ -216,6 +216,9 @@ class posLoader:
 
         return result
     
+    
+    #Graph Stuff
+    
     def returnNumGazeEvents(self, mouseID):
         #A gaze event is a single collection of frames where the mice are gazing. There has to be at least a 5 frame separation with no gazing between gaze events
         
@@ -230,7 +233,20 @@ class posLoader:
                 lastGaze = i
                 
         return numGazeEvents
-            
+    
+    def returnTotalFramesGazing(self, mouseID):
+        g0 = self.returnIsGazing(mouseID)
+        totalFramesGazing = np.sum(g0)
+        return totalFramesGazing
+        
+    
+    def returnAverageGazeLength(self, mouseID):
+        return (self.returnTotalFramesGazing(mouseID) / self.returnNumGazeEvents(mouseID))
+    
+    def returnNumFrames(self):
+        return self.data.shape[-1]
+        
+        
 
 def visualize_gaze_overlay(
     video_path,
@@ -338,10 +354,12 @@ def visualize_gaze_overlay(
     print(f"Video saved to {save_path}")
     
     
-'''h5_file = "/Users/david/Documents/Research/Saxena Lab/rat-cooperation/David/Behavioral Quantification/Example Data Files/041624_Cam4_TrNum10_Coop_KL001B-KL001Y.predictions.h5"
-    
-loader = posLoader(h5_file)
-visualize_gaze_overlay("/Users/david/Documents/Research/Saxena Lab/rat-cooperation/David/Behavioral Quantification/Example Data Files/041624_Cam4_TrNum10_Coop_KL001B-KL001Y.mp4", loader, mouseID=0, save_path = "/Users/david/Documents/Research/Saxena Lab/rat-cooperation/David/Behavioral Quantification/Graphs/testGazeVid.mp4")'''
+h5_file = "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G.predictions.h5"
+video_file = "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G.mp4"    
+
+
+#loader = posLoader(h5_file)
+#visualize_gaze_overlay(video_file, loader, mouseID=0, save_path = "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Graphs/Videos//testGazeVid.mp4")
 
     
     

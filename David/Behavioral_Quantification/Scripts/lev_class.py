@@ -116,18 +116,121 @@ class levLoader:
                 raise ValueError(f"Column '{column}' not found in data.")
             return self.data[column].isna().sum()
 
-
-
     def getTrialNum(self, row_idx): #returns the trial number for row_idx of the data
         return self.get_value(row_idx, 0)
     
     def getLevNum(self, row_idx): #returns the mag num for row_idx of the data
         return self.get_value(row_idx, 1)
+    
+    
+    #Graph Stuff: 
+    
+    def returnNumTotalTrials(self):
+        trials = self.data['TrialNum'].nunique()
+        return trials    
+    
+    def returnTotalLeverPresses(self):
+        res = self.data.shape[0]
+        return res
+    
+    def returnLevPressesPerTrial(self):
+       return self.returnTotalLeverPresses() / self.returnNumTotalTrials()
+    
+    def returnNumSuccessfulTrials(self):
+        succ = self.data.groupby('TrialNum').first().query('coopSucc == 1').shape[0]
+        return succ
+    
+        
+    def returnAvgIPI(self):
+        """Compute IPI (time between all consecutive lever presses)."""
+        
+        df = self.data.copy()
+        df = df.sort_values(by="AbsTime")  # Sort all presses chronologically
+        times = df["AbsTime"].values
+    
+        if len(times) < 2:
+            return []
+    
+        ipis = [t2 - t1 for t1, t2 in zip(times[:-1], times[1:])]
+        return sum(ipis)/len(ipis)
+    
+    def returnAvgIPI_FirsttoSuccess(self):
+        '''Time between first press and successful press (second rat press) in successful trials.'''
+        
+        df = self.data.copy()
+        df = df.sort_values(by=["coopSucc", "TrialNum", "AbsTime"])
+        
+        ipis = []
+
+        for trial_num, trial_data in df[df["coopSucc"] == 1].groupby("TrialNum"):
+            rats_pressed = set()
+            presses = []
+            #print("TrialNum: ", trial_num)
+            #print("trial_data: \n", trial_data)
+
+            for _, row in trial_data.iterrows():
+                rat = row["RatID"]
+                presses.append((rat, row["AbsTime"]))
+
+                if rat not in rats_pressed:
+                    rats_pressed.add(rat)
+        
+                if len(rats_pressed) == 2:
+                    # Second rat has just pressed — trial becomes successful
+                    first_press_time = presses[0][1]
+                    success_press_time = row["AbsTime"]
+                    #print("Res: ", success_press_time - first_press_time)
+                    ipis.append(success_press_time - first_press_time)
+                    break  # Done with this trial
+
+        #ipis is a List of all the times: 
+        sumTimes = sum(ipis)
+        numSuccessfulTrials = len(ipis)
+        return sumTimes/numSuccessfulTrials
+    
+    def returnAvgIPI_LasttoSuccess(self):
+        """Time between last press (by same rat as first) and success press (by second rat)."""
+        df = self.data.copy()
+        df = df.sort_values(by=["coopSucc", "TrialNum", "AbsTime"])
+        ipis = []
+
+        for trial_num, trial_data in df[df["coopSucc"] == 1].groupby("TrialNum"):
+            rats_pressed = set()
+            presses = []
+
+            for _, row in trial_data.iterrows():
+                rat = row["RatID"]
+                presses.append((rat, row["AbsTime"]))
+
+                if rat not in rats_pressed:
+                    rats_pressed.add(rat)
+
+                if len(rats_pressed) == 2:
+                    # Find last press before success from first rat
+                    first_rat = presses[0][0]
+                    first_rat_presses = [t for r, t in presses[:-1] if r == first_rat]
+                    if not first_rat_presses:
+                        continue  # skip this trial — no valid prior press from first rat
+                    last_first_rat_time = max(first_rat_presses)
+                    success_press_time = row["AbsTime"]
+                    #print("TrialNum: ", trial_num)
+                    #print("Success Press Time: ", success_press_time)
+                    #print("Last FirstRat Time: ", last_first_rat_time)
+                    #print("Res: ", success_press_time - last_first_rat_time, "\n")
+                    ipis.append(success_press_time - last_first_rat_time)
+                    break
+
+        #ipis is a List of all the times: 
+        sumTimes = sum(ipis)
+        numSuccessfulTrials = len(ipis)
+        return sumTimes/numSuccessfulTrials
 
 
 #Testing
 #
 #
 
-#file1 = "/Users/david/Documents/Research/Saxena Lab/Behavioral Quantification/Example Data Files/ExampleLevFile.csv"
+#file1 = "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/leverData.csv"
 #lev1 = levLoader(file1)
+#print(lev1.returnAvgIPI_LasttoSuccess())
+
