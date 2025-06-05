@@ -93,34 +93,53 @@ class multiFileGraphsCategories:
         for cat in categoryNames:    
             self.endSaveName += f"_{cat}"
         
-        self.endSaveName += ".png"
         #self.path = "/gpfs/radev/project/saxena/drb83/rat-cooperation/David/Behavioral_Quantification/Graphs/"
         self.path = ""
         
+        if not self.path:
+            print("Warning: No save path specified. Saving plots to current directory.")
+        
     def compareGazeEventsCategories(self):
-        avg_events = []
-        #cum_event_data = []
-        FRAME_WINDOW = 1800
+        '''
+        Function Purpose:
+        -----------------
+        This function calculates and visualizes the average number of gaze events per minute 
+        (assuming 1800 frames equals 1 minute) for each experimental category.
+        
+        For each category:
+        - It sums all gaze events detected for both mice (ID 0 and ID 1).
+        - It normalizes the total events by the total number of frames.
+        - It scales the result to a 1-minute equivalent (1800 frames).
+        - The result is plotted as a bar chart with each bar representing a category.
+        '''
+        
+        avg_events = []  # Stores the average gaze events per minute for each category
+        FRAME_WINDOW = 1800  # Defines the number of frames corresponding to one minute
     
+        # Iterate over each group of experiments (i.e., each category)
         for group in self.allFileGroupExperiments:
-            sumEvents = 0
-            sumFrames = 0
+            sumEvents = 0     # Total number of gaze events for this category
+            sumFrames = 0     # Total number of frames across all experiments in this category
     
+            # Process each experiment in the current category
             for exp in group:
-                loader = exp.pos
+                loader = exp.pos  # Get positional data loader
     
+                # Retrieve gaze event counts for both mice
                 countEvents0 = loader.returnNumGazeEvents(0)
                 countEvents1 = loader.returnNumGazeEvents(1)
-                numFrames = exp.pos.returnNumFrames()
-                
+                numFrames = loader.returnNumFrames()
+    
+                # Only include experiments with complete data
                 if countEvents0 is not None and countEvents1 is not None and numFrames is not None:
                     sumEvents += countEvents0 + countEvents1
                     sumFrames += numFrames
-            
-            if sumFrames > 0:
-                avg_events.append(sumEvents / numFrames * FRAME_WINDOW)
     
-        # --- Plot 1: Bar chart of average gaze events per 1800 frames ---
+            # Compute average gaze events per 1800 frames if data is available
+            if sumFrames > 0:
+                avg_events.append(sumEvents / sumFrames * FRAME_WINDOW)
+    
+        # --- Plot: Bar chart of average gaze events per minute (1800 frames) ---
         plt.figure(figsize=(8, 6))
         plt.bar(range(len(avg_events)), avg_events, color='skyblue')
         plt.xlabel('Category')
@@ -128,6 +147,8 @@ class multiFileGraphsCategories:
         plt.title('Average Gaze Events (per Minute) per Category')
         plt.xticks(range(len(avg_events)), self.categoryNames)
         plt.tight_layout()
+        
+        # Save and display the plot
         plt.savefig(f'GazeEventsPerMinute{self.endSaveName}')
         plt.show()
         plt.close()
@@ -146,71 +167,140 @@ class multiFileGraphsCategories:
         plt.close()'''
 
     def compareSuccesfulTrials(self):
+        '''
+        What? – Displays the comparison between the percent of trials that result in a cooperative 
+        success for each of the categories inputted
+              - Displays each individual data point for each file on top of the percentage bar
+        '''
+        # Initialize lists to store average success probabilities and individual datapoints per category
         probs = []
-        for group in self.allFileGroupExperiments:
+        individual_datapoints = []
+    
+        # Iterate through each experimental group (category)
+        for i, group in enumerate(self.allFileGroupExperiments):
+            individual_datapoints.append([])  # Holds datapoints for this category
             totalSucc = 0
             totalTrials = 0
+    
+            # Iterate through each experiment in the group
             for exp in group:
                 loader = exp.lev
-                totalSucc += loader.returnNumSuccessfulTrials()
-                totalTrials += loader.returnNumTotalTrials()
-            
-            probs.append(totalSucc / totalTrials)
-
+                # Add to totals for computing the average success rate across the category
+                num_succ = loader.returnNumSuccessfulTrials()
+                num_total = loader.returnNumTotalTrials()
+    
+                totalSucc += num_succ
+                totalTrials += num_total
+    
+                # Store individual success probability for this experiment
+                if num_total > 0:
+                    individual_datapoints[i].append(num_succ / num_total)
+                else:
+                    individual_datapoints[i].append(np.nan)
+    
+            # Compute overall success probability for the category
+            prob = totalSucc / totalTrials if totalTrials > 0 else 0
+            probs.append(prob)
+    
+        # --- Plotting ---
         plt.figure(figsize=(8, 6))
-        plt.bar(range(len(probs)), probs, color='green')
+    
+        # Bar plot for average success probability per category
+        bar_positions = range(len(probs))
+        plt.bar(bar_positions, probs, color='green', label='Category Average')
+    
+        # Overlay individual datapoints as scatter plot
+        for i, datapoints in enumerate(individual_datapoints):
+            jittered_x = [i + (np.random.rand() - 0.5) * 0.2 for _ in datapoints]  # Add slight x jitter
+            if i == 0:
+                plt.scatter(jittered_x, datapoints, color='black', alpha=0.7, s=40, label='Individual Data')
+            else:
+                plt.scatter(jittered_x, datapoints, color='black', alpha=0.7, s=40)
+    
+        # Formatting
         plt.xlabel('Category')
         plt.ylabel('Probability of Successful Trials')
         plt.title('Success Probability per Category')
-        plt.xticks(range(len(probs)), self.categoryNames)
+        plt.xticks(bar_positions, self.categoryNames)
         plt.ylim(0, 1)
+        plt.legend()
+        plt.tight_layout()
+    
+        # Save and display the plot
         plt.savefig(f'{self.path}ProbofSuccesfulTrial_{self.endSaveName}')
         plt.show()
         plt.close()
 
     def compareIPI(self):
-        avg_ipi = []
-        avg_first_to = []
-        avg_last_to = []
-
+        """
+        Function Purpose:
+        -----------------
+        This function computes and visualizes average inter-press intervals (IPIs) and success-related timing metrics 
+        across multiple experimental categories. Specifically, it generates bar plots for:
+        1. Average IPI across all lever presses.
+        2. Average time between the first press and a successful trial.
+        3. Average time between the last press and a successful trial.
+        
+        It aggregates these metrics across all files in each category, accounting for potential division-by-zero cases.
+        """
+        
+        # Initialize lists to store per-category averages
+        avg_ipi = []         # Average IPI per category
+        avg_first_to = []    # Average time from first press to success per category
+        avg_last_to = []     # Average time from last press to success per category
+        
+        # Iterate over each experimental group (i.e., each category)
         for group in self.allFileGroupExperiments:
+            # Initialize cumulative totals for this group
             totalPresses = 0
             totalSucc = 0
             totalFirsttoSuccTime = 0
             totalLasttoSuccTime = 0
             totalIPITime = 0
-            
+        
+            # Process each experiment in the group
             for exp in group:
-                loader = exp.lev
-                
+                loader = exp.lev  # Get lever loader for this experiment
+        
+                # Get IPI stats and total lever presses
                 ipiSum = loader.returnAvgIPI()
                 numPresses = loader.returnTotalLeverPresses()
-                if ipiSum and numPresses > 0:
-                    totalIPITime += ipiSum * numPresses
-                    totalPresses += numPresses
                 
+                # Accumulate total IPI time only if valid data exists
+                if ipiSum is not None and numPresses > 0:
+                    totalIPITime += ipiSum * numPresses  # Weighted sum
+                    totalPresses += numPresses
+        
+                # Get success-related stats
                 succ = loader.returnNumSuccessfulTrials()
                 avgIPIFirst_to_Sucess = loader.returnAvgIPI_FirsttoSuccess()
                 avgIPILast_to_Sucess = loader.returnAvgIPI_LasttoSuccess()
-                
+        
+                # Accumulate total time from first/last press to success
                 totalFirsttoSuccTime += succ * avgIPIFirst_to_Sucess
                 totalLasttoSuccTime += succ * avgIPILast_to_Sucess
                 totalSucc += succ
-                
-            avg_ipi.append(totalIPITime / totalPresses)
-            avg_first_to.append(totalFirsttoSuccTime / totalSucc)
-            avg_last_to.append(totalLasttoSuccTime / totalSucc)
-
+        
+            # Compute per-category averages, handling division by zero
+            avg_ipi.append(totalIPITime / totalPresses if totalPresses > 0 else 0)
+            avg_first_to.append(totalFirsttoSuccTime / totalSucc if totalSucc > 0 else 0)
+            avg_last_to.append(totalLasttoSuccTime / totalSucc if totalSucc > 0 else 0)
+        
+        # Define plot titles, corresponding data, and colors
         for title, data, color in zip(
             ['Avg IPI per Category', 'Avg First->Success per Category', 'Avg Last->Success per Category'],
             [avg_ipi, avg_first_to, avg_last_to],
             ['blue', 'skyblue', 'salmon']):
+        
+            # Create bar plot for the current metric
             plt.figure(figsize=(8, 6))
             plt.bar(range(len(data)), data, color=color)
             plt.xticks(range(len(data)), self.categoryNames)
             plt.xlabel('Category')
             plt.ylabel('Time (s)')
             plt.title(title)
+            
+            # Save and display the plot
             plt.savefig(f'{self.path}{title}{self.endSaveName}')
             plt.show()
             plt.close()
@@ -227,45 +317,54 @@ class multiFileGraphsCategories:
         plt.close()
     
     def printSummaryStats(self):
-        avg_gaze_lengths = []
-        avg_lever_per_trial = []
-        avg_mag_per_trial = []
-        
+        avg_gaze_lengths = []       # Stores average gaze duration (in frames) per category
+        avg_lever_per_trial = []    # Stores average number of lever presses per trial
+        avg_mag_per_trial = []      # Stores average number of magazine entries per trial
+    
+        # Loop through each experimental group (i.e., category)
         for idx, group in enumerate(self.allFileGroupExperiments):
-            total_gaze_events = 0
-            total_frames = 0
-            total_trials = 0
-            successful_trials = 0
-            total_lever_presses = 0
-            total_mag_events = 0
-            total_gaze_frames = 0
-
+            total_gaze_events = 0     # Total gaze events (all mice) in the category
+            total_frames = 0          # Total number of frames across all sessions
+            total_trials = 0          # Total number of trials across sessions
+            successful_trials = 0     # Total number of cooperative successful trials
+            total_lever_presses = 0   # Total number of lever presses
+            total_mag_events = 0      # Total number of magazine entries
+            total_gaze_frames = 0     # Total frames where gaze was detected
+    
+            # Process each experiment within the category
             for exp in group:
                 loader = exp.pos
                 g0 = loader.returnIsGazing(0)
                 g1 = loader.returnIsGazing(1)
+    
+                # Count gaze events and sum up the frames with gazing behavior
                 total_gaze_events += loader.returnNumGazeEvents(0) + loader.returnNumGazeEvents(1)
-                total_gaze_frames += np.sum(g0) + np.sum(g1) #Frames where at least 1 mouse was gazing
+                total_gaze_frames += np.sum(g0) + np.sum(g1)
                 total_frames += g0.shape[0]
-                
+    
+                # Access lever press data and compute trial/success counts
                 lev = exp.lev.data
                 trials = lev['TrialNum'].nunique()
                 succ = lev.groupby('TrialNum').first().query('coopSucc == 1').shape[0]
                 total_trials += trials
                 successful_trials += succ
                 total_lever_presses += lev.shape[0]
-
+    
+                # Count magazine events
                 mag = exp.mag.data
                 total_mag_events += mag.shape[0]
-            
+    
+            # Calculate averages for the category
             avg_gaze_len = (total_gaze_frames / total_gaze_events) if total_gaze_events > 0 else 0
             avg_lever = (total_lever_presses / total_trials) if total_trials > 0 else 0
             avg_mag = (total_mag_events / total_trials) if total_trials > 0 else 0
     
+            # Store for plotting
             avg_gaze_lengths.append(avg_gaze_len)
             avg_lever_per_trial.append(avg_lever)
             avg_mag_per_trial.append(avg_mag)
-            
+    
+            # Print summary statistics for the current category
             print(f"\nCategory: {self.categoryNames[idx]}")
             print(f"  Number of Files: {len(group)}")
             print(f"  Total Frames: {total_frames}")
@@ -280,27 +379,53 @@ class multiFileGraphsCategories:
             print(f"  Total Lever Presses: {total_lever_presses}")
             print(f"  Avg Mag Events per Trial: {total_mag_events / total_trials:.2f}")
             print(f"  Total Mag Events: {total_mag_events}")
-           
-        self.make_bar_plot(avg_gaze_lengths, 'Avg Gaze Length (frames)', 'Average Gaze Length per Category', "Avg_Gaze_Length")
-        self.make_bar_plot(avg_lever_per_trial, 'Avg Lever Presses per Trial', 'Lever Presses per Trial per Category', "Avg_Lev_Presses_perTrial")
-        self.make_bar_plot(avg_mag_per_trial, 'Avg Mag Events per Trial', 'Mag Events per Trial per Category', "Avg_Mag_Events_perTrial")
+    
+        # --- Plot results for each metric ---
+        self.make_bar_plot(
+            avg_gaze_lengths,
+            'Avg Gaze Length (frames)',
+            'Average Gaze Length per Category',
+            "Avg_Gaze_Length"
+        )
+    
+        self.make_bar_plot(
+            avg_lever_per_trial,
+            'Avg Lever Presses per Trial',
+            'Lever Presses per Trial per Category',
+            "Avg_Lev_Presses_perTrial"
+        )
+    
+        self.make_bar_plot(
+            avg_mag_per_trial,
+            'Avg Mag Events per Trial',
+            'Mag Events per Trial per Category',
+            "Avg_Mag_Events_perTrial"
+        )
         
 
-'''magFiles = [["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv"], ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv"]]
-levFiles = [["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_mag.csv"], ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_mag.csv"]]
-posFiles = [["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G.predictions.h5"], ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.predictions.h5"]]                   
-categoryExperiments = multiFileGraphsCategories(levFiles, magFiles, posFiles, ["Paired_Testing", "Training_Cooperation"])'''
+#magFiles = [["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv"], ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv"]]
+#levFiles = [["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_mag.csv"], ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_mag.csv"]]
+#posFiles = [["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G.predictions.h5"], ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.predictions.h5"]]                   
+
+'''magFiles = [["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv"],
+            ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv"]]
+levFiles = [["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_mag.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_mag.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_mag.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_mag.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_mag.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_mag.csv"], 
+            ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_mag.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_mag.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_mag.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_mag.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_mag.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_mag.csv"]]
+posFiles = [["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.predictions.h5"], 
+            ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.predictions.h5"]]'''
+
+#categoryExperiments = multiFileGraphsCategories(levFiles, magFiles, posFiles, ["Paired_Testing", "Training_Cooperation"])
 
 
 
 #Paired Testing vs. Training Cooperation
-'''dataPT = getOnlyPairedTesting()
+dataPT = getOnlyPairedTesting()
 dataTC = getOnlyTrainingCoop()
 
 levFiles = [dataPT[0], dataTC[0]]
 magFiles = [dataPT[1], dataTC[1]]
 posFiles = [dataPT[2], dataTC[2]]
-categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["Paired_Testing", "Training_Cooperation"])'''
+categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["Paired_Testing", "Training_Cooperation"])
 
 
 #Unfamiliar vs. Training Partners
@@ -324,10 +449,10 @@ posFiles = [dataTransparent[2], dataTranslucent[2], dataOpaque[2]]
 categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["Transparent", "Translucent", "Opaque"])'''
 
 
-'''categoryExperiments.compareGazeEventsCategories()
+#categoryExperiments.compareGazeEventsCategories()
 categoryExperiments.compareSuccesfulTrials()
-categoryExperiments.compareIPI()
-categoryExperiments.printSummaryStats()'''
+#categoryExperiments.compareIPI()
+#categoryExperiments.printSummaryStats()
 
 
 
@@ -690,10 +815,14 @@ data = getGroupMicePairs()
 
 pairGraphs = MicePairGraphs(data[0], data[1], data[2])'''
 
+'''
+magFiles = [["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv"],
+            ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv"]]
+levFiles = [["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_mag.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_mag.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_mag.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_mag.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_mag.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_mag.csv"], 
+            ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_mag.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_mag.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_mag.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_mag.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_mag.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_mag.csv"]]
+posFiles = [["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.predictions.h5"], 
+            ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.predictions.h5"]]
 
-'''magFiles = [["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv"], ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv"]]
-levFiles = [["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_mag.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_mag.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_mag.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_mag.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_mag.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_mag.csv"], ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_mag.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_mag.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_mag.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_mag.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_mag.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_mag.csv"]]
-posFiles = [["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.predictions.h5"], ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.predictions.h5"]]                   
 pairGraphs = MicePairGraphs(levFiles, magFiles, posFiles)'''
 
 
@@ -1270,18 +1399,18 @@ class multiFileGraphs:
 #
 #
 
-arr = getAllValid()
-lev_files = arr[0]
-mag_files = arr[1]
-pos_files = arr[2]
+#arr = getAllValid()
+#lev_files = arr[0]
+#mag_files = arr[1]
+#pos_files = arr[2]
 
 #mag_files = ["/Users/david/Documents/Research/Saxena Lab/rat-cooperation/David/Behavioral Quantification/Example Data Files/magData.csv", "/Users/david/Documents/Research/Saxena Lab/rat-cooperation/David/Behavioral Quantification/Example Data Files/ExampleMagFile.csv"]
 #lev_files = ["/Users/david/Documents/Research/Saxena Lab/rat-cooperation/David/Behavioral Quantification/Example Data Files/leverData.csv", "/Users/david/Documents/Research/Saxena Lab/rat-cooperation/David/Behavioral Quantification/Example Data Files/ExampleLevFile.csv"]
 
-experiment = multiFileGraphs(mag_files, lev_files, pos_files)
-experiment.magFileDataAvailabilityGraph()
-experiment.levFileDataAvailabilityGraph()
-experiment.percentSuccesfulTrials()
+#experiment = multiFileGraphs(mag_files, lev_files, pos_files)
+#experiment.magFileDataAvailabilityGraph()
+#experiment.levFileDataAvailabilityGraph()
+#experiment.percentSuccesfulTrials()
 
 #experiment.interpressIntervalPlot()
 #experiment.interpressIntervalSuccessPlot()
