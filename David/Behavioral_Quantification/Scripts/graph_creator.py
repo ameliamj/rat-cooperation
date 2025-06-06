@@ -425,14 +425,14 @@ posFiles = [["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/B
 
 #Paired Testing vs. Training Cooperation
 
-print("Running Paired Testing vs Training Cooperation")
+'''print("Running Paired Testing vs Training Cooperation")
 dataPT = getOnlyPairedTesting()
 dataTC = getOnlyTrainingCoop()
 
 levFiles = [dataPT[0], dataTC[0]]
 magFiles = [dataPT[1], dataTC[1]]
 posFiles = [dataPT[2], dataTC[2]]
-categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["Paired_Testing", "Training_Cooperation"])
+categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["Paired_Testing", "Training_Cooperation"])'''
 
 
 #Unfamiliar vs. Training Partners
@@ -459,10 +459,10 @@ posFiles = [dataTransparent[2], dataTranslucent[2], dataOpaque[2]]
 categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["Transparent", "Translucent", "Opaque"])'''
 
 
-categoryExperiments.compareGazeEventsCategories()
-categoryExperiments.compareSuccesfulTrials()
-categoryExperiments.compareIPI()
-categoryExperiments.printSummaryStats()
+#categoryExperiments.compareGazeEventsCategories()
+#categoryExperiments.compareSuccesfulTrials()
+#categoryExperiments.compareIPI()
+#categoryExperiments.printSummaryStats()
 
 
 
@@ -480,10 +480,30 @@ class MicePairGraphs:
         print("Initializing MicePairGraphs")
         assert len(magGroups) == len(levGroups) == len(posGroups), "Mismatched group lengths."
         self.experimentGroups = []
-        for mag_list, lev_list, pos_list in zip(magGroups, levGroups, posGroups):
-            print(f"Creating group for {len(mag_list)} files")
-            group_exps = [singleExperiment(mag, lev, pos) for mag, lev, pos in zip(mag_list, lev_list, pos_list)]
+        deleted_count = 0
+
+        for group_idx, (mag_list, lev_list, pos_list) in enumerate(zip(magGroups, levGroups, posGroups)):
+            print(f"Creating group {group_idx + 1} for {len(mag_list)} files")
+            group_exps = []
+
+            for mag, lev, pos in zip(mag_list, lev_list, pos_list):
+                mag_missing = [col for col in mag.categories if col not in mag.data.columns]
+                lev_missing = [col for col in lev.categories if col not in lev.data.columns]
+
+                if mag_missing or lev_missing:
+                    deleted_count += 1
+                    print("Skipping experiment due to missing categories:")
+                    if mag_missing:
+                        print(f"  MagFile missing: {mag_missing}")
+                    if lev_missing:
+                        print(f"  LevFile missing: {lev_missing}")
+                    continue
+
+                group_exps.append(singleExperiment(mag, lev, pos))
+
             self.experimentGroups.append(group_exps)
+
+        print(f"Deleted {deleted_count} experiment(s) due to missing categories.")
 
     def _make_boxplot(self, data, ylabel, title, filename):
         print(f"Creating boxplot: {title}")
@@ -863,8 +883,8 @@ def getGroupMicePairs():
     return [fe.getLevsDatapath(grouped = True), fe.getMagsDatapath(grouped = True), fe.getPosDatapath(grouped = True)]
 
 
-#data = getGroupMicePairs()
-#pairGraphs = MicePairGraphs(data[0], data[1], data[2])
+data = getGroupMicePairs()
+pairGraphs = MicePairGraphs(data[0], data[1], data[2])
 
 '''
 magFiles = [["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv"],
@@ -877,7 +897,7 @@ posFiles = [["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/B
 pairGraphs = MicePairGraphs(levFiles, magFiles, posFiles)'''
 
 
-'''pairGraphs.boxplot_avg_gaze_length()
+pairGraphs.boxplot_avg_gaze_length()
 pairGraphs.boxplot_lever_presses_per_trial()
 pairGraphs.boxplot_mag_events_per_trial()
 pairGraphs.boxplot_percent_successful_trials()
@@ -885,7 +905,7 @@ pairGraphs.boxplot_gaze_events_per_minute()
 pairGraphs.boxplot_avg_IPI()
 pairGraphs.boxplot_IPI_first_to_success()
 pairGraphs.boxplot_IPI_last_to_success()
-pairGraphs.difference_last_vs_first()'''
+pairGraphs.difference_last_vs_first()
 
 
 
