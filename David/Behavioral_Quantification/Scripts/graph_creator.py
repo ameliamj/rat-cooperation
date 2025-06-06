@@ -491,7 +491,6 @@ class MicePairGraphs:
             for mag_path, lev_path, pos_path in zip(mag_list, lev_list, pos_list):
                 mag = magLoader(mag_path)
                 lev = levLoader(lev_path)
-                pos = posLoader(pos_path)
         
                 mag_missing = [col for col in mag.categories if col not in mag.data.columns]
                 lev_missing = [col for col in lev.categories if col not in lev.data.columns]
