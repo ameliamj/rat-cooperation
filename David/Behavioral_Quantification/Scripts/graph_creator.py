@@ -489,7 +489,7 @@ class MicePairGraphs:
             group_exps = []
         
             for mag_path, lev_path, pos_path in zip(mag_list, lev_list, pos_list):
-                exp = singleExperiment(mag_path, lev_path, pos_path)        
+                exp = singleExperiment(lev_path, mag_path, pos_path)        
                 mag_missing = [col for col in exp.mag.categories if col not in exp.mag.data.columns]
                 lev_missing = [col for col in exp.lev.categories if col not in exp.lev.data.columns]
         
