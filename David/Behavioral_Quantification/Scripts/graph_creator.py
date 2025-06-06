@@ -196,7 +196,7 @@ class multiFileGraphsCategories:
                 if num_total > 0:
                     print("\n\nProb: ",  num_succ / num_total)
                     print("Num Trials: ", num_total)
-                    print("Lev File: ", self.allFileGroupExperiments[i][j][1])
+                    print("Lev File: ", self.allFileGroupExperiments[i][j].lev_file)
                     individual_datapoints[i].append(num_succ / num_total)
                 else:
                     individual_datapoints[i].append(np.nan)
@@ -424,7 +424,9 @@ posFiles = [["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/B
 
 
 #Paired Testing vs. Training Cooperation
-'''dataPT = getOnlyPairedTesting()
+'''
+print("Running Paired Testing vs Training Cooperation")
+dataPT = getOnlyPairedTesting()
 dataTC = getOnlyTrainingCoop()
 
 levFiles = [dataPT[0], dataTC[0]]
@@ -434,6 +436,7 @@ categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["
 
 
 #Unfamiliar vs. Training Partners
+print("Running UF vs TP")
 dataUF = getOnlyUnfamiliar() #Unfamiliar
 dataTP = getOnlyTrainingPartners() #Training Partners
 
@@ -444,7 +447,9 @@ categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["
 
 
 #Transparent vs. Translucent vs. Opaque
-'''dataTransparent = getOnlyTransparent() #Transparent
+'''
+print("Running Transparency")
+dataTransparent = getOnlyTransparent() #Transparent
 dataTranslucent = getOnlyTranslucent() #Translucent
 dataOpaque = getOnlyOpaque() #Opaque
 
