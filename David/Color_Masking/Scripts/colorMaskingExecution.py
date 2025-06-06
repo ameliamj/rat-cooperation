@@ -9,7 +9,8 @@ Created on Mon Jun  2 23:37:33 2025
 import os
 from colorMaskingScript import normalize_video
 
-directory = "/gpfs/radev/pi/saxena/aj764/Nina_Model_Testing/Collars/Masking/videos"
+directory1 = "/gpfs/radev/pi/saxena/aj764/Nina_Model_Testing/Collars/Masking/videos"
+directory2 = "/gpfs/radev/pi/saxena/aj764/David_Model_Testing/Collars/Masking/videos"
 
 list_names = ["111824_COOPTRAIN_LARGEARENA_NM014B-NM014Y_Camera2.mp4", 
               "111924_COOPTRAIN_LARGEARENA_NF010B-NF010Y_Camera3.mp4", 
@@ -76,13 +77,13 @@ for name in list_names:
     color1_rgb, color1_rgb2 = color_map[color1_code]
     color2_rgb, color2_rgb2 = color_map[color2_code]
 
-    input_path = os.path.join(directory, name)
-    output_path = os.path.join(directory, "masked_" + name)
+    input_path = os.path.join(directory1, name)
+    output_path = os.path.join(directory2, "masked_" + name)
     
     print(input_path)
     print(output_path)
     
-    diagnostics_dir = os.path.join(directory, "diagnostics", name.replace(".mp4", ""))
+    diagnostics_dir = os.path.join(directory2, "diagnostics", name.replace(".mp4", ""))
 
     print(f"Processing {name} with colors {color1_code} and {color2_code}...")
 
