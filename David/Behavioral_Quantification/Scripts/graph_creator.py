@@ -489,11 +489,9 @@ class MicePairGraphs:
             group_exps = []
         
             for mag_path, lev_path, pos_path in zip(mag_list, lev_list, pos_list):
-                mag = magLoader(mag_path)
-                lev = levLoader(lev_path)
-        
-                mag_missing = [col for col in mag.categories if col not in mag.data.columns]
-                lev_missing = [col for col in lev.categories if col not in lev.data.columns]
+                exp = singleExperiment(mag_path, lev_path, pos_path)        
+                mag_missing = [col for col in exp.mag.categories if col not in exp.mag.data.columns]
+                lev_missing = [col for col in exp.lev.categories if col not in exp.lev.data.columns]
         
                 if mag_missing or lev_missing:
                     deleted_count += 1
@@ -506,7 +504,7 @@ class MicePairGraphs:
                         print(f"  Lev File: {lev_path}")
                     continue
         
-                group_exps.append(singleExperiment(mag_path, lev_path, pos_path))
+                group_exps.append(exp)
         
             self.experimentGroups.append(group_exps)
 
