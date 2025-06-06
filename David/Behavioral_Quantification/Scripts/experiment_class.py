@@ -44,6 +44,8 @@ class singleExperiment:
 #lev = "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv"
 #pos = "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G.predictions.h5"
 
+#lev = "/Users/david/Downloads/041024_EB001R-EB003B_lever.csv"
+
 #test = singleExperiment(mag, lev, pos)
 
 #test.unitTest()

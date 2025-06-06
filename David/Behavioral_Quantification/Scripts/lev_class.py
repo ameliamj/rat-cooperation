@@ -126,8 +126,8 @@ class levLoader:
     #Graph Stuff: 
     
     def returnNumTotalTrials(self):
-        trials = self.data['TrialNum'].nunique()
-        return trials    
+        trials = self.data["TrialNum"].iloc[-1]
+        return trials
     
     def returnTotalLeverPresses(self):
         res = self.data.shape[0]
