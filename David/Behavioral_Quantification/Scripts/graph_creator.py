@@ -500,11 +500,13 @@ class MicePairGraphs:
                     print("Skipping experiment due to missing categories:")
                     if mag_missing:
                         print(f"  MagFile missing: {mag_missing}")
+                        print(f"  Mag File: {mag_path}")
                     if lev_missing:
                         print(f"  LevFile missing: {lev_missing}")
+                        print(f"  Lev File: {lev_path}")
                     continue
         
-                group_exps.append(singleExperiment(mag, lev, pos))
+                group_exps.append(singleExperiment(mag_path, lev_path, pos_path))
         
             self.experimentGroups.append(group_exps)
 
