@@ -153,13 +153,23 @@ class levLoader:
     
         ipis = [t2 - t1 for t1, t2 in zip(times[:-1], times[1:])]
         
-        if (test == True):
+        if (test == True and len(ipis) >= 5):
             return ipis[:5]
         
         if (returnList == True):
             return ipis
         
-        return sum(ipis)/len(ipis)
+        #ipis is a List of all the times: 
+        sumTimes = sum(ipis)
+        numSuccessfulTrials = len(ipis)
+        if (numSuccessfulTrials > 0): 
+            return sumTimes/numSuccessfulTrials
+        else:
+            print("\n numSuccessfulTrials is 0")
+            print("Lev File: ", self.filename)
+            print("ipis", ipis)
+            return 0
+    
     
     def returnAvgIPI_FirsttoSuccess(self, test = False, returnList = False):
         '''Time between first press and successful press (second rat press) in successful trials.'''
@@ -193,11 +203,17 @@ class levLoader:
         #ipis is a List of all the times: 
         sumTimes = sum(ipis)
         numSuccessfulTrials = len(ipis)
-        if (test == True):
+        if (test == True and len(ipis) >= 5):
             return ipis[:5]
         if (returnList == True):
             return ipis
-        return sumTimes/numSuccessfulTrials
+        if (numSuccessfulTrials > 0): 
+            return sumTimes/numSuccessfulTrials
+        else:
+            print("\n numSuccessfulTrials is 0")
+            print("Lev File: ", self.filename)
+            print("ipis", ipis)
+            return 0
     
     def returnAvgIPI_LasttoSuccess(self, test = False):
         """Time between last press (by same rat as first) and success press (by second rat)."""
@@ -236,7 +252,14 @@ class levLoader:
         numSuccessfulTrials = len(ipis)
         if (test == True):
             return ipis[:5]
-        return sumTimes/numSuccessfulTrials
+        
+        if (numSuccessfulTrials > 0): 
+            return sumTimes/numSuccessfulTrials
+        else:
+            print("\nnumSuccessfulTrials is 0")
+            print("Lev File: ", self.filename)
+            print("ipis", ipis)
+            return 0
 
 
 #Testing
