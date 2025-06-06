@@ -13,6 +13,8 @@ import pandas as pd
 from experiment_class import singleExperiment
 from typing import List
 from file_extractor_class import fileExtractor
+from mag_class import magLoader
+from lev_class import levLoader
 
 import sys
 sys.stdout.flush()
@@ -485,11 +487,15 @@ class MicePairGraphs:
         for group_idx, (mag_list, lev_list, pos_list) in enumerate(zip(magGroups, levGroups, posGroups)):
             print(f"Creating group {group_idx + 1} for {len(mag_list)} files")
             group_exps = []
-
-            for mag, lev, pos in zip(mag_list, lev_list, pos_list):
+        
+            for mag_path, lev_path, pos_path in zip(mag_list, lev_list, pos_list):
+                mag = magLoader(mag_path)
+                lev = levLoader(lev_path)
+                pos = posLoader(pos_path)
+        
                 mag_missing = [col for col in mag.categories if col not in mag.data.columns]
                 lev_missing = [col for col in lev.categories if col not in lev.data.columns]
-
+        
                 if mag_missing or lev_missing:
                     deleted_count += 1
                     print("Skipping experiment due to missing categories:")
@@ -498,9 +504,9 @@ class MicePairGraphs:
                     if lev_missing:
                         print(f"  LevFile missing: {lev_missing}")
                     continue
-
+        
                 group_exps.append(singleExperiment(mag, lev, pos))
-
+        
             self.experimentGroups.append(group_exps)
 
         print(f"Deleted {deleted_count} experiment(s) due to missing categories.")
