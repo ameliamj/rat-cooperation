@@ -803,10 +803,11 @@ class MicePairGraphs:
             # Set x-ticks to the metric name
             plt.xticks([0], [name], fontsize=10)
             
-            # Add vertical padding to y-limits
-            ymin = min(0, avg_diff - error)
-            ymax = max(0, avg_diff + error)
-            yrange = ymax - ymin
+            # Add vertical padding to y-limits based on both bar and individual points
+            all_y = values + [avg_diff - error, avg_diff + error]
+            ymin = min(all_y)
+            ymax = max(all_y)
+            yrange = ymax - ymin if ymax > ymin else 1.0  # Prevent zero-range
             plt.ylim(ymin - 0.1 * yrange, ymax + 0.1 * yrange)
             
             plt.xlim(-0.4, 0.4)
@@ -892,8 +893,8 @@ def getGroupMicePairs():
     return [fe.getLevsDatapath(grouped = True), fe.getMagsDatapath(grouped = True), fe.getPosDatapath(grouped = True)]
 
 
-#data = getGroupMicePairs()
-#pairGraphs = MicePairGraphs(data[0], data[1], data[2])
+data = getGroupMicePairs()
+pairGraphs = MicePairGraphs(data[0], data[1], data[2])
 
 
 '''magFiles = [["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv"],
@@ -914,7 +915,7 @@ pairGraphs.boxplot_gaze_events_per_minute()
 pairGraphs.boxplot_avg_IPI()
 pairGraphs.boxplot_IPI_first_to_success()
 pairGraphs.boxplot_IPI_last_to_success()'''
-#pairGraphs.difference_last_vs_first()
+pairGraphs.difference_last_vs_first()
 
 
 

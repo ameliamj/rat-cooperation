@@ -257,6 +257,23 @@ def visualize_gaze_overlay(
     max_frames=5000,
     gaze_length=250
 ):
+    '''
+    Visual Representation of Gaze Events
+        Definitions
+            A mouse is considering gazing if it is still and is looking at the other mouse
+            
+            Stillness is defined as whether all 5 points tracked over {minFramesStill} frames, the standard deviation in the x and y direction is under a threshold {stillnessRange} 
+            
+            Looking is defined as whether the vector originating from the headbase in the direction 
+            of the nose with a length of {vectorLength} intersects with the body made by all the tracked 
+            points of the other mouse
+    
+        Parameters
+            a. {stillnessRange}
+            b. {minFramesStill}
+            c. {vectorLength}
+    '''
+    
     print("Start")
     cap = cv2.VideoCapture(video_path)
     if not cap.isOpened():
@@ -308,6 +325,12 @@ def visualize_gaze_overlay(
 
         # Draw the gaze vector
         cv2.line(frame, p1, p2, color, 2)
+        
+        #Draw Stillness Circles        
+        #for part_idx in range(5):
+                #cx, cy = loader.data[mouseID, :, part_idx, frame_idx].astype(int)
+                #cv2.circle(frame, (cx, cy), int(loader.stillnessRange), (255, 255, 0), 1)
+
 
         cv2.putText(frame, f"Intersecting: {intersect}", (10, 60), cv2.FONT_HERSHEY_SIMPLEX, 0.7, color, 2)
         cv2.putText(frame, f"Gazing: {gazing}", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, color, 2)
@@ -353,9 +376,12 @@ def visualize_gaze_overlay(
     shutil.rmtree(temp_dir)
     print(f"Video saved to {save_path}")
     
-    
-h5_file = "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G.predictions.h5"
-video_file = "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G.mp4"    
+ 
+h5_file = "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.predictions.h5"
+video_file = "/Users/david/Downloads/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.mp4"    
+ 
+#h5_file = "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G.predictions.h5"
+#video_file = "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G.mp4"    
 
 
 #loader = posLoader(h5_file)
