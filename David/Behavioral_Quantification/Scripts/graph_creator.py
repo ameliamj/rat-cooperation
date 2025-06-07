@@ -1536,16 +1536,82 @@ class multiFileGraphs:
        plt.savefig("PercentGazingbyRat.png")
        plt.show()
             
-        
+     
+    def quantifyRePressingBehavior(self):
+        """
+        Generates graphs to quantify re-pressing behavior:
+        1. Average re-presses by the first mouse (across all trials).
+        2. Average re-presses by the second mouse in successful trials.
+        3. Comparison of re-presses by the first mouse in successful vs. non-successful trials.
+        """
+    
+        avg_repress_first = []
+        avg_repress_second_success = []
+        avg_repress_first_success = []
+        avg_repress_first_non = []
+    
+        # Collect re-pressing data from each experiment
+        for exp in self.experiments:
+            lev = exp.lev
+            avg_repress_first.append(lev.returnAvgRepresses_FirstMouse())
+            avg_repress_second_success.append(lev.returnAvgRepresses_SecondMouse_Success())
+            success, non_success = lev.returnAvgRepresses_FirstMouse_SuccessVsNon()
+            avg_repress_first_success.append(success)
+            avg_repress_first_non.append(non_success)
+    
+        # --- Plot 1: Avg re-presses by First Mouse across all trials ---
+        overall_first_avg = sum(avg_repress_first) / len(avg_repress_first) if avg_repress_first else 0
+    
+        plt.figure(figsize=(6, 6))
+        plt.bar(x=[0], height=[overall_first_avg], width=0.4, color='steelblue')
+        plt.xticks([0], ['First Mouse'])
+        # Adjust the x-axis limits to create space around the bar
+        plt.xlim(-0.5, 0.5)
+        plt.title('Average Re-Presses by First Mouse (All Trials)', fontsize=14)
+        plt.ylabel('Average Re-Presses')
+        plt.tight_layout()
+        plt.savefig("avg_repress_first_mouse.png")
+        plt.show()
+    
+        # --- Plot 2: Avg re-presses by Second Mouse in successful trials ---
+        overall_second_success_avg = sum(avg_repress_second_success) / len(avg_repress_second_success) if avg_repress_second_success else 0
+    
+        plt.figure(figsize=(6, 6))
+        plt.bar(x=[0], height=[overall_second_success_avg], width=0.4, color='seagreen')
+        plt.xticks([0], ['Second Mouse (Success Only)'])
+        # Adjust the x-axis limits to create space around the bar
+        plt.xlim(-0.5, 0.5)
+        plt.title('Average Re-Presses by Second Mouse (Successful Trials)', fontsize=14)
+        plt.ylabel('Average Re-Presses')
+        plt.tight_layout()
+        plt.savefig("avg_repress_second_mouse_success.png")
+        plt.show()
+    
+        # --- Plot 3: First Mouse Re-Presses in Success vs. Non-Success Trials ---
+        overall_success_avg = sum(avg_repress_first_success) / len(avg_repress_first_success) if avg_repress_first_success else 0
+        overall_non_avg = sum(avg_repress_first_non) / len(avg_repress_first_non) if avg_repress_first_non else 0
+        overall_combined_avg = (overall_success_avg + overall_non_avg) / 2  # Or use avg_repress_first instead if preferred
+    
+        labels = ['Success', 'Non-Success', 'Overall']
+        values = [overall_success_avg, overall_non_avg, overall_combined_avg]
+        colors = ['green', 'red', 'gray']
+    
+        plt.figure(figsize=(7, 6))
+        plt.bar(labels, values, color=colors)
+        plt.title('First Mouse Re-Pressing:\nSuccess vs Non-Success vs Overall', fontsize=14)
+        plt.ylabel('Average Re-Presses')
+        plt.tight_layout()
+        plt.savefig("avg_repress_first_mouse_success_vs_non.png")
+        plt.show()
 
 #Testing Multi File Graphs
 #
 #
 
-'''arr = getAllValid()
+arr = getAllValid()
 lev_files = arr[0]
 mag_files = arr[1]
-pos_files = arr[2]'''
+pos_files = arr[2]
 
 #mag_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv"]
 
@@ -1553,7 +1619,8 @@ pos_files = arr[2]'''
 
 #pos_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.predictions.h5"]
 
-#experiment = multiFileGraphs(mag_files, lev_files, pos_files)
+experiment = multiFileGraphs(mag_files, lev_files, pos_files)
+experiment.quantifyRePressingBehavior()
 #experiment.mouseIDFirstPress()
 #experiment.compareGazeEventsbyRat()
 

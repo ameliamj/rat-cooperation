@@ -260,7 +260,6 @@ class levLoader:
             print("ipis", ipis)
             return 0
 
-
     def returnRatFirstPress(self):
         res = [0, 0] #res[0] = numPressesRat0, res[1] = numPressesRat1
         
@@ -283,6 +282,74 @@ class levLoader:
                 res[1] += 1
         
         return res
+
+    def returnAvgRepresses_FirstMouse(self):
+        """
+        For each trial, find the first mouse to press a lever and count how many total times
+        that mouse pressed the lever during the entire trial. Return the average of these counts.
+        """
+        df = self.data.copy()
+        first_mouse_repress_counts = []
+    
+        for trial_num, trial_data in df.groupby("TrialNum"):
+            trial_data_sorted = trial_data.sort_values(by="AbsTime")
+            first_mouse = trial_data_sorted.iloc[0]["RatID"]
+            count_first_mouse_presses = (trial_data["RatID"] == first_mouse).sum()
+            first_mouse_repress_counts.append(count_first_mouse_presses)
+    
+        return sum(first_mouse_repress_counts) / len(first_mouse_repress_counts) if first_mouse_repress_counts else 0
+
+    def returnAvgRepresses_SecondMouse_Success(self):
+        """
+        For all successful trials, identify the second mouse to press and calculate the average number
+        of presses made by the second mouse in each of those trials.
+        """
+        df = self.data.copy()
+        df = df[df["coopSucc"] == 1]
+        second_mouse_repress_counts = []
+    
+        for trial_num, trial_data in df.groupby("TrialNum"):
+            trial_data_sorted = trial_data.sort_values(by="AbsTime")
+            rats_seen = set()
+            second_mouse = None
+            for _, row in trial_data_sorted.iterrows():
+                rat = row["RatID"]
+                if rat not in rats_seen:
+                    rats_seen.add(rat)
+                    if len(rats_seen) == 2:
+                        second_mouse = rat
+                        break
+            if second_mouse is not None:
+                count_second_mouse_presses = (trial_data["RatID"] == second_mouse).sum()
+                second_mouse_repress_counts.append(count_second_mouse_presses)
+    
+        return sum(second_mouse_repress_counts) / len(second_mouse_repress_counts) if second_mouse_repress_counts else 0
+
+    def returnAvgRepresses_FirstMouse_SuccessVsNon(self):
+        """
+        For all trials, find the first mouse to press and count how many times they pressed the lever
+        during the entire trial. Return two averages:
+        - Average for successful trials
+        - Average for unsuccessful trials
+        """
+        df = self.data.copy()
+        success_counts = []
+        nonsuccess_counts = []
+    
+        for trial_num, trial_data in df.groupby("TrialNum"):
+            trial_data_sorted = trial_data.sort_values(by="AbsTime")
+            first_mouse = trial_data_sorted.iloc[0]["RatID"]
+            count_first_mouse_presses = (trial_data["RatID"] == first_mouse).sum()
+            is_success = trial_data_sorted.iloc[0]["coopSucc"] == 1
+            if is_success:
+                success_counts.append(count_first_mouse_presses)
+            else:
+                nonsuccess_counts.append(count_first_mouse_presses)
+    
+        avg_success = sum(success_counts) / len(success_counts) if success_counts else 0
+        avg_non_success = sum(nonsuccess_counts) / len(nonsuccess_counts) if nonsuccess_counts else 0
+    
+        return avg_success, avg_non_success
 
 #Testing
 #
