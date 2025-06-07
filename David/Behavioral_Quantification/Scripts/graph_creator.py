@@ -895,8 +895,8 @@ def getGroupMicePairs():
     return [fe.getLevsDatapath(grouped = True), fe.getMagsDatapath(grouped = True), fe.getPosDatapath(grouped = True)]
 
 
-data = getGroupMicePairs()
-pairGraphs = MicePairGraphs(data[0], data[1], data[2])
+#data = getGroupMicePairs()
+#pairGraphs = MicePairGraphs(data[0], data[1], data[2])
 
 
 '''magFiles = [["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv"],
@@ -917,7 +917,7 @@ pairGraphs.boxplot_gaze_events_per_minute()
 pairGraphs.boxplot_avg_IPI()
 pairGraphs.boxplot_IPI_first_to_success()
 pairGraphs.boxplot_IPI_last_to_success()'''
-pairGraphs.difference_last_vs_first()
+#pairGraphs.difference_last_vs_first()
 
 
 
@@ -1228,7 +1228,7 @@ class multiFileGraphs:
             raise ValueError("Different number of mag, lev, and pos files")
         
         for i in range(len(magFiles)):
-            exp = singleExperiment(magFiles[i], levFiles[i], posFiles[i])
+            exp = singleExperiment(levFiles[i], magFiles[i], posFiles[i])
             self.experiments.append(exp)
     
     def magFileDataAvailabilityGraph(self):
@@ -1325,7 +1325,8 @@ class multiFileGraphs:
         plt.savefig('lev_data_availability.png')
     
     def interpressIntervalPlot(self):
-        # concat all lev data
+        #INCORRECT, REDO
+        
         all_lev = pd.concat([exp.lev.data for exp in self.experiments], ignore_index=True)
         if all_lev is None or all_lev.empty:
             raise ValueError("No lever data loaded.")
@@ -1371,6 +1372,8 @@ class multiFileGraphs:
         plt.close()
       
     def interpressIntervalSuccessPlot(self):
+        #INCORRECT, REDO
+        
         all_lev = pd.concat([exp.lev.data for exp in self.experiments], ignore_index=True)
         if all_lev is None or all_lev.empty:
             raise ValueError("No lever data loaded.")
@@ -1450,9 +1453,10 @@ class multiFileGraphs:
         plt.show()
         plt.savefig('Who_Presses_First.png')
         plt.close()
-    
-    
+       
     def percentSuccesfulTrials(self):
+        #Incorrect I think, REDO
+        
         all_lev = pd.concat([exp.lev.data for exp in self.experiments], ignore_index=True)
         
         grouped = all_lev.groupby("TrialNum")
@@ -1478,19 +1482,73 @@ class multiFileGraphs:
         plt.savefig('Percent Successful.png')
         plt.close()
 
+    def mouseIDFirstPress(self):
+        countRat0 = 0
+        countRat1 = 0
+        
+        for exp in self.experiments:
+            #print(countRat0)
+            levLoader = exp.lev
+            expRes = levLoader.returnRatFirstPress()
+            countRat0 += expRes[0]
+            countRat1 += expRes[1]
+        
+        #print(countRat0)
+        #print(countRat1)
+        
+        labels = ['Rat 0', 'Rat 1']
+        counts = [countRat0, countRat1]
+        
+        # Pie chart
+        plt.figure(figsize=(6, 6))
+        plt.pie(counts, labels=labels, autopct='%1.1f%%', startangle=90)
+        plt.title('First Press Distribution Between Rats')
+        plt.axis('equal')  # Equal aspect ratio ensures the pie is a circle
+        plt.show()
+        
+    def compareGazeEventsbyRat(self):
+       countRat0 = 0
+       countRat1 = 0
+       
+       for exp in self.experiments:
+           posLoader = exp.pos
+           countRat0 += posLoader.returnNumGazeEvents(0)
+           countRat1 += posLoader.returnNumGazeEvents(1)
+       
+       #print(countRat0)
+       #print(countRat1) 
+       
+       labels = ['Rat 0', 'Rat 1']
+       counts = [countRat0, countRat1]
+       
+       # Pie chart
+       plt.figure(figsize=(6, 6))
+       plt.pie(counts, labels=labels, autopct='%1.1f%%', startangle=90)
+       plt.title('Gaze Distribution Between Rats')
+       plt.axis('equal')  # Equal aspect ratio ensures the pie is a circle
+       plt.show()
+            
+        
+
 #Testing Multi File Graphs
 #
 #
 
-#arr = getAllValid()
-#lev_files = arr[0]
-#mag_files = arr[1]
-#pos_files = arr[2]
+arr = getAllValid()
+lev_files = arr[0]
+mag_files = arr[1]
+pos_files = arr[2]
 
-#mag_files = ["/Users/david/Documents/Research/Saxena Lab/rat-cooperation/David/Behavioral Quantification/Example Data Files/magData.csv", "/Users/david/Documents/Research/Saxena Lab/rat-cooperation/David/Behavioral Quantification/Example Data Files/ExampleMagFile.csv"]
-#lev_files = ["/Users/david/Documents/Research/Saxena Lab/rat-cooperation/David/Behavioral Quantification/Example Data Files/leverData.csv", "/Users/david/Documents/Research/Saxena Lab/rat-cooperation/David/Behavioral Quantification/Example Data Files/ExampleLevFile.csv"]
+#mag_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv"]
 
-#experiment = multiFileGraphs(mag_files, lev_files, pos_files)
+#lev_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_mag.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_mag.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_mag.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_mag.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_mag.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_mag.csv"] 
+
+#pos_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.predictions.h5"]
+
+experiment = multiFileGraphs(mag_files, lev_files, pos_files)
+experiment.mouseIDFirstPress()
+experiment.compareGazeEventsbyRat()
+
 #experiment.magFileDataAvailabilityGraph()
 #experiment.levFileDataAvailabilityGraph()
 #experiment.percentSuccesfulTrials()

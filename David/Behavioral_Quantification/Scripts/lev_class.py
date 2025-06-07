@@ -21,7 +21,6 @@ class levLoader:
         Load the CSV file into a pandas DataFrame.
         Handles file not found or malformed CSV errors.
         """
-        
         try:
             self.data = pd.read_csv(self.filename, sep=',', na_values=[''])
             # Ensure numeric columns are properly typed
@@ -261,6 +260,29 @@ class levLoader:
             print("ipis", ipis)
             return 0
 
+
+    def returnRatFirstPress(self):
+        res = [0, 0] #res[0] = numPressesRat0, res[1] = numPressesRat1
+        
+        #print("self.data")
+        #print(self.data)
+        
+        grouped = self.data.groupby("TrialNum")
+        
+        #print("\n\nGrouped")
+        #print(grouped)
+        
+        for trial_num, trial_data in grouped:
+            #print("Start:")
+            #print(trial_num)
+            #print(trial_data)
+            
+            if (trial_data.iloc[0]['RatID'] == 0):
+                res[0] += 1
+            elif(trial_data.iloc[0]['RatID'] == 1):
+                res[1] += 1
+        
+        return res
 
 #Testing
 #
