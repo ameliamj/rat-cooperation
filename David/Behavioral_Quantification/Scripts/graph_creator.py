@@ -1504,6 +1504,7 @@ class multiFileGraphs:
         plt.pie(counts, labels=labels, autopct='%1.1f%%', startangle=90)
         plt.title('First Press Distribution Between Rats')
         plt.axis('equal')  # Equal aspect ratio ensures the pie is a circle
+        plt.savefig('PercentFirstPressbyRat.png')
         plt.show()
         
     def compareGazeEventsbyRat(self):
@@ -1526,6 +1527,7 @@ class multiFileGraphs:
        plt.pie(counts, labels=labels, autopct='%1.1f%%', startangle=90)
        plt.title('Gaze Distribution Between Rats')
        plt.axis('equal')  # Equal aspect ratio ensures the pie is a circle
+       plt.savefig("PercentGazingbyRat.png")
        plt.show()
             
         
