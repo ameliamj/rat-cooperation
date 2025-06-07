@@ -64,8 +64,11 @@ color_map = {
 #––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––
 
 #Actual Code: 
+print("Starting Code")
     
-for name in list_names:
+for i, name in enumerate(list_names):
+    print(f"On Video #{i}")
+    
     color1_code = name[-13]  # First collar
     color2_code = name[-20]   # Second collar
 
@@ -80,8 +83,8 @@ for name in list_names:
     input_path = os.path.join(directory1, name)
     output_path = os.path.join(directory2, "masked_" + name)
     
-    print(input_path)
-    print(output_path)
+    print("Input: ", input_path)
+    print("Output: ", output_path)
     
     diagnostics_dir = os.path.join(directory2, "diagnostics", name.replace(".mp4", ""))
 
