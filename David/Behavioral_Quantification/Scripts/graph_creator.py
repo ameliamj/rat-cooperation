@@ -748,10 +748,12 @@ class MicePairGraphs:
             if len(group) < 5:
                 print(f"Skipping group {idx}: only {len(group)} session(s)")
                 continue
-            first, last = group[0], group[-1]
+            first, second, second_last, last = group[0], group[1], group[-2], group[-1]
             for name, func in metrics.items():
                 try:
-                    v1, v2 = func(first), func(last)
+                    v1a, v1b, v2a, v2b = func(first), func(second), func(second_last), func(last)
+                    v1 = np.mean[v1a, v1b]
+                    v2 = np.mean[v2a, v2b]
                     if v1 is not None and v2 is not None:
                         diffs[name].append(v2 - v1)
                 except:
@@ -767,10 +769,10 @@ class MicePairGraphs:
             print(f"  [Histogram] Metric: {name} — Number of values: {len(values)}")
             plt.figure(figsize=(10, 4))
             plt.hist(values, bins=15)
-            plt.title(f"Change in {name} (Last Session - 1st Session)")
+            plt.title(f"Change in {name} (Last 2 - First 2)")
             plt.xlabel(f"Δ {name}")
             plt.tight_layout()
-            filename = f"Diff_{name.replace(' ', '_')}.png"
+            filename = f"Diff_2_{name.replace(' ', '_')}.png"
             print(f" Saving histogram to {filename}")
             plt.savefig(filename)
             plt.show()
@@ -813,11 +815,11 @@ class MicePairGraphs:
             plt.xlim(-0.4, 0.4)
             
             # Clean labels and layout
-            plt.ylabel(f"Δ {name} (Last - First)", fontsize=12)
+            plt.ylabel(f"Δ {name} (Last 2 - First 2)", fontsize=12)
             plt.title(f"Avg Change in {name}", fontsize=14)
             plt.tight_layout()
         
-            filename = f"Bar_Change_{name.replace(' ', '_').replace('→', 'to')}.png"
+            filename = f"Bar_Change_2_{name.replace(' ', '_').replace('→', 'to')}.png"
             print(f"    Saving bar plot to {filename}")
             plt.savefig(filename)
             plt.show()
