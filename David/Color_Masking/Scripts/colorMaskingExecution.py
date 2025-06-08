@@ -12,7 +12,7 @@ from colorMaskingScript import normalize_video
 directory1 = "/gpfs/radev/pi/saxena/aj764/Nina_Model_Testing/Collars/Masking/videos"
 directory2 = "/gpfs/radev/pi/saxena/aj764/David_Model_Testing/Collars/Masking/videos"
 
-list_names = ["111824_COOPTRAIN_LARGEARENA_NM014B-NM014Y_Camera2.mp4", 
+'''list_names = ["111824_COOPTRAIN_LARGEARENA_NM014B-NM014Y_Camera2.mp4", 
               "111924_COOPTRAIN_LARGEARENA_NF010B-NF010Y_Camera3.mp4", 
               "111924_COOPTRAIN_LARGEARENA_NM002B-NM002Y_Camera2.mp4", 
               "112024_COOPTRAIN_LARGEARENA_NF010B-NF010Y_Camera4.mp4", 
@@ -27,7 +27,9 @@ list_names = ["111824_COOPTRAIN_LARGEARENA_NM014B-NM014Y_Camera2.mp4",
               "120324_COOPTRAIN_LARGEARENA_NM002B-NM002Y_Camera2.mp4", 
               "120524_COOPTRAIN_LARGEARENA_NM001R-NM001G_Camera1.mp4", 
               "120524_COOPTRAIN_LARGEARENA_NM003R-NM003G_Camera1.mp4", 
-              "120624_COOPTRAIN_LARGEARENA_NM001R-NM001G_Camera2.mp4"]
+              "120624_COOPTRAIN_LARGEARENA_NM001R-NM001G_Camera2.mp4"]'''
+
+list_names = ["111824_COOPTRAIN_LARGEARENA_NM014B-NM014Y_Camera2.mp4"]
 
 '''
 Iterate through list_names, extract the two colors by looking the the character 
