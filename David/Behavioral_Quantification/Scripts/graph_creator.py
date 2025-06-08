@@ -441,7 +441,7 @@ posFiles = [["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/B
 
 #Paired Testing vs. Training Cooperation
 
-print("Running Paired Testing vs Training Cooperation")
+#print("Running Paired Testing vs Training Cooperation")
 '''dataPT = getOnlyPairedTesting()
 dataTC = getOnlyTrainingCoop()
 
@@ -464,7 +464,7 @@ categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["
 
 #Transparent vs. Translucent vs. Opaque
 
-print("Running Transparency")
+#print("Running Transparency")
 '''dataTransparent = getOnlyTransparent() #Transparent
 dataTranslucent = getOnlyTranslucent() #Translucent
 dataOpaque = getOnlyOpaque() #Opaque
@@ -1249,7 +1249,7 @@ class multiFileGraphs:
             raise ValueError("Different number of mag, lev, and pos files")
         
         for i in range(len(magFiles)):
-            exp = singleExperiment(levFiles[i], magFiles[i], posFiles[i])
+            exp = singleExperiment(magFiles[i], levFiles[i], posFiles[i])
             mag_missing = [col for col in exp.mag.categories if col not in exp.mag.data.columns]
             lev_missing = [col for col in exp.lev.categories if col not in exp.lev.data.columns]
             
@@ -1670,8 +1670,8 @@ class multiFileGraphs:
 #
 
 arr = getAllValid()
-lev_files = arr[1]
-mag_files = arr[0]
+lev_files = arr[0]
+mag_files = arr[1]
 pos_files = arr[2]
 
 #mag_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv"]
