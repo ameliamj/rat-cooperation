@@ -40,6 +40,19 @@ class posLoader:
         
         self.vectorLength = 250
         
+        #Frame Dimensions
+        self.width = 1392
+        self.height = 640
+        
+        # Define horizontal boundaries for zones
+        self.levBoundary = self.width // 3
+        self.magBoundary = 2 * self.width // 3
+    
+        # Define regions based on x-coordinate of headbase
+        self.levRegion = (0, self.levBoundary)
+        self.middleRegion = (self.levBoundary, self.magBoundary)
+        self.magRegion = (self.magBoundary, self.width)
+        
         
     def _fill_missing_data(self, Y, kind = "linear"):
         """Fills missing values independently along each (mouse, coord, part) trace over frames."""
@@ -260,6 +273,58 @@ class posLoader:
     
     #Graph Stuff
     
+    def returnGazeAlignmentHistogram(self, mouseID):
+        """
+        Computes a histogram of angles (in degrees) between the gaze vector and the 
+        tailbase-to-headbase vector, binned in 5-degree intervals.
+    
+        Returns:
+            np.ndarray: array of shape (36,) with counts for 0-5, 6-10, ..., 175-180 degree bins.
+        """
+        num_frames = self.data.shape[-1]
+        
+        # Tailbase-to-headbase vector
+        TB = self.data[mouseID, :, self.TB_INDEX, :]  # shape (2, num_frames)
+        HB = self.data[mouseID, :, self.HB_INDEX, :]  # shape (2, num_frames)
+        body_vec = HB - TB                             # shape (2, num_frames)
+    
+        # Gaze vector
+        gaze_vec = self.returnGazeVector(mouseID)      # shape (2, num_frames)
+    
+        # Normalize vectors
+        body_norm = np.linalg.norm(body_vec, axis=0) + 1e-8
+        gaze_norm = np.linalg.norm(gaze_vec, axis=0) + 1e-8
+        body_unit = body_vec / body_norm
+        gaze_unit = gaze_vec / gaze_norm
+    
+        # Compute dot product
+        dot_product = np.sum(body_unit * gaze_unit, axis=0)
+        dot_product = np.clip(dot_product, -1.0, 1.0)  # Avoid rounding errors
+    
+        # Convert to angles in degrees
+        angles = np.degrees(np.arccos(dot_product))  # shape (num_frames,)
+    
+        # Bin the angles into 5-degree intervals (0–180 → 36 bins)
+        bins = np.arange(0, 185, 5)  # [0, 5, ..., 180]
+        hist, _ = np.histogram(angles, bins=bins)
+    
+        return hist
+    
+    def returnInterMouseDistance(self):
+        """
+        Returns an array of distances between the headbases of the two mice
+        for each frame.
+    
+        Returns:
+            np.ndarray: Array of shape (num_frames,) with distances per frame.
+        """
+        HB_mouse0 = self.data[0, :, self.HB_INDEX, :]  # shape (2, num_frames)
+        HB_mouse1 = self.data[1, :, self.HB_INDEX, :]  # shape (2, num_frames)
+    
+        # Euclidean distance between corresponding frames
+        distances = np.linalg.norm(HB_mouse0 - HB_mouse1, axis=0)
+        return distances
+    
     def returnNumGazeEvents(self, mouseID):
         #A gaze event is a single collection of frames where the mice are gazing. There has to be at least a 5 frame separation with no gazing between gaze events
         
@@ -323,7 +388,9 @@ def visualize_gaze_overlay(
     num_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
     fps = cap.get(cv2.CAP_PROP_FPS)
     width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+    print("width: ", width)
     height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+    print("height: ", height)
 
     # Temp directory to store images
     temp_dir = Path("temp_gaze_frames")
@@ -377,6 +444,15 @@ def visualize_gaze_overlay(
         cv2.putText(frame, f"Gazing: {gazing}", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, color, 2)
         cv2.putText(frame, f"Still: {still}", (10, 90), cv2.FONT_HERSHEY_SIMPLEX, 0.7, color, 2)
 
+        # Draw zone boundaries
+        cv2.line(frame, (loader.levBoundary, 0), (loader.levBoundary, height), (255, 255, 0), 2)   # Cyan line for levBoundary
+        cv2.line(frame, (loader.magBoundary, 0), (loader.magBoundary, height), (255, 0, 255), 2)   # Magenta line for magBoundary
+
+        # Optional: label the zones
+        cv2.putText(frame, "Lev", (loader.levBoundary//2 - 30, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255,255,0), 2)
+        cv2.putText(frame, "Mid", (width//2 - 30, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (200,200,200), 2)
+        cv2.putText(frame, "Mag", (loader.magBoundary + (width - loader.magBoundary)//2 - 30, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255,0,255), 2)        
+
         # Draw body polygon
         polygon_indices = [
             loader.earL_INDEX,
@@ -425,8 +501,8 @@ video_file = "/Users/david/Downloads/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.mp4"
 #video_file = "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G.mp4"    
 
 
-#loader = posLoader(h5_file)
-#visualize_gaze_overlay(video_file, loader, mouseID=0, save_path = "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Graphs/Videos//testGazeVid.mp4")
+loader = posLoader(h5_file)
+visualize_gaze_overlay(video_file, loader, mouseID=0, save_path = "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Graphs/Videos//testGazeVid.mp4")
 
     
     

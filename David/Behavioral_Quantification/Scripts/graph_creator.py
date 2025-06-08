@@ -88,6 +88,20 @@ class multiFileGraphsCategories:
             file_group = []
             for mag, lev, pos in zip(magFiles[c], levFiles[c], posFiles[c]):
                 exp = singleExperiment(mag, lev, pos)
+                
+                mag_missing = [col for col in exp.mag.categories if col not in exp.mag.data.columns]
+                lev_missing = [col for col in exp.lev.categories if col not in exp.lev.data.columns]
+                
+                if mag_missing or lev_missing:
+                    print("Skipping experiment due to missing categories:")
+                    if mag_missing:
+                        print(f"  MagFile missing: {mag_missing}")
+                        print(f"  Mag File: {mag}")
+                    if lev_missing:
+                        print(f"  LevFile missing: {lev_missing}")
+                        print(f"  Lev File: {lev}")
+                    continue
+                
                 file_group.append(exp)
             self.allFileGroupExperiments.append(file_group)
         
@@ -427,7 +441,7 @@ posFiles = [["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/B
 
 #Paired Testing vs. Training Cooperation
 
-print("Running Paired Testing vs Training Cooperation")
+'''print("Running Paired Testing vs Training Cooperation")
 dataPT = getOnlyPairedTesting()
 dataTC = getOnlyTrainingCoop()
 
@@ -435,7 +449,7 @@ levFiles = [dataPT[0], dataTC[0]]
 magFiles = [dataPT[1], dataTC[1]]
 posFiles = [dataPT[2], dataTC[2]]
 categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["Paired_Testing", "Training_Cooperation"])
-
+'''
 
 #Unfamiliar vs. Training Partners
 '''print("Running UF vs TP")
@@ -461,7 +475,7 @@ posFiles = [dataTransparent[2], dataTranslucent[2], dataOpaque[2]]
 categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["Transparent", "Translucent", "Opaque"])
 '''
 
-categoryExperiments.compareGazeEventsCategories()
+#categoryExperiments.compareGazeEventsCategories()
 #categoryExperiments.compareSuccesfulTrials()
 #categoryExperiments.compareIPI()
 #categoryExperiments.printSummaryStats()
@@ -1229,13 +1243,31 @@ experiment.interpressIntervalSuccessPlot()'''
 class multiFileGraphs:
     def __init__(self, magFiles: List[str], levFiles: List[str], posFiles: List[str]):
         self.experiments = []
+        deleted_count = 0
         
         if (len(magFiles) != len(levFiles) or len(magFiles) != len(posFiles)):
             raise ValueError("Different number of mag, lev, and pos files")
         
         for i in range(len(magFiles)):
             exp = singleExperiment(levFiles[i], magFiles[i], posFiles[i])
+            mag_missing = [col for col in exp.mag.categories if col not in exp.mag.data.columns]
+            lev_missing = [col for col in exp.lev.categories if col not in exp.lev.data.columns]
+            
+            if mag_missing or lev_missing:
+                deleted_count += 1
+                print("Skipping experiment due to missing categories:")
+                if mag_missing:
+                    print(f"  MagFile missing: {mag_missing}")
+                    print(f"  Mag File: {magFiles[i]}")
+                if lev_missing:
+                    print(f"  LevFile missing: {lev_missing}")
+                    print(f"  Lev File: {levFiles[i]}")
+                continue
+            
             self.experiments.append(exp)
+        
+        print(f"Deleted {deleted_count} experiment(s) due to missing categories.")
+            
     
     def magFileDataAvailabilityGraph(self):
         # Expected column structure
@@ -1604,6 +1636,35 @@ class multiFileGraphs:
         plt.savefig("avg_repress_first_mouse_success_vs_non.png")
         plt.show()
 
+    def gazeAlignmentAngleHistogram(self, both_mice=True):
+        """
+        Computes and plots a combined histogram of gaze-to-body angle alignment
+        across all experiments.
+    
+        Parameters:
+            both_mice (bool): If True, includes both mouse 0 and 1 from each experiment.
+        """
+        total_hist = np.zeros(36)  # 36 bins for 0–180 degrees in 5° intervals
+    
+        for exp in self.experiments:
+            pos = exp.pos  # posLoader object
+            if both_mice:
+                for mouseID in [0, 1]:
+                    total_hist += pos.returnGazeAlignmentHistogram(mouseID)
+            else:
+                total_hist += pos.returnGazeAlignmentHistogram(mouseID=0)
+    
+        # Plot
+        bin_centers = np.arange(2.5, 180, 5)  # Centers of 5° bins
+        plt.figure(figsize=(10, 6))
+        plt.bar(bin_centers, total_hist, width=5, color='mediumseagreen', edgecolor='black')
+        plt.xlabel("Angle between gaze and TB→HB vector (degrees)")
+        plt.ylabel("Total Frame Count")
+        plt.title("Gaze-Body Angle Distribution Across All Experiments")
+        plt.xticks(np.arange(0, 181, 15))
+        plt.tight_layout()
+        plt.show()
+
 #Testing Multi File Graphs
 #
 #
@@ -1620,6 +1681,7 @@ pos_files = arr[2]
 #pos_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.predictions.h5"]
 
 experiment = multiFileGraphs(mag_files, lev_files, pos_files)
+experiment.gazeAlignmentAngleHistogram()
 experiment.quantifyRePressingBehavior()
 #experiment.mouseIDFirstPress()
 #experiment.compareGazeEventsbyRat()
