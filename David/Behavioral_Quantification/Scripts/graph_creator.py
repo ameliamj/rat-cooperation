@@ -1253,6 +1253,9 @@ class multiFileGraphs:
             mag_missing = [col for col in exp.mag.categories if col not in exp.mag.data.columns]
             lev_missing = [col for col in exp.lev.categories if col not in exp.lev.data.columns]
             
+            print("mag.categories: ", exp.mag.categories)
+            print("lev.categories: ", exp.lev.categories)
+            
             if mag_missing or lev_missing:
                 deleted_count += 1
                 print("Skipping experiment due to missing categories:")
@@ -1576,7 +1579,9 @@ class multiFileGraphs:
         2. Average re-presses by the second mouse in successful trials.
         3. Comparison of re-presses by the first mouse in successful vs. non-successful trials.
         """
-    
+        
+        print("Starting quantifyRePressingBehavior")
+        
         avg_repress_first = []
         avg_repress_second_success = []
         avg_repress_first_success = []
@@ -1644,6 +1649,8 @@ class multiFileGraphs:
         Parameters:
             both_mice (bool): If True, includes both mouse 0 and 1 from each experiment.
         """
+        print("Starting gazeAlignment Angle Histogram")
+        
         total_hist = np.zeros(36)  # 36 bins for 0–180 degrees in 5° intervals
     
         for exp in self.experiments:
@@ -1653,7 +1660,7 @@ class multiFileGraphs:
                     total_hist += pos.returnGazeAlignmentHistogram(mouseID)
             else:
                 total_hist += pos.returnGazeAlignmentHistogram(mouseID=0)
-    
+        
         # Plot
         bin_centers = np.arange(2.5, 180, 5)  # Centers of 5° bins
         plt.figure(figsize=(10, 6))
