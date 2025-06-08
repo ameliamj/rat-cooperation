@@ -1640,6 +1640,7 @@ class multiFileGraphs:
         plt.tight_layout()
         plt.savefig("avg_repress_first_mouse_success_vs_non.png")
         plt.show()
+        plt.close()
 
     def gazeAlignmentAngleHistogram(self, both_mice=True):
         """
@@ -1670,8 +1671,10 @@ class multiFileGraphs:
         plt.title("Gaze-Body Angle Distribution Across All Experiments")
         plt.xticks(np.arange(0, 181, 15))
         plt.tight_layout()
+        plt.savefig("Gaze_Alignment_Angle_Histogram.png")
         plt.show()
-
+        plt.close()
+        
 #Testing Multi File Graphs
 #
 #
@@ -1689,7 +1692,7 @@ pos_files = arr[2]
 
 experiment = multiFileGraphs(mag_files, lev_files, pos_files)
 experiment.gazeAlignmentAngleHistogram()
-experiment.quantifyRePressingBehavior()
+#experiment.quantifyRePressingBehavior()
 #experiment.mouseIDFirstPress()
 #experiment.compareGazeEventsbyRat()
 
