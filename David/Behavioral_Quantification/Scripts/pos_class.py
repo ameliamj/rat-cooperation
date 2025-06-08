@@ -115,33 +115,7 @@ class posLoader:
         scaled = normalized * length
         return scaled  # shape (2, num_frames)
         
-        
-    def returnIsStill(self, mouseID):
-        #Determines whether a mouse has been still for self.minFramesStill frames where stillness is quantified by each body part being within a circle of radius self.stillnessRange for the entire frameCount
-        """
-        Return a boolean array of shape (num_frames,) where True indicates the mouse was still
-        for the last `minFramesStill` frames.
-        Stillness is defined by each body part remaining within a circle of radius `stillnessRange`.
-        """
-        num_frames = self.data.shape[-1]
-        body_part_positions = self.data[mouseID]  # shape (2, 5, num_frames)
-        still_mask = np.zeros(num_frames, dtype=bool)
-
-        for t in range(self.minFramesStill, num_frames):
-            window = body_part_positions[:, :, t - self.minFramesStill:t]  # shape (2, 5, window)
-            # Calculate std dev in x and y for each part over the window
-            is_still = True
-            for part in range(5):
-                x_std = np.std(window[0, part, :])
-                y_std = np.std(window[1, part, :])
-                if np.sqrt(x_std**2 + y_std**2) > self.stillnessRange:
-                    is_still = False
-                    break
-            if is_still:
-                still_mask[t] = True
-
-        return still_mask
-
+    
     def _point_to_segment_distance(self, point, seg_start, seg_end):
         """Return distance from point to line segment (seg_start -> seg_end)."""
         line_vec = seg_end - seg_start
@@ -175,6 +149,73 @@ class posLoader:
         nose = target_body[:, self.NOSE_INDEX]
         earR = target_body[:, self.earR_INDEX]
         tail = target_body[:, self.TB_INDEX]
+        
+        # Construct polygon path
+        polygon_points = [tuple(earL), tuple(nose), tuple(earR), tuple(tail), tuple(earL)]
+        body_poly = Polygon(polygon_points)
+    
+        # Extend the gaze vector in both directions
+        gaze_dir = gaze_vector / (np.linalg.norm(gaze_vector) + 1e-8)
+        p1 = gaze_origin - gaze_length * gaze_dir
+        p2 = gaze_origin + gaze_length * gaze_dir
+        gaze_line = LineString([tuple(p1), tuple(p2)])
+    
+        return gaze_line.intersects(body_poly)
+    
+    def returnIsStill(self, mouseID, alternateDef = True):
+        #Determines whether a mouse has been still for self.minFramesStill frames where stillness is quantified by each body part being within a circle of radius self.stillnessRange for the entire frameCount
+        
+        if (alternateDef == False):
+            """
+            Return a boolean array of shape (num_frames,) where True indicates the mouse was still
+            for the last `minFramesStill` frames.
+            Stillness is defined by each body part remaining within a circle of radius `stillnessRange`.
+            """
+            num_frames = self.data.shape[-1]
+            body_part_positions = self.data[mouseID]  # shape (2, 5, num_frames)
+            still_mask = np.zeros(num_frames, dtype=bool)
+    
+            for t in range(self.minFramesStill, num_frames):
+                window = body_part_positions[:, :, t - self.minFramesStill:t]  # shape (2, 5, window)
+                # Calculate std dev in x and y for each part over the window
+                is_still = True
+                for part in range(5):
+                    x_std = np.std(window[0, part, :])
+                    y_std = np.std(window[1, part, :])
+                    if np.sqrt(x_std**2 + y_std**2) > self.stillnessRange:
+                        is_still = False
+                        break
+                if is_still:
+                    still_mask[t] = True
+    
+            return still_mask
+        else:
+            # Alternate definition: gaze intersects body for minFramesStill consecutive frames
+            num_frames = self.data.shape[-1]
+            still_mask = np.zeros(num_frames, dtype=bool)
+    
+            other_mouse = 1 - mouseID
+            for t in range(self.minFramesStill, num_frames):
+                intersected_all = True
+    
+                for tau in range(t - self.minFramesStill, t):
+                    # Get the gaze origin and direction
+                    gaze_origin = self.data[mouseID, :, self.HB_INDEX, tau]       # shape (2,)
+                    gaze_vector = self.returnGazeVector(mouseID)[:, tau]          # shape (2,)
+                    
+                    # Get the target body (2, 5) for the other mouse at frame tau
+                    target_body = self.data[other_mouse, :, :, tau]               # shape (2, 5)
+    
+                    # Check for intersection
+                    if not self._gaze_intersects_body(gaze_origin, gaze_vector, target_body):
+                        intersected_all = False
+                        break
+    
+                if intersected_all:
+                    still_mask[t] = True
+    
+            return still_mask
+            
     
         # Construct polygon path
         polygon_points = [tuple(earL), tuple(nose), tuple(earR), tuple(tail), tuple(earL)]

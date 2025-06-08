@@ -95,7 +95,7 @@ class multiFileGraphsCategories:
         for cat in categoryNames:    
             self.endSaveName += f"_{cat}"
         
-        self.path = "/gpfs/radev/project/saxena/drb83/rat-cooperation/David/Behavioral_Quantification/Graphs/"
+        self.path = "/gpfs/radev/project/saxena/drb83/rat-cooperation/David/Behavioral_Quantification/Graphs/adef_"
         #self.path = ""
         
         if not self.path:
@@ -450,7 +450,7 @@ categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["
 
 #Transparent vs. Translucent vs. Opaque
 
-'''print("Running Transparency")
+print("Running Transparency")
 dataTransparent = getOnlyTransparent() #Transparent
 dataTranslucent = getOnlyTranslucent() #Translucent
 dataOpaque = getOnlyOpaque() #Opaque
@@ -459,9 +459,9 @@ levFiles = [dataTransparent[0], dataTranslucent[0], dataOpaque[0]]
 magFiles = [dataTransparent[1], dataTranslucent[1], dataOpaque[1]]
 posFiles = [dataTransparent[2], dataTranslucent[2], dataOpaque[2]]
 categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["Transparent", "Translucent", "Opaque"])
-'''
 
-#categoryExperiments.compareGazeEventsCategories()
+
+categoryExperiments.compareGazeEventsCategories()
 #categoryExperiments.compareSuccesfulTrials()
 #categoryExperiments.compareIPI()
 #categoryExperiments.printSummaryStats()
@@ -901,8 +901,8 @@ def getGroupMicePairs():
     return [fe.getLevsDatapath(grouped = True), fe.getMagsDatapath(grouped = True), fe.getPosDatapath(grouped = True)]
 
 
-data = getGroupMicePairs()
-pairGraphs = MicePairGraphs(data[0], data[1], data[2])
+#data = getGroupMicePairs()
+#pairGraphs = MicePairGraphs(data[0], data[1], data[2])
 
 
 '''magFiles = [["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv"],
@@ -923,7 +923,7 @@ pairGraphs.boxplot_gaze_events_per_minute()
 pairGraphs.boxplot_avg_IPI()
 pairGraphs.boxplot_IPI_first_to_success()
 pairGraphs.boxplot_IPI_last_to_success()'''
-pairGraphs.difference_last_vs_first()
+#pairGraphs.difference_last_vs_first()
 
 
 
