@@ -452,7 +452,7 @@ categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["
 '''
 
 #Unfamiliar vs. Training Partners
-'''print("Running UF vs TP")
+print("Running UF vs TP")
 dataUF = getOnlyUnfamiliar() #Unfamiliar
 dataTP = getOnlyTrainingPartners() #Training Partners
 
@@ -460,7 +460,7 @@ levFiles = [dataUF[0], dataTP[0]]
 magFiles = [dataUF[1], dataTP[1]]
 posFiles = [dataUF[2], dataTP[2]]
 categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["Unfamiliar", "Training Partners"])
-'''
+
 
 #Transparent vs. Translucent vs. Opaque
 
@@ -1679,10 +1679,10 @@ class multiFileGraphs:
 #
 #
 
-arr = getAllValid()
+'''arr = getAllValid()
 lev_files = arr[0]
 mag_files = arr[1]
-pos_files = arr[2]
+pos_files = arr[2]'''
 
 #mag_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv"]
 
@@ -1690,8 +1690,8 @@ pos_files = arr[2]
 
 #pos_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.predictions.h5"]
 
-experiment = multiFileGraphs(mag_files, lev_files, pos_files)
-experiment.gazeAlignmentAngleHistogram()
+#experiment = multiFileGraphs(mag_files, lev_files, pos_files)
+#experiment.gazeAlignmentAngleHistogram()
 #experiment.quantifyRePressingBehavior()
 #experiment.mouseIDFirstPress()
 #experiment.compareGazeEventsbyRat()
