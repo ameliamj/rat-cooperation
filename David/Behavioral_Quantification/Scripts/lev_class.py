@@ -6,6 +6,7 @@ Created on Wed May 28 11:23:52 2025
 @author: david
 """
 import pandas as pd
+import numpy as np
 
 class levLoader: 
     #Class to read, store, and access a csv file with data from each lever press for a single coop experimental session
@@ -340,6 +341,9 @@ class levLoader:
             trial_data_sorted = trial_data.sort_values(by="AbsTime")
             first_mouse = trial_data_sorted.iloc[0]["RatID"]
             count_first_mouse_presses = (trial_data["RatID"] == first_mouse).sum()
+            
+            if "coopSucc" not in df.columns:
+                return np.nan  # or 0 or continue, depending on your logic
             is_success = trial_data_sorted.iloc[0]["coopSucc"] == 1
             if is_success:
                 success_counts.append(count_first_mouse_presses)

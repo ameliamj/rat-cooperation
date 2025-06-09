@@ -94,49 +94,91 @@ class fileExtractor:
         if (saveFile):
             df_copy.to_csv("dyed_preds_all_valid.csv", index=False)
 
-    def getTrainingCoopSessions(self, saveFile = False):
+    def getFirstSessionPerMicePair(self):
+        """
+        Uses sortByMicePairs to get the first session (earliest date + TrNum)
+        for each unique mice pair.
+        Returns a DataFrame containing only the first session per pair.
+        """
+        grouped = self.sortByMicePairs()
+        
+        
+        
+        # Extract the first row of each group
+        first_sessions = [group.iloc[0] for group in grouped if not group.empty]
+        
+        
+        # Combine them into a single DataFrame and assign back to self.data
+        self.data = pd.DataFrame(first_sessions).reset_index(drop=True)
+        # Convert list of Series to a DataFrame
+        #return pd.DataFrame(first_sessions)
+        
+        #Save
+        #df_copy = self.data.copy()
+        #df_copy.to_csv("onlyFirstSession.csv", index=False)
+
+    def getTrainingCoopSessions(self, sortOut = True, saveFile = False):
         """
         Keep only rows where test/train == 'train'
         """
+        if (sortOut):
+            self.deleteAllButFirst()
+            
         self.data = self.data[self.data['test/train'] == 'train']
         df_copy = self.data.copy()
         if (saveFile):
            df_copy.to_csv("only_TrainingCooperation.csv", index=False)
         
-    def getPairedTestingSessions(self, saveFile = False):
+    def getPairedTestingSessions(self, sortOut = True, saveFile = False):
         """
         Keep only rows where test/train == 'test'
         """
+        if (sortOut):
+            self.deleteAllButFirst()
+        
         self.data = self.data[self.data['test/train'] == 'test']
         df_copy = self.data.copy()
         if (saveFile):
             df_copy.to_csv("only_PairedTesting.csv", index=False)
+    
         
-    def getTrainingPartner(self, saveFile = False): # gets rid of all rows where familiarity != TP
+    def getTrainingPartner(self, sortOut = True, saveFile = False): # gets rid of all rows where familiarity != TP
         """
         Keep only rows where familiarity == 'TP'
         """
+        if (sortOut):
+            self.getPairedTestingSessions()
+            self.deleteAllButFirst()
+        
         self.data = self.data[self.data['familiarity'] == 'TP']
         df_copy = self.data.copy()
         
         if (saveFile):
             df_copy.to_csv("only_training_partners.csv", index=False)
         
-    def getUnfamiliarPartners(self, saveFile = False): # gets rid of all rows where familiarity != UF
+    def getUnfamiliarPartners(self, sortOut = True, saveFile = False): # gets rid of all rows where familiarity != UF
         """
         Keep only rows where familiarity == 'UF'
         """
+        if (sortOut):
+            self.getPairedTestingSessions()
+            self.deleteAllButFirst()
+        
         self.data = self.data[self.data['familiarity'] == 'UF']
         df_copy = self.data.copy()
         
         if (saveFile):
             df_copy.to_csv("only_unfamiliar_partners.csv", index=False)
     
-    def getTransparentSessions(self, saveFile = False):
+    def getTransparentSessions(self, sortOut = True, saveFile = False):
         """
         Remove all rows where 'session' ends with 'opaque' or 'translucent'
         (i.e., retain only transparent divider sessions).
         """
+        if (sortOut):
+            self.getPairedTestingSessions()
+            self.deleteAllButFirst()
+        
         self.data = self.data[
             ~self.data['session'].str.endswith(('Opaque', 'Translucent'), na=False)
         ]
@@ -145,10 +187,14 @@ class fileExtractor:
         if (saveFile):
             df_copy.to_csv("only_transparent_sessions.csv", index=False)
 
-    def getTranslucentSessions(self, saveFile = False):
+    def getTranslucentSessions(self, sortOut = True, saveFile = False):
         """
         Keep only rows where 'session' ends with 'translucent'.
         """
+        if (sortOut):
+            self.getPairedTestingSessions()
+            self.deleteAllButFirst()
+        
         self.data = self.data[
             self.data['session'].str.endswith('Translucent', na=False)
         ]
@@ -157,10 +203,14 @@ class fileExtractor:
         if (saveFile):
             df_copy.to_csv("only_translucent_sessions.csv", index=False)
 
-    def getOpaqueSessions(self, saveFile = False):
+    def getOpaqueSessions(self, sortOut = True, saveFile = False):
         """
         Keep only rows where 'session' ends with 'opaque'.
         """
+        if (sortOut):
+            self.getPairedTestingSessions()
+            self.deleteAllButFirst()
+        
         self.data = self.data[
             self.data['session'].str.endswith('Opaque', na=False)
         ]
@@ -181,12 +231,26 @@ class fileExtractor:
         def extract_mice_pair(row):
             vid = row['vid']
             category = row['test/train']
+            # Step 1: Extract the full 13-character ID
             if category == 'test':
-                return vid[-13:]
+                full_pair = vid[-13:]
             elif category == 'train':
-                return vid[:-8][-13:]
+                full_pair = vid[:-8][-13:]
             else:
                 return "UNKNOWN"
+            
+            # Step 2: Split into two mouse IDs
+            mouse1 = full_pair[:6]
+            #print("Mouse 1: ", mouse1)
+            mouse2 = full_pair[-6:]
+            #print("Mouse 2: ", mouse2)
+            
+            
+            # Step 3: Alphabetically order
+            if mouse1 <= mouse2:
+                return mouse1 + "-" + mouse2
+            else:
+                return mouse2 + "-" + mouse1
     
         def extract_date(vid):
             return int(vid[:6]) if vid[:6].isdigit() else float('inf')
@@ -351,8 +415,9 @@ only_transparent = "/Users/david/Documents/Research/Saxena Lab/rat-cooperation/D
 only_unfamiliar = "/Users/david/Documents/Research/Saxena Lab/rat-cooperation/David/Behavioral_Quantification/Sorted Data Files/only_unfamiliar_partners.csv"
 only_trainingpartners = "/Users/david/Documents/Research/Saxena Lab/rat-cooperation/David/Behavioral_Quantification/Sorted Data Files/only_training_partners.csv"
 
-#fe = fileExtractor(fixedExpanded)
-#fe.deleteInvalid()  
+fe = fileExtractor(fixedExpanded)
+fe.deleteInvalid()  
+fe.getFirstSessionPerMicePair()
 #fe.getPairedTestingSessions()
 #fe.sortByMicePairs(True)
 

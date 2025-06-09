@@ -26,6 +26,7 @@ class posLoader:
             if 'tracks' not in f:
                 print("Dataset 'tracks' not found in file")
                 return
+            #self.data = f['tracks'][:]
             self.data = self._fill_missing_data(f['tracks'][:]) #Shape: (2, 2, 5, x) --> (mouse0/1, x/y, which_body_part, which_frame)
             
         self.minFramesStill = 10
@@ -273,11 +274,30 @@ class posLoader:
     
     #Graph Stuff
     
+    def returnMouseLocation(self, mouseID):
+        """
+        Returns a list of strings indicating the region ('lev', 'mid', 'mag') the headbase of the mouse is in for each frame.
+        """
+        HB_x = self.data[mouseID, 0, self.HB_INDEX, :]  # x-coordinate of headbase across frames
+        locations = []
+    
+        for x in HB_x:
+            if self.levRegion[0] <= x < self.levRegion[1]:
+                locations.append("lev")
+            elif self.middleRegion[0] <= x < self.middleRegion[1]:
+                locations.append("mid")
+            elif self.magRegion[0] <= x <= self.magRegion[1]:
+                locations.append("mag")
+            else:
+                locations.append("unknown")
+    
+        return locations
+    
     def returnGazeAlignmentHistogram(self, mouseID):
         """
         Computes a histogram of angles (in degrees) between the gaze vector and the 
         tailbase-to-headbase vector, binned in 5-degree intervals.
-    
+        
         Returns:
             np.ndarray: array of shape (36,) with counts for 0-5, 6-10, ..., 175-180 degree bins.
         """
@@ -360,7 +380,7 @@ def visualize_gaze_overlay(
     mouseID=0,
     save_path="output.mp4",
     start_frame=0,
-    max_frames=5000,
+    max_frames=300,
     gaze_length=250
 ):
     '''
@@ -400,7 +420,9 @@ def visualize_gaze_overlay(
     HB = loader.data[mouseID, :, loader.HB_INDEX, :]
     other_body = loader.data[1 - mouseID]  # shape (2, 5, num_frames)
     is_still = loader.returnIsStill(mouseID)
-
+    mouse_region = loader.returnMouseLocation(mouseID)
+    other_region = loader.returnMouseLocation(1 - mouseID)
+    
     frame_idx = start_frame
     frame_count = 0
     
@@ -452,7 +474,14 @@ def visualize_gaze_overlay(
         cv2.putText(frame, "Lev", (loader.levBoundary//2 - 30, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255,255,0), 2)
         cv2.putText(frame, "Mid", (width//2 - 30, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (200,200,200), 2)
         cv2.putText(frame, "Mag", (loader.magBoundary + (width - loader.magBoundary)//2 - 30, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255,0,255), 2)        
-
+        
+        #Mouse Region
+        region_self = mouse_region[frame_idx]
+        region_other = other_region[frame_idx]
+        
+        cv2.putText(frame, f"Mouse{mouseID}: {region_self}", (10, 120), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
+        cv2.putText(frame, f"Mouse{1 - mouseID}: {region_other}", (10, 150), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
+        
         # Draw body polygon
         polygon_indices = [
             loader.earL_INDEX,
@@ -468,7 +497,8 @@ def visualize_gaze_overlay(
 
         frame_filename = temp_dir / f"frame_{frame_count:05d}.png"
         cv2.imwrite(str(frame_filename), frame)
-
+        print (f"Frame {frame_count}")
+        
         frame_idx += 1
         frame_count += 1
 
@@ -494,15 +524,15 @@ def visualize_gaze_overlay(
     print(f"Video saved to {save_path}")
     
  
-#h5_file = "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.predictions.h5"
-#video_file = "/Users/david/Downloads/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.mp4"    
+h5_file = "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.predictions.h5"
+video_file = "/Users/david/Downloads/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.mp4"    
  
 #h5_file = "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G.predictions.h5"
 #video_file = "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G.mp4"    
 
 
 #loader = posLoader(h5_file)
-#visualize_gaze_overlay(video_file, loader, mouseID=0, save_path = "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Graphs/Videos//testGazeVid.mp4")
+#visualize_gaze_overlay(video_file, loader, mouseID=0, save_path = "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Graphs/Videos/testGazeVid_noFillMissingData.mp4")
 
     
     
