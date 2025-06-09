@@ -26,8 +26,16 @@ class posLoader:
             if 'tracks' not in f:
                 print("Dataset 'tracks' not found in file")
                 return
-            #self.data = f['tracks'][:]
-            self.data = self._fill_missing_data(f['tracks'][:]) #Shape: (2, 2, 5, x) --> (mouse0/1, x/y, which_body_part, which_frame)
+            raw_data = f['tracks'][:]  # Shape: (2, 2, 5, num_frames)
+
+            # Calculate NaN percentage
+            total_values = np.prod(raw_data.shape)
+            nan_count = np.isnan(raw_data).sum()
+            nan_percentage = 100 * nan_count / total_values
+            print(f"[{filename}] Missing data: {nan_count} NaNs out of {total_values} values "
+                  f"({nan_percentage:.2f}%) before interpolation")
+    
+            self.data = self._fill_missing_data(raw_data) #Shape: (2, 2, 5, x) --> (mouse0/1, x/y, which_body_part, which_frame)
             
         self.minFramesStill = 10
         self.stillnessRange = 10
@@ -371,6 +379,7 @@ class posLoader:
     
     def returnNumFrames(self):
         return self.data.shape[-1]
+
         
         
 

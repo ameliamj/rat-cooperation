@@ -130,6 +130,28 @@ class magLoader:
 
     #Graph Stuff: 
     
+    def returnMostPressesbyMag(self, ratID):
+        """
+        Returns the number of presses by the specified rat on Mag 1 and Mag 2.
+    
+        Args:
+            ratID (int): The ID of the rat to filter presses for.
+    
+        Returns:
+            max(num_mag1_presses, num_mag2_presses)
+        """
+        if self.data is None:
+            raise ValueError("No data loaded.")
+    
+        if 'RatID' not in self.data.columns or 'MagNum' not in self.data.columns:
+            raise ValueError("Required columns 'RatID' or 'MagNum' are missing from data.")
+    
+        rat_data = self.data[self.data['RatID'] == ratID]
+    
+        mag1_count = (rat_data['MagNum'] == 1).sum()
+        mag2_count = (rat_data['MagNum'] == 2).sum()
+        return max(mag1_count, mag2_count)
+    
     def getTotalMagEvents(self):
         total_mag_events = self.data.shape[0]
         return total_mag_events

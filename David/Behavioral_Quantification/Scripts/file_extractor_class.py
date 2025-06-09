@@ -7,6 +7,7 @@ Created on Wed May 28 15:17:08 2025
 """
 
 import pandas as pd
+import cv2
 import numpy as np
 import re
 
@@ -15,8 +16,7 @@ class fileExtractor:
         self.filename = information_path
         self.data = None
         self._load_data()
-        
-        
+         
     def _load_data(self):
         """
         Load the CSV file in information_path into a pandas DataFrame.
@@ -102,8 +102,6 @@ class fileExtractor:
         """
         grouped = self.sortByMicePairs()
         
-        
-        
         # Extract the first row of each group
         first_sessions = [group.iloc[0] for group in grouped if not group.empty]
         
@@ -127,7 +125,10 @@ class fileExtractor:
         self.data = self.data[self.data['test/train'] == 'train']
         df_copy = self.data.copy()
         if (saveFile):
-           df_copy.to_csv("only_TrainingCooperation.csv", index=False)
+           name = ""
+           if (sortOut):
+               name = "_sortOut"
+           df_copy.to_csv(f"only_TrainingCooperation{name}.csv", index=False)
         
     def getPairedTestingSessions(self, sortOut = True, saveFile = False):
         """
@@ -139,7 +140,10 @@ class fileExtractor:
         self.data = self.data[self.data['test/train'] == 'test']
         df_copy = self.data.copy()
         if (saveFile):
-            df_copy.to_csv("only_PairedTesting.csv", index=False)
+            name = ""
+            if (sortOut):
+                name = "_sortOut"
+            df_copy.to_csv(f"only_PairedTesting{name}.csv", index=False)
     
         
     def getTrainingPartner(self, sortOut = True, saveFile = False): # gets rid of all rows where familiarity != TP
@@ -154,7 +158,10 @@ class fileExtractor:
         df_copy = self.data.copy()
         
         if (saveFile):
-            df_copy.to_csv("only_training_partners.csv", index=False)
+            name = ""
+            if (sortOut):
+                name = "_sortOut"
+            df_copy.to_csv(f"only_training_partners{name}.csv", index=False)
         
     def getUnfamiliarPartners(self, sortOut = True, saveFile = False): # gets rid of all rows where familiarity != UF
         """
@@ -168,7 +175,10 @@ class fileExtractor:
         df_copy = self.data.copy()
         
         if (saveFile):
-            df_copy.to_csv("only_unfamiliar_partners.csv", index=False)
+            name = ""
+            if (sortOut):
+                name = "_sortOut"
+            df_copy.to_csv(f"only_unfamiliar_partners{name}.csv", index=False)
     
     def getTransparentSessions(self, sortOut = True, saveFile = False):
         """
@@ -185,7 +195,10 @@ class fileExtractor:
         df_copy = self.data.copy()
         
         if (saveFile):
-            df_copy.to_csv("only_transparent_sessions.csv", index=False)
+            name = ""
+            if (sortOut):
+                name = "_sortOut"
+            df_copy.to_csv(f"only_transparent_sessions{name}.csv", index=False)
 
     def getTranslucentSessions(self, sortOut = True, saveFile = False):
         """
@@ -201,7 +214,10 @@ class fileExtractor:
         df_copy = self.data.copy()
         
         if (saveFile):
-            df_copy.to_csv("only_translucent_sessions.csv", index=False)
+            name = ""
+            if (sortOut):
+                name = "_sortOut"
+            df_copy.to_csv(f"only_translucent_sessions{name}.csv", index=False)
 
     def getOpaqueSessions(self, sortOut = True, saveFile = False):
         """
@@ -217,7 +233,10 @@ class fileExtractor:
         df_copy = self.data.copy()
         
         if (saveFile):
-            df_copy.to_csv("only_opaque_sessions.csv", index=False)
+            name = ""
+            if (sortOut):
+                name = "_sortOut"
+            df_copy.to_csv(f"only_opaque_sessions{name}.csv", index=False)
 
     def sortByMicePairs(self, saveFile=False):
         """
@@ -399,6 +418,48 @@ class fileExtractor:
                     group_paths.append(construct_path(row))
                 grouped_paths.append(group_paths)
             return grouped_paths
+    
+    def returnFPS(self, grouped = False):
+        '''
+        Return a list of numbers, representing the fps for each file
+        '''
+        
+        base_path = "/gpfs/radev/pi/saxena/aj764"
+        
+        def construct_path(row):
+            folder = "PairedTestingSessions" if row["test/train"] == "test" else "Training_COOPERATION"
+            videoName = row["vid"] + ".mp4"
+            #zero = "" if row["test/train"] == "test" else "0" 
+            zero = ""
+            return f"{base_path}/{folder}/{zero}{row['session']}/{videoName}" if pd.isna(row["vid"]) == False and pd.isna(row["session"]) == False else None
+        
+        def getFPS(videoPath):
+            cap = cv2.VideoCapture(videoPath)
+            if not cap.isOpened():
+                raise IOError("Could not open video file.")
+
+            fps = cap.get(cv2.CAP_PROP_FPS)
+            return fps
+        
+        fpsList = []
+        
+        if not grouped:
+            for _, row in self.data.iterrows():
+                path = construct_path(row)
+                fps = getFPS(path)
+                fpsList.append(fps)
+        
+        else:
+            grouped_rows = self.sortByMicePairs()
+            for group in grouped_rows:
+                fpsTempList = []
+                for _, row in group.iterrows():
+                    path = construct_path(row)
+                    fpsTempList.append(getFPS(path))
+                
+                fpsList.append(fpsTempList)
+        
+        return fpsList
     
     
 #information_path = "/Users/david/Documents/Research/Saxena Lab/rat-cooperation/scripts/notebooks/dyed_preds_df.csv"

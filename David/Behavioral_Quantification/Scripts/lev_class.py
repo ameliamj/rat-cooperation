@@ -11,7 +11,7 @@ import numpy as np
 class levLoader: 
     #Class to read, store, and access a csv file with data from each lever press for a single coop experimental session
     
-    def __init__(self, filename): #Constructor
+    def __init__(self, filename, videoPath = ""): #Constructor
         self.filename = filename
         self.data = None
         self._load_data()
@@ -125,6 +125,48 @@ class levLoader:
     
     #Graph Stuff: 
     
+    def returnFirstPressAbsTimes(self):
+        """
+        Returns a list of absolute times (in seconds) for the first press in each trial.
+        The function groups the data by 'TrialNum' and finds the smallest 'AbsTime' per trial.
+        
+        Returns:
+            list: A list of floats, each being the absolute time of the first lever press in a trial.
+        """
+        if self.data is None:
+            raise ValueError("No data loaded.")
+    
+        if 'TrialNum' not in self.data.columns or 'AbsTime' not in self.data.columns:
+            raise ValueError("Required columns 'TrialNum' or 'AbsTime' are missing from data.")
+        
+        # Group by TrialNum and find the first (earliest) absolute press time in each trial
+        first_presses = self.data.groupby('TrialNum')['AbsTime'].min().dropna()
+        #print(first_presses.tolist())
+        
+        return first_presses.tolist()
+    
+    def returnMostPressesByLever(self, ratID):
+        """
+        Returns the number of presses by the specified rat on Lever 1 and Lever 2.
+    
+        Args:
+            ratID (int): The ID of the rat to filter presses for.
+    
+        Returns:
+            max(num_lever1_presses, num_lever2_presses)
+        """
+        if self.data is None:
+            raise ValueError("No data loaded.")
+    
+        if 'RatID' not in self.data.columns or 'LeverNum' not in self.data.columns:
+            raise ValueError("Required columns 'RatID' or 'LeverNum' are missing from data.")
+    
+        rat_data = self.data[self.data['RatID'] == ratID]
+    
+        lever1_count = (rat_data['LeverNum'] == 1).sum()
+        lever2_count = (rat_data['LeverNum'] == 2).sum()
+        return max(lever1_count, lever2_count)
+    
     def returnNumTotalTrials(self):
         trials = self.data["TrialNum"].iloc[-1]
         return trials
@@ -141,35 +183,55 @@ class levLoader:
         return succ
     
         
-    def returnAvgIPI(self, test = False, returnList = False):
-        """Compute IPI (time between all consecutive lever presses)."""
+    def returnAvgIPI(self, test = False, returnList = False, returnLen = False):
+        """
+        Compute IPI (Inter-Press Interval) for each rat separately (based on RatID),
+        then average across all IPIs from both rats.
+    
+        Parameters:
+        - test: If True and enough data, return only the first 5 IPIs for inspection.
+        - returnList: If True, return the full list of IPIs instead of their average.
+    
+        Returns:
+        - List of IPIs or their average, depending on returnList.
+        """
         
         df = self.data.copy()
-        df = df.sort_values(by="AbsTime")  # Sort all presses chronologically
-        times = df["AbsTime"].values
     
-        if len(times) < 2:
-            return []
+        # Filter necessary columns and drop rows with missing AbsTime or RatID
+        df = df[["RatID", "AbsTime"]].dropna()
     
-        ipis = [t2 - t1 for t1, t2 in zip(times[:-1], times[1:])]
-        
-        if (test == True and len(ipis) >= 5):
-            return ipis[:5]
-        
-        if (returnList == True):
-            return ipis
-        
-        #ipis is a List of all the times: 
-        sumTimes = sum(ipis)
-        numSuccessfulTrials = len(ipis)
-        if (numSuccessfulTrials > 0): 
-            return sumTimes/numSuccessfulTrials
-        else:
-            print("\n numSuccessfulTrials is 0")
+        if df.empty:
+            return [] if returnList or test else 0
+    
+        ipis = []
+    
+        # Group by RatID and compute IPIs for each rat
+        for rat_id, group in df.groupby("RatID"):
+            group = group.sort_values(by="AbsTime")
+            times = group["AbsTime"].values
+    
+            if len(times) < 2:
+                continue  # Can't compute IPI with fewer than 2 presses
+    
+            rat_ipis = [t2 - t1 for t1, t2 in zip(times[:-1], times[1:])]
+            ipis.extend(rat_ipis)
+    
+        if len(ipis) == 0:
+            print("\nNo IPIs computed")
             print("Lev File: ", self.filename)
-            print("ipis", ipis)
-            return 0
+            return [] if returnList or test else 0
+        
+        if (returnLen):
+            return len(ipis)
+        
+        if test and len(ipis) >= 5:
+            return ipis[:5]
     
+        if returnList:
+            return ipis
+    
+        return sum(ipis) / len(ipis)
     
     def returnAvgIPI_FirsttoSuccess(self, test = False, returnList = False):
         '''Time between first press and successful press (second rat press) in successful trials.'''
@@ -284,7 +346,7 @@ class levLoader:
         
         return res
 
-    def returnAvgRepresses_FirstMouse(self):
+    def returnAvgRepresses_FirstMouse(self, returnArr = False):
         """
         For each trial, find the first mouse to press a lever and count how many total times
         that mouse pressed the lever during the entire trial. Return the average of these counts.
@@ -297,6 +359,9 @@ class levLoader:
             first_mouse = trial_data_sorted.iloc[0]["RatID"]
             count_first_mouse_presses = (trial_data["RatID"] == first_mouse).sum()
             first_mouse_repress_counts.append(count_first_mouse_presses)
+        
+        if (returnArr):
+            return first_mouse_repress_counts
     
         return sum(first_mouse_repress_counts) / len(first_mouse_repress_counts) if first_mouse_repress_counts else 0
 
@@ -355,11 +420,88 @@ class levLoader:
     
         return avg_success, avg_non_success
 
+    def returnCooperativeSuccessRegionsBool(self):
+        '''
+        Return a boolean list of all trials that are in a region of cooperative success.
+        A trial is considered in a "region of cooperative success" if 4 out of the last 5
+        trials (including itself) were successful.
+    
+        Returns:
+            List[bool]: A list where each index corresponds to a TrialNum and is True
+                        if that trial is in a region of cooperative success.
+        '''
+        thresholdZone = 3
+        
+        if self.data is None:
+            raise ValueError("No data loaded.")
+    
+        if 'TrialNum' not in self.data.columns or 'coopSucc' not in self.data.columns:
+            raise ValueError("Required columns 'TrialNum' or 'coopSucc' are missing from data.")
+    
+        # Get success status for each unique trial
+        trial_success = self.data.groupby('TrialNum').first()['coopSucc'].fillna(0).astype(int)
+    
+        # Total number of trials
+        total_trials = self.returnNumTotalTrials()
+    
+        # Initialize the result list
+        region_bool = [False] * total_trials
+    
+        # Sliding window over the last 5 trials including current
+        for i in range(total_trials):
+            window_start = max(0, i - 4)
+            window = trial_success.iloc[window_start:i+1]
+            if window.sum() >= 4:
+                region_bool[i] = True
+        
+        cooperationZone = False
+        counter = 0
+        for i in range(total_trials):
+            if (not cooperationZone and region_bool[i] == True):
+                cooperationZone = True
+            elif (cooperationZone and region_bool[i] == True):
+                counter = 0
+            elif(region_bool[i] == False and cooperationZone):
+                counter += 1
+                if (counter >= 3):
+                    counter = 0
+                    cooperationZone = False
+                else:
+                    region_bool[i] = True
+        
+        return region_bool
+    
+    def returnNumCooperationSuccessZones(self):
+        '''
+        Return the number of cooperative success zones where a zone is a span of the trials that are in a region cooperative success until 3 trials (make this a variable) in a row are not
+        '''
+        res = 0
+        
+        arr = self.returnCooperativeSuccessRegionsBool()
+        for i in range(1, len(arr)):
+            if (arr[i] == True and arr[i-1] == False):
+                res += 1
+                
+        return res
+        
+    def returnAvgLengthCooperativeSuccessZones(self):
+        '''
+        number of trials in a region of cooperative success/Num cooperation success zones
+        '''
+        region_bool = self.returnCooperativeSuccessRegionsBool()
+        num_true = sum(region_bool)
+        num_zones = self.returnNumCooperationSuccessZones()
+        return num_true/num_zones
+        
+        
 #Testing
 #
 #
 
-#file1 = "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/leverData.csv"
-#lev1 = levLoader(file1)
-#print(lev1.returnAvgIPI_LasttoSuccess())
+file1 = "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/leverData.csv"
+lev = levLoader(file1)
+
+print(lev.returnCooperativeSuccessRegionsBool())
+print(lev.returnNumCooperationSuccessZones())
+print(lev.returnAvgLengthCooperativeSuccessZones())
 

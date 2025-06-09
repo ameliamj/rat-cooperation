@@ -37,7 +37,7 @@ only_TrainingCoop = "/gpfs/radev/project/saxena/drb83/rat-cooperation/David/Beha
 
 def getAllValid():
     fe = fileExtractor(all_valid)
-    return [fe.getLevsDatapath(), fe.getMagsDatapath(), fe.getPosDatapath()]
+    return [fe.getLevsDatapath(), fe.getMagsDatapath(), fe.getPosDatapath(), fe.returnFPS()]
     
 def getOnlyOpaque():
     fe = fileExtractor(only_opaque)
@@ -564,8 +564,8 @@ posFiles = [["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/B
             ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.predictions.h5"]]
 
 
-categoryExperiments = multiFileGraphsCategories(levFiles, magFiles, posFiles, ["Paired_Testing", "Training_Cooperation"])
-categoryExperiments.rePressingBehavior()
+#categoryExperiments = multiFileGraphsCategories(levFiles, magFiles, posFiles, ["Paired_Testing", "Training_Cooperation"])
+#categoryExperiments.rePressingBehavior()
 
 
 #Paired Testing vs. Training Cooperation
@@ -1206,135 +1206,81 @@ class multiFileGraphs:
         plt.savefig('lev_data_availability.png')
     
     def interpressIntervalPlot(self):
-        #INCORRECT, REDO
+        # Initialize lists to store per-category averages
+        avg_ipi = 0         # Average IPI
+        avg_first_to = 0    # Average time from first press to success
+        avg_last_to = 0     # Average time from last press to success
         
-        all_lev = pd.concat([exp.lev.data for exp in self.experiments], ignore_index=True)
-        if all_lev is None or all_lev.empty:
-            raise ValueError("No lever data loaded.")
+        # Initialize cumulative totals for this group
+        totalPresses = 0
+        totalSucc = 0
+        totalFirsttoSuccTime = 0
+        totalLasttoSuccTime = 0
+        totalIPITime = 0
         
-        all_lev = all_lev.sort_values(by=["RatID","AbsTime"])
-        all_lev["IPI"] = all_lev.groupby("RatID")["AbsTime"].diff()
-        ipi_data = all_lev[all_lev["IPI"].notna()]
+        for exp in self.experiments:
+            loader = exp.lev  # Get lever loader for this experiment
+    
+            # Get IPI stats and total lever presses
+            ipiSum = loader.returnAvgIPI()
+            numPresses = loader.returnAvgIPI(returnLen = True)
+            
+            # Accumulate total IPI time only if valid data exists
+            if ipiSum is not None and numPresses > 0:
+                totalIPITime += ipiSum * numPresses  # Weighted sum
+                totalPresses += numPresses
+    
+            # Get success-related stats
+            succ = loader.returnNumSuccessfulTrials()
+            avgIPIFirst_to_Sucess = loader.returnAvgIPI_FirsttoSuccess()
+            avgIPILast_to_Sucess = loader.returnAvgIPI_LasttoSuccess()
+    
+            # Accumulate total time from first/last press to success
+            totalFirsttoSuccTime += succ * avgIPIFirst_to_Sucess
+            totalLasttoSuccTime += succ * avgIPILast_to_Sucess
+            totalSucc += succ
         
-        # Histogram
-        plt.figure(figsize=(10,6))
-        plt.hist(ipi_data["IPI"], bins=50, edgecolor='black')
-        plt.xlabel("Inter-Press Interval (s)")
-        plt.ylabel("Frequency")
-        plt.title("Histogram of Inter-Press Intervals (All Rats)")
+        if (numPresses > 0):
+            avg_ipi = totalIPITime / numPresses
+            
+        if (totalSucc > 0):
+            avg_first_to = totalFirsttoSuccTime / totalSucc
+            avg_last_to = totalLasttoSuccTime / totalSucc
+        
+        # Create figure and twin axes
+        fig, ax1 = plt.subplots(figsize=(8, 6))
+        ax2 = ax1.twinx()
+    
+        # X-axis bar positions
+        x = [0, 1, 2]
+    
+        # Plot Avg IPI on left axis
+        ax1.bar(x[0], avg_ipi, width=0.4, color='blue', label='Avg IPI')
+        ax1.set_ylabel('Avg IPI (s)', color='blue')
+        ax1.tick_params(axis='y', labelcolor='blue')
+        ax1.set_xticks(x)
+        ax1.set_xticklabels(['Avg IPI', 'First→Success', 'Last→Success'])
+    
+        # Plot First→Success and Last→Success on right axis
+        ax2.bar(x[1], avg_first_to, width=0.4, color='skyblue', label='First→Success')
+        ax2.bar(x[2], avg_last_to, width=0.4, color='salmon', label='Last→Success')
+        ax2.set_ylabel('Success Timing (s)', color='darkred')
+        ax2.tick_params(axis='y', labelcolor='darkred')
+    
+        # Title and legend
+        plt.title('Inter-Press Interval and Success Timing Metrics')
+    
+        # Combine legends from both axes
+        handles1, labels1 = ax1.get_legend_handles_labels()
+        handles2, labels2 = ax2.get_legend_handles_labels()
+        ax1.legend(handles1 + handles2, labels1 + labels2, loc='upper right')
+    
+        # Save and show
         plt.tight_layout()
+        plt.savefig('interpress_metrics_dualaxis')
         plt.show()
-        plt.savefig('IPI_histogram.png')
-        plt.close()
-        
-        # Boxplot
-        plt.figure(figsize=(10,6))
-        all_lev.boxplot(column="IPI", by="RatID")
-        plt.suptitle("") 
-        plt.xlabel("RatID")
-        plt.ylabel("IPI (s)")
-        plt.xticks(rotation=45)
-        plt.tight_layout()
-        plt.show()
-        plt.savefig('IPI_boxplot.png')
-        plt.close()
-        
-        # Time series
-        plt.figure(figsize=(12,6))
-        for rat_id, grp in all_lev.groupby("RatID"):
-            plt.plot(grp["AbsTime"], grp["IPI"], label=str(rat_id), alpha=0.7)
-        plt.title("IPI Over Time by Rat (All Files)")
-        plt.xlabel("AbsTime (s)")
-        plt.ylabel("IPI (s)")
-        plt.legend(title="RatID", bbox_to_anchor=(1.05,1), loc='upper left')
-        plt.tight_layout()
-        plt.show()
-        plt.savefig('IPI_timeseries.png')
         plt.close()
       
-    def interpressIntervalSuccessPlot(self):
-        #INCORRECT, REDO
-        
-        all_lev = pd.concat([exp.lev.data for exp in self.experiments], ignore_index=True)
-        if all_lev is None or all_lev.empty:
-            raise ValueError("No lever data loaded.")
-        
-        # filter successes
-        succ = all_lev[all_lev["coopSucc"] == 1]
-        grouped = succ.groupby("TrialNum")
-        
-        ipi_first, ipi_last, first_rats, success_counts = [], [], [], {}
-        for _, trial in grouped:
-            trial = trial.sort_values("AbsTime")
-            if 1 not in trial["Hit"].values: continue
-            coop_end = trial[trial["TrialEnd"]==1]
-            if coop_end.empty: continue
-            t_coop = coop_end.iloc[0]["AbsTime"]
-            first = trial[trial["Hit"]==1].iloc[0]
-            before = trial[trial["AbsTime"] < t_coop]
-            if before.empty: continue
-            last = before.iloc[-1]
-            
-            ipi_first.append(t_coop - first["AbsTime"])
-            ipi_last.append(t_coop - last["AbsTime"])
-            first_rats.append(first["RatID"])
-            rid = coop_end.iloc[0]["RatID"]
-            success_counts[rid] = success_counts.get(rid,0) + 1
-        
-        # Plot 1
-        plt.figure(figsize=(8,6))
-        plt.hist(ipi_first, bins=20)
-        plt.title("First Press → Success IPI")
-        plt.xlabel("IPI (s)")
-        plt.ylabel("Count")
-        plt.tight_layout()
-        plt.show()
-        plt.savefig('IPI_firstpress_to_success.png')
-        plt.close()
-        
-        # Plot 2
-        plt.figure(figsize=(8,6))
-        plt.hist(ipi_last, bins=20)
-        plt.title("Last Press → Success IPI")
-        plt.xlabel("IPI (s)")
-        plt.ylabel("Count")
-        plt.tight_layout()
-        plt.show()
-        plt.savefig('IPI_lastpress_to_success.png')
-        plt.close()
-        
-        # Plot 3
-        plt.figure(figsize=(10,5))
-        plt.plot(ipi_first, marker='o')
-        plt.title("Time Series: First Press to Success")
-        plt.xlabel("Trial Index")
-        plt.ylabel("IPI (s)")
-        plt.tight_layout()
-        plt.show()
-        plt.savefig('Timeseries_IPI_firstpress_to_success.png')
-        plt.close()
-        
-        # Plot 4
-        plt.figure(figsize=(10,5))
-        plt.plot(ipi_last, marker='o')
-        plt.title("Time Series: Last Press to Success")
-        plt.xlabel("Trial Index")
-        plt.ylabel("IPI (s)")
-        plt.tight_layout()
-        plt.show()
-        plt.savefig('Timeseries_IPI_lastpress_to_success.png')
-        plt.close()
-        
-        # Plot 5
-        counts = pd.Series(first_rats).value_counts()
-        plt.figure(figsize=(6,6))
-        plt.pie(counts, labels=counts.index, autopct='%1.1f%%', startangle=140)
-        plt.title("Who Presses First")
-        plt.tight_layout()
-        plt.show()
-        plt.savefig('Who_Presses_First.png')
-        plt.close()
-       
     def percentSuccesfulTrials(self):
         #Incorrect I think, REDO
         
@@ -1515,6 +1461,133 @@ class multiFileGraphs:
         plt.show()
         plt.close()
         
+    def rePressingbyDistance(self):
+        #Graph 1: RePressing by Region
+        #use posLoader.returnMouseLocation to get the location of the mouse at eachFrame. 
+        #Then using abs time in levLoader and posLoader.returnFPS() find which frame the first press happened at for each trial. 
+        #Then quantify the average re-presses by using levLoader.returnAvgRepresses_FirstMouse(returnArr = True) and make a bar graph displaying the average represses by location at first press
+        
+        
+        #Graph 2: RePressing by Dsitance 
+        #Find a way to quantify the rePressing by distance by using posLoader.returnInterMouseDistance and the functions above
+        '''
+        Quantify the rePressing Behavior of the rats given the location of the other mouse. 
+        '''
+        
+        # Initialize containers to hold repressing values for each location and distance
+        location_dict = {'lev': [], 'mid': [], 'mag': []}
+        distance_list = []  # Inter-mouse distance at first press
+        repress_list = []   # Avg number of re-presses by first mouse in each trial
+    
+        for exp in self.experiments:
+            pos = exp.pos
+            lev = exp.lev
+            
+            #Data we Keep Track of
+            fps = exp.fps
+            num_trials = lev.returnNumTotalTrials()
+            first_press_times = lev.returnFirstPressAbsTimes()
+            represses = lev.returnAvgRepresses_FirstMouse(returnArr=True)
+            inter_mouse_dist = pos.returnInterMouseDistance()
+    
+            # Skip if mismatch in data length
+            if len(first_press_times) != len(represses):
+                print("Mismatch between number of trials and repress array")
+                continue
+            
+            #Iterate through Trials to classify location
+            for i in range(num_trials):
+                press_time = first_press_times[i]
+                if np.isnan(press_time) or i >= len(represses):
+                    continue
+    
+                press_frame = int(press_time * fps)
+                if press_frame >= len(inter_mouse_dist):
+                    continue
+    
+                location = pos.returnMouseLocation(0)[press_frame]
+                if location in location_dict:
+                    location_dict[location].append(represses[i])
+                
+                # Collect distance and repressing for scatterplot
+                distance_list.append(inter_mouse_dist[press_frame])
+                repress_list.append(represses[i])
+    
+        # === Graph 1: Bar graph of average represses per region ===
+        avg_represses_by_region = {
+            region: np.mean(vals) if vals else 0
+            for region, vals in location_dict.items()
+        }
+    
+        plt.figure(figsize=(10, 5))
+        plt.bar(avg_represses_by_region.keys(), avg_represses_by_region.values(), color='skyblue')
+        plt.ylabel("Avg Represses")
+        plt.title("Average Represses by Region at First Press")
+        plt.tight_layout()
+        plt.show()
+    
+        # === Graph 2: Scatter plot of distance vs repressing with trendline ===
+        plt.figure(figsize=(10, 5))
+        plt.scatter(distance_list, repress_list, alpha=0.6, label="Trial Points")
+        plt.xlabel("Inter-Mouse Distance at First Press")
+        plt.ylabel("Avg Represses (First Mouse)")
+        plt.title("Repressing vs Inter-Mouse Distance")
+    
+        # --- Trendline calculation ---
+        if len(distance_list) > 1:
+            dist_np = np.array(distance_list)
+            repress_np = np.array(repress_list)
+    
+            # Fit a linear regression (degree-1 polynomial) to the data
+            coeffs = np.polyfit(dist_np, repress_np, 1)
+            trendline = np.poly1d(coeffs)
+    
+            # Generate smooth x and y values for plotting the line
+            xs = np.linspace(min(dist_np), max(dist_np), 100)
+            ys = trendline(xs)
+    
+            # Plot the trendline
+            plt.plot(xs, ys, color='red', linestyle='--', label='Trendline')
+    
+            # Optional: Show slope and intercept
+            slope, intercept = coeffs
+            print(f"Trendline: y = {slope:.3f}x + {intercept:.3f}")
+    
+        plt.legend()
+        plt.tight_layout()
+        plt.show()
+        
+    def crossingOverQuantification(self):
+        '''
+        Description: 
+            
+        '''
+        
+        numMaxCount = 0
+        totalCountPresses = 0
+        for exp in self.experiments:
+            lev = exp.lev
+            
+            numMaxCount += lev.returnMostPressesByLever(0) + lev.returnMostPressesByLever(1)
+            totalCountPresses += lev.returnTotalLeverPresses()
+            
+        numMinCount = totalCountPresses - numMaxCount
+        labels = ['Max', 'Min']
+        sizes = [numMaxCount, numMinCount]
+        colors = ['green', 'red']
+    
+        plt.figure(figsize=(6, 6))
+        plt.pie(sizes, labels=labels, colors=colors, autopct='%1.1f%%', startangle=140, textprops={'fontsize': 14})
+        plt.title('Max vs Min (%)', fontsize=16)
+        plt.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle.
+        plt.tight_layout()
+        plt.show()
+        plt.savefig('MaxvsMin.png')
+        plt.close()
+            
+        
+            
+
 #Testing Multi File Graphs
 #
 #
@@ -1522,15 +1595,19 @@ class multiFileGraphs:
 '''arr = getAllValid()
 lev_files = arr[0]
 mag_files = arr[1]
-pos_files = arr[2]'''
+pos_files = arr[2]
+fpsList = arr[3]'''
 
-#mag_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv"]
+lev_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv"]
 
-#lev_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_mag.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_mag.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_mag.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_mag.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_mag.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_mag.csv"] 
+mag_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_mag.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_mag.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_mag.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_mag.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_mag.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_mag.csv"] 
 
-#pos_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.predictions.h5"]
+pos_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.predictions.h5"]
 
-#experiment = multiFileGraphs(mag_files, lev_files, pos_files)
+
+experiment = multiFileGraphs(mag_files, lev_files, pos_files)
+experiment.interpressIntervalPlot()
+
 #experiment.gazeAlignmentAngleHistogram()
 #experiment.quantifyRePressingBehavior()
 #experiment.mouseIDFirstPress()
