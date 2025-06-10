@@ -9,12 +9,15 @@ Created on Tue May 27 17:57:51 2025
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import math
 
 from experiment_class import singleExperiment
 from typing import List
 from file_extractor_class import fileExtractor
 from mag_class import magLoader
 from lev_class import levLoader
+from scipy.stats import linregress
+from scipy.ndimage import gaussian_filter
 
 import sys
 sys.stdout.flush()
@@ -37,7 +40,8 @@ only_TrainingCoop = "/gpfs/radev/project/saxena/drb83/rat-cooperation/David/Beha
 
 def getAllValid():
     fe = fileExtractor(all_valid)
-    return [fe.getLevsDatapath(), fe.getMagsDatapath(), fe.getPosDatapath(), fe.returnFPS()]
+    fpsList, totFramesList = fe.returnFPSandTotFrames()
+    return [fe.getLevsDatapath(), fe.getMagsDatapath(), fe.getPosDatapath(), fpsList, totFramesList]
     
 def getOnlyOpaque():
     fe = fileExtractor(only_opaque)
@@ -1475,10 +1479,12 @@ class multiFileGraphs:
         '''
         
         # Initialize containers to hold repressing values for each location and distance
-        location_dict = {'lev': [], 'mid': [], 'mag': []}
+        location_dict = {'lev_other': [], 'lev_same': [], 'mid': [], 'mag_other': [], 'mag_same': [], 'other': []}
         distance_list = []  # Inter-mouse distance at first press
         repress_list = []   # Avg number of re-presses by first mouse in each trial
-    
+        
+        location_counts = {key: 0 for key in location_dict}
+        
         for exp in self.experiments:
             pos = exp.pos
             lev = exp.lev
@@ -1487,8 +1493,10 @@ class multiFileGraphs:
             fps = exp.fps
             num_trials = lev.returnNumTotalTrials()
             first_press_times = lev.returnFirstPressAbsTimes()
+            first_press_ids = lev.returnRatIDFirstPressTrial()
             represses = lev.returnAvgRepresses_FirstMouse(returnArr=True)
             inter_mouse_dist = pos.returnInterMouseDistance()
+            locationPresser = lev.returnRatLocationFirstPressTrial()
     
             # Skip if mismatch in data length
             if len(first_press_times) != len(represses):
@@ -1498,6 +1506,16 @@ class multiFileGraphs:
             #Iterate through Trials to classify location
             for i in range(num_trials):
                 press_time = first_press_times[i]
+                rat_id_val = first_press_ids.iloc[i]
+                
+                if math.isnan(rat_id_val):
+                    # Skip or handle this trial because no first press rat ID
+                    continue
+            
+                rat_id = int(rat_id_val)
+                #print(f"rat_id: {rat_id} ({type(rat_id)})")
+                #print(f"1 - rat_id: {1 - rat_id} ({type(1 - rat_id)})")
+                
                 if np.isnan(press_time) or i >= len(represses):
                     continue
     
@@ -1505,9 +1523,38 @@ class multiFileGraphs:
                 if press_frame >= len(inter_mouse_dist):
                     continue
     
-                location = pos.returnMouseLocation(0)[press_frame]
-                if location in location_dict:
-                    location_dict[location].append(represses[i])
+                locationOther = pos.returnMouseLocation(1 - rat_id)[press_frame]
+                locationRat = pos.returnMouseLocation(rat_id)[press_frame]
+                pressLocation = ""
+                
+                if (locationPresser.iloc[i] == 1):
+                    pressLocation = "lev_bottom"
+                                        
+                elif(locationPresser.iloc[i] == 2):
+                    pressLocation = "lev_top"
+                else:
+                    print("Incorrect LeverNum Data")
+                
+                if (locationRat != pressLocation):
+                    print("Mismatch between locationRat and pressLocation")
+                    print("locationRat: ", locationRat)
+                    print("pressLocation: ", pressLocation)
+                
+                if (pressLocation == locationOther):
+                    locationOther = "lev_same"
+                
+                elif (locationOther == "lev_top" or locationOther == "lev_bottom"):
+                    locationOther = "lev_other"
+                
+                elif ((locationOther == "mag_top" and pressLocation == "lev_top") or (locationOther == "mag_bottom" and pressLocation == "lev_bottom")):
+                    locationOther = "mag_same"
+                
+                elif (locationOther == "mag_top" or locationOther == "mag_bottom"):
+                    locationOther = "mag_other"
+                
+                if locationOther in location_dict:
+                    location_dict[locationOther].append(represses[i])
+                    location_counts[locationOther] += 1
                 
                 # Collect distance and repressing for scatterplot
                 distance_list.append(inter_mouse_dist[press_frame])
@@ -1555,7 +1602,26 @@ class multiFileGraphs:
     
         plt.legend()
         plt.tight_layout()
+        plt.savefig("Distance_vs_RepressingBehavior.png")
         plt.show()
+        
+        # === Graph 3: Pie chart of trial percentages by region ===
+        total_trials = sum(location_counts.values())
+        if total_trials > 0:
+            labels = []
+            sizes = []
+            for region, count in location_counts.items():
+                if count > 0:
+                    labels.append(region)
+                    sizes.append(count)
+        
+            plt.figure(figsize=(7, 7))
+            plt.pie(sizes, labels=labels, autopct='%1.1f%%', startangle=140, colors=plt.cm.tab20.colors)
+            plt.title("Percentage of Trials by Location Category")
+            plt.tight_layout()
+            plt.show()
+        else:
+            print("No trial location data to display in pie chart.")
         
     def crossingOverQuantification(self):
         '''
@@ -1563,8 +1629,13 @@ class multiFileGraphs:
             
         '''
         
+        #Max vs. Min
         numMaxCount = 0
         totalCountPresses = 0
+        
+        numSwitchCount = 0
+        numTrials = 0
+        
         for exp in self.experiments:
             lev = exp.lev
             
@@ -1584,13 +1655,326 @@ class multiFileGraphs:
         plt.show()
         plt.savefig('MaxvsMin.png')
         plt.close()
-            
         
+        
+        # Crossing Over Pie Charts
+        same_side_success = 0
+        cross_side_success = 0
+        no_mag_success = 0
+        unknown_ratid_mag_success = 0
+        
+        same_side_fail = 0
+        cross_side_fail = 0
+        no_mag_fail = 0
+        unknown_ratid_mag_fail = 0
+        
+        for exp in self.experiments:
+            # Drop only lever rows with missing RatID (we must know which rat pressed)
+            lev_df = exp.lev.data[['TrialNum', 'RatID', 'LeverNum', 'coopSucc']].dropna(subset=['RatID'])
             
+            # Keep all mag rows (even those with NaN RatID)
+            mag_df = exp.mag.data[['TrialNum', 'RatID', 'MagNum']]
+        
+            # Get first lever press per trial per mouse
+            lev_first = lev_df.drop_duplicates(subset=['TrialNum', 'RatID'], keep='first')
+            print("lev_first: ")
+            print(lev_first)
+            
+            # Get first mag entry per trial per mouse
+            mag_first = mag_df.drop_duplicates(subset=['TrialNum'], keep='first')
+            print("mag_first: ")
+            print(mag_first)
+            
+            # Merge on TrialNum ONLY — not RatID
+            merged = lev_first.merge(mag_first, on='TrialNum', how='left', suffixes=('_lev', '_mag'))
+
+            print("Merged: ")
+            print(merged)
+            
+            print("Merged Successful: ")
+            print(merged[merged['coopSucc'] == 1])
+            
+            
+            for _, row in merged.iterrows():
+                lever = row['LeverNum']
+                mag = row['MagNum'] if not pd.isna(row['MagNum']) else None
+                success = row['coopSucc']
+                lever_rat = row['RatID_lev']
+                mag_rat = row['RatID_mag'] if 'RatID_mag' in row else None  # From mag side
+        
+                # Skip invalid lever
+                if lever not in [1, 2]:
+                    continue
+        
+                if mag is None:
+                    # No mag entry recorded at all
+                    if success:
+                        no_mag_success += 1
+                    else:
+                        no_mag_fail += 1
+                elif pd.isna(mag_rat):
+                    # Mag entry exists but with unknown RatID
+                    if success:
+                        unknown_ratid_mag_success += 1
+                    else:
+                        unknown_ratid_mag_fail += 1
+                else:
+                    # Valid known rat and mag entry
+                    crossed = (lever == 1 and mag == 2) or (lever == 2 and mag == 1)
+                    if success:
+                        if crossed:
+                            cross_side_success += 1
+                        else:
+                            same_side_success += 1
+                    else:
+                        if crossed:
+                            cross_side_fail += 1
+                        else:
+                            same_side_fail += 1
+        
+        # --- Pie chart for successful trials ---
+        labels_success = [
+            'Same Side',
+            'Cross Side',
+            'No Mag Visit',
+            'Mag w/ Unknown RatID'
+        ]
+        sizes_success = [
+            same_side_success,
+            cross_side_success,
+            no_mag_success,
+            unknown_ratid_mag_success
+        ]
+        
+        plt.figure(figsize=(6, 6))
+        plt.pie(sizes_success, labels=labels_success, autopct='%1.1f%%', startangle=140, textprops={'fontsize': 14})
+        plt.title('Crossover Behavior in Successful Trials', fontsize=16)
+        plt.axis('equal')
+        plt.tight_layout()
+        plt.show()
+        plt.savefig('Crossover_Successful.png')
+        plt.close()
+        
+        # --- Pie chart for failed trials ---
+        labels_fail = [
+            'Same Side',
+            'Cross Side',
+            'No Mag Visit',
+            'Mag w/ Unknown RatID'
+        ]
+        sizes_fail = [same_side_fail, cross_side_fail, no_mag_fail, unknown_ratid_mag_fail]
+        
+        plt.figure(figsize=(6, 6))
+        plt.pie(sizes_fail, labels=labels_fail, autopct='%1.1f%%', startangle=140, textprops={'fontsize': 14})
+        plt.title('Crossover Behavior in Failed Trials', fontsize=16)
+        plt.axis('equal')
+        plt.tight_layout()
+        plt.savefig('Crossover_Failed.png')
+        plt.show()
+        plt.close()
+        
+
+    def cooperativeRegionStrategiesQuantification(self):
+        '''
+        Iterate through 
+        '''
+        averageDistance_NoSuccess = 0
+        averageDistance_SuccessZone = 0
+        
+        totFrames_SuccessZone = 0
+        totDifference_SuccessZone = 0
+        datapoints_SuccessZone = []
+        
+        totFrames_NoSuccess = 0
+        totDifference_NoSuccess = 0
+        datapoints_NoSuccess = []
+        
+        for exp in self.experiments:
+            lev = exp.lev
+            pos = exp.pos
+            fps = exp.fps
+            
+            listTrials = lev.returnCooperativeSuccessRegionsBool()
+            startTimeTrials = lev.returnTimeStartTrials()
+            endTimeTrials = lev.returnTimeEndTrials()
+            
+            for i, trialBool in enumerate(listTrials):
+                startFrame = int(startTimeTrials[i] * fps)
+                endFrame = int(endTimeTrials[i] * fps)
+                
+                print("startFrame: ", startFrame)
+                print("endFrame: ", endFrame)
+                
+                numFrames = endFrame - startFrame
+                
+                rat1_xlocations = pos.data[0, 0, pos.HB_INDEX, startFrame:endFrame]
+                rat2_xlocations = pos.data[1, 0, pos.HB_INDEX, startFrame:endFrame]
+                
+                difference = sum(abs(a - b) for a, b in zip(rat1_xlocations, rat2_xlocations))            
+                
+                if (trialBool):
+                    totFrames_SuccessZone += numFrames
+                    totDifference_SuccessZone += difference
+                    if (numFrames > 0):
+                        datapoints_SuccessZone.append(difference / numFrames)
+                else:
+                    totFrames_NoSuccess += numFrames
+                    totDifference_NoSuccess += difference
+                    if (numFrames > 0):
+                        datapoints_NoSuccess.append(difference / numFrames)
+        
+        print("totFrames_NoSuccess: ", totFrames_NoSuccess)
+        print("totFrames_SuccessZone: ", totFrames_SuccessZone)
+        
+        if (totFrames_NoSuccess > 0):
+            averageDistance_NoSuccess = totDifference_NoSuccess / totFrames_NoSuccess
+            
+        if (totFrames_SuccessZone > 0):
+            averageDistance_SuccessZone = totDifference_SuccessZone / totFrames_SuccessZone
+        
+        #Make Graphs: 
+        # Labels and values for the bar plot
+        labels = ['No Success', 'Success Zone']
+        averages = [averageDistance_NoSuccess, averageDistance_SuccessZone]
+        datapoints = [datapoints_NoSuccess, datapoints_SuccessZone]
+        
+        # X locations for the bars and jittered scatter points
+        x = np.arange(len(labels))
+        width = 0.6
+        
+        # Create figure and axes
+        fig, ax = plt.subplots(figsize=(8, 6))
+        
+        # Plot bar chart
+        bars = ax.bar(x, averages, width, color=['red', 'green'], alpha=0.6, edgecolor='black')
+        
+        # Overlay individual data points
+        for i, points in enumerate(datapoints):
+            # Add jitter to the x-position of each point for visibility
+            jittered_x = np.random.normal(loc=x[i], scale=0.05, size=len(points))
+            ax.scatter(jittered_x, points, alpha=0.8, color='black', s=20)
+        
+        # Labels and formatting
+        ax.set_ylabel('Average Distance')
+        ax.set_title('Average Head-Body X-Distance per Trial')
+        ax.set_xticks(x)
+        ax.set_xticklabels(labels)
+        ax.axhline(0, color='gray', linewidth=0.8, linestyle='--')
+        
+        plt.tight_layout()
+        plt.show()
+        
+        
+    def makeHeatmapLocation(self):
+        '''
+        Make a heatmap of all mice and where they spend time by tracking the location of the headbase.
+        '''
+        bin_size = 5  # Controls resolution of heatmap (larger = coarser)
+        height, width = 640, 1392
+        heatmap_height = height // bin_size
+        heatmap_width = width // bin_size
+        heatmap = np.zeros((heatmap_height, heatmap_width))
+    
+        for exp in self.experiments:
+            pos = exp.pos
+            data = pos.data  # shape: (2, 2, 5, num_frames)
+    
+            for mouse in range(2):
+                x_coords = data[mouse, 0, pos.HB_INDEX, :]
+                y_coords = data[mouse, 1, pos.HB_INDEX, :]
+    
+                for x, y in zip(x_coords, y_coords):
+                    if not np.isnan(x) and not np.isnan(y):
+                        x_bin = int(min(max(x // bin_size, 0), heatmap_width - 1))
+                        y_bin = int(min(max(y // bin_size, 0), heatmap_height - 1))
+                        heatmap[y_bin, x_bin] += 1
+        
+        # Smooth the heatmap
+        heatmap = gaussian_filter(heatmap, sigma=1)
+    
+        # Optional: Use logarithmic scale for better visibility
+        heatmap_log = np.log1p(heatmap)  # log(1 + x) to handle zeroes
+    
+        plt.figure(figsize=(12, 6))
+        plt.imshow(
+            heatmap_log,
+            cmap='hot',
+            interpolation='nearest',
+            origin='upper',
+            extent=[0, width, height, 0],
+            vmin=np.percentile(heatmap_log, 10),  # tune as needed
+            vmax=np.percentile(heatmap_log, 99)
+        )
+        plt.colorbar(label='Log(Time Spent)')
+        plt.title('Mouse Location Heatmap (Headbase)')
+        plt.xlabel('X Position (pixels)')
+        plt.ylabel('Y Position (pixels)')
+        plt.savefig("movementHeatmap.png", bbox_inches='tight')
+        plt.show()
+        #print("Max heatmap value:", np.max(heatmap))
+            
+    
+    def findTotalDistanceMoved(self):
+        '''
+        For each mouse, compute total distance moved based on headbase position.
+        Plot total distance vs. cooperative success % with a trendline.
+        '''
+        distancesSum = []
+        coop_successes = []
+    
+        for exp in self.experiments:
+            pos = exp.pos
+            data = pos.data
+            total_distance = [0.0, 0.0]
+    
+            for rat in range(2):
+                total_distance[rat] = pos.returnStandardizedDistanceMoved(rat)
+            
+            print("Total Distance: ", total_distance)
+            
+            total_trials = exp.lev.returnNumTotalTrials()
+            print("Total Trials: ", total_trials)
+            
+            if total_trials > 0:
+                success_rate = exp.lev.returnNumSuccessfulTrials() / total_trials
+                coop_successes.append(success_rate)
+                distancesSum.append(total_distance[0] + total_distance[1])
+            else:
+                print(f"Skipping session {exp} due to zero total trials.")
+        
+        if len(set(distancesSum)) < 2:
+            print("All total distance values are identical; cannot compute trendline.")
+            return
+    
+        # Scatter plot with trendline
+        plt.figure(figsize=(8, 6))
+        plt.scatter(distancesSum, coop_successes, alpha=0.7, label='Rat')
+        
+        # Fit trendline
+        slope, intercept, r_value, p_value, std_err = linregress(distancesSum, coop_successes)
+        x_vals = np.linspace(min(distancesSum), max(distancesSum), 100)
+        plt.plot(x_vals, slope * x_vals + intercept, color='red', linestyle='--', label='Trendline')
+    
+        plt.title('Total Distance Moved vs. Cooperative Success Rate')
+        plt.xlabel('Total Distance Moved (pixels)')
+        plt.ylabel('Cooperative Success Rate (%)')
+        plt.legend()
+        plt.grid(True)
+        plt.show()
+        
+        
 
 #Testing Multi File Graphs
 #
 #
+
+def getDefault():
+    fe = fileExtractor(all_valid)
+    fe.getPairedTestingSessions(sortOut=False)
+    fe.getTrainingPartner(sortOut=False)
+    fe.getTranslucentSessions(sortOut=False)
+    fpsList, totFramesList = fe.returnFPSandTotFrames()
+    return [fe.getLevsDatapath(), fe.getMagsDatapath(), fe.getPosDatapath(), fpsList, totFramesList]
 
 '''arr = getAllValid()
 lev_files = arr[0]
@@ -1598,15 +1982,19 @@ mag_files = arr[1]
 pos_files = arr[2]
 fpsList = arr[3]'''
 
-lev_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv"]
+lev_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/ExampleLevFile.csv"]
 
-mag_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_mag.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_mag.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_mag.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_mag.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_mag.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_mag.csv"] 
+mag_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_mag.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_mag.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_mag.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_mag.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_mag.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_mag.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/ExampleMagFile.csv"] 
 
-pos_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.predictions.h5"]
+pos_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/ExampleTrackingCoop.h5"]
 
 
 experiment = multiFileGraphs(mag_files, lev_files, pos_files)
-experiment.interpressIntervalPlot()
+#experiment.makeHeatmapLocation()
+#experiment.findTotalDistanceMoved()
+
+#experiment.rePressingbyDistance()
+experiment.cooperativeRegionStrategiesQuantification()
 
 #experiment.gazeAlignmentAngleHistogram()
 #experiment.quantifyRePressingBehavior()
@@ -1619,12 +2007,6 @@ experiment.interpressIntervalPlot()
 
 #experiment.interpressIntervalPlot()
 #experiment.interpressIntervalSuccessPlot()
-
-
-
-
-
-
 
 
 

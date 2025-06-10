@@ -11,11 +11,13 @@ import numpy as np
 class levLoader: 
     #Class to read, store, and access a csv file with data from each lever press for a single coop experimental session
     
-    def __init__(self, filename, videoPath = ""): #Constructor
+    def __init__(self, filename, endFrame = 0, fps = 30): #Constructor
         self.filename = filename
         self.data = None
         self._load_data()
         self.categories = ["TrialNum", "LeverNum", "AbsTime", "TrialCond", "DispTime", "TrialTime", "coopTS", "coopSucc", "Hit", "TrialEnd", "AnimalID", "RatID"]
+        self.endFrame = endFrame
+        self.fps = fps
         
     def _load_data(self): #Uses pandas to read csv file and store in a pandas datastructure
         """
@@ -124,6 +126,74 @@ class levLoader:
     
     
     #Graph Stuff: 
+    def returnTimeStartTrials(self):  
+        """
+        Returns a list of absolute times (in seconds) each trial started at.
+        The function groups the data by 'TrialNum' and finds the smallest 'AbsTime' per trial, 
+        and then subtracts the 'TrialTime' to get the result.
+        
+        Returns:
+            list: A list of floats, each being the absolute time of the trial starting
+        """
+        if self.data is None:
+            raise ValueError("No data loaded.")
+    
+        if not {'TrialNum', 'AbsTime', 'TrialTime'}.issubset(self.data.columns):
+            raise ValueError("Required columns 'TrialNum', 'AbsTime', or 'TrialTime' are missing from data.")
+    
+        # Find the index of the row with the minimum AbsTime for each TrialNum
+        min_time_idx = self.data.groupby('TrialNum')['AbsTime'].idxmin()
+        
+        # Get the corresponding rows
+        trial_start_rows = self.data.loc[min_time_idx]
+    
+        # Subtract TrialTime from AbsTime to get true start time
+        trial_starts = (trial_start_rows['AbsTime'] - trial_start_rows['TrialTime']).tolist()
+    
+        return trial_starts
+    
+    def returnTimeEndTrials(self):
+        trial_starts = self.returnTimeStartTrials()
+        trial_ends = []
+        
+        for i, start in enumerate(trial_starts):
+            if (i < len(trial_starts) - 1):
+                trial_ends.append(trial_starts[i + 1])
+            else:
+                trial_ends.append((self.endFrame - 2) / self.fps)
+        
+        return trial_ends
+    
+    def returnRatIDFirstPressTrial(self):
+        '''
+        Returns a list of the RatID for the rat that pressed the lever 
+        first for each trial where there was a lever press.
+        '''
+        if self.data is None:
+            raise ValueError("No data loaded.")
+    
+        if not {'TrialNum', 'RatID'}.issubset(self.data.columns):
+            raise ValueError("Required columns 'TrialNum'or 'RatID' are missing from data.")
+        
+        first_ratids = self.data.groupby('TrialNum')['RatID'].first()
+        
+        return first_ratids
+    
+    def returnRatLocationFirstPressTrial(self): 
+        '''
+        Returns a list of the leverNum for the rat that presses the lever first
+        for each trial where there was a lever press. 
+        '''
+        
+        if self.data is None:
+            raise ValueError("No data loaded.")
+    
+        if not {'TrialNum', 'LeverNum'}.issubset(self.data.columns):
+            raise ValueError("Required columns 'TrialNum'or 'LeverNum' are missing from data.")
+        
+        leverNums = self.data.groupby('TrialNum')['LeverNum'].first()
+        
+        return leverNums
     
     def returnFirstPressAbsTimes(self):
         """
@@ -148,21 +218,21 @@ class levLoader:
     def returnMostPressesByLever(self, ratID):
         """
         Returns the number of presses by the specified rat on Lever 1 and Lever 2.
-    
+        
         Args:
             ratID (int): The ID of the rat to filter presses for.
-    
+        
         Returns:
             max(num_lever1_presses, num_lever2_presses)
         """
         if self.data is None:
             raise ValueError("No data loaded.")
-    
+        
         if 'RatID' not in self.data.columns or 'LeverNum' not in self.data.columns:
             raise ValueError("Required columns 'RatID' or 'LeverNum' are missing from data.")
-    
+        
         rat_data = self.data[self.data['RatID'] == ratID]
-    
+        
         lever1_count = (rat_data['LeverNum'] == 1).sum()
         lever2_count = (rat_data['LeverNum'] == 2).sum()
         return max(lever1_count, lever2_count)
@@ -499,9 +569,9 @@ class levLoader:
 #
 
 file1 = "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/leverData.csv"
-lev = levLoader(file1)
+#lev = levLoader(file1)
 
-print(lev.returnCooperativeSuccessRegionsBool())
-print(lev.returnNumCooperationSuccessZones())
-print(lev.returnAvgLengthCooperativeSuccessZones())
+#print(lev.returnCooperativeSuccessRegionsBool())
+#print(lev.returnNumCooperationSuccessZones())
+#print(lev.returnAvgLengthCooperativeSuccessZones())
 

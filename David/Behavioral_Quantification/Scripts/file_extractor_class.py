@@ -120,7 +120,8 @@ class fileExtractor:
         Keep only rows where test/train == 'train'
         """
         if (sortOut):
-            self.deleteAllButFirst()
+            #self.deleteAllButFirst()
+            self.getTrainingPartner()
             
         self.data = self.data[self.data['test/train'] == 'train']
         df_copy = self.data.copy()
@@ -135,7 +136,8 @@ class fileExtractor:
         Keep only rows where test/train == 'test'
         """
         if (sortOut):
-            self.deleteAllButFirst()
+            #self.deleteAllButFirst()
+            self.getTrainingPartner()
         
         self.data = self.data[self.data['test/train'] == 'test']
         df_copy = self.data.copy()
@@ -152,7 +154,7 @@ class fileExtractor:
         """
         if (sortOut):
             self.getPairedTestingSessions()
-            self.deleteAllButFirst()
+            #self.deleteAllButFirst()
         
         self.data = self.data[self.data['familiarity'] == 'TP']
         df_copy = self.data.copy()
@@ -169,7 +171,7 @@ class fileExtractor:
         """
         if (sortOut):
             self.getPairedTestingSessions()
-            self.deleteAllButFirst()
+            #self.deleteAllButFirst()
         
         self.data = self.data[self.data['familiarity'] == 'UF']
         df_copy = self.data.copy()
@@ -187,7 +189,8 @@ class fileExtractor:
         """
         if (sortOut):
             self.getPairedTestingSessions()
-            self.deleteAllButFirst()
+            self.getTrainingPartner()
+            #self.deleteAllButFirst()
         
         self.data = self.data[
             ~self.data['session'].str.endswith(('Opaque', 'Translucent'), na=False)
@@ -205,8 +208,9 @@ class fileExtractor:
         Keep only rows where 'session' ends with 'translucent'.
         """
         if (sortOut):
-            self.getPairedTestingSessions()
+            #self.getPairedTestingSessions()
             self.deleteAllButFirst()
+            self.getTrainingPartner()
         
         self.data = self.data[
             self.data['session'].str.endswith('Translucent', na=False)
@@ -225,7 +229,8 @@ class fileExtractor:
         """
         if (sortOut):
             self.getPairedTestingSessions()
-            self.deleteAllButFirst()
+            #self.deleteAllButFirst()
+            self.getTrainingPartner()
         
         self.data = self.data[
             self.data['session'].str.endswith('Opaque', na=False)
@@ -419,7 +424,7 @@ class fileExtractor:
                 grouped_paths.append(group_paths)
             return grouped_paths
     
-    def returnFPS(self, grouped = False):
+    def returnFPSandTotFrames(self, grouped = False):
         '''
         Return a list of numbers, representing the fps for each file
         '''
@@ -433,33 +438,41 @@ class fileExtractor:
             zero = ""
             return f"{base_path}/{folder}/{zero}{row['session']}/{videoName}" if pd.isna(row["vid"]) == False and pd.isna(row["session"]) == False else None
         
-        def getFPS(videoPath):
+        def getFPSandTotFrames(videoPath):
             cap = cv2.VideoCapture(videoPath)
             if not cap.isOpened():
                 raise IOError("Could not open video file.")
 
             fps = cap.get(cv2.CAP_PROP_FPS)
-            return fps
-        
+            totFrames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+            return fps, totFrames
+                
         fpsList = []
+        totFramesList = []
         
         if not grouped:
             for _, row in self.data.iterrows():
                 path = construct_path(row)
-                fps = getFPS(path)
+                fps, totFrames = getFPSandTotFrames(path)
                 fpsList.append(fps)
+                totFramesList.append(totFrames)
         
         else:
             grouped_rows = self.sortByMicePairs()
             for group in grouped_rows:
                 fpsTempList = []
+                totFramesTempList = []
+                
                 for _, row in group.iterrows():
                     path = construct_path(row)
-                    fpsTempList.append(getFPS(path))
+                    fps, totFrames = getFPSandTotFrames(path)
+                    fpsTempList.append(fps)
+                    totFramesTempList.append(totFrames)
                 
                 fpsList.append(fpsTempList)
+                totFramesList.append(totFramesTempList)
         
-        return fpsList
+        return fpsList, totFramesList
     
     
 #information_path = "/Users/david/Documents/Research/Saxena Lab/rat-cooperation/scripts/notebooks/dyed_preds_df.csv"

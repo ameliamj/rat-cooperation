@@ -13,15 +13,16 @@ from lev_class import levLoader
 from pos_class import posLoader
 
 class singleExperiment:
-    def __init__(self, mag_file, lev_file, pos_file, fps = 30):
+    def __init__(self, mag_file, lev_file, pos_file, fps = 30, endFrame = 5000):
         self.mag_file = mag_file
         self.lev_file = lev_file
         self.pos_file = pos_file
         
         self.mag = magLoader(mag_file)
-        self.lev = levLoader(lev_file)
-        self.pos = posLoader(pos_file)
+        self.lev = levLoader(lev_file, endFrame, fps)
+        self.pos = posLoader(pos_file, endFrame)
         self.fps = fps
+        self.endFrame = endFrame
     
     def unitTest(self):
         print("Mag Unit Tests")

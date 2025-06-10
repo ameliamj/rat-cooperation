@@ -19,7 +19,7 @@ from shapely.geometry import LineString, Polygon
 
 class posLoader:
     
-    def __init__(self, filename):
+    def __init__(self, filename, totalFrames):
         
         self.filename = filename
         with h5py.File(filename, "r") as f:
@@ -36,7 +36,9 @@ class posLoader:
                   f"({nan_percentage:.2f}%) before interpolation")
     
             self.data = self._fill_missing_data(raw_data) #Shape: (2, 2, 5, x) --> (mouse0/1, x/y, which_body_part, which_frame)
-            
+        
+        self.totalFrames = totalFrames
+        
         self.minFramesStill = 10
         self.stillnessRange = 10
         
@@ -54,13 +56,28 @@ class posLoader:
         self.height = 640
         
         # Define horizontal boundaries for zones
-        self.levBoundary = self.width // 3
-        self.magBoundary = 2 * self.width // 3
+        self.levBoundary = self.width // 4
+        self.magBoundary = 3 * self.width // 4
+        
+        #Subdivide Lev and Mag Zones
+        self.levTopTR = (300, 10)
+        self.levTopBL = (10, 310)
+        
+        self.levBotTR = (300, 330)
+        self.levBotBL = (10, 630)
+        
+        self.magTopTR = (1382, 10)
+        self.magTopBL = (1080, 310)
+        
+        self.magBotTR = (1382, 330)
+        self.magBotBL = (1080, 630)
     
         # Define regions based on x-coordinate of headbase
         self.levRegion = (0, self.levBoundary)
         self.middleRegion = (self.levBoundary, self.magBoundary)
         self.magRegion = (self.magBoundary, self.width)
+        
+        self.possibleLocations = ['lev_top', 'lev_bottom', 'mag_top', 'mag_bottom', 'mid', 'other']
         
         
     def _fill_missing_data(self, Y, kind = "linear"):
@@ -282,25 +299,31 @@ class posLoader:
     
     #Graph Stuff
     
-    def returnMouseLocation(self, mouseID):
+    def returnMouseLocation(self, ratID):
         """
-        Returns a list of strings indicating the region ('lev', 'mid', 'mag') the headbase of the mouse is in for each frame.
+        Returns a list of strings indicating the region of the mouse's headbase for each frame.
+        Possible regions: 'lev_top', 'lev_bottom', 'mag_top', 'mag_bottom', 'mid', 'other'
         """
-        HB_x = self.data[mouseID, 0, self.HB_INDEX, :]  # x-coordinate of headbase across frames
+        HB_x = self.data[ratID, 0, self.HB_INDEX]  # x-coordinate of headbase
+        HB_y = self.data[ratID, 1, self.HB_INDEX]  # y-coordinate of headbase
         locations = []
     
-        for x in HB_x:
-            if self.levRegion[0] <= x < self.levRegion[1]:
-                locations.append("lev")
-            elif self.middleRegion[0] <= x < self.middleRegion[1]:
+        for x, y in zip(HB_x, HB_y):
+            if self.levTopBL[0] <= x <= self.levTopTR[0] and self.levTopTR[1] <= y <= self.levTopBL[1]:
+                locations.append("lev_top")
+            elif self.levBotBL[0] <= x <= self.levBotTR[0] and self.levBotTR[1] <= y <= self.levBotBL[1]:
+                locations.append("lev_bottom")
+            elif self.magTopBL[0] <= x <= self.magTopTR[0] and self.magTopTR[1] <= y <= self.magTopBL[1]:
+                locations.append("mag_top")
+            elif self.magBotBL[0] <= x <= self.magBotTR[0] and self.magBotTR[1] <= y <= self.magBotBL[1]:
+                locations.append("mag_bottom")
+            elif self.levBoundary <= x < self.magBoundary:
                 locations.append("mid")
-            elif self.magRegion[0] <= x <= self.magRegion[1]:
-                locations.append("mag")
             else:
-                locations.append("unknown")
+                locations.append("other")
     
         return locations
-    
+        
     def returnGazeAlignmentHistogram(self, mouseID):
         """
         Computes a histogram of angles (in degrees) between the gaze vector and the 
@@ -380,7 +403,34 @@ class posLoader:
     def returnNumFrames(self):
         return self.data.shape[-1]
 
+    def returnStandardizedDistanceMoved(self, ratID):
+        x_coords = self.data[ratID, 0, self.HB_INDEX, :]
+        print("x_coords")
+        print(x_coords)
+        y_coords = self.data[ratID, 1, self.HB_INDEX, :]
+        print("y_coords: ")
+        print(y_coords)
+
+        # Calculate total distance as sum of Euclidean distances between consecutive frames
+        valid_indices = ~np.isnan(x_coords) & ~np.isnan(y_coords)
+        x = x_coords[valid_indices]
+        y = y_coords[valid_indices]
+
+        dx = np.diff(x)
+        print("dx: ", dx)
+        dy = np.diff(y)
+        print("dy: ", dy)
         
+        dist = np.sqrt(dx ** 2 + dy ** 2)
+        total_distance = np.sum(dist)
+        
+        #total_distance = np.sum(totDist)
+        
+        if (self.totalFrames > 0):
+            print("Result: ", total_distance / self.totalFrames)
+            return total_distance / self.totalFrames
+        else:
+            return 0
         
 
 def visualize_gaze_overlay(
@@ -389,7 +439,7 @@ def visualize_gaze_overlay(
     mouseID=0,
     save_path="output.mp4",
     start_frame=0,
-    max_frames=300,
+    max_frames=500,
     gaze_length=250
 ):
     '''
@@ -488,8 +538,26 @@ def visualize_gaze_overlay(
         region_self = mouse_region[frame_idx]
         region_other = other_region[frame_idx]
         
-        cv2.putText(frame, f"Mouse{mouseID}: {region_self}", (10, 120), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
-        cv2.putText(frame, f"Mouse{1 - mouseID}: {region_other}", (10, 150), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
+        cv2.putText(frame, f"Rat{mouseID}: {region_self}", (10, 120), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
+        cv2.putText(frame, f"Rat{1 - mouseID}: {region_other}", (10, 150), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
+        
+        #Draw Sub-Zones: 
+        zone_color = (255, 255, 255)  # White color for rectangles
+        thickness = 2
+        
+        # Convert corner definitions to top-left and bottom-right for OpenCV
+        zones = [
+            ("levTop", loader.levTopTR, loader.levTopBL),
+            ("levBot", loader.levBotTR, loader.levBotBL),
+            ("magTop", loader.magTopTR, loader.magTopBL),
+            ("magBot", loader.magBotTR, loader.magBotBL)
+        ]
+        
+        for label, tr, bl in zones:
+            top_left = (bl[0], tr[1])     # x from BL, y from TR
+            bottom_right = (tr[0], bl[1]) # x from TR, y from BL
+            cv2.rectangle(frame, top_left, bottom_right, zone_color, thickness)
+            cv2.putText(frame, label, (top_left[0] + 5, top_left[1] + 25), cv2.FONT_HERSHEY_SIMPLEX, 0.6, zone_color, 2)
         
         # Draw body polygon
         polygon_indices = [
@@ -541,7 +609,7 @@ video_file = "/Users/david/Downloads/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.mp4"
 
 
 #loader = posLoader(h5_file)
-#visualize_gaze_overlay(video_file, loader, mouseID=0, save_path = "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Graphs/Videos/testGazeVid_noFillMissingData.mp4")
+#visualize_gaze_overlay(video_file, loader, mouseID=0, save_path = "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Graphs/Videos/testGazeVid.mp4")
 
     
     
