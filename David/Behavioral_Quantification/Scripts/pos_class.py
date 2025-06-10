@@ -254,19 +254,6 @@ class posLoader:
                     still_mask[t] = True
     
             return still_mask
-            
-    
-        # Construct polygon path
-        polygon_points = [tuple(earL), tuple(nose), tuple(earR), tuple(tail), tuple(earL)]
-        body_poly = Polygon(polygon_points)
-    
-        # Extend the gaze vector in both directions
-        gaze_dir = gaze_vector / (np.linalg.norm(gaze_vector) + 1e-8)
-        p1 = gaze_origin - gaze_length * gaze_dir
-        p2 = gaze_origin + gaze_length * gaze_dir
-        gaze_line = LineString([tuple(p1), tuple(p2)])
-    
-        return gaze_line.intersects(body_poly)
     
     
     def returnIsGazing(self, mouseID, test = False):

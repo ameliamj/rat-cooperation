@@ -1864,6 +1864,117 @@ class multiFileGraphs:
         plt.tight_layout()
         plt.show()
         
+    def compareAverageVelocityGazevsNot(self):
+        '''
+        Creates a bar plot comparing the average velocity of the mouse during gazing moments vs. non-gazing
+        moments. 
+        
+        Velocity is calculated by finding the distance moved per frame of the head base
+        'flexibilityVar' exists to not count any non-gazing within flexibilityVar frames of a gazing frame.   
+        '''
+        
+        flexibilityVar = 5
+        
+        totFramesNonGazing = 0
+        totMovementNonGazing = 0
+        
+        totFramesGazing = 0 
+        totMovementGazing = 0
+        
+        for exp in self.experiments:
+            pos = exp.pos
+            
+            x_coordsRat0 = pos.data[0, 0, pos.HB_INDEX, :]
+            y_coordsRat0 = pos.data[0, 1, pos.HB_INDEX, :]
+            
+            x_coordsRat1 = pos.data[1, 0, pos.HB_INDEX, :]
+            y_coordsRat1 = pos.data[1, 1, pos.HB_INDEX, :]
+            
+            arrIsGazingRat0 = pos.returnIsGazing(0)
+            arrIsGazingRat1 = pos.returnIsGazing(1)
+            
+            print("len(arrIsGazingRat0): ", len(arrIsGazingRat0))
+            print("len(arrIsGazingRat1): ", len(arrIsGazingRat1))
+            print("len(x_coordsRat0): ", len(x_coordsRat0))
+            
+            
+            counterIsGazing = 0
+            
+            for i, frame in enumerate(arrIsGazingRat0):
+                if (i == 0):
+                    continue
+                
+                x = x_coordsRat0[i]
+                y = y_coordsRat0[i]
+                xp = x_coordsRat0[i-1]
+                yp = y_coordsRat0[i-1]
+                
+                dx = x - xp
+                dy = y - yp
+                
+                dist = np.sqrt(dx ** 2 + dy ** 2)
+                
+                if (counterIsGazing >= 0 and frame == True):
+                    counterIsGazing = flexibilityVar
+                    totFramesGazing += 1
+                    totMovementGazing += dist
+                    
+                elif (counterIsGazing > 0 and frame == False):
+                    counterIsGazing -= 1
+                
+                else:
+                    totFramesNonGazing += 1
+                    totMovementNonGazing += dist
+                
+            for i, frame in enumerate(arrIsGazingRat1):
+                if (i == 0):
+                    continue
+                
+                x = x_coordsRat1[i]
+                y = y_coordsRat1[i]
+                xp = x_coordsRat1[i-1]
+                yp = y_coordsRat1[i-1]
+                
+                dx = x - xp
+                dy = y - yp
+                
+                dist = np.sqrt(dx ** 2 + dy ** 2)
+                
+                if (counterIsGazing >= 0 and frame == True):
+                    counterIsGazing = flexibilityVar
+                    totFramesGazing += 1
+                    totMovementGazing += dist
+                    
+                elif (counterIsGazing > 0 and frame == False):
+                    counterIsGazing -= 1
+                
+                else:
+                    totFramesNonGazing += 1
+                    totMovementNonGazing += dist
+            
+            # Compute average velocities
+            avgVelGazing = totMovementGazing / totFramesGazing if totFramesGazing > 0 else 0
+            avgVelNonGazing = totMovementNonGazing / totFramesNonGazing if totFramesNonGazing > 0 else 0
+        
+            # Plotting
+            labels = ['Gazing', 'Not Gazing']
+            values = [avgVelGazing, avgVelNonGazing]
+        
+            plt.figure(figsize=(6, 5))
+            bars = plt.bar(labels, values, color=['blue', 'gray'])
+            plt.ylabel('Average Velocity (pixels/frame)')
+            plt.title('Average Velocity During Gazing vs Not Gazing')
+            
+            # Add value labels on top of bars
+            for bar in bars:
+                height = bar.get_height()
+                plt.text(bar.get_x() + bar.get_width() / 2, height * 1.01, f'{height:.2f}', 
+                         ha='center', va='bottom', fontsize=10)
+        
+            plt.tight_layout()
+            plt.savefig("compareAverageVelocityGazevsNotGazing.png")
+            plt.show()
+    
         
     def makeHeatmapLocation(self):
         '''
@@ -1960,6 +2071,7 @@ class multiFileGraphs:
         plt.ylabel('Cooperative Success Rate (%)')
         plt.legend()
         plt.grid(True)
+        plt.savefig("DistMoved_vs_CoopSuccessRate.png")
         plt.show()
         
         

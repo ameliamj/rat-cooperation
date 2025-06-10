@@ -24,6 +24,20 @@ class singleExperiment:
         self.fps = fps
         self.endFrame = endFrame
     
+    def deleteSub100msTrials(self):
+        '''
+        Deletes all rows in lev.data and pos.data associated with trials where any
+        TrialTime is below 0.1 seconds.
+        '''
+        # Find all trial numbers with any TrialTime under 0.1
+        bad_trials = self.lev.data.loc[self.lev.data["TrialTime"] < 0.1, "TrialNum"].unique()
+        
+        # Filter out rows from lev.data where TrialNum is in bad_trials
+        self.lev.data = self.lev.data[~self.lev.data["TrialNum"].isin(bad_trials)]
+    
+        # Filter out rows from pos.data where TrialNum is in bad_trials
+        self.pos.data = self.pos.data[~self.pos.data["TrialNum"].isin(bad_trials)]
+    
     def unitTest(self):
         print("Mag Unit Tests")
         print("    Total Mag Events: ", self.mag.getTotalMagEvents())
