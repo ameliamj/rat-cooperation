@@ -1092,6 +1092,9 @@ class multiFileGraphs:
         self.prefix = prefix
         deleted_count = 0
         
+        print("There are ", len(magFiles), " experiments in this data session. ")
+        print("")
+        
         if (len(magFiles) != len(levFiles) or len(magFiles) != len(posFiles)):
             raise ValueError("Different number of mag, lev, and pos files")
         
