@@ -122,6 +122,7 @@ class fileExtractor:
         if (sortOut):
             #self.deleteAllButFirst()
             self.getTrainingPartner()
+            self.getTransparentSessions()
             
         self.data = self.data[self.data['test/train'] == 'train']
         df_copy = self.data.copy()
@@ -138,6 +139,7 @@ class fileExtractor:
         if (sortOut):
             #self.deleteAllButFirst()
             self.getTrainingPartner()
+            self.getTransparentSessions()
         
         self.data = self.data[self.data['test/train'] == 'test']
         df_copy = self.data.copy()
@@ -154,6 +156,7 @@ class fileExtractor:
         """
         if (sortOut):
             self.getPairedTestingSessions()
+            self.getTransparentSessions()
             #self.deleteAllButFirst()
         
         self.data = self.data[self.data['familiarity'] == 'TP']
@@ -171,6 +174,7 @@ class fileExtractor:
         """
         if (sortOut):
             self.getPairedTestingSessions()
+            self.getTransparentSessions()
             #self.deleteAllButFirst()
         
         self.data = self.data[self.data['familiarity'] == 'UF']
@@ -208,8 +212,8 @@ class fileExtractor:
         Keep only rows where 'session' ends with 'translucent'.
         """
         if (sortOut):
-            #self.getPairedTestingSessions()
-            self.deleteAllButFirst()
+            self.getPairedTestingSessions()
+            #self.deleteAllButFirst()
             self.getTrainingPartner()
         
         self.data = self.data[
@@ -436,7 +440,8 @@ class fileExtractor:
             videoName = row["vid"] + ".mp4"
             #zero = "" if row["test/train"] == "test" else "0" 
             zero = ""
-            return f"{base_path}/{folder}/{zero}{row['session']}/{videoName}" if pd.isna(row["vid"]) == False and pd.isna(row["session"]) == False else None
+            videos = "" if row["test/train"] == "train" else "Videos/"
+            return f"{base_path}/{folder}/{zero}{row['session']}/{videos}{videoName}" if pd.isna(row["vid"]) == False and pd.isna(row["session"]) == False else None
         
         def getFPSandTotFrames(videoPath):
             cap = cv2.VideoCapture(videoPath)
@@ -453,6 +458,7 @@ class fileExtractor:
         if not grouped:
             for _, row in self.data.iterrows():
                 path = construct_path(row)
+                #print("Path is: ", path)
                 fps, totFrames = getFPSandTotFrames(path)
                 fpsList.append(fps)
                 totFramesList.append(totFrames)
@@ -489,9 +495,10 @@ only_transparent = "/Users/david/Documents/Research/Saxena Lab/rat-cooperation/D
 only_unfamiliar = "/Users/david/Documents/Research/Saxena Lab/rat-cooperation/David/Behavioral_Quantification/Sorted Data Files/only_unfamiliar_partners.csv"
 only_trainingpartners = "/Users/david/Documents/Research/Saxena Lab/rat-cooperation/David/Behavioral_Quantification/Sorted Data Files/only_training_partners.csv"
 
-fe = fileExtractor(fixedExpanded)
-fe.deleteInvalid()  
-fe.getFirstSessionPerMicePair()
+#fe = fileExtractor(fixedExpanded)
+#fe.deleteInvalid()
+#print("Res: ", fe.returnFPSandTotFrames())
+#fe.getFirstSessionPerMicePair()
 #fe.getPairedTestingSessions()
 #fe.sortByMicePairs(True)
 

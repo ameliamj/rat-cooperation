@@ -8,9 +8,22 @@ Created on Mon Jun  2 15:33:35 2025
 
 import numpy as np
 import pandas as pd
+import cv2 
 from .error_utils import load_file
-from .global_utils import fps, levx, loc2y, loc1y, magx
+from .global_utils import levx, loc2y, loc1y, magx
 from .global_utils import ROOTDIR, TESTDIR, TRAINDIR
+
+def get_fps(video_path):
+    cap = cv2.VideoCapture(video_path)
+    if not cap.isOpened():
+        raise IOError("Could not open video file.")
+
+    fps = cap.get(cv2.CAP_PROP_FPS)
+    return fps
+
+def construct_path():
+    video_path = ROOTDIR #Finish
+    return video_path
 
 # given a row of the data frame from PredLoader, will add the rat id to each lever and mag
 # event or return that a lever / mag file doesn't exist for this trial
@@ -18,6 +31,7 @@ def get_lever_mag(row):
     tt = TESTDIR if row['test/train'] == 'test' else TRAINDIR
     behav = '/Behavioral/processed/' if row['test/train'] == 'test' else '/Behavioral/'
     session = row['session']
+        
     if row['test/train'] == 'test': 
         vid = row['vid']
     else:
@@ -42,7 +56,7 @@ def get_lever_mag(row):
             mag.to_csv(ROOTDIR + tt + session + behav + 'mag/' +  vid + '_mag.csv', index=False)
     except FileNotFoundError:
         mag_exists = False 
-
+    
     return lever_exists, mag_exists
     
 # for a given list of events and locations and event type (mag/lever), will add an 
@@ -50,6 +64,9 @@ def get_lever_mag(row):
 # event given the rat locations
 def get_rat_id(events, locations, event_type):
     ratID = []
+    
+    videoPath = construct_path()
+    fps = get_fps(videoPath)
 
     for row in events.itertuples(index=False):
         # Calculate the frame for every lever press

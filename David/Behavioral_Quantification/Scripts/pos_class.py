@@ -19,7 +19,7 @@ from shapely.geometry import LineString, Polygon
 
 class posLoader:
     
-    def __init__(self, filename, totalFrames):
+    def __init__(self, filename, totalFrames = 1000):
         
         self.filename = filename
         with h5py.File(filename, "r") as f:
@@ -208,7 +208,8 @@ class posLoader:
             """
             Return a boolean array of shape (num_frames,) where True indicates the mouse was still
             for the last `minFramesStill` frames.
-            Stillness is defined by each body part remaining within a circle of radius `stillnessRange`.
+            Stillness is defined by each body part having a standard deviation over the {minFramesStill} 
+            less than `stillnessRange`.
             """
             num_frames = self.data.shape[-1]
             body_part_positions = self.data[mouseID]  # shape (2, 5, num_frames)
@@ -229,7 +230,10 @@ class posLoader:
     
             return still_mask
         else:
-            # Alternate definition: gaze intersects body for minFramesStill consecutive frames
+            '''
+            Alternate definition: gaze intersects body for minFramesStill consecutive frames
+            '''
+            
             num_frames = self.data.shape[-1]
             still_mask = np.zeros(num_frames, dtype=bool)
     
@@ -517,9 +521,9 @@ def visualize_gaze_overlay(
         cv2.line(frame, (loader.magBoundary, 0), (loader.magBoundary, height), (255, 0, 255), 2)   # Magenta line for magBoundary
 
         # Optional: label the zones
-        cv2.putText(frame, "Lev", (loader.levBoundary//2 - 30, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255,255,0), 2)
+        #cv2.putText(frame, "Lev", (loader.levBoundary//2 - 30, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255,255,0), 2)
         cv2.putText(frame, "Mid", (width//2 - 30, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (200,200,200), 2)
-        cv2.putText(frame, "Mag", (loader.magBoundary + (width - loader.magBoundary)//2 - 30, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255,0,255), 2)        
+        #cv2.putText(frame, "Mag", (loader.magBoundary + (width - loader.magBoundary)//2 - 30, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255,0,255), 2)        
         
         #Mouse Region
         region_self = mouse_region[frame_idx]
@@ -596,7 +600,7 @@ video_file = "/Users/david/Downloads/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.mp4"
 
 
 #loader = posLoader(h5_file)
-#visualize_gaze_overlay(video_file, loader, mouseID=0, save_path = "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Graphs/Videos/testGazeVid.mp4")
+#visualize_gaze_overlay(video_file, loader, mouseID=0, save_path = "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Graphs/Videos/testGazeVid2.mp4")
 
     
     

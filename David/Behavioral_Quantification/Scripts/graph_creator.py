@@ -113,7 +113,7 @@ class multiFileGraphsCategories:
         for cat in categoryNames:    
             self.endSaveName += f"_{cat}"
         
-        self.path = "/gpfs/radev/project/saxena/drb83/rat-cooperation/David/Behavioral_Quantification/Graphs/adef_"
+        self.path = "/gpfs/radev/project/saxena/drb83/rat-cooperation/David/Behavioral_Quantification/Graphs/adef_filtered_"
         #self.path = ""
         
         if not self.path:
@@ -169,7 +169,7 @@ class multiFileGraphsCategories:
         plt.tight_layout()
         
         # Save and display the plot
-        plt.savefig(f'GazeEventsPerMinute{self.endSaveName}')
+        plt.savefig(f'{self.path}GazeEventsPerMinute{self.endSaveName}')
         plt.show()
         plt.close()
     
@@ -473,7 +473,7 @@ class multiFileGraphsCategories:
         plt.title('Avg Re-Presses by First Mouse (All Trials) by Category', fontsize=14)
         plt.ylabel('Average Re-Presses')
         plt.tight_layout()
-        plt.savefig("avg_repress_first_mouse_by_category.png")
+        plt.savefig("{self.path}avg_repress_first_mouse_by_category{self.endSaveName}.png")
         plt.show()
         
         # --- Plot 2: Avg re-presses by Second Mouse in successful trials (by category) ---
@@ -484,7 +484,7 @@ class multiFileGraphsCategories:
         plt.title('Avg Re-Presses by Second Mouse (Success Only) by Category', fontsize=14)
         plt.ylabel('Average Re-Presses')
         plt.tight_layout()
-        plt.savefig("avg_repress_second_mouse_success_by_category.png")
+        plt.savefig("{self.path}avg_repress_second_mouse_success_by_category{self.endSaveName}.png")
         plt.show()
         
         # --- Plot 3: First Mouse Re-Presses in Success vs. Non-Success Trials (by category) ---
@@ -502,7 +502,7 @@ class multiFileGraphsCategories:
         plt.title('First Mouse Re-Pressing by Category\n(Success vs Non-Success)', fontsize=14)
         plt.legend()
         plt.tight_layout()
-        plt.savefig("avg_repress_first_mouse_success_vs_non_by_category.png")
+        plt.savefig("{self.path}avg_repress_first_mouse_success_vs_non_by_category{self.endSaveName}.png")
         plt.show()
     
     def gazeAlignmentAngle(self, both_mice = True):
@@ -570,19 +570,19 @@ posFiles = [["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/B
 
 #categoryExperiments = multiFileGraphsCategories(levFiles, magFiles, posFiles, ["Paired_Testing", "Training_Cooperation"])
 #categoryExperiments.rePressingBehavior()
-
+#categoryExperiments.gazeAlignmentAngle()
 
 #Paired Testing vs. Training Cooperation
 
 #print("Running Paired Testing vs Training Cooperation")
-'''dataPT = getOnlyPairedTesting()
+dataPT = getOnlyPairedTesting()
 dataTC = getOnlyTrainingCoop()
 
 levFiles = [dataPT[0], dataTC[0]]
 magFiles = [dataPT[1], dataTC[1]]
 posFiles = [dataPT[2], dataTC[2]]
 categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["Paired_Testing", "Training_Cooperation"])
-'''
+
 
 #Unfamiliar vs. Training Partners
 '''print("Running UF vs TP")
@@ -608,10 +608,12 @@ posFiles = [dataTransparent[2], dataTranslucent[2], dataOpaque[2]]
 categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["Transparent", "Translucent", "Opaque"])
 '''
 
-#categoryExperiments.compareGazeEventsCategories()
-#categoryExperiments.compareSuccesfulTrials()
-#categoryExperiments.compareIPI()
-#categoryExperiments.printSummaryStats()
+categoryExperiments.compareGazeEventsCategories()
+categoryExperiments.compareSuccesfulTrials()
+categoryExperiments.compareIPI()
+categoryExperiments.rePressingBehavior()
+categoryExperiments.gazeAlignmentAngle()
+categoryExperiments.printSummaryStats()
 
 
 
@@ -1802,8 +1804,8 @@ class multiFileGraphs:
                 startFrame = int(startTimeTrials[i] * fps)
                 endFrame = int(endTimeTrials[i] * fps)
                 
-                print("startFrame: ", startFrame)
-                print("endFrame: ", endFrame)
+                #print("startFrame: ", startFrame)
+                #print("endFrame: ", endFrame)
                 
                 numFrames = endFrame - startFrame
                 
@@ -2102,11 +2104,12 @@ pos_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/B
 
 
 experiment = multiFileGraphs(mag_files, lev_files, pos_files)
+experiment.quantifyRePressingBehavior()
 #experiment.makeHeatmapLocation()
 #experiment.findTotalDistanceMoved()
 
 #experiment.rePressingbyDistance()
-experiment.cooperativeRegionStrategiesQuantification()
+#experiment.cooperativeRegionStrategiesQuantification()
 
 #experiment.gazeAlignmentAngleHistogram()
 #experiment.quantifyRePressingBehavior()
