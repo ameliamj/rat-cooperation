@@ -1852,6 +1852,9 @@ class multiFileGraphs:
                 startFrame = int(startTimeTrials[i] * fps)
                 endFrame = int(endTimeTrials[i] * fps)
                 
+                if (startFrame == None or endFrame == None):
+                    continue
+                
                 #print("startFrame: ", startFrame)
                 #print("endFrame: ", endFrame)
                 

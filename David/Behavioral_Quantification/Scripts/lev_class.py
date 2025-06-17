@@ -147,8 +147,12 @@ class levLoader:
         # Get the corresponding rows
         trial_start_rows = self.data.loc[min_time_idx]
     
-        # Subtract TrialTime from AbsTime to get true start time
-        trial_starts = (trial_start_rows['AbsTime'] - trial_start_rows['TrialTime']).tolist()
+        # Subtract TrialTime from AbsTime to get the true start time
+        trial_starts_dict = (trial_start_rows['AbsTime'] - trial_start_rows['TrialTime']).to_dict()
+        
+        # Construct a list of length total_trials, using None for missing trials
+        total_trials = self.returnNumTotalTrials()
+        trial_starts = [trial_starts_dict.get(i, None) for i in range(total_trials)]
     
         return trial_starts
     
