@@ -1097,6 +1097,12 @@ class multiFileGraphs:
         
         if (len(magFiles) != len(levFiles) or len(magFiles) != len(posFiles)):
             raise ValueError("Different number of mag, lev, and pos files")
+            
+        if (len(magFiles) != len(fpsList) or len(magFiles) != len(totFramesList)):
+            print("lenDataFiles: ", len(magFiles))
+            print("len(fpsList)", len(fpsList))
+            print("len(totFramesList)", len(totFramesList))
+            raise ValueError("Different number of fpsList, totFramesList values")
         
         for i in range(len(magFiles)):
             exp = singleExperiment(magFiles[i], levFiles[i], posFiles[i], fpsList[i], totFramesList[i])
@@ -1836,6 +1842,11 @@ class multiFileGraphs:
             listTrials = lev.returnCooperativeSuccessRegionsBool()
             startTimeTrials = lev.returnTimeStartTrials()
             endTimeTrials = lev.returnTimeEndTrials()
+            
+            
+            print("Lengths:", len(listTrials), len(startTimeTrials), len(endTimeTrials))
+            if (len(listTrials) != len(startTimeTrials) != len(endTimeTrials)):
+                print("levFiles: ", exp.lev_file)
             
             for i, trialBool in enumerate(listTrials):
                 startFrame = int(startTimeTrials[i] * fps)
