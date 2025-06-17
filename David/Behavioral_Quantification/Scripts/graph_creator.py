@@ -1849,11 +1849,11 @@ class multiFileGraphs:
                 print("levFiles: ", exp.lev_file)
             
             for i, trialBool in enumerate(listTrials):
+                if (startTimeTrials[i] == None or endTimeTrials[i] == None):
+                    continue
+                
                 startFrame = int(startTimeTrials[i] * fps)
                 endFrame = int(endTimeTrials[i] * fps)
-                
-                if (startFrame == None or endFrame == None):
-                    continue
                 
                 #print("startFrame: ", startFrame)
                 #print("endFrame: ", endFrame)
