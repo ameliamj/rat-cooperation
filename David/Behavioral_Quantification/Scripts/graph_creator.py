@@ -2149,7 +2149,7 @@ def getFiltered():
     fe = fileExtractor(all_valid)
     fe.getPairedTestingSessions(sortOut=False)
     fe.getTrainingPartner(sortOut=False)
-    fe.getTransparent(sortOut=False)
+    fe.getTransparentSessions(sortOut=False)
     fpsList, totFramesList = fe.returnFPSandTotFrames()
     return [fe.getLevsDatapath(), fe.getMagsDatapath(), fe.getPosDatapath(), fpsList, totFramesList]
 
