@@ -88,7 +88,7 @@ for i, name in enumerate(list_names):
     print("Input: ", input_path)
     print("Output: ", output_path)
     
-    diagnostics_dir = os.path.join(directory2, "diagnostics", name.replace(".mp4", ""))
+    #diagnostics_dir = os.path.join(directory2, "diagnostics", name.replace(".mp4", ""))
 
     print(f"Processing {name} with colors {color1_code} and {color2_code}...")
 
@@ -102,7 +102,7 @@ for i, name in enumerate(list_names):
         threshold=15,
         var_threshold=8.0,
         sample_rate=1,
-        diagnostics_dir=diagnostics_dir,
+        diagnostics_dir=None,
         verbose=True,
         distance_threshold=0
     )

@@ -585,8 +585,8 @@ categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["
 '''
 
 #Unfamiliar vs. Training Partners
-print("Running UF vs TP")
-'''dataUF = getOnlyUnfamiliar() #Unfamiliar
+'''print("Running UF vs TP")
+dataUF = getOnlyUnfamiliar() #Unfamiliar
 dataTP = getOnlyTrainingPartners() #Training Partners
 
 levFiles = [dataUF[0], dataTP[0]]
@@ -1898,7 +1898,7 @@ class multiFileGraphs:
         ax.axhline(0, color='gray', linewidth=0.8, linestyle='--')
         
         plt.tight_layout()
-        plt.save(f"{self.prefix}X_Distance_SuccessZonevsNoSuccess.png")
+        plt.savefig(f"{self.prefix}X_Distance_SuccessZonevsNoSuccess.png")
         plt.show()
         
     def compareAverageVelocityGazevsNot(self):
