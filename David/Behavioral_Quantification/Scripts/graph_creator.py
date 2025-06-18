@@ -1604,11 +1604,22 @@ class multiFileGraphs:
             region: np.mean(vals) if vals else 0
             for region, vals in location_dict.items()
         }
+        
+        region_counts = {
+            region: len(vals)
+            for region, vals in location_dict.items()
+        }
+
     
         plt.figure(figsize=(10, 5))
-        plt.bar(avg_represses_by_region.keys(), avg_represses_by_region.values(), color='skyblue')
+        bars = plt.bar(avg_represses_by_region.keys(), avg_represses_by_region.values(), color='skyblue')
         plt.ylabel("Avg Represses")
         plt.title("Average Represses by Region at First Press")
+        # Add count annotations on top of each bar
+        for bar, count in zip(bars, region_counts.values()):
+            height = bar.get_height()
+            plt.text(bar.get_x() + bar.get_width() / 2, height + 0.05,  # slight offset above bar
+                     f'n={count}', ha='center', va='bottom', fontsize=10)
         plt.tight_layout()
         plt.savefig(f"{self.prefix}BarGraphRepressesPerRegion.png")
         plt.show()
