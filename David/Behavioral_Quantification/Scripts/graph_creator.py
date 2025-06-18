@@ -2116,7 +2116,11 @@ class multiFileGraphs:
         if len(set(distancesSum)) < 2 or len(set(distancesDiff)) < 2:
             print("Insufficient variation in distances; cannot compute trendlines.")
             return
-    
+        
+        print("distancesSum:", distancesSum)
+        print("distancesDiff:", distancesDiff)
+        print("coop_successes:", coop_successes)
+        
         # Graph 1: distancesSum
             #Scatter plot with trendline
         plt.figure(figsize=(8, 6))
