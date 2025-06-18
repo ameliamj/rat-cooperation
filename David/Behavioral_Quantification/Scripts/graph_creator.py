@@ -587,17 +587,17 @@ posFiles = [["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/B
 #Paired Testing vs. Training Cooperation
 
 #print("Running Paired Testing vs Training Cooperation")
-dataPT = getOnlyPairedTesting()
+'''dataPT = getOnlyPairedTesting()
 dataTC = getOnlyTrainingCoop()
 
 levFiles = [dataPT[0], dataTC[0]]
 magFiles = [dataPT[1], dataTC[1]]
 posFiles = [dataPT[2], dataTC[2]]
 categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["Paired_Testing", "Training_Cooperation"], save = False)
-
+'''
 
 #Unfamiliar vs. Training Partners
-'''print("Running UF vs TP")
+print("Running UF vs TP")
 dataUF = getOnlyUnfamiliar() #Unfamiliar
 dataTP = getOnlyTrainingPartners() #Training Partners
 
@@ -605,7 +605,7 @@ levFiles = [dataUF[0], dataTP[0]]
 magFiles = [dataUF[1], dataTP[1]]
 posFiles = [dataUF[2], dataTP[2]]
 categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["Unfamiliar", "Training Partners"])
-'''
+
 
 #Transparent vs. Translucent vs. Opaque
 
@@ -628,7 +628,7 @@ categoryExperiments.compareSuccesfulTrials()
 print("2")
 #categoryExperiments.compareIPI()
 print("3")
-categoryExperiments.rePressingBehavior()
+#categoryExperiments.rePressingBehavior()
 print("4")
 categoryExperiments.gazeAlignmentAngle()
 print("5")
