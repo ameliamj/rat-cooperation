@@ -2121,6 +2121,26 @@ class multiFileGraphs:
         print("distancesDiff:", distancesDiff)
         print("coop_successes:", coop_successes)
         
+        # Remove outliers (top 5% of distancesSum and distancesDiff)
+        threshold_sum = np.percentile(distancesSum, 95)  # 95th percentile for distancesSum
+        threshold_diff = np.percentile(distancesDiff, 95)  # 95th percentile for distancesDiff
+        mask = (np.array(distancesSum) <= threshold_sum) & (np.array(distancesDiff) <= threshold_diff)
+        distancesSum_filtered = np.array(distancesSum)[mask].tolist()
+        distancesDiff_filtered = np.array(distancesDiff)[mask].tolist()
+        coop_successes_filtered = np.array(coop_successes)[mask].tolist()
+        
+        # Check if enough data remains after filtering
+        if len(distancesSum_filtered) < 2 or len(set(distancesSum_filtered)) < 2 or len(set(distancesDiff_filtered)) < 2:
+            print("Not enough data after filtering outliers; using original data.")
+            distancesSum_filtered = distancesSum
+            distancesDiff_filtered = distancesDiff
+            coop_successes_filtered = coop_successes
+        else:
+            print(f"Filtered out {len(distancesSum) - len(distancesSum_filtered)} outliers.")
+            distancesSum = distancesSum_filtered
+            distancesDiff = distancesDiff_filtered
+            coop_successes = coop_successes_filtered
+        
         #Scatterplot with Trendline
         
         # Graph 1: distancesSum
