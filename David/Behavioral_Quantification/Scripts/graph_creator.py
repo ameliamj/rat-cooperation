@@ -587,14 +587,14 @@ posFiles = [["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/B
 #Paired Testing vs. Training Cooperation
 
 #print("Running Paired Testing vs Training Cooperation")
-'''dataPT = getOnlyPairedTesting()
+dataPT = getOnlyPairedTesting()
 dataTC = getOnlyTrainingCoop()
 
 levFiles = [dataPT[0], dataTC[0]]
 magFiles = [dataPT[1], dataTC[1]]
 posFiles = [dataPT[2], dataTC[2]]
 categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["Paired_Testing", "Training_Cooperation"])
-'''
+
 
 #Unfamiliar vs. Training Partners
 '''print("Running UF vs TP")
@@ -620,7 +620,7 @@ posFiles = [dataTransparent[2], dataTranslucent[2], dataOpaque[2]]
 categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["Transparent", "Translucent", "Opaque"])
 '''
 
-'''
+
 print("0")
 categoryExperiments.compareGazeEventsCategories()
 print("1")
@@ -630,11 +630,11 @@ print("2")
 print("3")
 #categoryExperiments.rePressingBehavior()
 print("4")
-categoryExperiments.gazeAlignmentAngle()
+#categoryExperiments.gazeAlignmentAngle()
 print("5")
-categoryExperiments.printSummaryStats()
+#categoryExperiments.printSummaryStats()
 print("Done")
-'''
+
 
 
 
@@ -2374,13 +2374,13 @@ def getFiltered():
     return [fe.getLevsDatapath(), fe.getMagsDatapath(), fe.getPosDatapath(), fpsList, totFramesList, initial_nan_list]
 
 
-arr = getFiltered()
+'''arr = getFiltered()
 lev_files = arr[0]
 mag_files = arr[1]
 pos_files = arr[2]
 fpsList = arr[3]
 totFramesList = arr[4]
-initialNanList = arr[5]
+initialNanList = arr[5]'''
 
 '''lev_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/ExampleLevFile.csv"]
 
@@ -2403,7 +2403,7 @@ fpsList = [30]
 totFramesList = [14000]
 '''
 
-print("Start MultiFileGraphs Regular")
+'''print("Start MultiFileGraphs Regular")
 experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "filtered_")
 #experiment.percentSuccesfulTrials()
 experiment.interpressIntervalPlot()
@@ -2413,7 +2413,7 @@ experiment.cooperativeRegionStrategiesQuantification()
 #experiment.compareAverageVelocityGazevsNot()
 #experiment.makeHeatmapLocation()
 experiment.intersectings_vs_percentNaN()
-experiment.findTotalDistanceMoved()
+experiment.findTotalDistanceMoved()'''
 
 # ---------------------------------------------------------------------------------------------------------
 
