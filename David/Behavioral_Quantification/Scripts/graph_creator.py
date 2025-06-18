@@ -587,14 +587,14 @@ posFiles = [["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/B
 #Paired Testing vs. Training Cooperation
 
 #print("Running Paired Testing vs Training Cooperation")
-dataPT = getOnlyPairedTesting()
+'''dataPT = getOnlyPairedTesting()
 dataTC = getOnlyTrainingCoop()
 
 levFiles = [dataPT[0], dataTC[0]]
 magFiles = [dataPT[1], dataTC[1]]
 posFiles = [dataPT[2], dataTC[2]]
 categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["Paired_Testing", "Training_Cooperation"])
-
+'''
 
 #Unfamiliar vs. Training Partners
 '''print("Running UF vs TP")
@@ -620,7 +620,7 @@ posFiles = [dataTransparent[2], dataTranslucent[2], dataOpaque[2]]
 categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["Transparent", "Translucent", "Opaque"])
 '''
 
-
+'''
 print("0")
 categoryExperiments.compareGazeEventsCategories()
 print("1")
@@ -635,7 +635,7 @@ print("5")
 #categoryExperiments.printSummaryStats()
 print("Done")
 
-
+'''
 
 
 # ---------------------------------------------------------------------------------------------------------
@@ -1398,8 +1398,7 @@ class multiFileGraphs:
        plt.axis('equal')  # Equal aspect ratio ensures the pie is a circle
        plt.savefig("PercentGazingbyRat.png")
        plt.show()
-            
-     
+                 
     def quantifyRePressingBehavior(self):
         """
         Generates graphs to quantify re-pressing behavior:
@@ -1470,6 +1469,7 @@ class multiFileGraphs:
         plt.savefig(f"{self.prefix}avg_repress_first_mouse_success_vs_non.png")
         plt.show()
         plt.close()
+
 
     def gazeAlignmentAngleHistogram(self, both_mice=True):
         """
@@ -1610,6 +1610,7 @@ class multiFileGraphs:
         plt.ylabel("Avg Represses")
         plt.title("Average Represses by Region at First Press")
         plt.tight_layout()
+        plt.savefig(f"{self.prefix}BarGraphRepressesPerRegion.png")
         plt.show()
     
         # === Graph 2: Scatter plot of distance vs repressing with trendline ===
@@ -1634,14 +1635,27 @@ class multiFileGraphs:
     
             # Plot the trendline
             plt.plot(xs, ys, color='red', linestyle='--', label='Trendline')
-    
+            
+            # Calculate R^2
+            predicted = trendline(dist_np)
+            ss_res = np.sum((repress_np - predicted) ** 2)
+            ss_tot = np.sum((repress_np - np.mean(repress_np)) ** 2)
+            r_squared = 1 - (ss_res / ss_tot)
+            
+            # Display R² in the top right of the plot
+            plt.text(0.95, 0.05, f'$R^2 = {r_squared:.3f}$',
+                     transform=plt.gca().transAxes,
+                     fontsize=12,
+                     ha='right', va='bottom',
+                     bbox=dict(facecolor='white', alpha=0.7, edgecolor='gray'))
+            
             # Optional: Show slope and intercept
             slope, intercept = coeffs
             print(f"Trendline: y = {slope:.3f}x + {intercept:.3f}")
     
         plt.legend()
         plt.tight_layout()
-        plt.savefig("Distance_vs_RepressingBehavior.png")
+        plt.savefig(f"{self.prefix}Distance_vs_RepressingBehavior.png")
         plt.show()
         
         # === Graph 3: Pie chart of trial percentages by region ===
@@ -1656,8 +1670,9 @@ class multiFileGraphs:
         
             plt.figure(figsize=(7, 7))
             plt.pie(sizes, labels=labels, autopct='%1.1f%%', startangle=140, colors=plt.cm.tab20.colors)
-            plt.title("Percentage of Trials by Location Category")
+            plt.title("Percentage of Trials by Location at First Press")
             plt.tight_layout()
+            plt.savefig(f"{self.prefix}TrialPercentagesbyRegion.png")
             plt.show()
         else:
             print("No trial location data to display in pie chart.")
@@ -1878,7 +1893,6 @@ class multiFileGraphs:
         plt.show()
         plt.close()
         
-
     def cooperativeRegionStrategiesQuantification(self):
         """
         This function quantifies and compares the average horizontal distance (in X coordinates) between 
@@ -2121,8 +2135,7 @@ class multiFileGraphs:
             plt.tight_layout()
             plt.savefig(f"{self.prefix}compareAverageVelocityGazevsNotGazing.png")
             plt.show()
-    
-        
+            
     def makeHeatmapLocation(self):
         '''
         Make a heatmap of all mice and where they spend time by tracking the location of the headbase.
@@ -2169,9 +2182,7 @@ class multiFileGraphs:
         plt.ylabel('Y Position (pixels)')
         plt.savefig(f"{self.prefix}movementHeatmap.png", bbox_inches='tight')
         plt.show()
-        #print("Max heatmap value:", np.max(heatmap))
-            
-    
+                
     def findTotalDistanceMoved(self):
         '''
         For each experiment, compute:
@@ -2370,9 +2381,19 @@ def getFiltered():
     fe.getTransparentSessions(sortOut=False)
     fpsList, totFramesList = fe.returnFPSandTotFrames()
     initial_nan_list = fe.returnNaNPercentage()
-    print("initial_nan_list: ", initial_nan_list)
+    #print("initial_nan_list: ", initial_nan_list)
     return [fe.getLevsDatapath(), fe.getMagsDatapath(), fe.getPosDatapath(), fpsList, totFramesList, initial_nan_list]
 
+
+lev_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/ExampleLevFile.csv"]
+
+mag_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_mag.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_mag.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_mag.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_mag.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_mag.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_mag.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/ExampleMagFile.csv"] 
+
+pos_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/ExampleTrackingCoop.h5"]
+
+fpsList = [30, 30, 30, 30, 30, 30, 30]
+totFramesList = [15000, 26000, 15000, 26000, 15000, 26000, 15000]
+initialNanList = [0.15, 0.12, 0.14, 0.16, 0.3, 0.04, 0.2]
 
 '''arr = getFiltered()
 lev_files = arr[0]
@@ -2381,16 +2402,6 @@ pos_files = arr[2]
 fpsList = arr[3]
 totFramesList = arr[4]
 initialNanList = arr[5]'''
-
-'''lev_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/ExampleLevFile.csv"]
-
-mag_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_mag.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_mag.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_mag.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_mag.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_mag.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_mag.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/ExampleMagFile.csv"] 
-
-pos_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/ExampleTrackingCoop.h5"]
-
-fpsList = [30, 30, 30, 30, 30, 30, 30]
-totFramesList = [15000, 26000, 15000, 26000, 15000, 26000, 15000]
-initialNanList = [0.15, 0.12, 0.14, 0.16, 0.3, 0.04, 0.2]'''
 
 
 '''lev_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/4_nanerror_lev.csv"]
@@ -2403,17 +2414,18 @@ fpsList = [30]
 totFramesList = [14000]
 '''
 
-'''print("Start MultiFileGraphs Regular")
+print("Start MultiFileGraphs Regular")
 experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "filtered_")
+experiment.rePressingbyDistance()
 #experiment.percentSuccesfulTrials()
-experiment.interpressIntervalPlot()
-experiment.quantifyRePressingBehavior()
-experiment.crossingOverQuantification()
-experiment.cooperativeRegionStrategiesQuantification()
+#experiment.interpressIntervalPlot()
+#experiment.quantifyRePressingBehavior()
+#experiment.crossingOverQuantification()
+#experiment.cooperativeRegionStrategiesQuantification()
 #experiment.compareAverageVelocityGazevsNot()
 #experiment.makeHeatmapLocation()
-experiment.intersectings_vs_percentNaN()
-experiment.findTotalDistanceMoved()'''
+#experiment.intersectings_vs_percentNaN()
+#experiment.findTotalDistanceMoved()
 
 # ---------------------------------------------------------------------------------------------------------
 
