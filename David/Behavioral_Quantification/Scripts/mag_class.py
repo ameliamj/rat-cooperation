@@ -50,10 +50,18 @@ class magLoader:
             
     def _delete_bad_data(self):    
         """
-        Delete rows where MagNum or AbsTime are null.
+        Delete rows where MagNum or AbsTime are null, 
+        but only if those columns exist.
         """
         if self.data is not None:
-            self.data = self.data.dropna(subset=['MagNum', 'AbsTime'])
+            required_columns = ['MagNum', 'AbsTime']
+            existing_columns = [col for col in required_columns if col in self.data.columns]
+            
+            if existing_columns:
+                print(f"Dropping rows with NaN in columns: {existing_columns}")
+                self.data = self.data.dropna(subset=existing_columns)
+            else:
+                print("Warning: Neither 'MagNum' nor 'AbsTime' columns found in mag data. Skipping dropna.")
             
     def get_value(self, row_idx, col): #Gets a value in any row/col of the data
         """
