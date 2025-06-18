@@ -119,6 +119,8 @@ class multiFileGraphsCategories:
         if not self.path:
             print("Warning: No save path specified. Saving plots to current directory.")
         
+        print("Done with init")
+        
     def compareGazeEventsCategories(self):
         '''
         Function Purpose:
