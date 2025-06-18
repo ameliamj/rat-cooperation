@@ -482,7 +482,7 @@ class multiFileGraphsCategories:
         plt.ylabel('Average Re-Presses')
         plt.tight_layout()
         if (self.save):
-            plt.savefig("{self.path}avg_repress_first_mouse_by_category{self.endSaveName}.png")
+            plt.savefig(f"{self.path}avg_repress_first_mouse_by_category{self.endSaveName}.png")
         plt.show()
         
         # --- Plot 2: Avg re-presses by Second Mouse in successful trials (by category) ---
@@ -494,7 +494,7 @@ class multiFileGraphsCategories:
         plt.ylabel('Average Re-Presses')
         plt.tight_layout()
         if (self.save):
-            plt.savefig("{self.path}avg_repress_second_mouse_success_by_category{self.endSaveName}.png")
+            plt.savefig(f"{self.path}avg_repress_second_mouse_success_by_category{self.endSaveName}.png")
         plt.show()
         
         # --- Plot 3: First Mouse Re-Presses in Success vs. Non-Success Trials (by category) ---
@@ -513,7 +513,7 @@ class multiFileGraphsCategories:
         plt.legend()
         plt.tight_layout()
         if (self.save):
-            plt.savefig("{self.path}avg_repress_first_mouse_success_vs_non_by_category{self.endSaveName}.png")
+            plt.savefig(f"{self.path}avg_repress_first_mouse_success_vs_non_by_category{self.endSaveName}.png")
         plt.show()
     
     def gazeAlignmentAngle(self, both_mice = True):
@@ -2356,6 +2356,8 @@ class multiFileGraphs:
         
         plt.show()
         plt.close()
+        
+        print("Done with % Intersecting vs. % Nan")
 
 #Testing Multi File Graphs
 #
@@ -2402,7 +2404,7 @@ totFramesList = [14000]
 '''
 
 print("Start MultiFileGraphs Regular")
-experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "filtered_", save = False)
+experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "filtered_")
 #experiment.percentSuccesfulTrials()
 experiment.interpressIntervalPlot()
 experiment.quantifyRePressingBehavior()
