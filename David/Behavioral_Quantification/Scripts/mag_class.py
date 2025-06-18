@@ -20,6 +20,7 @@ class magLoader:
         self.filename = filename
         self.data = None
         self._load_data()
+        self._delete_bad_data()
         self.categories = ["TrialNum", "MagNum", "AbsTime", "Duration", "TrialCond", "DispTime", "TrialTime", "Hit", "TrialEnd", "RatID"]
         
     def _load_data(self): #Uses pandas to read csv file and store in a pandas datastructure
@@ -42,6 +43,13 @@ class magLoader:
             raise FileNotFoundError(f"CSV file not found at: {self.filename}")
         except pd.errors.ParserError:
             raise ValueError("Error parsing CSV file. Ensure it is properly formatted.")
+            
+    def _delete_bad_data(self):    
+        """
+        Delete rows where MagNum or AbsTime are null.
+        """
+        if self.data is not None:
+            self.data = self.data.dropna(subset=['MagNum', 'AbsTime'])
             
     def get_value(self, row_idx, col): #Gets a value in any row/col of the data
         """

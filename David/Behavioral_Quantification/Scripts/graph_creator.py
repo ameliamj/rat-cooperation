@@ -2138,6 +2138,7 @@ class multiFileGraphs:
         plt.grid(True)
         plt.savefig(f"{self.prefix}DistMovedSum_vs_CoopSuccessRate.png")
         plt.show()
+        plt.close()
         
         # Graph 2: distancesDiff
             #Scatter plot with trendline
@@ -2156,6 +2157,7 @@ class multiFileGraphs:
         plt.grid(True)
         plt.savefig(f"{self.prefix}DistMovedDiff_vs_CoopSuccessRate.png")
         plt.show()
+        plt.close()
         
         
 
@@ -2190,7 +2192,7 @@ experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFrames
 #experiment.percentSuccesfulTrials()
 #experiment.interpressIntervalPlot()
 #experiment.quantifyRePressingBehavior()
-#experiment.crossingOverQuantification()
+experiment.crossingOverQuantification()
 #experiment.cooperativeRegionStrategiesQuantification()
 #experiment.compareAverageVelocityGazevsNot()
 #experiment.makeHeatmapLocation()
