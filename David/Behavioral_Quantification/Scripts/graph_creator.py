@@ -609,7 +609,7 @@ categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["
 
 #Transparent vs. Translucent vs. Opaque
 
-print("Running Transparency")
+'''print("Running Transparency")
 dataTransparent = getOnlyTransparent() #Transparent
 dataTranslucent = getOnlyTranslucent() #Translucent
 dataOpaque = getOnlyOpaque() #Opaque
@@ -618,9 +618,9 @@ levFiles = [dataTransparent[0], dataTranslucent[0], dataOpaque[0]]
 magFiles = [dataTransparent[1], dataTranslucent[1], dataOpaque[1]]
 posFiles = [dataTransparent[2], dataTranslucent[2], dataOpaque[2]]
 categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["Transparent", "Translucent", "Opaque"])
+'''
 
-
-
+'''
 print("0")
 categoryExperiments.compareGazeEventsCategories()
 print("1")
@@ -634,7 +634,7 @@ categoryExperiments.gazeAlignmentAngle()
 print("5")
 categoryExperiments.printSummaryStats()
 print("Done")
-
+'''
 
 
 
@@ -1107,9 +1107,10 @@ pairGraphs.boxplot_IPI_last_to_success()'''
 
 
 class multiFileGraphs:
-    def __init__(self, magFiles: List[str], levFiles: List[str], posFiles: List[str], fpsList: List[int], totFramesList: List[int], prefix = ""):
+    def __init__(self, magFiles: List[str], levFiles: List[str], posFiles: List[str], fpsList: List[int], totFramesList: List[int], initialNanList: List[int], prefix = "", save = True):
         self.experiments = []
         self.prefix = prefix
+        self.save = save
         deleted_count = 0
         
         print("There are ", len(magFiles), " experiments in this data session. ")
@@ -1118,14 +1119,15 @@ class multiFileGraphs:
         if (len(magFiles) != len(levFiles) or len(magFiles) != len(posFiles)):
             raise ValueError("Different number of mag, lev, and pos files")
             
-        if (len(magFiles) != len(fpsList) or len(magFiles) != len(totFramesList)):
+        if ((len(magFiles) != len(fpsList)) or (len(magFiles) != len(totFramesList)) or len(magFiles) != len(initialNanList)):
             print("lenDataFiles: ", len(magFiles))
             print("len(fpsList)", len(fpsList))
             print("len(totFramesList)", len(totFramesList))
-            raise ValueError("Different number of fpsList, totFramesList values")
+            print("len(initialNanList)", len(initialNanList))
+            raise ValueError("Different number of fpsList, totFramesList, or initialNanList values")
         
         for i in range(len(magFiles)):
-            exp = singleExperiment(magFiles[i], levFiles[i], posFiles[i], fpsList[i], totFramesList[i])
+            exp = singleExperiment(magFiles[i], levFiles[i], posFiles[i], fpsList[i], totFramesList[i], initialNanList[i])
             mag_missing = [col for col in exp.mag.categories if col not in exp.mag.data.columns]
             lev_missing = [col for col in exp.lev.categories if col not in exp.lev.data.columns]
             
@@ -1421,6 +1423,7 @@ class multiFileGraphs:
             success, non_success = lev.returnAvgRepresses_FirstMouse_SuccessVsNon()
             avg_repress_first_success.append(success)
             avg_repress_first_non.append(non_success)
+            
     
         # --- Plot 1: Avg re-presses by First Mouse across all trials ---
         overall_first_avg = sum(avg_repress_first) / len(avg_repress_first) if avg_repress_first else 0
@@ -1670,7 +1673,7 @@ class multiFileGraphs:
             - Compares this against the number of presses made by the less active lever (Min).
             - Produces a pie chart showing the proportion of Max vs. Min lever usage across all trials.
     
-        2. **Crossover Behavior Pie Charts**:
+        3. **Crossover Behavior Pie Charts**:
             - Examines each trial to determine if rats collected rewards on the same side as their lever press
               ("Same Side") or the opposite side ("Cross Side").
             - Also accounts for trials with missing or ambiguous reward data:
@@ -1681,8 +1684,9 @@ class multiFileGraphs:
          
         """
         
-        #Max vs. Min
+        #Max vs. Min Lever Preference
         numMaxCount = 0
+        numMinCountReal = 0
         totalCountPresses = 0
         
         numSwitchCount = 0
@@ -1692,20 +1696,60 @@ class multiFileGraphs:
             lev = exp.lev
             
             numMaxCount += lev.returnMostPressesByLever(0) + lev.returnMostPressesByLever(1)
-            totalCountPresses += lev.returnTotalLeverPresses()
+            numMinCountReal += lev.returnMinPressesByLever(0) + lev.returnMinPressesByLever(1)
+            totalCountPresses += lev.returnTotalLeverPressesFiltered()
+            
+            print("numMaxCount: ", numMaxCount)
+            print("numMinCountReal: ", numMinCountReal)
+            print("totalCountPresses: ", totalCountPresses)
             
         numMinCount = totalCountPresses - numMaxCount
-        labels = ['Max', 'Min']
+        if (numMinCount != numMinCountReal):
+            print("MISMATCH IN COUNTS")
+            print("numMinCount: ", numMinCount)
+            print("numMinCountReal: ", numMinCountReal)
+        else:
+            print("No Mismatch")
+        
+        labels = ['Preferred', 'Other']
         sizes = [numMaxCount, numMinCount]
         colors = ['green', 'red']
     
         plt.figure(figsize=(6, 6))
         plt.pie(sizes, labels=labels, colors=colors, autopct='%1.1f%%', startangle=140, textprops={'fontsize': 14})
-        plt.title('Max vs Min (%)', fontsize=16)
+        plt.title('Lever Preference(%)', fontsize=16)
         plt.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle.
         plt.tight_layout()
         plt.show()
-        plt.savefig(f'{self.prefix}MaxvsMin.png')
+        if (self.save):
+            plt.savefig(f'{self.prefix}MaxvsMin.png')
+        plt.close()
+        
+        
+        #Max vs. Min Mag Preference
+        print("Starting Mag Zone Preference Analysis")
+        mag_max_count = 0
+        mag_total_count = 0
+
+        for exp in self.experiments:
+            mag = exp.mag
+
+            mag_max_count += mag.returnMostEntriesbyMag(0) + mag.returnMostEntriesbyMag(1)
+            mag_total_count += mag.getTotalMagEventsFiltered()
+
+        mag_min_count = mag_total_count - mag_max_count
+        mag_labels = ['Preferred', 'Other']
+        mag_sizes = [mag_max_count, mag_min_count]
+        mag_colors = ['purple', 'orange']
+
+        plt.figure(figsize=(6, 6))
+        plt.pie(mag_sizes, labels=mag_labels, colors=mag_colors, autopct='%1.1f%%', startangle=140, textprops={'fontsize': 14})
+        plt.title('Mag Zone Preference (%)', fontsize=16)
+        plt.axis('equal')
+        plt.tight_layout()
+        plt.show()
+        if (self.save):
+            plt.savefig(f'{self.prefix}MagMaxvsMin.png')
         plt.close()
         
         
@@ -1729,13 +1773,13 @@ class multiFileGraphs:
         
             # Get first lever press per trial per mouse
             lev_first = lev_df.drop_duplicates(subset=['TrialNum', 'RatID'], keep='first')
-            print("lev_first: ")
-            print(lev_first)
+            #print("lev_first: ")
+            #print(lev_first)
             
             # Get first mag entry per trial per mouse
             mag_first = mag_df.drop_duplicates(subset=['TrialNum'], keep='first')
-            print("mag_first: ")
-            print(mag_first)
+            #print("mag_first: ")
+            #print(mag_first)
             
             # Merge on TrialNum ONLY — not RatID
             merged = lev_first.merge(mag_first, on='TrialNum', how='left', suffixes=('_lev', '_mag'))
@@ -1748,12 +1792,14 @@ class multiFileGraphs:
             
             
             for _, row in merged.iterrows():
+                trialNum = row['TrialNum']
+                #absTime = row['AbsTime']
                 lever = row['LeverNum']
                 mag = row['MagNum'] if not pd.isna(row['MagNum']) else None
                 success = row['coopSucc']
                 lever_rat = row['RatID_lev']
                 mag_rat = row['RatID_mag'] if 'RatID_mag' in row else None  # From mag side
-        
+                
                 # Skip invalid lever
                 if lever not in [1, 2]:
                     continue
@@ -1783,6 +1829,11 @@ class multiFileGraphs:
                             cross_side_fail += 1
                         else:
                             same_side_fail += 1
+                
+                if (success):
+                    print("TrialNum: ", trialNum)
+                    #print("AbsTime: ", absTime)
+                    print("same_side_success: ", same_side_success, "; cross_side_success: ", cross_side_success, "; unknown_ratid_mag_success: ", unknown_ratid_mag_success, "; no_mag_success: ", no_mag_success)
         
         # --- Pie chart for successful trials ---
         labels_success = [
@@ -1804,7 +1855,8 @@ class multiFileGraphs:
         plt.axis('equal')
         plt.tight_layout()
         plt.show()
-        plt.savefig(f'{self.prefix}Crossover_Successful.png')
+        if (self.save):
+            plt.savefig(f'{self.prefix}Crossover_Successful.png')
         plt.close()
         
         # --- Pie chart for failed trials ---
@@ -1821,7 +1873,8 @@ class multiFileGraphs:
         plt.title('Crossover Behavior in Failed Trials', fontsize=16)
         plt.axis('equal')
         plt.tight_layout()
-        plt.savefig(f'{self.prefix}Crossover_Failed.png')
+        if (self.save):
+            plt.savefig(f'{self.prefix}Crossover_Failed.png')
         plt.show()
         plt.close()
         
@@ -1832,6 +1885,7 @@ class multiFileGraphs:
         the head-body markers of two rats during different behavioral trial contexts:
         - Trials that fall within a "cooperative success region" (defined as 4 out of the last 5 trials being successful)
         - Trials that do not fall in such regions.
+        - Trials that are successful but not in a success region
     
         For each trial in each experiment:
             - The start and end frame of the trial are calculated based on absolute times and framerate.
@@ -1841,14 +1895,21 @@ class multiFileGraphs:
         The function then computes the average inter-rat distance per frame for each context and generates a bar plot
         with individual data points overlaid, enabling visual comparison of spatial strategies during cooperative
         vs. non-cooperative behavioral states.
+        
+        
         """
         
         averageDistance_NoSuccess = 0
         averageDistance_SuccessZone = 0
+        averageDistance_Success_NoZone = 0
         
         totFrames_SuccessZone = 0
         totDifference_SuccessZone = 0
         datapoints_SuccessZone = []
+        
+        totFrames_Success_NoZone = 0 
+        totDifference_Success_NoZone = 0
+        datapoints_Success_NoZone = []
         
         totFrames_NoSuccess = 0
         totDifference_NoSuccess = 0
@@ -1862,6 +1923,8 @@ class multiFileGraphs:
             listTrials = lev.returnCooperativeSuccessRegionsBool()
             startTimeTrials = lev.returnTimeStartTrials()
             endTimeTrials = lev.returnTimeEndTrials()
+            
+            successTrial = lev.returnSuccessTrials()
             
             
             print("Lengths:", len(listTrials), len(startTimeTrials), len(endTimeTrials))
@@ -1890,6 +1953,12 @@ class multiFileGraphs:
                     totDifference_SuccessZone += difference
                     if (numFrames > 0):
                         datapoints_SuccessZone.append(difference / numFrames)
+                        
+                elif(successTrial[i] == 1):
+                    totFrames_Success_NoZone += numFrames
+                    totDifference_Success_NoZone += difference
+                    if (numFrames > 0):
+                        datapoints_Success_NoZone.append(difference / numFrames)
                 else:
                     totFrames_NoSuccess += numFrames
                     totDifference_NoSuccess += difference
@@ -1898,18 +1967,22 @@ class multiFileGraphs:
         
         print("totFrames_NoSuccess: ", totFrames_NoSuccess)
         print("totFrames_SuccessZone: ", totFrames_SuccessZone)
+        print("totFrames_Success_NoZone: ", totFrames_Success_NoZone)
         
         if (totFrames_NoSuccess > 0):
             averageDistance_NoSuccess = totDifference_NoSuccess / totFrames_NoSuccess
             
         if (totFrames_SuccessZone > 0):
             averageDistance_SuccessZone = totDifference_SuccessZone / totFrames_SuccessZone
+            
+        if (totFrames_Success_NoZone > 0):
+            averageDistance_Success_NoZone = totDifference_Success_NoZone / totFrames_Success_NoZone
         
         #Make Graphs: 
         # Labels and values for the bar plot
-        labels = ['No Success', 'Success Zone']
-        averages = [averageDistance_NoSuccess, averageDistance_SuccessZone]
-        datapoints = [datapoints_NoSuccess, datapoints_SuccessZone]
+        labels = ['No Success', 'Success Zone', 'Success No Zone']
+        averages = [averageDistance_NoSuccess, averageDistance_SuccessZone, averageDistance_Success_NoZone]
+        datapoints = [datapoints_NoSuccess, datapoints_SuccessZone, datapoints_Success_NoZone]
         
         # X locations for the bars and jittered scatter points
         x = np.arange(len(labels))
@@ -2104,11 +2177,13 @@ class multiFileGraphs:
         For each experiment, compute:
         - Sum of distances moved by both mice
         - Absolute difference in distances moved between mice
+        - Minimum Distance Moved by a Rat
         Then, plot both metrics against cooperative success rate, with trendlines.
         '''
         
         distancesSum = []
         distancesDiff = []
+        minRatMoved = []
         coop_successes = []
     
         for exp in self.experiments:
@@ -2129,11 +2204,12 @@ class multiFileGraphs:
                 coop_successes.append(success_rate)
                 distancesSum.append(total_distance[0] + total_distance[1])
                 distancesDiff.append(abs(total_distance[0] - total_distance[1]))
+                minRatMoved.append(min(pos.returnStandardizedDistanceMoved(0), pos.returnStandardizedDistanceMoved(1)))
             else:
                 print(f"Skipping session {exp} due to zero total trials.")
         
         # Check for sufficient data to make trendlines
-        if len(set(distancesSum)) < 2 or len(set(distancesDiff)) < 2:
+        if len(set(distancesSum)) < 2 or len(set(distancesDiff)) < 2 or len(set(minRatMoved)) < 2:
             print("Insufficient variation in distances; cannot compute trendlines.")
             return
         
@@ -2161,44 +2237,13 @@ class multiFileGraphs:
             distancesDiff = distancesDiff_filtered
             coop_successes = coop_successes_filtered
         
-        #Scatterplot with Trendline
+        #Scatterplots with Trendlines
         
-        # Graph 1: distancesSum
+        # Graph 1: distancesSum linear
         plt.figure(figsize=(8, 6))
         plt.scatter(distancesSum, coop_successes, alpha=0.7, label='Rat', color='blue')
-        slope, intercept, _, _, _ = linregress(distancesSum, coop_successes)
-        x_vals = np.linspace(min(distancesSum), max(distancesSum), 100)
-        plt.plot(x_vals, slope * x_vals + intercept, color='red', linestyle='--', label='Trendline')
-        plt.title('Total Distance Moved vs. Cooperative Success Rate')
-        plt.xlabel('Total Distance Moved (pixels)')
-        plt.ylabel('Cooperative Success Rate (%)')
-        plt.xscale('log')
-        plt.legend()
-        plt.grid(True)
-        plt.savefig(f"{self.prefix}DistMovedSum_vs_CoopSuccessRate.png")
-        plt.show()
-        plt.close()
-        
-        # Graph 2: distancesDiff
-        plt.figure(figsize=(8, 6))
-        plt.scatter(distancesDiff, coop_successes, alpha=0.7, label='Rat', color='green')
-        slope, intercept, _, _, _ = linregress(distancesDiff, coop_successes)
-        x_vals = np.linspace(min(distancesDiff), max(distancesDiff), 100)
-        plt.plot(x_vals, slope * x_vals + intercept, color='red', linestyle='--', label='Trendline')
-        plt.title('Abs Diff Distance Moved vs. Cooperative Success Rate')
-        plt.xlabel('Diff in Distance Moved (pixels)')
-        plt.ylabel('Cooperative Success Rate (%)')
-        plt.xscale('log')
-        plt.legend()
-        plt.grid(True)
-        plt.savefig(f"{self.prefix}DistMovedDiff_vs_CoopSuccessRate.png")  
-        plt.show()
-        plt.close()
-        
-        # Graph 3: distancesSum linear
-        plt.figure(figsize=(8, 6))
-        plt.scatter(distancesSum, coop_successes, alpha=0.7, label='Rat', color='blue')
-        slope, intercept, _, _, _ = linregress(distancesSum, coop_successes)
+        slope, intercept, r_value, _, _ = linregress(distancesSum, coop_successes)
+        r_squared = r_value ** 2
         x_vals = np.linspace(min(distancesSum), max(distancesSum), 100)
         plt.plot(x_vals, slope * x_vals + intercept, color='red', linestyle='--', label='Trendline')
         plt.title('Total Distance Moved vs. Cooperative Success Rate')
@@ -2207,14 +2252,18 @@ class multiFileGraphs:
         plt.xscale('linear')
         plt.legend()
         plt.grid(True)
-        plt.savefig(f"{self.prefix}DistMovedSum_vs_CoopSuccessRate_linear.png")
+        plt.text(0.95, 0.95, f"$R^2$ = {r_squared:.3f}", transform=plt.gca().transAxes,
+                 ha='right', va='top', fontsize=12, bbox=dict(facecolor='white', edgecolor='gray'))
+        if self.save: 
+            plt.savefig(f"{self.prefix}DistMovedSum_vs_CoopSuccessRate_linear.png")
         plt.show()
         plt.close()
         
-        # Graph 4: distancesDiff linear
+        # Graph 2: distancesDiff linear
         plt.figure(figsize=(8, 6))
         plt.scatter(distancesDiff, coop_successes, alpha=0.7, label='Rat', color='green')
-        slope, intercept, _, _, _ = linregress(distancesDiff, coop_successes)
+        slope, intercept, r_value, _, _ = linregress(distancesDiff, coop_successes)
+        r_squared = r_value ** 2
         x_vals = np.linspace(min(distancesDiff), max(distancesDiff), 100)
         plt.plot(x_vals, slope * x_vals + intercept, color='red', linestyle='--', label='Trendline')
         plt.title('Abs Diff Distance Moved vs. Cooperative Success Rate')
@@ -2223,11 +2272,88 @@ class multiFileGraphs:
         plt.xscale('linear')
         plt.legend()
         plt.grid(True)
-        plt.savefig(f"{self.prefix}DistMovedDiff_vs_CoopSuccessRate_linear.png")  
+        plt.text(0.95, 0.95, f"$R^2$ = {r_squared:.3f}", transform=plt.gca().transAxes,
+                 ha='right', va='top', fontsize=12, bbox=dict(facecolor='white', edgecolor='gray'))
+        if self.save:
+            plt.savefig(f"{self.prefix}DistMovedDiff_vs_CoopSuccessRate_linear.png")  
         plt.show()
         plt.close()
         
+        # Graph 3: minRatMoved vs. success rate
+        plt.figure(figsize=(8, 6))
+        plt.scatter(minRatMoved, coop_successes, alpha=0.7, label='Rat', color='green')
+        slope, intercept, r_value, _, _ = linregress(minRatMoved, coop_successes)
+        r_squared = r_value ** 2
+        x_vals = np.linspace(min(minRatMoved), max(minRatMoved), 100)
+        plt.plot(x_vals, slope * x_vals + intercept, color='red', linestyle='--', label='Trendline')
+        plt.title('Min Distance Moved vs. Cooperative Success Rate')
+        plt.xlabel('Diff in Distance Moved (pixels)')
+        plt.ylabel('Cooperative Success Rate (%)')
+        plt.xscale('linear')
+        plt.legend()
+        plt.grid(True)
+        plt.text(0.95, 0.95, f"$R^2$ = {r_squared:.3f}", transform=plt.gca().transAxes,
+                 ha='right', va='top', fontsize=12, bbox=dict(facecolor='white', edgecolor='gray'))
+        if self.save:
+            plt.savefig(f"{self.prefix}MinDistMoved_vs_CoopSuccessRate_linear.png")  
+        plt.show()
+        plt.close()
         
+
+    def intersectings_vs_percentNaN(self):
+        '''
+        For each experiment:
+        - Get the initial NaN count from `exp.initialNan`
+        - Use `exp.pos.checkSelfIntersection(ratID)` for both rats (ratID 0 and 1)
+        - Combine both rats' intersection lists and compute the % of intersecting frames
+          (i.e., where either rat is self-intersecting)
+        - Plot initial NaN count vs % frames intersecting across experiments
+        '''
+    
+        initial_nans = []
+        percent_intersecting = []
+    
+        for exp in self.experiments:
+            # Total number of frames
+            total_frames = exp.endFrame
+    
+            # Get list of intersecting frames for each rat
+            rat0_intersects = exp.pos.checkSelfIntersection(0)
+            rat1_intersects = exp.pos.checkSelfIntersection(1)
+    
+            # Combine — a frame is intersecting if either rat is intersecting
+            combined = [a or b for a, b in zip(rat0_intersects, rat1_intersects)]
+    
+            # Count how many frames are intersecting
+            num_intersecting = sum(combined)
+    
+            # Append to data lists
+            initial_nans.append(exp.initialNan)
+            percent = 100 * num_intersecting / total_frames if total_frames > 0 else 0
+            percent_intersecting.append(percent)
+    
+        # Make scatter plot
+        plt.figure(figsize=(8, 6))
+        plt.scatter(initial_nans, percent_intersecting, alpha=0.7, color='purple')
+        plt.xlabel('Initial NaN Count')
+        plt.ylabel('% of Frames Self-Intersecting (Either Rat)')
+        plt.title('Initial Missing Data vs. Self-Intersection Rate')
+        plt.grid(True)
+    
+        # Optional: trendline
+        if len(initial_nans) >= 2:
+            from scipy.stats import linregress
+            slope, intercept, r, _, _ = linregress(initial_nans, percent_intersecting)
+            x_vals = np.linspace(min(initial_nans), max(initial_nans), 100)
+            y_vals = slope * x_vals + intercept
+            plt.plot(x_vals, y_vals, linestyle='--', color='red', label=f"Trendline (R²={r**2:.2f})")
+            plt.legend()
+    
+        if self.save:
+            plt.savefig(f"{self.prefix}NaN_vs_Intersecting.png")
+        
+        plt.show()
+        plt.close()
 
 #Testing Multi File Graphs
 #
@@ -2239,32 +2365,49 @@ def getFiltered():
     fe.getTrainingPartner(sortOut=False)
     fe.getTransparentSessions(sortOut=False)
     fpsList, totFramesList = fe.returnFPSandTotFrames()
-    return [fe.getLevsDatapath(), fe.getMagsDatapath(), fe.getPosDatapath(), fpsList, totFramesList]
+    initial_nan_list = fe.returnNaNPercentage()
+    return [fe.getLevsDatapath(), fe.getMagsDatapath(), fe.getPosDatapath(), fpsList, totFramesList, initial_nan_list]
 
 
-'''arr = getFiltered()
+arr = getFiltered()
 lev_files = arr[0]
 mag_files = arr[1]
 pos_files = arr[2]
 fpsList = arr[3]
-totFramesList = arr[4]'''
+totFramesList = arr[4]
+initialNanList = arr[5]
 
-'''lev_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/ExampleLevFile.csv"]
+lev_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/ExampleLevFile.csv"]
 
 mag_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_mag.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_mag.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_mag.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_mag.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_mag.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_mag.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/ExampleMagFile.csv"] 
 
 pos_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/ExampleTrackingCoop.h5"]
+
+fpsList = [30, 30, 30, 30, 30, 30, 30]
+totFramesList = [15000, 26000, 15000, 26000, 15000, 26000, 15000]
+initialNanList = [0.15, 0.12, 0.14, 0.16, 0.3, 0.04, 0.2]
+
+
+'''lev_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/4_nanerror_lev.csv"]
+
+mag_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/4_nanerror_mag.csv"]
+
+pos_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/4_nanerror_test.h5"]
+
+fpsList = [30]
+totFramesList = [14000]
 '''
 
-'''experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, prefix = "filtered_")
+experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "filtered_", save = False)
 #experiment.percentSuccesfulTrials()
-#experiment.interpressIntervalPlot()
-#experiment.quantifyRePressingBehavior()
+experiment.interpressIntervalPlot()
+experiment.quantifyRePressingBehavior()
 experiment.crossingOverQuantification()
-#experiment.cooperativeRegionStrategiesQuantification()
+experiment.cooperativeRegionStrategiesQuantification()
 #experiment.compareAverageVelocityGazevsNot()
 #experiment.makeHeatmapLocation()
-experiment.findTotalDistanceMoved()'''
+experiment.intersectings_vs_percentNaN()
+experiment.findTotalDistanceMoved()
 
 # ---------------------------------------------------------------------------------------------------------
 

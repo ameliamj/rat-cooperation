@@ -393,14 +393,85 @@ class posLoader:
     
     def returnNumFrames(self):
         return self.data.shape[-1]
-
+    
+    def checkSelfIntersection(self, ratID):
+        """
+        For each frame, determines whether the polygon formed by
+        nose → right ear → tailbase → left ear → nose intersects itself.
+        Returns a boolean array of shape (num_frames,) where True = self-intersecting.
+        """
+        def segments_intersect(p1, p2, q1, q2):
+            """Check if line segments p1-p2 and q1-q2 intersect."""
+            def ccw(a, b, c):
+                # Compute the cross product (b-a) x (c-a)
+                return (c[1] - a[1]) * (b[0] - a[0]) - (b[1] - a[1]) * (c[0] - a[0])
+        
+            # Check if the orientations differ for the endpoints of each segment
+            o1 = ccw(p1, q1, q2)
+            o2 = ccw(p2, q1, q2)
+            o3 = ccw(p1, p2, q1)
+            o4 = ccw(p1, p2, q2)
+        
+            # General case: segments intersect if orientations of endpoints differ
+            if o1 * o2 < 0 and o3 * o4 < 0:
+                return True
+        
+            # Special cases: handle collinear segments
+            def on_segment(p, q, r):
+                return (q[0] <= max(p[0], r[0]) and q[0] >= min(p[0], r[0]) and
+                        q[1] <= max(p[1], r[1]) and q[1] >= min(p[1], r[1]))
+        
+            if o1 == 0 and on_segment(p1, q1, p2): return True
+            if o2 == 0 and on_segment(p1, q2, p2): return True
+            if o3 == 0 and on_segment(q1, p1, q2): return True
+            if o4 == 0 and on_segment(q1, p2, q2): return True
+        
+            return False
+    
+        data = self.data  # shape: (2, 2, 5, num_frames)
+        num_frames = data.shape[-1]
+        result = []
+    
+        for f in range(num_frames):
+            # Extract points in order: nose → right ear → tailbase → left ear → nose
+            nose = data[ratID, :, self.NOSE_INDEX, f]
+            right_ear = data[ratID, :, self.earR_INDEX, f]
+            tailbase = data[ratID, :, self.TB_INDEX, f]
+            left_ear = data[ratID, :, self.earL_INDEX, f]
+    
+            pts = [tuple(nose), tuple(right_ear), tuple(tailbase), tuple(left_ear)]
+            pts.append(pts[0])  # close the polygon
+            edges = [(pts[i], pts[i+1]) for i in range(4)]
+            #print("Edges: ", edges)
+    
+            intersect = False
+            for i in range(len(edges)):
+                for j in range(i + 1, len(edges)):
+                    # Skip if edges share a point (i.e., adjacent edges)
+                    if set(edges[i]) & set(edges[j]):
+                        continue
+                    if segments_intersect(edges[i][0], edges[i][1], edges[j][0], edges[j][1]):
+                        intersect = True
+                        break
+                if intersect:
+                    break
+    
+            result.append(intersect)
+    
+        return result  # Boolean array, True = frame has self-intersecting shape
+    
+    def returnNumFramesSelfIntersection(self, ratID):
+        lst = self.checkSelfIntersection(ratID)
+        true_count = lst.count(True)
+        return true_count
+    
     def returnStandardizedDistanceMoved(self, ratID):
         x_coords = self.data[ratID, 0, self.HB_INDEX, :]
-        print("x_coords")
-        print(x_coords)
+        #print("x_coords")
+        #print(x_coords)
         y_coords = self.data[ratID, 1, self.HB_INDEX, :]
-        print("y_coords: ")
-        print(y_coords)
+        #print("y_coords: ")
+        #print(y_coords)
 
         # Calculate total distance as sum of Euclidean distances between consecutive frames
         valid_indices = ~np.isnan(x_coords) & ~np.isnan(y_coords)
@@ -408,9 +479,9 @@ class posLoader:
         y = y_coords[valid_indices]
 
         dx = np.diff(x)
-        print("dx: ", dx)
+        #print("dx: ", dx)
         dy = np.diff(y)
-        print("dy: ", dy)
+        #print("dy: ", dy)
         
         dist = np.sqrt(dx ** 2 + dy ** 2)
         total_distance = np.sum(dist)
@@ -418,7 +489,7 @@ class posLoader:
         #total_distance = np.sum(totDist)
         
         if (self.totalFrames > 0):
-            print("Result: ", total_distance / self.totalFrames)
+            #print("Result: ", total_distance / self.totalFrames)
             return total_distance / self.totalFrames
         else:
             return 0
@@ -430,7 +501,7 @@ def visualize_gaze_overlay(
     mouseID=0,
     save_path="output.mp4",
     start_frame=0,
-    max_frames=500,
+    max_frames=600,
     gaze_length=250
 ):
     '''
@@ -472,6 +543,9 @@ def visualize_gaze_overlay(
     is_still = loader.returnIsStill(mouseID)
     mouse_region = loader.returnMouseLocation(mouseID)
     other_region = loader.returnMouseLocation(1 - mouseID)
+    
+    self_intersecting_rat1 = loader.checkSelfIntersection(1)
+    #print("self_intersecting_rat1: ", self_intersecting_rat1)
     
     frame_idx = start_frame
     frame_count = 0
@@ -515,6 +589,15 @@ def visualize_gaze_overlay(
         cv2.putText(frame, f"Intersecting: {intersect}", (10, 60), cv2.FONT_HERSHEY_SIMPLEX, 0.7, color, 2)
         cv2.putText(frame, f"Gazing: {gazing}", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, color, 2)
         cv2.putText(frame, f"Still: {still}", (10, 90), cv2.FONT_HERSHEY_SIMPLEX, 0.7, color, 2)
+        
+        # Draw self-intersecting status for Rat 1 in bottom right
+        status_text = f"Rat1 Self-Intersecting: {self_intersecting_rat1[frame_idx]}"
+        text_size, _ = cv2.getTextSize(status_text, cv2.FONT_HERSHEY_SIMPLEX, 0.6, 2)
+        text_width, text_height = text_size
+        bottom_right_x = width - text_width - 50
+        bottom_right_y = height - 50
+        cv2.putText(frame, status_text, (bottom_right_x, bottom_right_y), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 255), 2)
+        
 
         # Draw zone boundaries
         cv2.line(frame, (loader.levBoundary, 0), (loader.levBoundary, height), (255, 255, 0), 2)   # Cyan line for levBoundary
@@ -592,15 +675,18 @@ def visualize_gaze_overlay(
     print(f"Video saved to {save_path}")
     
  
-h5_file = "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.predictions.h5"
-video_file = "/Users/david/Downloads/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.mp4"    
- 
+h5_file = "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/4_nanerror_test.h5"
+video_file = "/Users/david/Downloads/4%_nan_test.mp4"    
+
+#h5_file = "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/18_nanerror_test.h5"
+#video_file = "/Users/david/Downloads/18%_nan_test.mp4"
+
 #h5_file = "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G.predictions.h5"
 #video_file = "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G.mp4"    
 
 
 #loader = posLoader(h5_file)
-#visualize_gaze_overlay(video_file, loader, mouseID=0, save_path = "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Graphs/Videos/testGazeVid2.mp4")
+#visualize_gaze_overlay(video_file, loader, mouseID=0, save_path = "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Graphs/Videos/18percentErrorTestVid.mp4")
 
     
     

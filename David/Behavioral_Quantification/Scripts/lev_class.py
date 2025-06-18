@@ -126,6 +126,34 @@ class levLoader:
     
     
     #Graph Stuff: 
+    def returnSuccessTrials(self):
+        """
+        For each possible trial number from 1 to N:
+        - If a trial with that TrialNum exists and coopSucc == 1 → 1
+        - If it exists and coopSucc != 1 → 0
+        - If no such trial exists → -1
+    
+        Returns:
+            List[int]: array of 1s (success), 0s (failure), or -1s (missing trial)
+        """
+        n = self.returnNumTotalTrials()
+        arr = [0] * n
+        
+        for i in range(n):
+            trial_df = self.data[self.data['TrialNum'] == i + 1]
+            
+            if trial_df.empty:
+                arr[i] = -1
+            else:
+                # Take first row (if there are multiple)
+                trial = trial_df.iloc[0]
+                if trial['coopSucc'] == 1:
+                    arr[i] = 1
+                else:
+                    arr[i] = 0
+        
+        return arr
+        
     def returnTimeStartTrials(self):  
         """
         Returns a list of absolute times (in seconds) each trial started at.
@@ -241,6 +269,19 @@ class levLoader:
         lever2_count = (rat_data['LeverNum'] == 2).sum()
         return max(lever1_count, lever2_count)
     
+    def returnMinPressesByLever(self, ratID):
+        if self.data is None:
+            raise ValueError("No data loaded.")
+        
+        if 'RatID' not in self.data.columns or 'LeverNum' not in self.data.columns:
+            raise ValueError("Required columns 'RatID' or 'LeverNum' are missing from data.")
+        
+        rat_data = self.data[self.data['RatID'] == ratID]
+        
+        lever1_count = (rat_data['LeverNum'] == 1).sum()
+        lever2_count = (rat_data['LeverNum'] == 2).sum()
+        return min(lever1_count, lever2_count)
+    
     def returnNumTotalTrials(self):
         trials = self.data["TrialNum"].iloc[-1]
         return trials
@@ -248,6 +289,25 @@ class levLoader:
     def returnTotalLeverPresses(self):
         res = self.data.shape[0]
         return res
+    
+    def returnTotalLeverPressesFiltered(self):
+        '''
+        Same as returnTotalLeverPresses but you delete any rows in which there's missing RatID or AbsTime'
+        '''
+        df = self.data.copy()
+        
+        if df is not None:
+            required_columns = ['RatID', 'AbsTime']
+            existing_columns = [col for col in required_columns if col in df.columns]
+            
+            if existing_columns:
+                print(f"Dropping rows with NaN in columns: {existing_columns}")
+                df = df.dropna(subset=existing_columns)
+            else:
+                print("Warning: Neither 'RatID' nor 'AbsTime' columns found in lev data. Skipping dropna.")
+        
+        total_lev_events_filtered = df.shape[0]
+        return total_lev_events_filtered
     
     def returnLevPressesPerTrial(self):
        return self.returnTotalLeverPresses() / self.returnNumTotalTrials()

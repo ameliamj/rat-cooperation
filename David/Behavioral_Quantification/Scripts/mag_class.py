@@ -20,11 +20,11 @@ class magLoader:
         self.filename = filename
         self.data = None
         self._load_data()
-        print("Data Before: ")
-        print(self.data)
+        #print("Data Before: ")
+        #print(self.data)
         self._delete_bad_data()
-        print("Data after: ")
-        print(self.data)
+        #print("Data after: ")
+        #print(self.data)
         self.categories = ["TrialNum", "MagNum", "AbsTime", "Duration", "TrialCond", "DispTime", "TrialTime", "Hit", "TrialEnd", "RatID"]
         
     def _load_data(self): #Uses pandas to read csv file and store in a pandas datastructure
@@ -150,31 +150,50 @@ class magLoader:
 
     #Graph Stuff: 
     
-    def returnMostPressesbyMag(self, ratID):
-        """
-        Returns the number of presses by the specified rat on Mag 1 and Mag 2.
-    
-        Args:
-            ratID (int): The ID of the rat to filter presses for.
-    
-        Returns:
-            max(num_mag1_presses, num_mag2_presses)
-        """
-        if self.data is None:
-            raise ValueError("No data loaded.")
-    
-        if 'RatID' not in self.data.columns or 'MagNum' not in self.data.columns:
-            raise ValueError("Required columns 'RatID' or 'MagNum' are missing from data.")
-    
-        rat_data = self.data[self.data['RatID'] == ratID]
-    
-        mag1_count = (rat_data['MagNum'] == 1).sum()
-        mag2_count = (rat_data['MagNum'] == 2).sum()
-        return max(mag1_count, mag2_count)
-    
     def getTotalMagEvents(self):
         total_mag_events = self.data.shape[0]
         return total_mag_events
+    
+    def getTotalMagEventsFiltered(self):
+        '''
+        Same as getTotalMagEvents but you delete any rows in which there's missing RatID'
+        '''
+        df = self.data.copy()
+        
+        if df is not None:
+            required_columns = ['RatID', 'AbsTime']
+            existing_columns = [col for col in required_columns if col in df.columns]
+            
+            if existing_columns:
+                print(f"Dropping rows with NaN in columns: {existing_columns}")
+                df = df.dropna(subset=existing_columns)
+            else:
+                print("Warning: Neither 'RatID' nor 'AbsTime' columns found in mag data. Skipping dropna.")
+        
+        total_mag_events_filtered = df.shape[0]
+        return total_mag_events_filtered
+    
+    def returnMostEntriesbyMag(self, ratID):
+        """
+        Finds the number of entries by the specified rat on Mag 1 and Mag 2. Then returns the higher of the 2
+        
+        Args:
+            ratID (int): The ID of the rat to filter presses for.
+        
+        Returns:
+            max(num_mag1_entries, num_mag2_entries)
+        """
+        if self.data is None:
+            raise ValueError("No data loaded.")
+        
+        if 'RatID' not in self.data.columns or 'MagNum' not in self.data.columns:
+            raise ValueError("Required columns 'RatID' or 'MagNum' are missing from data.")
+        
+        rat_data = self.data[self.data['RatID'] == ratID]
+        
+        num_mag1_entries = (rat_data['MagNum'] == 1).sum()
+        num_mag2_entries = (rat_data['MagNum'] == 2).sum()
+        return max(num_mag1_entries, num_mag2_entries)
 
 
 #Testing

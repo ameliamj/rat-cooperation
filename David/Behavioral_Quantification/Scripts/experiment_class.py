@@ -13,7 +13,7 @@ from lev_class import levLoader
 from pos_class import posLoader
 
 class singleExperiment:
-    def __init__(self, mag_file, lev_file, pos_file, fps = 30, endFrame = 5000):
+    def __init__(self, mag_file, lev_file, pos_file, fps = 30, endFrame = 5000, initialNan = 0.1):
         self.mag_file = mag_file
         self.lev_file = lev_file
         self.pos_file = pos_file
@@ -23,6 +23,7 @@ class singleExperiment:
         self.pos = posLoader(pos_file, endFrame)
         self.fps = fps
         self.endFrame = endFrame
+        self.initialNan = initialNan
     
     def deleteSub100msTrials(self):
         '''

@@ -481,6 +481,14 @@ class fileExtractor:
         return fpsList, totFramesList
     
     
+    def returnNaNPercentage(self):
+        df = pd.DataFrame(self.data)
+
+        # Return the column named 'initial nan'
+        initial_nan_column = df['initial nan']
+        
+        return initial_nan_column
+    
 #information_path = "/Users/david/Documents/Research/Saxena Lab/rat-cooperation/scripts/notebooks/dyed_preds_df.csv"
 #information_path = "/Users/david/Documents/Research/Saxena Lab/rat-cooperation/David/Behavioral Quantification/Sorted Data Files/dyed_preds_df_fixed.csv"
 information_path = "/Users/david/Documents/Research/Saxena Lab/rat-cooperation/David/Behavioral_Quantification/Sorted_Data_Files/originalFile.csv"
