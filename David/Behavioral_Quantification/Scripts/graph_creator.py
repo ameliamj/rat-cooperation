@@ -2141,8 +2141,8 @@ class multiFileGraphs:
         plt.scatter(distancesDiff, coop_successes, alpha=0.7, label='Rat')
         
         # Fit trendline
-        slope, intercept, r_value, p_value, std_err = linregress(distancesSum, coop_successes)
-        x_vals = np.linspace(min(distancesSum), max(distancesSum), 100)
+        slope, intercept, r_value, p_value, std_err = linregress(distancesDiff, coop_successes)
+        x_vals = np.linspace(min(distancesDiff), max(distancesDiff), 100)
         plt.plot(x_vals, slope * x_vals + intercept, color='red', linestyle='--', label='Trendline')
     
         plt.title('Abs Diff Distance Moved vs. Cooperative Success Rate')
@@ -2183,13 +2183,13 @@ pos_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/B
 '''
 
 experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, prefix = "filtered_")
-experiment.percentSuccesfulTrials()
-experiment.interpressIntervalPlot()
-experiment.quantifyRePressingBehavior()
-experiment.crossingOverQuantification()
-experiment.cooperativeRegionStrategiesQuantification()
-experiment.compareAverageVelocityGazevsNot()
-experiment.makeHeatmapLocation()
+#experiment.percentSuccesfulTrials()
+#experiment.interpressIntervalPlot()
+#experiment.quantifyRePressingBehavior()
+#experiment.crossingOverQuantification()
+#experiment.cooperativeRegionStrategiesQuantification()
+#experiment.compareAverageVelocityGazevsNot()
+#experiment.makeHeatmapLocation()
 experiment.findTotalDistanceMoved()
 
 # ---------------------------------------------------------------------------------------------------------
