@@ -2132,7 +2132,6 @@ class multiFileGraphs:
         plt.title('Total Distance Moved vs. Cooperative Success Rate')
         plt.xlabel('Total Distance Moved (pixels)')
         plt.ylabel('Cooperative Success Rate (%)')
-        plt.xscale('log')  # Added: Log scale to handle outliers
         plt.legend()
         plt.grid(True)
         plt.savefig(f"{self.prefix}DistMovedSum_vs_CoopSuccessRate.png")
@@ -2148,10 +2147,9 @@ class multiFileGraphs:
         plt.title('Abs Diff Distance Moved vs. Cooperative Success Rate')
         plt.xlabel('Diff in Distance Moved (pixels)')
         plt.ylabel('Cooperative Success Rate (%)')
-        plt.xscale('log')  # Added: Log scale to handle outliers
         plt.legend()
         plt.grid(True)
-        plt.savefig(f"{self.prefix}DistMovedDiff_vs_CoopSuccessRate.png")  
+        plt.savefig(f"{self.prefix}DistMovedDiff_vs_CoopSuccessRate.png") 
         plt.show()
         plt.close()
         
