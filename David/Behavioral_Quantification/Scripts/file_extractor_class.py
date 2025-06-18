@@ -484,8 +484,8 @@ class fileExtractor:
     def returnNaNPercentage(self):
         df = pd.DataFrame(self.data)
 
-        # Return the column named 'initial nan'
-        initial_nan_column = df['initial nan']
+        # Return the column named 'initial nan' as a list
+        initial_nan_column = df['initial nan'].tolist()
         
         return initial_nan_column
     
