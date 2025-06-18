@@ -2144,7 +2144,7 @@ class multiFileGraphs:
         plt.scatter(distancesDiff, coop_successes, alpha=0.7, label='Rat', color='green')
         slope, intercept, _, _, _ = linregress(distancesDiff, coop_successes)
         x_vals = np.linspace(min(distancesDiff), max(distancesDiff), 100)
-        plt.plot(x_vals, slope * x_vals + intercept, color='eton', linestyle='--', label='Trendline')
+        plt.plot(x_vals, slope * x_vals + intercept, color='red', linestyle='--', label='Trendline')
         plt.title('Abs Diff Distance Moved vs. Cooperative Success Rate')
         plt.xlabel('Diff in Distance Moved (pixels)')
         plt.ylabel('Cooperative Success Rate (%)')
