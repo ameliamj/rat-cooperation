@@ -2155,6 +2155,38 @@ class multiFileGraphs:
         plt.show()
         plt.close()
         
+        # Graph 3: distancesSum linear
+        plt.figure(figsize=(8, 6))
+        plt.scatter(distancesSum, coop_successes, alpha=0.7, label='Rat', color='blue')
+        slope, intercept, _, _, _ = linregress(distancesSum, coop_successes)
+        x_vals = np.linspace(min(distancesSum), max(distancesSum), 100)
+        plt.plot(x_vals, slope * x_vals + intercept, color='red', linestyle='--', label='Trendline')
+        plt.title('Total Distance Moved vs. Cooperative Success Rate')
+        plt.xlabel('Total Distance Moved (pixels)')
+        plt.ylabel('Cooperative Success Rate (%)')
+        plt.xscale('linear')
+        plt.legend()
+        plt.grid(True)
+        plt.savefig(f"{self.prefix}DistMovedSum_vs_CoopSuccessRate_linear.png")
+        plt.show()
+        plt.close()
+        
+        # Graph 4: distancesDiff linear
+        plt.figure(figsize=(8, 6))
+        plt.scatter(distancesDiff, coop_successes, alpha=0.7, label='Rat', color='green')
+        slope, intercept, _, _, _ = linregress(distancesDiff, coop_successes)
+        x_vals = np.linspace(min(distancesDiff), max(distancesDiff), 100)
+        plt.plot(x_vals, slope * x_vals + intercept, color='red', linestyle='--', label='Trendline')
+        plt.title('Abs Diff Distance Moved vs. Cooperative Success Rate')
+        plt.xlabel('Diff in Distance Moved (pixels)')
+        plt.ylabel('Cooperative Success Rate (%)')
+        plt.xscale('linear')
+        plt.legend()
+        plt.grid(True)
+        plt.savefig(f"{self.prefix}DistMovedDiff_vs_CoopSuccessRate_linear.png")  
+        plt.show()
+        plt.close()
+        
         
 
 #Testing Multi File Graphs
