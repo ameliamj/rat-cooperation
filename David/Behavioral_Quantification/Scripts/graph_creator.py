@@ -2217,6 +2217,8 @@ class multiFileGraphs:
         print("distancesDiff:", distancesDiff)
         print("coop_successes:", coop_successes)
         
+        coop_successes_unfiltered = coop_successes
+        
         # Remove outliers (top 5% of distancesSum and distancesDiff)
         threshold_sum = np.percentile(distancesSum, 95)  # 95th percentile for distancesSum
         threshold_diff = np.percentile(distancesDiff, 95)  # 95th percentile for distancesDiff
@@ -2281,8 +2283,8 @@ class multiFileGraphs:
         
         # Graph 3: minRatMoved vs. success rate
         plt.figure(figsize=(8, 6))
-        plt.scatter(minRatMoved, coop_successes, alpha=0.7, label='Rat', color='green')
-        slope, intercept, r_value, _, _ = linregress(minRatMoved, coop_successes)
+        plt.scatter(minRatMoved, coop_successes_unfiltered, alpha=0.7, label='Rat', color='green')
+        slope, intercept, r_value, _, _ = linregress(minRatMoved, coop_successes_unfiltered)
         r_squared = r_value ** 2
         x_vals = np.linspace(min(minRatMoved), max(minRatMoved), 100)
         plt.plot(x_vals, slope * x_vals + intercept, color='red', linestyle='--', label='Trendline')
