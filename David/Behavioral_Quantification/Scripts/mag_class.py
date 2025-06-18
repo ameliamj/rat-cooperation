@@ -20,7 +20,11 @@ class magLoader:
         self.filename = filename
         self.data = None
         self._load_data()
+        print("Data Before: ")
+        print(self.data)
         self._delete_bad_data()
+        print("Data after: ")
+        print(self.data)
         self.categories = ["TrialNum", "MagNum", "AbsTime", "Duration", "TrialCond", "DispTime", "TrialTime", "Hit", "TrialEnd", "RatID"]
         
     def _load_data(self): #Uses pandas to read csv file and store in a pandas datastructure
