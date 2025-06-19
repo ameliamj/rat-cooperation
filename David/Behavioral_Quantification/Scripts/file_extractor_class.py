@@ -94,6 +94,33 @@ class fileExtractor:
         if (saveFile):
             df_copy.to_csv("dyed_preds_all_valid.csv", index=False)
 
+    def deleteAllButFirst(self, saveFile = False):
+        """
+        For each unique mice pair, retain only:
+        - The first row (by date and TrNum) where 'test/train' == 'test'
+        - The first row (by date and TrNum) where 'test/train' == 'train'
+        Delete all other rows.
+        """
+        grouped = self.sortByMicePairs()
+        first_rows = []
+    
+        for group in grouped:
+            # Find first test session
+            test_rows = group[group['test/train'] == 'test']
+            if not test_rows.empty:
+                first_rows.append(test_rows.iloc[0])
+    
+            # Find first train session
+            train_rows = group[group['test/train'] == 'train']
+            if not train_rows.empty:
+                first_rows.append(train_rows.iloc[0])
+    
+        self.data = pd.DataFrame(first_rows).reset_index(drop=True)
+        if (saveFile):
+            df_copy = self.data.copy()
+            df_copy.to_csv("dyed_preds_all_valid.csv", index=False)
+        
+
     def getFirstSessionPerMicePair(self):
         """
         Uses sortByMicePairs to get the first session (earliest date + TrNum)

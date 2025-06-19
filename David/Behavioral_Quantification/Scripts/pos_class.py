@@ -384,6 +384,7 @@ class posLoader:
     
     def returnTotalFramesGazing(self, mouseID, alternateDef = True):
         g0 = self.returnIsGazing(mouseID, alternateDef)
+        print("isGazingArr: ", g0)
         totalFramesGazing = np.sum(g0)
         return totalFramesGazing
         

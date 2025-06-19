@@ -73,12 +73,20 @@ def getOnlyTrainingPartners():
     fe = fileExtractor(only_trainingpartners)
     fpsList, totFramesList = fe.returnFPSandTotFrames()
     initial_nan_list = fe.returnNaNPercentage()
+    
+    #df_copy = fe.data.copy()
+    #df_copy.to_csv("test_filtered_TP.csv", index=False)
+    
     return [fe.getLevsDatapath(), fe.getMagsDatapath(), fe.getPosDatapath(), fpsList, totFramesList, initial_nan_list]
 
 def getOnlyPairedTesting():
     fe = fileExtractor(only_PairedTesting)
     fpsList, totFramesList = fe.returnFPSandTotFrames()
     initial_nan_list = fe.returnNaNPercentage()
+    
+    df_copy = fe.data.copy()
+    df_copy.to_csv("test_filtered_PT.csv", index=False)
+    
     return [fe.getLevsDatapath(), fe.getMagsDatapath(), fe.getPosDatapath(), fpsList, totFramesList, initial_nan_list]
 
 
@@ -86,6 +94,10 @@ def getOnlyTrainingCoop():
     fe = fileExtractor(only_TrainingCoop)
     fpsList, totFramesList = fe.returnFPSandTotFrames()
     initial_nan_list = fe.returnNaNPercentage()
+    
+    df_copy = fe.data.copy()
+    df_copy.to_csv("test_filtered_TC.csv", index=False)
+    
     return [fe.getLevsDatapath(), fe.getMagsDatapath(), fe.getPosDatapath(), fpsList, totFramesList, initial_nan_list]     
         
 
@@ -101,7 +113,9 @@ class multiFileGraphsCategories:
         self.allFileGroupExperiments = []
         self.categoryNames = categoryNames
         self.numCategories = len(magFiles)
-
+        
+        print("There are: ", len(magFiles), " categories!")
+        
         if not (len(magFiles) == len(levFiles) == len(posFiles) == len(categoryNames)):
             raise ValueError("Mismatch between number of categories and provided file lists or category names.")
 
@@ -603,14 +617,14 @@ posFiles = [["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/B
 #Paired Testing vs. Training Cooperation
 
 #print("Running Paired Testing vs Training Cooperation")
-'''dataPT = getOnlyPairedTesting()
+dataPT = getOnlyPairedTesting()
 dataTC = getOnlyTrainingCoop()
 
 levFiles = [dataPT[0], dataTC[0]]
 magFiles = [dataPT[1], dataTC[1]]
 posFiles = [dataPT[2], dataTC[2]]
 categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["Paired_Testing", "Training_Cooperation"])
-'''
+
 
 #Unfamiliar vs. Training Partners
 '''print("Running UF vs TP")
@@ -636,9 +650,9 @@ posFiles = [dataTransparent[2], dataTranslucent[2], dataOpaque[2]]
 categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["Transparent", "Translucent", "Opaque"])
 '''
 
-'''
+
 print("0")
-categoryExperiments.compareGazeEventsCategories()
+#categoryExperiments.compareGazeEventsCategories()
 print("1")
 categoryExperiments.compareSuccesfulTrials()
 print("2")
@@ -651,7 +665,7 @@ print("5")
 #categoryExperiments.printSummaryStats()
 print("Done")
 
-'''
+
 
 
 # ---------------------------------------------------------------------------------------------------------
@@ -2444,7 +2458,7 @@ class multiFileGraphs:
             total_gaze_frames += np.sum(g0) + np.sum(g1)
             total_frames += g0.shape[0]
             
-            total_gaze_events += loader.returnNumGazeEvents(0) + loader.returnNumGazeEvents(1)
+            total_gaze_events_alternate += loader.returnNumGazeEvents(0) + loader.returnNumGazeEvents(1)
             total_gaze_frames_alternate += np.sum(g2) + np.sum(g3)
             print("past r2")
             
@@ -2506,16 +2520,16 @@ totFramesList = [15000, 26000, 15000, 26000, 15000, 26000, 15000]
 initialNanList = [0.15, 0.12, 0.14, 0.16, 0.3, 0.04, 0.2]
 
 #arr = getFiltered()
-arr = getOnlyPairedTesting()
+'''arr = getOnlyPairedTesting()
 lev_files = arr[0]
 mag_files = arr[1]
 pos_files = arr[2]
 fpsList = arr[3]
 totFramesList = arr[4]
-initialNanList = arr[5]
+initialNanList = arr[5]'''
 
 
-'''lev_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/4_nanerror_lev.csv"]
+lev_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/4_nanerror_lev.csv"]
 
 mag_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/4_nanerror_mag.csv"]
 
@@ -2523,13 +2537,14 @@ pos_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/B
 
 fpsList = [30]
 totFramesList = [14000]
-'''
+initialNanList = [0.1]
+
 
 print("Start MultiFileGraphs Regular")
-experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "PairedTesting")
+#experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "PairedTesting")
 #experiment.printSummaryStats()
 #experiment.rePressingbyDistance()
-experiment.percentSuccesfulTrials()
+#experiment.percentSuccesfulTrials()
 #experiment.interpressIntervalPlot()
 #experiment.quantifyRePressingBehavior()
 #experiment.crossingOverQuantification()
