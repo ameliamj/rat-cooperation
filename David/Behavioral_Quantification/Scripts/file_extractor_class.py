@@ -152,12 +152,13 @@ class fileExtractor:
             self.getTransparentSessions()
             
         self.data = self.data[self.data['test/train'] == 'train']
-        df_copy = self.data.copy()
+        
         if (saveFile):
-           name = ""
-           if (sortOut):
+            df_copy = self.data.copy()
+            name = ""
+            if (sortOut):
                name = "_sortOut"
-           df_copy.to_csv(f"only_TrainingCooperation{name}.csv", index=False)
+            df_copy.to_csv(f"only_TrainingCooperation{name}.csv", index=False)
         
     def getPairedTestingSessions(self, sortOut = True, saveFile = False):
         """
@@ -169,8 +170,9 @@ class fileExtractor:
             self.getTransparentSessions()
         
         self.data = self.data[self.data['test/train'] == 'test']
-        df_copy = self.data.copy()
+        
         if (saveFile):
+            df_copy = self.data.copy()
             name = ""
             if (sortOut):
                 name = "_sortOut"
@@ -184,12 +186,13 @@ class fileExtractor:
         if (sortOut):
             self.getPairedTestingSessions()
             self.getTransparentSessions()
-            #self.deleteAllButFirst()
+            self.deleteAllButFirst()
+            print("deleted all but first")
         
         self.data = self.data[self.data['familiarity'] == 'TP']
-        df_copy = self.data.copy()
         
         if (saveFile):
+            df_copy = self.data.copy()
             name = ""
             if (sortOut):
                 name = "_sortOut"
@@ -202,12 +205,13 @@ class fileExtractor:
         if (sortOut):
             self.getPairedTestingSessions()
             self.getTransparentSessions()
-            #self.deleteAllButFirst()
+            self.deleteAllButFirst()
         
         self.data = self.data[self.data['familiarity'] == 'UF']
-        df_copy = self.data.copy()
+        
         
         if (saveFile):
+            df_copy = self.data.copy()
             name = ""
             if (sortOut):
                 name = "_sortOut"
@@ -246,9 +250,10 @@ class fileExtractor:
         self.data = self.data[
             self.data['session'].str.endswith('Translucent', na=False)
         ]
-        df_copy = self.data.copy()
+        
         
         if (saveFile):
+            df_copy = self.data.copy()
             name = ""
             if (sortOut):
                 name = "_sortOut"
@@ -266,9 +271,10 @@ class fileExtractor:
         self.data = self.data[
             self.data['session'].str.endswith('Opaque', na=False)
         ]
-        df_copy = self.data.copy()
+        
         
         if (saveFile):
+            df_copy = self.data.copy()
             name = ""
             if (sortOut):
                 name = "_sortOut"
