@@ -197,7 +197,7 @@ class fileExtractor:
             name = ""
             if (sortOut):
                 name = "_filtered"
-            df_copy.to_csv(f"Filtered{name}.csv", index=False)
+            df_copy.to_csv(f"only_TrainingPartner{name}.csv", index=False)
         
     def getUnfamiliarPartners(self, sortOut = True, saveFile = False): # gets rid of all rows where familiarity != UF
         """
