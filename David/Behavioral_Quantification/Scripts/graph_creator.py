@@ -434,29 +434,38 @@ class multiFileGraphsCategories:
     
     def printSummaryStats(self):
         avg_gaze_lengths = []       # Stores average gaze duration (in frames) per category
+        avg_gaze_lengths_alternate = [] # Stores average gaze duration (in frames) per category for alternate definition
         avg_lever_per_trial = []    # Stores average number of lever presses per trial
         avg_mag_per_trial = []      # Stores average number of magazine entries per trial
     
         # Loop through each experimental group (i.e., category)
         for idx, group in enumerate(self.allFileGroupExperiments):
-            total_gaze_events = 0     # Total gaze events (all mice) in the category
+            total_gaze_events = 0     # Total gaze events in the category
+            total_gaze_events_alternate = 0     # Total gaze events in the category for alternate definition
             total_frames = 0          # Total number of frames across all sessions
             total_trials = 0          # Total number of trials across sessions
             successful_trials = 0     # Total number of cooperative successful trials
             total_lever_presses = 0   # Total number of lever presses
             total_mag_events = 0      # Total number of magazine entries
             total_gaze_frames = 0     # Total frames where gaze was detected
+            total_gaze_frames_alternate = 0
     
             # Process each experiment within the category
             for exp in group:
                 loader = exp.pos
-                g0 = loader.returnIsGazing(0)
-                g1 = loader.returnIsGazing(1)
+                
+                g0 = loader.returnIsGazing(0, alternateDef=False)
+                g1 = loader.returnIsGazing(1, alternateDef=False)
+                g2 = loader.returnIsGazing(0)
+                g3 = loader.returnIsGazing(1)
     
                 # Count gaze events and sum up the frames with gazing behavior
-                total_gaze_events += loader.returnNumGazeEvents(0) + loader.returnNumGazeEvents(1)
+                total_gaze_events += loader.returnNumGazeEvents(0, alternateDef=False) + loader.returnNumGazeEvents(1, alternateDef=False)
                 total_gaze_frames += np.sum(g0) + np.sum(g1)
                 total_frames += g0.shape[0]
+                
+                total_gaze_events_alternate += loader.returnNumGazeEvents(0) + loader.returnNumGazeEvents(1)
+                total_gaze_frames_alternate += np.sum(g2) + np.sum(g3)
     
                 # Access lever press data and compute trial/success counts
                 lev = exp.lev.data
@@ -472,11 +481,13 @@ class multiFileGraphsCategories:
     
             # Calculate averages for the category
             avg_gaze_len = (total_gaze_frames / total_gaze_events) if total_gaze_events > 0 else 0
+            avg_gaze_len_alternate = (total_gaze_frames_alternate / total_gaze_events_alternate) if total_gaze_events_alternate > 0 else 0
             avg_lever = (total_lever_presses / total_trials) if total_trials > 0 else 0
             avg_mag = (total_mag_events / total_trials) if total_trials > 0 else 0
     
             # Store for plotting
             avg_gaze_lengths.append(avg_gaze_len)
+            avg_gaze_lengths_alternate.append(avg_gaze_len_alternate)
             avg_lever_per_trial.append(avg_lever)
             avg_mag_per_trial.append(avg_mag)
     
@@ -491,6 +502,9 @@ class multiFileGraphsCategories:
             print(f"  Total Gaze Events: {total_gaze_events}")
             print(f"  Average Gaze Length: {total_gaze_frames / total_gaze_events:.2f}")
             print(f"  Percent Gazing: {100 * total_gaze_events / total_frames:.2f}%")
+            print(f"  Total Gaze Events (Alternate): {total_gaze_events_alternate}")
+            print(f"  Average Gaze Length (Alternate): {total_gaze_frames_alternate / total_gaze_events_alternate:.2f}")
+            print(f"  Percent Gazing (Alternate): {100 * total_gaze_frames_alternate / total_frames:.2f}%")
             print(f"  Avg Lever Presses per Trial: {total_lever_presses / total_trials:.2f}")
             print(f"  Total Lever Presses: {total_lever_presses}")
             print(f"  Avg Mag Events per Trial: {total_mag_events / total_trials:.2f}")
@@ -501,6 +515,13 @@ class multiFileGraphsCategories:
             avg_gaze_lengths,
             'Avg Gaze Length (frames)',
             'Average Gaze Length per Category',
+            "Avg_Gaze_Length"
+        )
+        
+        self.make_bar_plot(
+            avg_gaze_lengths_alternate,
+            'Avg Gaze Length (frames)',
+            'Average Gaze Length per Category (Alternate Def)',
             "Avg_Gaze_Length"
         )
     
@@ -704,7 +725,6 @@ levFiles = [dataTransparent[0], dataTranslucent[0], dataOpaque[0]]
 magFiles = [dataTransparent[1], dataTranslucent[1], dataOpaque[1]]
 posFiles = [dataTransparent[2], dataTranslucent[2], dataOpaque[2]]
 categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["Transparent", "Translucent", "Opaque"])
-categoryExperiments.compareSuccesfulTrials()
 
 
 
