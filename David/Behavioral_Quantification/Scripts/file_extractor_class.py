@@ -95,7 +95,7 @@ class fileExtractor:
         if (saveFile):
             df_copy.to_csv("dyed_preds_all_valid.csv", index=False)
 
-    def deleteAllButFirst(self, saveFile = False):
+    def deleteAllButFirstPTvsTC(self, saveFile = False):
         """
         For each unique mice pair, retain only:
         - The first row (by date and TrNum) where 'test/train' == 'test'
@@ -120,7 +120,65 @@ class fileExtractor:
         if (saveFile):
             df_copy = self.data.copy()
             df_copy.to_csv("dyed_preds_all_valid.csv", index=False)
-        
+            
+    
+    def deleteAllButFirstTransparency(self, saveFile = False):
+        """
+        For each unique mice pair, retain only:
+        - The first row (by date and TrNum) where 'test/train' == 'test'
+        - The first row (by date and TrNum) where 'test/train' == 'train'
+        Delete all other rows.
+        """
+        grouped = self.sortByMicePairs()
+        first_rows = []
+    
+        for group in grouped:
+            # Find first transparent session
+            test_rows = group[group['dividers'] == 'transparent']
+            if not test_rows.empty:
+                first_rows.append(test_rows.iloc[0])
+    
+            # Find first translucent session
+            train_rows = group[group['dividers'] == 'translucent']
+            if not train_rows.empty:
+                first_rows.append(train_rows.iloc[0])
+                
+            # Find first opaque session
+            train_rows = group[group['dividers'] == 'opaque']
+            if not train_rows.empty:
+                first_rows.append(train_rows.iloc[0])
+    
+        self.data = pd.DataFrame(first_rows).reset_index(drop=True)
+        if (saveFile):
+            df_copy = self.data.copy()
+            df_copy.to_csv("dyed_preds_all_valid.csv", index=False)
+            
+    def deleteAllButFirstFamiliarity(self, saveFile = False):
+        """
+        For each unique mice pair, retain only:
+        - The first row (by date and TrNum) where 'test/train' == 'test'
+        - The first row (by date and TrNum) where 'test/train' == 'train'
+        Delete all other rows.
+        """
+        grouped = self.sortByMicePairs()
+        first_rows = []
+    
+        for group in grouped:
+            # Find first unfamiliar session
+            test_rows = group[group['familiarity'] == 'UF']
+            if not test_rows.empty:
+                first_rows.append(test_rows.iloc[0])
+    
+            # Find first training partner session
+            train_rows = group[group['familiarity'] == 'TP']
+            if not train_rows.empty:
+                first_rows.append(train_rows.iloc[0])
+    
+        self.data = pd.DataFrame(first_rows).reset_index(drop=True)
+        if (saveFile):
+            df_copy = self.data.copy()
+            df_copy.to_csv("dyed_preds_all_valid.csv", index=False)
+    
 
     def getFirstSessionPerMicePair(self):
         """
@@ -148,7 +206,7 @@ class fileExtractor:
         Keep only rows where test/train == 'train'
         """
         if (sortOut):
-            self.deleteAllButFirst()
+            self.deleteAllButFirstPTvsTC()
             self.getTrainingPartner(sortOut=False)
             self.getTransparentSessions(sortOut=False)
             
@@ -166,7 +224,7 @@ class fileExtractor:
         Keep only rows where test/train == 'test'
         """
         if (sortOut):
-            self.deleteAllButFirst()
+            self.deleteAllButFirstPTvsTC()
             self.getTrainingPartner(sortOut=False)
             self.getTransparentSessions(sortOut=False)
         
@@ -187,7 +245,7 @@ class fileExtractor:
         if (sortOut):
             self.getPairedTestingSessions(sortOut=False)
             self.getTransparentSessions(sortOut=False)
-            self.deleteAllButFirst()
+            self.deleteAllButFirstFamiliarity()
             #print("deleted all but first")
         
         self.data = self.data[self.data['familiarity'] == 'TP']
@@ -206,7 +264,7 @@ class fileExtractor:
         if (sortOut):
             self.getPairedTestingSessions(sortOut=False)
             self.getTransparentSessions(sortOut=False)
-            self.deleteAllButFirst()
+            self.deleteAllButFirstFamiliarity()
         
         self.data = self.data[self.data['familiarity'] == 'UF']
         
@@ -226,7 +284,7 @@ class fileExtractor:
         if (sortOut):
             self.getPairedTestingSessions(sortOut=False)
             self.getTrainingPartner(sortOut=False)
-            self.deleteAllButFirst()
+            self.deleteAllButFirstTransparency()
         
         self.data = self.data[
             ~self.data['session'].str.endswith(('Opaque', 'Translucent'), na=False)
@@ -245,7 +303,7 @@ class fileExtractor:
         """
         if (sortOut):
             self.getPairedTestingSessions(sortOut=False)
-            self.deleteAllButFirst()
+            self.deleteAllButFirstTransparency()
             self.getTrainingPartner(sortOut=False)
         
         self.data = self.data[
@@ -266,7 +324,7 @@ class fileExtractor:
         """
         if (sortOut):
             self.getPairedTestingSessions(sortOut=False)
-            self.deleteAllButFirst()
+            self.deleteAllButFirstTransparency()
             self.getTrainingPartner(sortOut=False)
         
         self.data = self.data[

@@ -127,8 +127,10 @@ def getOnlyTrainingPartners(filtered = True, onlyFirst = False):
     
     return [fe.getLevsDatapath(), fe.getMagsDatapath(), fe.getPosDatapath(), fpsList, totFramesList, initial_nan_list]
 
-def getOnlyPairedTesting(filtered = True):
-    if (filtered):
+def getOnlyPairedTesting(filtered = True, onlyFirst = False):
+    if (onlyFirst):
+        fe = fileExtractor(only_PairedTesting_filtered_onlyFirst)
+    elif (filtered):
         fe = fileExtractor(only_PairedTesting_filtered)
     else:
         fe = fileExtractor(only_PairedTesting)
@@ -138,8 +140,10 @@ def getOnlyPairedTesting(filtered = True):
     return [fe.getLevsDatapath(), fe.getMagsDatapath(), fe.getPosDatapath(), fpsList, totFramesList, initial_nan_list]
 
 
-def getOnlyTrainingCoop(filtered = True):
-    if (filtered):
+def getOnlyTrainingCoop(filtered = True, onlyFirst = False):
+    if (onlyFirst):
+        fe = fileExtractor(only_TrainingCoop_filtered_onlyFirst)
+    elif (filtered):
         fe = fileExtractor(only_TrainingCoop_filtered)
     else:
         fe = fileExtractor(only_TrainingCoop)
@@ -665,35 +669,36 @@ posFiles = [["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/B
 
 #Paired Testing vs. Training Cooperation
 
-'''
+
 print("Running Paired Testing vs Training Cooperation")
-dataPT = getOnlyPairedTesting()
-dataTC = getOnlyTrainingCoop()
+dataPT = getOnlyPairedTesting(onlyFirst=True)
+dataTC = getOnlyTrainingCoop(onlyFirst=True)
 
 levFiles = [dataPT[0], dataTC[0]]
 magFiles = [dataPT[1], dataTC[1]]
 posFiles = [dataPT[2], dataTC[2]]
 categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["Paired_Testing", "Training_Cooperation"])
-'''
 
+
+'''
 #Unfamiliar vs. Training Partners
 print("Running UF vs TP")
-dataUF = getOnlyUnfamiliar(onlyFirst=True) #Unfamiliar
-dataTP = getOnlyTrainingPartners(onlyFirst=True) #Training Partners
+dataUF = getOnlyUnfamiliar() #Unfamiliar
+dataTP = getOnlyTrainingPartners() #Training Partners
 
 levFiles = [dataUF[0], dataTP[0]]
 magFiles = [dataUF[1], dataTP[1]]
 posFiles = [dataUF[2], dataTP[2]]
 categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["Unfamiliar", "Training Partners"])
-categoryExperiments.compareSuccesfulTrials()
-
+#categoryExperiments.compareSuccesfulTrials()
+'''
 
 #Transparent vs. Translucent vs. Opaque
 
 print("Running Transparency")
 dataTransparent = getOnlyTransparent(onlyFirst=True) #Transparent
 dataTranslucent = getOnlyTranslucent(onlyFirst=True) #Translucent
-dataOpaque = getOnlyOpaque() #Opaque
+dataOpaque = getOnlyOpaque(onlyFirst=True) #Opaque
 
 levFiles = [dataTransparent[0], dataTranslucent[0], dataOpaque[0]]
 magFiles = [dataTransparent[1], dataTranslucent[1], dataOpaque[1]]
@@ -2573,13 +2578,13 @@ totFramesList = [15000, 26000, 15000, 26000, 15000, 26000, 15000]
 initialNanList = [0.15, 0.12, 0.14, 0.16, 0.3, 0.04, 0.2]
 '''
 
-arr = getFiltered()
+'''arr = getFiltered()
 lev_files = arr[0]
 mag_files = arr[1]
 pos_files = arr[2]
 fpsList = arr[3]
 totFramesList = arr[4]
-initialNanList = arr[5]
+initialNanList = arr[5]'''
 
 
 '''lev_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/4_nanerror_lev.csv"]
@@ -2593,7 +2598,7 @@ totFramesList = [14000]
 initialNanList = [0.1]'''
 
 
-print("Start MultiFileGraphs Regular")
+'''print("Start MultiFileGraphs Regular")
 experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "")
 #experiment.printSummaryStats()
 #experiment.compareAverageVelocityGazevsNot()
@@ -2606,7 +2611,7 @@ experiment.crossingOverQuantification()
 experiment.cooperativeRegionStrategiesQuantification()
 experiment.makeHeatmapLocation()
 experiment.intersectings_vs_percentNaN()
-experiment.findTotalDistanceMoved()
+experiment.findTotalDistanceMoved()'''
 
 # ---------------------------------------------------------------------------------------------------------
 

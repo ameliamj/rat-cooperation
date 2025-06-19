@@ -1,1 +1,5 @@
 vid,session,single/multi,test/train,pred,color pair,initial nan,vel nan,correct,final nan,levers,mags,trial type,familiarity,fiber pho,dividers,mice_pair
+050324_Cam1_TrNum9_Coop_KL002B-KL002Y,050324_KL002_TimeOut_Opaque,multi,test,True,KL002B-KL002Y,0.0308453140201059,0.0314992973732569,True,0.0002351097178683,True,True,coop,TP,False,opaque,KL002B-KL002Y
+043024_Cam4_TrNum7_Coop_KL004G-KL004R,043024_KL004_TimeOut_Opaque,multi,test,True,KL004G-KL004R,0.1466560073092736,0.1526678848789401,True,0.0076541799908634,True,True,coop,TP,False,opaque,KL004G-KL004R
+050124_Cam2_TrNum6_Coop_KL005Y-KL005B,050124_KL005_TimeOut_Opaque,multi,test,True,KL005Y-KL005B,0.0652913112621078,0.0691687147607344,True,0.000925256614139,True,True,coop,TP,False,opaque,KL005B-KL005Y
+050524_Cam3_TrNum7_Coop_KL006G-KL006R,050524_KL006_TimeOut_Opaque,multi,test,True,KL006G-KL006R,0.0628579489349696,0.0642403724079559,True,0.0005607278882776,True,True,coop,TP,False,opaque,KL006G-KL006R

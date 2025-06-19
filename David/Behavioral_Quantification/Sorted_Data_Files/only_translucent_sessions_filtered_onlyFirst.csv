@@ -1,1 +1,6 @@
 vid,session,single/multi,test/train,pred,color pair,initial nan,vel nan,correct,final nan,levers,mags,trial type,familiarity,fiber pho,dividers,mice_pair
+043024_Cam3_TrNum5_Coop_KL002B-KL002Y,043024_KL002_TimeOut_Translucent,multi,test,True,KL002B-KL002Y,0.0283636624158188,0.0293021922911591,True,0.000139704828772,True,True,coop,TP,False,translucent,KL002B-KL002Y
+050324_Cam2_TrNum7_Coop_KL004G-KL004R,050324_KL004_TimeOut_Translucent,multi,test,True,KL004G-KL004R,0.2703324538258575,0.2847862796833773,True,0.0027941952506596,True,True,coop,TP,False,translucent,KL004G-KL004R
+050524_Cam4_TrNum5_Coop_KL005Y-KL005B,050524_KL005_TimeOut_Translucent,multi,test,True,KL005Y-KL005B,0.0656007722706567,0.067851217231289,True,0.0004178104920208,True,True,coop,TP,False,translucent,KL005B-KL005Y
+050124_Cam3_TrNum5_Coop_KL006G-KL006R,050124_KL006_TimeOut_Translucent,multi,test,True,KL006G-KL006R,0.0771304797620587,0.0783007888271046,True,0.0023050562524246,True,True,coop,TP,False,translucent,KL006G-KL006R
+050124_Cam1_TrNum8_Coop_KL007Y-KL007G,050124_KL007_TimeOut_Translucent,multi,test,True,KL007Y-KL007G,0.2478536957073914,0.2627465921598509,True,0.0066251799170265,True,True,coop,TP,False,translucent,KL007G-KL007Y
