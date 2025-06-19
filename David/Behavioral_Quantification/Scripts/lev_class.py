@@ -286,6 +286,10 @@ class levLoader:
         trials = self.data["TrialNum"].iloc[-1]
         return trials
     
+    def returnNumTotalTrialswithLeverPress(self):
+        num_unique_trials = self.data['TrialNum'].nunique()
+        return num_unique_trials
+    
     def returnTotalLeverPresses(self):
         res = self.data.shape[0]
         return res

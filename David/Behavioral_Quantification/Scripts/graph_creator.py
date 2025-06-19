@@ -1530,7 +1530,7 @@ class multiFileGraphs:
             
             #Data we Keep Track of
             fps = exp.fps
-            num_trials = lev.returnNumTotalTrials()
+            num_trials = lev.returnNumTotalTrialswithLeverPress()
             first_press_times = lev.returnFirstPressAbsTimes()
             first_press_ids = lev.returnRatIDFirstPressTrial()
             represses = lev.returnAvgRepresses_FirstMouse(returnArr=True)
@@ -1540,6 +1540,12 @@ class multiFileGraphs:
             # Skip if mismatch in data length
             if len(first_press_times) != len(represses):
                 print("Mismatch between number of trials and repress array")
+                continue
+            
+            if (len(first_press_times) != num_trials):
+                print("Mismatch between number of trials and repress array")
+                print(num_trials)
+                print(len(first_press_times))
                 continue
             
             #Iterate through Trials to classify location
