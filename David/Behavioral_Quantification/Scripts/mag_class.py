@@ -58,7 +58,7 @@ class magLoader:
             existing_columns = [col for col in required_columns if col in self.data.columns]
             
             if existing_columns:
-                print(f"Dropping rows with NaN in columns: {existing_columns}")
+                #print(f"Dropping rows with NaN in columns: {existing_columns}")
                 self.data = self.data.dropna(subset=existing_columns)
             else:
                 print("Warning: Neither 'MagNum' nor 'AbsTime' columns found in mag data. Skipping dropna.")

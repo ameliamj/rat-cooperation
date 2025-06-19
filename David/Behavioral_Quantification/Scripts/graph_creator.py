@@ -39,68 +39,88 @@ only_PairedTesting = "/gpfs/radev/project/saxena/drb83/rat-cooperation/David/Beh
 only_TrainingCoop = "/gpfs/radev/project/saxena/drb83/rat-cooperation/David/Behavioral_Quantification/Sorted_Data_Files/only_TrainingCooperation.csv"
 
 
+only_opaque_filtered = "/gpfs/radev/project/saxena/drb83/rat-cooperation/David/Behavioral_Quantification/Sorted_Data_Files/only_opaque_sessions_filtered.csv"
+only_translucent_filtered = "/gpfs/radev/project/saxena/drb83/rat-cooperation/David/Behavioral_Quantification/Sorted_Data_Files/only_translucent_sessions_filtered.csv"
+only_transparent_filtered = "/gpfs/radev/project/saxena/drb83/rat-cooperation/David/Behavioral_Quantification/Sorted_Data_Files/only_transparent_sessions_filtered.csv"
+
+only_unfamiliar_filtered = "/gpfs/radev/project/saxena/drb83/rat-cooperation/David/Behavioral_Quantification/Sorted_Data_Files/only_unfamiliar_partners_filtered.csv"
+only_trainingpartners_filtered = "/gpfs/radev/project/saxena/drb83/rat-cooperation/David/Behavioral_Quantification/Sorted_Data_Files/only_training_partners_filtered.csv"
+
+only_PairedTesting_filtered = "/gpfs/radev/project/saxena/drb83/rat-cooperation/David/Behavioral_Quantification/Sorted_Data_Files/only_PairedTesting_filtered.csv"
+only_TrainingCoop_filtered = "/gpfs/radev/project/saxena/drb83/rat-cooperation/David/Behavioral_Quantification/Sorted_Data_Files/only_TrainingCooperation_filtered.csv"
+
+
 def getAllValid():
     fe = fileExtractor(all_valid)
     fpsList, totFramesList = fe.returnFPSandTotFrames()
     return [fe.getLevsDatapath(), fe.getMagsDatapath(), fe.getPosDatapath(), fpsList, totFramesList]
     
-def getOnlyOpaque():
-    fe = fileExtractor(only_opaque)
+def getOnlyOpaque(filtered = True):
+    if (filtered):
+        fe = fileExtractor(only_opaque_filtered)
+    else:
+        fe = fileExtractor(only_opaque)
     fpsList, totFramesList = fe.returnFPSandTotFrames()
     initial_nan_list = fe.returnNaNPercentage()
     return [fe.getLevsDatapath(), fe.getMagsDatapath(), fe.getPosDatapath(), fpsList, totFramesList, initial_nan_list]
 
-def getOnlyTranslucent():
-    fe = fileExtractor(only_translucent)
+def getOnlyTranslucent(filtered = True):
+    if (filtered):
+        fe = fileExtractor(only_translucent_filtered)
+    else:
+        fe = fileExtractor(only_translucent)
     fpsList, totFramesList = fe.returnFPSandTotFrames()
     initial_nan_list = fe.returnNaNPercentage()
     return [fe.getLevsDatapath(), fe.getMagsDatapath(), fe.getPosDatapath(), fpsList, totFramesList, initial_nan_list]
 
-def getOnlyTransparent():
-    fe = fileExtractor(only_transparent)
+def getOnlyTransparent(filtered = True):
+    if (filtered):
+        fe = fileExtractor(only_transparent_filtered)
+    else:
+        fe = fileExtractor(only_transparent)
     fpsList, totFramesList = fe.returnFPSandTotFrames()
     initial_nan_list = fe.returnNaNPercentage()
     return [fe.getLevsDatapath(), fe.getMagsDatapath(), fe.getPosDatapath(), fpsList, totFramesList, initial_nan_list]
 
-def getOnlyUnfamiliar():
-    fe = fileExtractor(only_unfamiliar)
+def getOnlyUnfamiliar(filtered = True):
+    if (filtered):
+        fe = fileExtractor(only_unfamiliar_filtered)
+    else:
+        fe = fileExtractor(only_unfamiliar)
     fpsList, totFramesList = fe.returnFPSandTotFrames()
     initial_nan_list = fe.returnNaNPercentage()
-    
-    df_copy = fe.data.copy()
-    df_copy.to_csv("test_filtered_onlyFirst_Unfamiliar.csv", index=False)
     
     return [fe.getLevsDatapath(), fe.getMagsDatapath(), fe.getPosDatapath(), fpsList, totFramesList, initial_nan_list]
 
 
-def getOnlyTrainingPartners():
-    fe = fileExtractor(only_trainingpartners)
+def getOnlyTrainingPartners(filtered = True):
+    if (filtered):
+        fe = fileExtractor(only_trainingpartners_filtered)
+    else:
+        fe = fileExtractor(only_trainingpartners)
     fpsList, totFramesList = fe.returnFPSandTotFrames()
     initial_nan_list = fe.returnNaNPercentage()
-    
-    df_copy = fe.data.copy()
-    df_copy.to_csv("test_filtered_onlyFirst_TrainingPartners.csv", index=False)
     
     return [fe.getLevsDatapath(), fe.getMagsDatapath(), fe.getPosDatapath(), fpsList, totFramesList, initial_nan_list]
 
-def getOnlyPairedTesting():
-    fe = fileExtractor(only_PairedTesting)
+def getOnlyPairedTesting(filtered = True):
+    if (filtered):
+        fe = fileExtractor(only_PairedTesting_filtered)
+    else:
+        fe = fileExtractor(only_PairedTesting)
     fpsList, totFramesList = fe.returnFPSandTotFrames()
     initial_nan_list = fe.returnNaNPercentage()
-    
-    df_copy = fe.data.copy()
-    df_copy.to_csv("test_filtered_PT.csv", index=False)
     
     return [fe.getLevsDatapath(), fe.getMagsDatapath(), fe.getPosDatapath(), fpsList, totFramesList, initial_nan_list]
 
 
-def getOnlyTrainingCoop():
-    fe = fileExtractor(only_TrainingCoop)
+def getOnlyTrainingCoop(filtered = True):
+    if (filtered):
+        fe = fileExtractor(only_TrainingCoop_filtered)
+    else:
+        fe = fileExtractor(only_TrainingCoop)
     fpsList, totFramesList = fe.returnFPSandTotFrames()
     initial_nan_list = fe.returnNaNPercentage()
-    
-    df_copy = fe.data.copy()
-    df_copy.to_csv("test_filtered_TC.csv", index=False)
     
     return [fe.getLevsDatapath(), fe.getMagsDatapath(), fe.getPosDatapath(), fpsList, totFramesList, initial_nan_list]     
         
@@ -144,12 +164,13 @@ class multiFileGraphsCategories:
                 file_group.append(exp)
             self.allFileGroupExperiments.append(file_group)
         
+        self.prefix = "filtered_"
         self.endSaveName = ""
         for cat in categoryNames:    
             self.endSaveName += f"_{cat}"
         
         self.save = save
-        self.path = "/gpfs/radev/project/saxena/drb83/rat-cooperation/David/Behavioral_Quantification/Graphs/adef_filtered_"
+        self.path = "/gpfs/radev/project/saxena/drb83/rat-cooperation/David/Behavioral_Quantification/Graphs/filtered_"
         #self.path = ""
         
         if not self.path:
@@ -660,9 +681,9 @@ print("0")
 print("1")
 categoryExperiments.compareSuccesfulTrials()
 print("2")
-#categoryExperiments.compareIPI()
+categoryExperiments.compareIPI()
 print("3")
-#categoryExperiments.rePressingBehavior()
+categoryExperiments.rePressingBehavior()
 print("4")
 #categoryExperiments.gazeAlignmentAngle()
 print("5")
@@ -685,6 +706,7 @@ class MicePairGraphs:
         print("Initializing MicePairGraphs")
         assert len(magGroups) == len(levGroups) == len(posGroups), "Mismatched group lengths."
         self.experimentGroups = []
+        self.prefix = "filtered_"
         deleted_count = 0
 
         for group_idx, (mag_list, lev_list, pos_list) in enumerate(zip(magGroups, levGroups, posGroups)):
@@ -721,7 +743,7 @@ class MicePairGraphs:
         plt.title(title)
         plt.xticks([])
         plt.tight_layout()
-        plt.savefig(f"{filename}.png")
+        plt.savefig(f"{self.prefix}{filename}.png")
         plt.show()
         plt.close()
 
@@ -732,7 +754,7 @@ class MicePairGraphs:
         plt.xlabel(xlabel)
         plt.title(title)
         plt.tight_layout()
-        plt.savefig(f"{filename}_hist.png")
+        plt.savefig(f"{self.prefix}{filename}_hist.png")
         plt.show()
         plt.close()
 
@@ -981,7 +1003,7 @@ class MicePairGraphs:
             plt.title(f"Change in {name} (Last 2 - First 2)")
             plt.xlabel(f"Δ {name}")
             plt.tight_layout()
-            filename = f"Diff_2_{name.replace(' ', '_')}.png"
+            filename = f"{self.prefix}Diff_2_{name.replace(' ', '_')}.png"
             print(f" Saving histogram to {filename}")
             plt.savefig(filename)
             plt.show()
@@ -1028,7 +1050,7 @@ class MicePairGraphs:
             plt.title(f"Avg Change in {name}", fontsize=14)
             plt.tight_layout()
         
-            filename = f"Bar_Change_2_{name.replace(' ', '_').replace('→', 'to')}.png"
+            filename = f"{self.prefix}Bar_Change_2_{name.replace(' ', '_').replace('→', 'to')}.png"
             print(f"    Saving bar plot to {filename}")
             plt.savefig(filename)
             plt.show()
@@ -1090,7 +1112,7 @@ class MicePairGraphs:
             plt.grid(True)
             plt.tight_layout()
         
-            filename = f"Line_Progression_{name.replace(' ', '_').replace('→', 'to')}.png"
+            filename = f"{self.prefix}Line_Progression_{name.replace(' ', '_').replace('→', 'to')}.png"
             print(f"    Saving line plot to {filename}")
             plt.savefig(filename)
             plt.show()

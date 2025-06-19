@@ -32,8 +32,7 @@ class posLoader:
             total_values = np.prod(raw_data.shape)
             nan_count = np.isnan(raw_data).sum()
             nan_percentage = 100 * nan_count / total_values
-            print(f"[{filename}] Missing data: {nan_count} NaNs out of {total_values} values "
-                  f"({nan_percentage:.2f}%) before interpolation")
+            #print(f"[{filename}] Missing data: {nan_count} NaNs out of {total_values} values " f"({nan_percentage:.2f}%) before interpolation")
     
             self.data = self._fill_missing_data(raw_data) #Shape: (2, 2, 5, x) --> (mouse0/1, x/y, which_body_part, which_frame)
         

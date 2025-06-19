@@ -16,6 +16,7 @@ class fileExtractor:
         self.filename = information_path
         self.data = None
         self._load_data()
+        self.postFix = "_filtered"
          
     def _load_data(self):
         """
@@ -148,8 +149,8 @@ class fileExtractor:
         """
         if (sortOut):
             #self.deleteAllButFirst()
-            self.getTrainingPartner()
-            self.getTransparentSessions()
+            self.getTrainingPartner(sortOut=False)
+            self.getTransparentSessions(sortOut=False)
             
         self.data = self.data[self.data['test/train'] == 'train']
         
@@ -157,7 +158,7 @@ class fileExtractor:
             df_copy = self.data.copy()
             name = ""
             if (sortOut):
-               name = "_sortOut"
+               name = "_filtered"
             df_copy.to_csv(f"only_TrainingCooperation{name}.csv", index=False)
         
     def getPairedTestingSessions(self, sortOut = True, saveFile = False):
@@ -166,8 +167,8 @@ class fileExtractor:
         """
         if (sortOut):
             #self.deleteAllButFirst()
-            self.getTrainingPartner()
-            self.getTransparentSessions()
+            self.getTrainingPartner(sortOut=False)
+            self.getTransparentSessions(sortOut=False)
         
         self.data = self.data[self.data['test/train'] == 'test']
         
@@ -175,7 +176,7 @@ class fileExtractor:
             df_copy = self.data.copy()
             name = ""
             if (sortOut):
-                name = "_sortOut"
+                name = "_filtered"
             df_copy.to_csv(f"only_PairedTesting{name}.csv", index=False)
     
         
@@ -184,10 +185,10 @@ class fileExtractor:
         Keep only rows where familiarity == 'TP'
         """
         if (sortOut):
-            self.getPairedTestingSessions()
-            self.getTransparentSessions()
-            self.deleteAllButFirst()
-            print("deleted all but first")
+            self.getPairedTestingSessions(sortOut=False)
+            self.getTransparentSessions(sortOut=False)
+            #self.deleteAllButFirst()
+            #print("deleted all but first")
         
         self.data = self.data[self.data['familiarity'] == 'TP']
         
@@ -195,7 +196,7 @@ class fileExtractor:
             df_copy = self.data.copy()
             name = ""
             if (sortOut):
-                name = "_sortOut"
+                name = "_filtered"
             df_copy.to_csv(f"only_training_partners{name}.csv", index=False)
         
     def getUnfamiliarPartners(self, sortOut = True, saveFile = False): # gets rid of all rows where familiarity != UF
@@ -203,9 +204,9 @@ class fileExtractor:
         Keep only rows where familiarity == 'UF'
         """
         if (sortOut):
-            self.getPairedTestingSessions()
-            self.getTransparentSessions()
-            self.deleteAllButFirst()
+            self.getPairedTestingSessions(sortOut=False)
+            self.getTransparentSessions(sortOut=False)
+            #self.deleteAllButFirst()
         
         self.data = self.data[self.data['familiarity'] == 'UF']
         
@@ -214,7 +215,7 @@ class fileExtractor:
             df_copy = self.data.copy()
             name = ""
             if (sortOut):
-                name = "_sortOut"
+                name = "_filtered"
             df_copy.to_csv(f"only_unfamiliar_partners{name}.csv", index=False)
     
     def getTransparentSessions(self, sortOut = True, saveFile = False):
@@ -223,8 +224,8 @@ class fileExtractor:
         (i.e., retain only transparent divider sessions).
         """
         if (sortOut):
-            self.getPairedTestingSessions()
-            self.getTrainingPartner()
+            self.getPairedTestingSessions(sortOut=False)
+            self.getTrainingPartner(sortOut=False)
             #self.deleteAllButFirst()
         
         self.data = self.data[
@@ -235,7 +236,7 @@ class fileExtractor:
         if (saveFile):
             name = ""
             if (sortOut):
-                name = "_sortOut"
+                name = "_filtered"
             df_copy.to_csv(f"only_transparent_sessions{name}.csv", index=False)
 
     def getTranslucentSessions(self, sortOut = True, saveFile = False):
@@ -243,9 +244,9 @@ class fileExtractor:
         Keep only rows where 'session' ends with 'translucent'.
         """
         if (sortOut):
-            self.getPairedTestingSessions()
+            self.getPairedTestingSessions(sortOut=False)
             #self.deleteAllButFirst()
-            self.getTrainingPartner()
+            self.getTrainingPartner(sortOut=False)
         
         self.data = self.data[
             self.data['session'].str.endswith('Translucent', na=False)
@@ -256,7 +257,7 @@ class fileExtractor:
             df_copy = self.data.copy()
             name = ""
             if (sortOut):
-                name = "_sortOut"
+                name = "_filtered"
             df_copy.to_csv(f"only_translucent_sessions{name}.csv", index=False)
 
     def getOpaqueSessions(self, sortOut = True, saveFile = False):
@@ -264,9 +265,9 @@ class fileExtractor:
         Keep only rows where 'session' ends with 'opaque'.
         """
         if (sortOut):
-            self.getPairedTestingSessions()
+            self.getPairedTestingSessions(sortOut=False)
             #self.deleteAllButFirst()
-            self.getTrainingPartner()
+            self.getTrainingPartner(sortOut=False)
         
         self.data = self.data[
             self.data['session'].str.endswith('Opaque', na=False)
@@ -277,7 +278,7 @@ class fileExtractor:
             df_copy = self.data.copy()
             name = ""
             if (sortOut):
-                name = "_sortOut"
+                name = "_filtered"
             df_copy.to_csv(f"only_opaque_sessions{name}.csv", index=False)
 
     def sortByMicePairs(self, saveFile=False):
@@ -551,7 +552,7 @@ only_trainingpartners = "/Users/david/Documents/Research/Saxena Lab/rat-cooperat
 
 def saveAllCSVs():
     methods_to_call = [
-        "writeNewFixedFile",
+        #"writeNewFixedFile",
         "getTrainingCoopSessions",
         "getPairedTestingSessions",
         "getTrainingPartner",
@@ -569,9 +570,9 @@ def saveAllCSVs():
             fe = fileExtractor(fixedExpanded)
             fe.deleteInvalid()  # ensure you start from the cleaned data
             method = getattr(fe, method_name)
-            method(True)  # call the method
+            method(sortOut=True, saveFile=True)  # call the method
 
-#saveAllCSVs()
+saveAllCSVs()
 
 
 
