@@ -678,7 +678,7 @@ levFiles = [dataPT[0], dataTC[0]]
 magFiles = [dataPT[1], dataTC[1]]
 posFiles = [dataPT[2], dataTC[2]]
 categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["Paired_Testing", "Training_Cooperation"])
-
+categoryExperiments.compareSuccesfulTrials()
 
 '''
 #Unfamiliar vs. Training Partners
@@ -695,7 +695,7 @@ categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["
 
 #Transparent vs. Translucent vs. Opaque
 
-print("Running Transparency")
+'''print("Running Transparency")
 dataTransparent = getOnlyTransparent(onlyFirst=True) #Transparent
 dataTranslucent = getOnlyTranslucent(onlyFirst=True) #Translucent
 dataOpaque = getOnlyOpaque(onlyFirst=True) #Opaque
@@ -704,7 +704,7 @@ levFiles = [dataTransparent[0], dataTranslucent[0], dataOpaque[0]]
 magFiles = [dataTransparent[1], dataTranslucent[1], dataOpaque[1]]
 posFiles = [dataTransparent[2], dataTranslucent[2], dataOpaque[2]]
 categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["Transparent", "Translucent", "Opaque"])
-categoryExperiments.compareSuccesfulTrials()
+categoryExperiments.compareSuccesfulTrials()'''
 
 
 '''
