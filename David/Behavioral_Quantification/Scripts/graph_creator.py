@@ -2401,7 +2401,7 @@ class multiFileGraphs:
     def printSummaryStats(self):
         '''
         '''
-        
+        print("start")
         total_gaze_events = 0     # Total gaze events (all mice) 
         total_gaze_events_alternate = 0     # Total gaze events (all mice) for alternate definition
         total_frames = 0          # Total number of frames across all sessions
@@ -2413,13 +2413,15 @@ class multiFileGraphs:
         total_gaze_frames_alternate = 0
 
         # Process each experiment within the category
-        for exp in self.experiments:
+        for i, exp in enumerate(self.experiments):
+            print("Round: ", i)
             loader = exp.pos
+            print("past r0")
             g0 = loader.returnIsGazing(0, alternateDef=False)
             g1 = loader.returnIsGazing(1, alternateDef=False)
-            
             g2 = loader.returnIsGazing(0)
             g3 = loader.returnIsGazing(1)
+            print("past r1")
             
             # Count gaze events and sum up the frames with gazing behavior
             total_gaze_events += loader.returnNumGazeEvents(0, alternateDef=False) + loader.returnNumGazeEvents(1, alternateDef=False)
@@ -2428,6 +2430,7 @@ class multiFileGraphs:
             
             total_gaze_events += loader.returnNumGazeEvents(0) + loader.returnNumGazeEvents(1)
             total_gaze_frames_alternate += np.sum(g2) + np.sum(g3)
+            print("past r2")
             
             # Access lever press data and compute trial/success counts
             lev = exp.lev.data
