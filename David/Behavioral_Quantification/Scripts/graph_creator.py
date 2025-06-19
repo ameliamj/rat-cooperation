@@ -49,6 +49,8 @@ only_trainingpartners_filtered = "/gpfs/radev/project/saxena/drb83/rat-cooperati
 only_PairedTesting_filtered = "/gpfs/radev/project/saxena/drb83/rat-cooperation/David/Behavioral_Quantification/Sorted_Data_Files/only_PairedTesting_filtered.csv"
 only_TrainingCoop_filtered = "/gpfs/radev/project/saxena/drb83/rat-cooperation/David/Behavioral_Quantification/Sorted_Data_Files/only_TrainingCooperation_filtered.csv"
 
+filtered = "/gpfs/radev/project/saxena/drb83/rat-cooperation/David/Behavioral_Quantification/Sorted_Data_Files/Filtered.csv"
+
 
 def getAllValid():
     fe = fileExtractor(all_valid)
@@ -652,7 +654,7 @@ categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["
 '''
 
 #Unfamiliar vs. Training Partners
-print("Running UF vs TP")
+'''print("Running UF vs TP")
 dataUF = getOnlyUnfamiliar() #Unfamiliar
 dataTP = getOnlyTrainingPartners() #Training Partners
 
@@ -660,7 +662,7 @@ levFiles = [dataUF[0], dataTP[0]]
 magFiles = [dataUF[1], dataTP[1]]
 posFiles = [dataUF[2], dataTP[2]]
 categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["Unfamiliar", "Training Partners"])
-
+'''
 
 #Transparent vs. Translucent vs. Opaque
 
@@ -675,7 +677,7 @@ posFiles = [dataTransparent[2], dataTranslucent[2], dataOpaque[2]]
 categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["Transparent", "Translucent", "Opaque"])
 '''
 
-
+'''
 print("0")
 #categoryExperiments.compareGazeEventsCategories()
 print("1")
@@ -690,7 +692,7 @@ print("5")
 #categoryExperiments.printSummaryStats()
 print("Done")
 
-
+'''
 
 
 # ---------------------------------------------------------------------------------------------------------
@@ -1640,6 +1642,8 @@ class multiFileGraphs:
                     print("Mismatch between locationRat and pressLocation")
                     print("locationRat: ", locationRat)
                     print("pressLocation: ", pressLocation)
+                else:
+                    print("Correct Location")
                 
                 if (pressLocation == locationOther):
                     locationOther = "lev_same"
@@ -1673,19 +1677,20 @@ class multiFileGraphs:
         }
         
         # Compute standard deviation (or use scipy.stats.sem for standard error)
-        std_devs = {
+        '''std_devs = {
             region: np.std(vals) if vals else 0
             for region, vals in location_dict.items()
-        }
+        }'''
         
         #Plot
         plt.figure(figsize=(10, 5))
         regions = list(avg_represses_by_region.keys())
         means = [avg_represses_by_region[region] for region in regions]
-        errors = [std_devs[region] for region in regions]
+        #errors = [std_devs[region] for region in regions]
         counts = [region_counts[region] for region in regions]
         
-        bars = plt.bar(regions, means, yerr=errors, capsize=5, color='skyblue')
+        #bars = plt.bar(regions, means, yerr=errors, capsize=5, color='skyblue')
+        bars = plt.bar(regions, means, capsize=5, color='skyblue')
 
         plt.ylabel("Avg Represses")
         plt.title("Average Represses by Region at First Press")
@@ -2198,28 +2203,28 @@ class multiFileGraphs:
                     totFramesNonGazing += 1
                     totMovementNonGazing += dist
             
-            # Compute average velocities
-            avgVelGazing = totMovementGazing / totFramesGazing if totFramesGazing > 0 else 0
-            avgVelNonGazing = totMovementNonGazing / totFramesNonGazing if totFramesNonGazing > 0 else 0
+        # Compute average velocities
+        avgVelGazing = totMovementGazing / totFramesGazing if totFramesGazing > 0 else 0
+        avgVelNonGazing = totMovementNonGazing / totFramesNonGazing if totFramesNonGazing > 0 else 0
+    
+        # Plotting
+        labels = ['Gazing', 'Not Gazing']
+        values = [avgVelGazing, avgVelNonGazing]
+    
+        plt.figure(figsize=(6, 5))
+        bars = plt.bar(labels, values, color=['blue', 'gray'])
+        plt.ylabel('Average Velocity (pixels/frame)')
+        plt.title('Average Velocity During Gazing vs Not Gazing')
         
-            # Plotting
-            labels = ['Gazing', 'Not Gazing']
-            values = [avgVelGazing, avgVelNonGazing]
-        
-            plt.figure(figsize=(6, 5))
-            bars = plt.bar(labels, values, color=['blue', 'gray'])
-            plt.ylabel('Average Velocity (pixels/frame)')
-            plt.title('Average Velocity During Gazing vs Not Gazing')
-            
-            # Add value labels on top of bars
-            for bar in bars:
-                height = bar.get_height()
-                plt.text(bar.get_x() + bar.get_width() / 2, height * 1.01, f'{height:.2f}', 
-                         ha='center', va='bottom', fontsize=10)
-        
-            plt.tight_layout()
-            plt.savefig(f"{self.prefix}compareAverageVelocityGazevsNotGazing.png")
-            plt.show()
+        # Add value labels on top of bars
+        for bar in bars:
+            height = bar.get_height()
+            plt.text(bar.get_x() + bar.get_width() / 2, height * 1.01, f'{height:.2f}', 
+                     ha='center', va='bottom', fontsize=10)
+    
+        plt.tight_layout()
+        plt.savefig(f"{self.prefix}compareAverageVelocityGazevsNotGazing.png")
+        plt.show()
             
     def makeHeatmapLocation(self):
         '''
@@ -2525,17 +2530,14 @@ class multiFileGraphs:
 #
 
 def getFiltered():
-    fe = fileExtractor(all_valid)
-    fe.getPairedTestingSessions(sortOut=False)
-    fe.getTrainingPartner(sortOut=False)
-    fe.getTransparentSessions(sortOut=False)
+    fe = fileExtractor(filtered)
     fpsList, totFramesList = fe.returnFPSandTotFrames()
     initial_nan_list = fe.returnNaNPercentage()
     #print("initial_nan_list: ", initial_nan_list)
     return [fe.getLevsDatapath(), fe.getMagsDatapath(), fe.getPosDatapath(), fpsList, totFramesList, initial_nan_list]
 
 
-lev_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/ExampleLevFile.csv"]
+'''lev_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/ExampleLevFile.csv"]
 
 mag_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_mag.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_mag.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_mag.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_mag.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_mag.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_mag.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/ExampleMagFile.csv"] 
 
@@ -2544,18 +2546,19 @@ pos_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/B
 fpsList = [30, 30, 30, 30, 30, 30, 30]
 totFramesList = [15000, 26000, 15000, 26000, 15000, 26000, 15000]
 initialNanList = [0.15, 0.12, 0.14, 0.16, 0.3, 0.04, 0.2]
+'''
 
 #arr = getFiltered()
-'''arr = getOnlyPairedTesting()
+arr = getOnlyPairedTesting()
 lev_files = arr[0]
 mag_files = arr[1]
 pos_files = arr[2]
 fpsList = arr[3]
 totFramesList = arr[4]
-initialNanList = arr[5]'''
+initialNanList = arr[5]
 
 
-lev_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/4_nanerror_lev.csv"]
+'''lev_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/4_nanerror_lev.csv"]
 
 mag_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/4_nanerror_mag.csv"]
 
@@ -2563,22 +2566,22 @@ pos_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/B
 
 fpsList = [30]
 totFramesList = [14000]
-initialNanList = [0.1]
+initialNanList = [0.1]'''
 
 
 print("Start MultiFileGraphs Regular")
-#experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "PairedTesting")
+experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "")
 #experiment.printSummaryStats()
-#experiment.rePressingbyDistance()
-#experiment.percentSuccesfulTrials()
-#experiment.interpressIntervalPlot()
-#experiment.quantifyRePressingBehavior()
-#experiment.crossingOverQuantification()
-#experiment.cooperativeRegionStrategiesQuantification()
+experiment.rePressingbyDistance()
+experiment.percentSuccesfulTrials()
+experiment.interpressIntervalPlot()
+experiment.quantifyRePressingBehavior()
+experiment.crossingOverQuantification()
+experiment.cooperativeRegionStrategiesQuantification()
 #experiment.compareAverageVelocityGazevsNot()
-#experiment.makeHeatmapLocation()
-#experiment.intersectings_vs_percentNaN()
-#experiment.findTotalDistanceMoved()
+experiment.makeHeatmapLocation()
+experiment.intersectings_vs_percentNaN()
+experiment.findTotalDistanceMoved()
 
 # ---------------------------------------------------------------------------------------------------------
 
