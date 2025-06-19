@@ -260,7 +260,7 @@ class posLoader:
             return still_mask
     
     
-    def returnIsGazing(self, mouseID, test = False):
+    def returnIsGazing(self, mouseID, test = False, alternateDef = True):
         #determine whether mouse mouseID is gazing at the other mouse where a gaze is defined by a mouse standingStill for the self.minFramesStill and the gazeVector passing through the body of the other mouse (estimate of the body using the 5 body parts tracked)  
         """
         Return boolean array where True means that mouseID is still and gazing at the other mouse.
@@ -270,7 +270,7 @@ class posLoader:
         num_frames = self.data.shape[-1]
         result = np.zeros(num_frames, dtype=bool)
 
-        still_mask = self.returnIsStill(mouseID)
+        still_mask = self.returnIsStill(mouseID, alternateDef)
         gaze_vector = self.returnGazeVector(mouseID)
         HB = self.data[mouseID, :, self.HB_INDEX, :]
         otherID = 1 - mouseID
@@ -367,11 +367,11 @@ class posLoader:
         distances = np.linalg.norm(HB_mouse0 - HB_mouse1, axis=0)
         return distances
     
-    def returnNumGazeEvents(self, mouseID):
+    def returnNumGazeEvents(self, mouseID, alternateDef = True):
         #A gaze event is a single collection of frames where the mice are gazing. There has to be at least a 5 frame separation with no gazing between gaze events
         
         numGazeEvents = 0
-        isGazing = self.returnIsGazing(mouseID)
+        isGazing = self.returnIsGazing(mouseID, alternateDef)
         lastGaze = -5
         
         for i, frame in enumerate(isGazing):
@@ -382,8 +382,8 @@ class posLoader:
                 
         return numGazeEvents
     
-    def returnTotalFramesGazing(self, mouseID):
-        g0 = self.returnIsGazing(mouseID)
+    def returnTotalFramesGazing(self, mouseID, alternateDef = True):
+        g0 = self.returnIsGazing(mouseID, alternateDef)
         totalFramesGazing = np.sum(g0)
         return totalFramesGazing
         

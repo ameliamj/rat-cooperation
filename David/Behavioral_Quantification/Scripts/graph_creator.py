@@ -2341,7 +2341,6 @@ class multiFileGraphs:
         plt.show()
         plt.close()
         
-
     def intersectings_vs_percentNaN(self):
         '''
         For each experiment:
@@ -2399,6 +2398,69 @@ class multiFileGraphs:
         
         print("Done with % Intersecting vs. % Nan")
 
+    def printSummaryStats(self):
+        '''
+        '''
+        
+        total_gaze_events = 0     # Total gaze events (all mice) 
+        total_gaze_events_alternate = 0     # Total gaze events (all mice) for alternate definition
+        total_frames = 0          # Total number of frames across all sessions
+        total_trials = 0          # Total number of trials across sessions
+        successful_trials = 0     # Total number of cooperative successful trials
+        total_lever_presses = 0   # Total number of lever presses
+        total_mag_events = 0      # Total number of magazine entries
+        total_gaze_frames = 0     # Total frames where gaze was detected
+        total_gaze_frames_alternate = 0
+
+        # Process each experiment within the category
+        for exp in self.experiments:
+            loader = exp.pos
+            g0 = loader.returnIsGazing(0, alternateDef=False)
+            g1 = loader.returnIsGazing(1, alternateDef=False)
+            
+            g2 = loader.returnIsGazing(0)
+            g3 = loader.returnIsGazing(1)
+            
+            # Count gaze events and sum up the frames with gazing behavior
+            total_gaze_events += loader.returnNumGazeEvents(0, alternateDef=False) + loader.returnNumGazeEvents(1, alternateDef=False)
+            total_gaze_frames += np.sum(g0) + np.sum(g1)
+            total_frames += g0.shape[0]
+            
+            total_gaze_events += loader.returnNumGazeEvents(0) + loader.returnNumGazeEvents(1)
+            total_gaze_frames_alternate += np.sum(g2) + np.sum(g3)
+            
+            # Access lever press data and compute trial/success counts
+            lev = exp.lev.data
+            trials = lev['TrialNum'].nunique()
+            succ = lev.groupby('TrialNum').first().query('coopSucc == 1').shape[0]
+            total_trials += trials
+            successful_trials += succ
+            total_lever_presses += lev.shape[0]
+
+            # Count magazine events
+            mag = exp.mag.data
+            total_mag_events += mag.shape[0]
+        
+        
+        # Print summary statistics for the current category
+        print(f"  Number of Files: {len(self.experiments)}")
+        print(f"  Total Frames: {total_frames}")
+        print(f"  Total Trials: {total_trials}")
+        print(f"  Successful Trials: {successful_trials}")
+        print(f"  Percent Successful: {successful_trials / total_trials:.2f}")
+        print(f"  Frames Gazing: {total_gaze_frames}")
+        print(f"  Total Gaze Events: {total_gaze_events}")
+        print(f"  Average Gaze Length: {total_gaze_frames / total_gaze_events:.2f}")
+        print(f"  Percent Gazing: {100 * total_gaze_frames / total_frames:.2f}%")
+        print(f"  Frames Gazing (Alternate): {total_gaze_frames}")
+        print(f"  Total Gaze Events (Alternate): {total_gaze_events_alternate}")
+        print(f"  Average Gaze Length (Alternate): {total_gaze_frames_alternate / total_gaze_events_alternate:.2f}")
+        print(f"  Percent Gazing (Alternate): {100 * total_gaze_frames_alternate / total_frames:.2f}%")
+        print(f"  Avg Lever Presses per Trial: {total_lever_presses / total_trials:.2f}")
+        print(f"  Total Lever Presses: {total_lever_presses}")
+        print(f"  Avg Mag Events per Trial: {total_mag_events / total_trials:.2f}")
+        print(f"  Total Mag Events: {total_mag_events}")
+        
 #Testing Multi File Graphs
 #
 #
@@ -2445,7 +2507,8 @@ totFramesList = [14000]
 
 print("Start MultiFileGraphs Regular")
 experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "filtered_")
-experiment.rePressingbyDistance()
+experiment.printSummaryStats()
+#experiment.rePressingbyDistance()
 #experiment.percentSuccesfulTrials()
 #experiment.interpressIntervalPlot()
 #experiment.quantifyRePressingBehavior()
