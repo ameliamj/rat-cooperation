@@ -572,7 +572,7 @@ def saveAllCSVs():
             method = getattr(fe, method_name)
             method(sortOut=True, saveFile=True)  # call the method
 
-saveAllCSVs()
+#saveAllCSVs()
 
 
 
