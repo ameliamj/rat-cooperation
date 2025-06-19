@@ -671,14 +671,14 @@ posFiles = [["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/B
 
 
 print("Running Paired Testing vs Training Cooperation")
-dataPT = getOnlyPairedTesting(onlyFirst=True)
-dataTC = getOnlyTrainingCoop(onlyFirst=True)
+dataPT = getOnlyPairedTesting()
+dataTC = getOnlyTrainingCoop()
 
 levFiles = [dataPT[0], dataTC[0]]
 magFiles = [dataPT[1], dataTC[1]]
 posFiles = [dataPT[2], dataTC[2]]
 categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["Paired_Testing", "Training_Cooperation"])
-categoryExperiments.compareSuccesfulTrials()
+
 
 '''
 #Unfamiliar vs. Training Partners
@@ -696,9 +696,9 @@ categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["
 #Transparent vs. Translucent vs. Opaque
 
 '''print("Running Transparency")
-dataTransparent = getOnlyTransparent(onlyFirst=True) #Transparent
-dataTranslucent = getOnlyTranslucent(onlyFirst=True) #Translucent
-dataOpaque = getOnlyOpaque(onlyFirst=True) #Opaque
+dataTransparent = getOnlyTransparent() #Transparent
+dataTranslucent = getOnlyTranslucent() #Translucent
+dataOpaque = getOnlyOpaque() #Opaque
 
 levFiles = [dataTransparent[0], dataTranslucent[0], dataOpaque[0]]
 magFiles = [dataTransparent[1], dataTranslucent[1], dataOpaque[1]]
@@ -707,22 +707,20 @@ categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["
 categoryExperiments.compareSuccesfulTrials()'''
 
 
-'''
-print("0")
-#categoryExperiments.compareGazeEventsCategories()
-print("1")
-categoryExperiments.compareSuccesfulTrials()
-print("2")
-categoryExperiments.compareIPI()
-print("3")
-categoryExperiments.rePressingBehavior()
-print("4")
-#categoryExperiments.gazeAlignmentAngle()
-print("5")
-#categoryExperiments.printSummaryStats()
-print("Done")
 
-'''
+print("0")
+categoryExperiments.compareGazeEventsCategories()
+print("1")
+#categoryExperiments.compareSuccesfulTrials()
+print("2")
+#categoryExperiments.compareIPI()
+print("3")
+#categoryExperiments.rePressingBehavior()
+print("4")
+categoryExperiments.gazeAlignmentAngle()
+print("5")
+categoryExperiments.printSummaryStats()
+print("Done")
 
 
 # ---------------------------------------------------------------------------------------------------------
