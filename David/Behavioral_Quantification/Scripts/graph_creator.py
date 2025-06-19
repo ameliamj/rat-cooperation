@@ -2548,8 +2548,7 @@ totFramesList = [15000, 26000, 15000, 26000, 15000, 26000, 15000]
 initialNanList = [0.15, 0.12, 0.14, 0.16, 0.3, 0.04, 0.2]
 '''
 
-#arr = getFiltered()
-arr = getOnlyPairedTesting()
+arr = getFiltered()
 lev_files = arr[0]
 mag_files = arr[1]
 pos_files = arr[2]
