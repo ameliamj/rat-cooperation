@@ -46,31 +46,47 @@ def getAllValid():
     
 def getOnlyOpaque():
     fe = fileExtractor(only_opaque)
-    return [fe.getLevsDatapath(), fe.getMagsDatapath(), fe.getPosDatapath()]
+    fpsList, totFramesList = fe.returnFPSandTotFrames()
+    initial_nan_list = fe.returnNaNPercentage()
+    return [fe.getLevsDatapath(), fe.getMagsDatapath(), fe.getPosDatapath(), fpsList, totFramesList, initial_nan_list]
 
 def getOnlyTranslucent():
     fe = fileExtractor(only_translucent)
-    return [fe.getLevsDatapath(), fe.getMagsDatapath(), fe.getPosDatapath()]
+    fpsList, totFramesList = fe.returnFPSandTotFrames()
+    initial_nan_list = fe.returnNaNPercentage()
+    return [fe.getLevsDatapath(), fe.getMagsDatapath(), fe.getPosDatapath(), fpsList, totFramesList, initial_nan_list]
 
 def getOnlyTransparent():
     fe = fileExtractor(only_transparent)
-    return [fe.getLevsDatapath(), fe.getMagsDatapath(), fe.getPosDatapath()]
+    fpsList, totFramesList = fe.returnFPSandTotFrames()
+    initial_nan_list = fe.returnNaNPercentage()
+    return [fe.getLevsDatapath(), fe.getMagsDatapath(), fe.getPosDatapath(), fpsList, totFramesList, initial_nan_list]
 
 def getOnlyUnfamiliar():
     fe = fileExtractor(only_unfamiliar)
-    return [fe.getLevsDatapath(), fe.getMagsDatapath(), fe.getPosDatapath()]
+    fpsList, totFramesList = fe.returnFPSandTotFrames()
+    initial_nan_list = fe.returnNaNPercentage()
+    return [fe.getLevsDatapath(), fe.getMagsDatapath(), fe.getPosDatapath(), fpsList, totFramesList, initial_nan_list]
+
 
 def getOnlyTrainingPartners():
     fe = fileExtractor(only_trainingpartners)
-    return [fe.getLevsDatapath(), fe.getMagsDatapath(), fe.getPosDatapath()]
+    fpsList, totFramesList = fe.returnFPSandTotFrames()
+    initial_nan_list = fe.returnNaNPercentage()
+    return [fe.getLevsDatapath(), fe.getMagsDatapath(), fe.getPosDatapath(), fpsList, totFramesList, initial_nan_list]
 
 def getOnlyPairedTesting():
     fe = fileExtractor(only_PairedTesting)
-    return [fe.getLevsDatapath(), fe.getMagsDatapath(), fe.getPosDatapath()]
+    fpsList, totFramesList = fe.returnFPSandTotFrames()
+    initial_nan_list = fe.returnNaNPercentage()
+    return [fe.getLevsDatapath(), fe.getMagsDatapath(), fe.getPosDatapath(), fpsList, totFramesList, initial_nan_list]
+
 
 def getOnlyTrainingCoop():
     fe = fileExtractor(only_TrainingCoop)
-    return [fe.getLevsDatapath(), fe.getMagsDatapath(), fe.getPosDatapath()]        
+    fpsList, totFramesList = fe.returnFPSandTotFrames()
+    initial_nan_list = fe.returnNaNPercentage()
+    return [fe.getLevsDatapath(), fe.getMagsDatapath(), fe.getPosDatapath(), fpsList, totFramesList, initial_nan_list]     
         
 
 # ---------------------------------------------------------------------------------------------------------
@@ -2489,7 +2505,8 @@ fpsList = [30, 30, 30, 30, 30, 30, 30]
 totFramesList = [15000, 26000, 15000, 26000, 15000, 26000, 15000]
 initialNanList = [0.15, 0.12, 0.14, 0.16, 0.3, 0.04, 0.2]
 
-arr = getFiltered()
+#arr = getFiltered()
+arr = getOnlyPairedTesting()
 lev_files = arr[0]
 mag_files = arr[1]
 pos_files = arr[2]
@@ -2509,10 +2526,10 @@ totFramesList = [14000]
 '''
 
 print("Start MultiFileGraphs Regular")
-experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "filtered_")
-experiment.printSummaryStats()
+experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "PairedTesting")
+#experiment.printSummaryStats()
 #experiment.rePressingbyDistance()
-#experiment.percentSuccesfulTrials()
+experiment.percentSuccesfulTrials()
 #experiment.interpressIntervalPlot()
 #experiment.quantifyRePressingBehavior()
 #experiment.crossingOverQuantification()
