@@ -1615,14 +1615,26 @@ class multiFileGraphs:
             region: len(vals)
             for region, vals in location_dict.items()
         }
-
-    
+        
+        # Compute standard deviation (or use scipy.stats.sem for standard error)
+        std_devs = {
+            region: np.std(vals) if vals else 0
+            for region, vals in location_dict.items()
+        }
+        
+        #Plot
         plt.figure(figsize=(10, 5))
-        bars = plt.bar(avg_represses_by_region.keys(), avg_represses_by_region.values(), color='skyblue')
+        regions = list(avg_represses_by_region.keys())
+        means = [avg_represses_by_region[region] for region in regions]
+        errors = [std_devs[region] for region in regions]
+        counts = [region_counts[region] for region in regions]
+        
+        bars = plt.bar(regions, means, yerr=errors, capsize=5, color='skyblue')
+
         plt.ylabel("Avg Represses")
         plt.title("Average Represses by Region at First Press")
         # Add count annotations on top of each bar
-        for bar, count in zip(bars, region_counts.values()):
+        for bar, count in zip(bars, counts):
             height = bar.get_height()
             plt.text(bar.get_x() + bar.get_width() / 2, height + 0.05,  # slight offset above bar
                      f'n={count}', ha='center', va='bottom', fontsize=10)
