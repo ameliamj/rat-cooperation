@@ -49,6 +49,18 @@ only_trainingpartners_filtered = "/gpfs/radev/project/saxena/drb83/rat-cooperati
 only_PairedTesting_filtered = "/gpfs/radev/project/saxena/drb83/rat-cooperation/David/Behavioral_Quantification/Sorted_Data_Files/only_PairedTesting_filtered.csv"
 only_TrainingCoop_filtered = "/gpfs/radev/project/saxena/drb83/rat-cooperation/David/Behavioral_Quantification/Sorted_Data_Files/only_TrainingCooperation_filtered.csv"
 
+
+only_opaque_filtered_onlyFirst = "/gpfs/radev/project/saxena/drb83/rat-cooperation/David/Behavioral_Quantification/Sorted_Data_Files/only_opaque_sessions_filtered_onlyFirst.csv"
+only_translucent_filtered_onlyFirst = "/gpfs/radev/project/saxena/drb83/rat-cooperation/David/Behavioral_Quantification/Sorted_Data_Files/only_translucent_sessions_filtered_onlyFirst.csv"
+only_transparent_filtered_onlyFirst = "/gpfs/radev/project/saxena/drb83/rat-cooperation/David/Behavioral_Quantification/Sorted_Data_Files/only_transparent_sessions_filtered_onlyFirst.csv"
+
+only_unfamiliar_filtered_onlyFirst = "/gpfs/radev/project/saxena/drb83/rat-cooperation/David/Behavioral_Quantification/Sorted_Data_Files/only_unfamiliar_partners_filtered_onlyFirst.csv"
+only_trainingpartners_filtered_onlyFirst = "/gpfs/radev/project/saxena/drb83/rat-cooperation/David/Behavioral_Quantification/Sorted_Data_Files/only_training_partners_filtered_onlyFirst.csv"
+
+only_PairedTesting_filtered_onlyFirst = "/gpfs/radev/project/saxena/drb83/rat-cooperation/David/Behavioral_Quantification/Sorted_Data_Files/only_PairedTesting_filtered_onlyFirst.csv"
+only_TrainingCoop_filtered_onlyFirst = "/gpfs/radev/project/saxena/drb83/rat-cooperation/David/Behavioral_Quantification/Sorted_Data_Files/only_TrainingCooperation_filtered_onlyFirst.csv"
+
+
 filtered = "/gpfs/radev/project/saxena/drb83/rat-cooperation/David/Behavioral_Quantification/Sorted_Data_Files/Filtered.csv"
 
 
@@ -57,8 +69,10 @@ def getAllValid():
     fpsList, totFramesList = fe.returnFPSandTotFrames()
     return [fe.getLevsDatapath(), fe.getMagsDatapath(), fe.getPosDatapath(), fpsList, totFramesList]
     
-def getOnlyOpaque(filtered = True):
-    if (filtered):
+def getOnlyOpaque(filtered = True, onlyFirst = False):
+    if (onlyFirst):
+        fe = fileExtractor(only_opaque_filtered_onlyFirst)
+    elif (filtered):
         fe = fileExtractor(only_opaque_filtered)
     else:
         fe = fileExtractor(only_opaque)
@@ -66,8 +80,10 @@ def getOnlyOpaque(filtered = True):
     initial_nan_list = fe.returnNaNPercentage()
     return [fe.getLevsDatapath(), fe.getMagsDatapath(), fe.getPosDatapath(), fpsList, totFramesList, initial_nan_list]
 
-def getOnlyTranslucent(filtered = True):
-    if (filtered):
+def getOnlyTranslucent(filtered = True, onlyFirst = False):
+    if (onlyFirst):
+        fe = fileExtractor(only_translucent_filtered_onlyFirst)
+    elif (filtered):
         fe = fileExtractor(only_translucent_filtered)
     else:
         fe = fileExtractor(only_translucent)
@@ -75,8 +91,10 @@ def getOnlyTranslucent(filtered = True):
     initial_nan_list = fe.returnNaNPercentage()
     return [fe.getLevsDatapath(), fe.getMagsDatapath(), fe.getPosDatapath(), fpsList, totFramesList, initial_nan_list]
 
-def getOnlyTransparent(filtered = True):
-    if (filtered):
+def getOnlyTransparent(filtered = True, onlyFirst = False):
+    if (onlyFirst):
+        fe = fileExtractor(only_transparent_filtered_onlyFirst)
+    elif (filtered):
         fe = fileExtractor(only_transparent_filtered)
     else:
         fe = fileExtractor(only_transparent)
@@ -84,8 +102,10 @@ def getOnlyTransparent(filtered = True):
     initial_nan_list = fe.returnNaNPercentage()
     return [fe.getLevsDatapath(), fe.getMagsDatapath(), fe.getPosDatapath(), fpsList, totFramesList, initial_nan_list]
 
-def getOnlyUnfamiliar(filtered = True):
-    if (filtered):
+def getOnlyUnfamiliar(filtered = True, onlyFirst = False):
+    if (onlyFirst):
+        fe = fileExtractor(only_unfamiliar_filtered_onlyFirst)
+    elif (filtered):
         fe = fileExtractor(only_unfamiliar_filtered)
     else:
         fe = fileExtractor(only_unfamiliar)
@@ -95,8 +115,10 @@ def getOnlyUnfamiliar(filtered = True):
     return [fe.getLevsDatapath(), fe.getMagsDatapath(), fe.getPosDatapath(), fpsList, totFramesList, initial_nan_list]
 
 
-def getOnlyTrainingPartners(filtered = True):
-    if (filtered):
+def getOnlyTrainingPartners(filtered = True, onlyFirst = False):
+    if (onlyFirst):
+        fe = fileExtractor(only_trainingpartners_filtered_onlyFirst)
+    elif (filtered):
         fe = fileExtractor(only_trainingpartners_filtered)
     else:
         fe = fileExtractor(only_trainingpartners)
@@ -643,8 +665,9 @@ posFiles = [["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/B
 
 #Paired Testing vs. Training Cooperation
 
-#print("Running Paired Testing vs Training Cooperation")
-'''dataPT = getOnlyPairedTesting()
+'''
+print("Running Paired Testing vs Training Cooperation")
+dataPT = getOnlyPairedTesting()
 dataTC = getOnlyTrainingCoop()
 
 levFiles = [dataPT[0], dataTC[0]]
@@ -654,28 +677,30 @@ categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["
 '''
 
 #Unfamiliar vs. Training Partners
-'''print("Running UF vs TP")
-dataUF = getOnlyUnfamiliar() #Unfamiliar
-dataTP = getOnlyTrainingPartners() #Training Partners
+print("Running UF vs TP")
+dataUF = getOnlyUnfamiliar(onlyFirst=True) #Unfamiliar
+dataTP = getOnlyTrainingPartners(onlyFirst=True) #Training Partners
 
 levFiles = [dataUF[0], dataTP[0]]
 magFiles = [dataUF[1], dataTP[1]]
 posFiles = [dataUF[2], dataTP[2]]
 categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["Unfamiliar", "Training Partners"])
-'''
+categoryExperiments.compareSuccesfulTrials()
+
 
 #Transparent vs. Translucent vs. Opaque
 
-'''print("Running Transparency")
-dataTransparent = getOnlyTransparent() #Transparent
-dataTranslucent = getOnlyTranslucent() #Translucent
+print("Running Transparency")
+dataTransparent = getOnlyTransparent(onlyFirst=True) #Transparent
+dataTranslucent = getOnlyTranslucent(onlyFirst=True) #Translucent
 dataOpaque = getOnlyOpaque() #Opaque
 
 levFiles = [dataTransparent[0], dataTranslucent[0], dataOpaque[0]]
 magFiles = [dataTransparent[1], dataTranslucent[1], dataOpaque[1]]
 posFiles = [dataTransparent[2], dataTranslucent[2], dataOpaque[2]]
 categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["Transparent", "Translucent", "Opaque"])
-'''
+categoryExperiments.compareSuccesfulTrials()
+
 
 '''
 print("0")
