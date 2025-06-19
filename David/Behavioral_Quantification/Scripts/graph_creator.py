@@ -2571,10 +2571,10 @@ initialNanList = [0.1]'''
 
 print("Start MultiFileGraphs Regular")
 experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "")
-experiment.printSummaryStats()
-experiment.compareAverageVelocityGazevsNot()
+#experiment.printSummaryStats()
+#experiment.compareAverageVelocityGazevsNot()
 
-'''experiment.rePressingbyDistance()
+experiment.rePressingbyDistance()
 experiment.percentSuccesfulTrials()
 experiment.interpressIntervalPlot()
 experiment.quantifyRePressingBehavior()
@@ -2582,7 +2582,7 @@ experiment.crossingOverQuantification()
 experiment.cooperativeRegionStrategiesQuantification()
 experiment.makeHeatmapLocation()
 experiment.intersectings_vs_percentNaN()
-experiment.findTotalDistanceMoved()'''
+experiment.findTotalDistanceMoved()
 
 # ---------------------------------------------------------------------------------------------------------
 
