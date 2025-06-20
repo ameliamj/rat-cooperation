@@ -707,7 +707,7 @@ posFiles = [["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/B
             ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.predictions.h5"]]
 
 
-categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["Paired_Testing", "Training_Cooperation"], save=False)
+#categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["Paired_Testing", "Training_Cooperation"], save=False)
 #categoryExperiments.rePressingBehavior()
 #categoryExperiments.gazeAlignmentAngle()
 
