@@ -691,7 +691,7 @@ posFiles = [["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/B
 #Paired Testing vs. Training Cooperation
 
 
-'''print("Running Paired Testing vs Training Cooperation")
+print("Running Paired Testing vs Training Cooperation")
 dataPT = getOnlyPairedTesting()
 dataTC = getOnlyTrainingCoop()
 
@@ -699,7 +699,7 @@ levFiles = [dataPT[0], dataTC[0]]
 magFiles = [dataPT[1], dataTC[1]]
 posFiles = [dataPT[2], dataTC[2]]
 categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["Paired_Testing", "Training_Cooperation"])
-'''
+
 
 
 #Unfamiliar vs. Training Partners
@@ -715,7 +715,7 @@ categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["
 '''
 
 #Transparent vs. Translucent vs. Opaque
-
+'''
 print("Running Transparency")
 dataTransparent = getOnlyTransparent() #Transparent
 dataTranslucent = getOnlyTranslucent() #Translucent
@@ -725,7 +725,7 @@ levFiles = [dataTransparent[0], dataTranslucent[0], dataOpaque[0]]
 magFiles = [dataTransparent[1], dataTranslucent[1], dataOpaque[1]]
 posFiles = [dataTransparent[2], dataTranslucent[2], dataOpaque[2]]
 categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["Transparent", "Translucent", "Opaque"])
-
+'''
 
 
 print("0")
@@ -2573,6 +2573,65 @@ class multiFileGraphs:
         print(f"  Avg Mag Events per Trial: {total_mag_events / total_trials:.2f}")
         print(f"  Total Mag Events: {total_mag_events}")
         
+    def successVsAverageDistance(self):
+        """
+        Creates a scatterplot of cooperative success probability vs. average inter-mouse distance
+        across all experiments. Includes a trendline and R² value.
+        """
+        success_rates = []
+        avg_distances = []
+    
+        for exp in self.experiments:
+            # Calculate success rate
+            total_trials = exp.lev.returnNumTotalTrials()
+            if total_trials == 0:
+                print(f"Skipping experiment {exp.lev.filename} due to zero total trials.")
+                continue
+            success_rate = exp.lev.returnNumSuccessfulTrials() / total_trials
+            success_rates.append(success_rate)
+    
+            # Calculate average inter-mouse distance
+            inter_mouse_dist = exp.pos.returnInterMouseDistance()
+            if len(inter_mouse_dist) == 0 or np.all(np.isnan(inter_mouse_dist)):
+                print(f"Skipping experiment {exp.pos.filename} due to invalid distance data.")
+                continue
+            avg_distance = np.nanmean(inter_mouse_dist)  # Ignore NaN values
+            avg_distances.append(avg_distance)
+    
+        # Check for sufficient data
+        if len(success_rates) < 2 or len(avg_distances) < 2:
+            print("Insufficient data to create scatterplot.")
+            return
+    
+        # Create scatterplot
+        plt.figure(figsize=(8, 6))
+        plt.scatter(avg_distances, success_rates, alpha=0.7, color='blue', label='Experiments')
+    
+        # Add trendline and R²
+        if len(set(avg_distances)) >= 2:  # Ensure enough variation for regression
+            slope, intercept, r_value, _, _ = linregress(avg_distances, success_rates)
+            r_squared = r_value ** 2
+            x_vals = np.linspace(min(avg_distances), max(avg_distances), 100)
+            plt.plot(x_vals, slope * x_vals + intercept, color='red', linestyle='--', label='Trendline')
+            plt.text(0.95, 0.05, f"$R^2$ = {r_squared:.3f}", transform=plt.gca().transAxes,
+                     ha='right', va='bottom', fontsize=12, bbox=dict(facecolor='white', edgecolor='gray'))
+        else:
+            print("Insufficient variation in distances for trendline.")
+    
+        # Plot formatting
+        plt.xlabel('Average Inter-Mouse Distance (pixels)')
+        plt.ylabel('Cooperative Success Rate')
+        plt.title('Success Probability vs. Average Inter-Mouse Distance')
+        plt.legend()
+        plt.grid(True)
+        plt.tight_layout()
+    
+        # Save plot if enabled
+        if self.save:
+            plt.savefig(f"{self.prefix}Success_vs_AvgDistance.png")
+        plt.show()
+        plt.close()
+
 #Testing Multi File Graphs
 #
 #
@@ -2596,13 +2655,13 @@ totFramesList = [15000, 26000, 15000, 26000, 15000, 26000, 15000]
 initialNanList = [0.15, 0.12, 0.14, 0.16, 0.3, 0.04, 0.2]
 '''
 
-'''arr = getFiltered()
+arr = getFiltered()
 lev_files = arr[0]
 mag_files = arr[1]
 pos_files = arr[2]
 fpsList = arr[3]
 totFramesList = arr[4]
-initialNanList = arr[5]'''
+initialNanList = arr[5]
 
 
 '''lev_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/4_nanerror_lev.csv"]
@@ -2616,11 +2675,13 @@ totFramesList = [14000]
 initialNanList = [0.1]'''
 
 
-'''print("Start MultiFileGraphs Regular")
+print("Start MultiFileGraphs Regular")
 experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "")
+experiment.successVsAverageDistance()
 #experiment.printSummaryStats()
 #experiment.compareAverageVelocityGazevsNot()
 
+'''
 experiment.rePressingbyDistance()
 experiment.percentSuccesfulTrials()
 experiment.interpressIntervalPlot()
