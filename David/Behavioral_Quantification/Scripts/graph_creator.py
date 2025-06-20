@@ -751,7 +751,7 @@ categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["
 
 
 print("0")
-#categoryExperiments.compareGazeEventsCategories()
+categoryExperiments.compareGazeEventsCategories()
 print("1")
 #categoryExperiments.compareSuccesfulTrials()
 print("2")
