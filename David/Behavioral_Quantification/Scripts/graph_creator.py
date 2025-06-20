@@ -724,6 +724,7 @@ posFiles = [dataPT[2], dataTC[2]]
 categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["Paired_Testing", "Training_Cooperation"])
 '''
 
+'''
 #Unfamiliar vs. Training Partners
 print("Running UF vs TP")
 dataUF = getOnlyUnfamiliar() #Unfamiliar
@@ -734,7 +735,7 @@ magFiles = [dataUF[1], dataTP[1]]
 posFiles = [dataUF[2], dataTP[2]]
 categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["Unfamiliar", "Training Partners"])
 #categoryExperiments.compareSuccesfulTrials()
-
+'''
 
 #Transparent vs. Translucent vs. Opaque
 '''
@@ -749,7 +750,7 @@ posFiles = [dataTransparent[2], dataTranslucent[2], dataOpaque[2]]
 categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["Transparent", "Translucent", "Opaque"])
 '''
 
-
+'''
 print("0")
 #categoryExperiments.compareGazeEventsCategories()
 print("1")
@@ -763,7 +764,7 @@ categoryExperiments.gazeAlignmentAngle()
 print("5")
 categoryExperiments.printSummaryStats()
 print("Done")
-
+'''
 
 # ---------------------------------------------------------------------------------------------------------
 
@@ -2677,7 +2678,7 @@ totFramesList = [15000, 26000, 15000, 26000, 15000, 26000, 15000]
 initialNanList = [0.15, 0.12, 0.14, 0.16, 0.3, 0.04, 0.2]
 '''
 
-'''
+
 arr = getFiltered()
 lev_files = arr[0]
 mag_files = arr[1]
@@ -2685,7 +2686,7 @@ pos_files = arr[2]
 fpsList = arr[3]
 totFramesList = arr[4]
 initialNanList = arr[5]
-'''
+
 
 
 '''lev_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/4_nanerror_lev.csv"]
@@ -2700,8 +2701,8 @@ initialNanList = [0.1]'''
 
 
 print("Start MultiFileGraphs Regular")
-#experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "")
-#experiment.successVsAverageDistance()
+experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "")
+experiment.successVsAverageDistance()
 #experiment.printSummaryStats()
 #experiment.compareAverageVelocityGazevsNot()
 
