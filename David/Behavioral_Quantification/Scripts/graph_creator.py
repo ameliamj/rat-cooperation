@@ -632,9 +632,11 @@ class multiFileGraphsCategories:
 
         num_bins = 36  # 0-180 degrees in 5° bins
         histograms = []  # To store histogram arrays for each category
-    
+        total_trials_per_category = []  # To store total trials per category
+        
         for group in self.allFileGroupExperiments:
             total_hist = np.zeros(num_bins)
+            total_trials = 0
             for exp in group:
                 pos = exp.pos
                 if both_mice:
@@ -642,17 +644,30 @@ class multiFileGraphsCategories:
                         total_hist += pos.returnGazeAlignmentHistogram(mouseID)
                 else:
                     total_hist += pos.returnGazeAlignmentHistogram(mouseID=0)
+                total_trials += exp.lev.returnNumTotalTrials()
+                
             histograms.append(total_hist)
-    
+            total_trials_per_category.append(total_trials)
+        
+        # Normalize histograms by total trials in each category
+        normalized_histograms = []
+        for hist, total_trials in zip(histograms, total_trials_per_category):
+            if total_trials > 0:
+                normalized_hist = hist / total_trials
+            else:
+                print(f"Warning: Category has zero trials; using unnormalized histogram.")
+                normalized_hist = hist
+            normalized_histograms.append(normalized_hist)
+        
         # Plotting
         bin_centers = np.arange(2.5, 180, 5)  # Centers of 5° bins
         plt.figure(figsize=(12, 7))
     
-        # For clearer visualization, plot each category's histogram with some transparency
-        colors = plt.cm.get_cmap('tab10', len(histograms))
-        for idx, hist in enumerate(histograms):
+        # Plot each category's normalized histogram with some transparency
+        colors = plt.cm.get_cmap('tab10', len(normalized_histograms))
+        for idx, hist in enumerate(normalized_histograms):
             plt.bar(
-                bin_centers + idx * 1.2,  # shift bars slightly for side-by-side grouping
+                bin_centers + idx * 1.2,  # Shift bars slightly for side-by-side grouping
                 hist,
                 width=1.2,
                 alpha=0.7,
@@ -662,12 +677,12 @@ class multiFileGraphsCategories:
             )
     
         plt.xlabel("Angle between gaze and TB→HB vector (degrees)")
-        plt.ylabel("Total Frame Count")
-        plt.title("Gaze-Body Angle Distribution by Category")
+        plt.ylabel("Average Frames per Trial")
+        plt.title("Normalized Gaze-Body Angle Distribution by Category")
         plt.xticks(np.arange(0, 181, 15))
         plt.legend()
         plt.tight_layout()
-        if (self.save):
+        if self.save:
             plt.savefig(f"{self.path}Gaze_Alignment_Angle_Histogram{self.endSaveName}.png")
         plt.show()
         plt.close()
@@ -684,7 +699,15 @@ posFiles = [["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/B
             ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.predictions.h5"]]
 
 
-#categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["Paired_Testing", "Training_Cooperation"], save=False)
+levFiles = [["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv"], 
+            ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv"]]
+magFiles = [["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_mag.csv"], 
+            ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_mag.csv"]]
+posFiles = [["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G.predictions.h5"], 
+            ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.predictions.h5"]]
+
+
+categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["Paired_Testing", "Training_Cooperation"], save=False)
 #categoryExperiments.rePressingBehavior()
 #categoryExperiments.gazeAlignmentAngle()
 
@@ -2654,6 +2677,7 @@ fpsList = [30, 30, 30, 30, 30, 30, 30]
 totFramesList = [15000, 26000, 15000, 26000, 15000, 26000, 15000]
 initialNanList = [0.15, 0.12, 0.14, 0.16, 0.3, 0.04, 0.2]
 '''
+
 
 arr = getFiltered()
 lev_files = arr[0]
