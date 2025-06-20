@@ -126,6 +126,35 @@ class levLoader:
     
     
     #Graph Stuff: 
+    def remove100msTrials(self):
+        """
+        Remove all lever presses in trials where the first lever press has a TrialTime <= 0.1.
+        Modifies the DataFrame in place.
+        
+        Raises:
+            ValueError: If no data is loaded or required columns are missing.
+        """
+        if self.data is None:
+            raise ValueError("No data loaded.")
+        if not all(col in self.data.columns for col in ["TrialNum", "TrialTime"]):
+            raise ValueError("Required columns 'TrialNum' or 'TrialTime' not found in data.")
+        
+        # Identify first lever press in each trial
+        first_presses = self.data.groupby("TrialNum").first().reset_index()
+        print("first_presses: ", first_presses)
+        
+        # Find trials where first press has TrialTime <= 0.1
+        trials_to_remove = first_presses[first_presses["TrialTime"] <= 0.1]["TrialNum"]
+        print("trials_to_remove: ", trials_to_remove)
+        
+        
+        print("original data: ", self.data)
+        # Remove all rows corresponding to these trials
+        self.data = self.data[~self.data["TrialNum"].isin(trials_to_remove)].reset_index(drop=True)
+        print("new data: ", self.data)
+        
+        return len(trials_to_remove)
+        
     def returnSuccessTrials(self):
         """
         For each possible trial number from 1 to N:
@@ -169,19 +198,31 @@ class levLoader:
         if not {'TrialNum', 'AbsTime', 'TrialTime'}.issubset(self.data.columns):
             raise ValueError("Required columns 'TrialNum', 'AbsTime', or 'TrialTime' are missing from data.")
     
+        #print("self.data: ", self.data)
+    
         # Find the index of the row with the minimum AbsTime for each TrialNum
         min_time_idx = self.data.groupby('TrialNum')['AbsTime'].idxmin()
+        #print("min_time_idx: ", min_time_idx)
         
         # Get the corresponding rows
         trial_start_rows = self.data.loc[min_time_idx]
+        #print("trial_start_rows: ", trial_start_rows)
     
         # Subtract TrialTime from AbsTime to get the true start time
-        trial_starts_dict = (trial_start_rows['AbsTime'] - trial_start_rows['TrialTime']).to_dict()
+        trial_starts_dict = {
+            row['TrialNum']: row['AbsTime'] - row['TrialTime']
+            for _, row in trial_start_rows.iterrows()
+        }
+        #print("trial_starts_dict: ", trial_starts_dict)
         
         # Construct a list of length total_trials, using None for missing trials
         total_trials = self.returnNumTotalTrials()
-        trial_starts = [trial_starts_dict.get(i, None) for i in range(total_trials)]
-    
+        trial_starts = list([float(trial_starts_dict.get(i + 1, None)) for i in range(total_trials)])
+        
+        #print("trial_starts: ", trial_starts)
+        
+        #print("length: ", len(trial_starts))
+        
         return trial_starts
     
     def returnTimeEndTrials(self):
@@ -284,7 +325,13 @@ class levLoader:
     
     def returnNumTotalTrials(self):
         trials = self.data["TrialNum"].iloc[-1]
-        return trials
+        #print("Num Trials: ", trials)
+        
+        num = 0
+        #num = self.remove100msTrials()
+        #print("Num Trials After: ", trials - num)
+        
+        return trials - num
     
     def returnNumTotalTrialswithLeverPress(self):
         num_unique_trials = self.data['TrialNum'].nunique()
@@ -318,6 +365,12 @@ class levLoader:
     
     def returnNumSuccessfulTrials(self):
         succ = self.data.groupby('TrialNum').first().query('coopSucc == 1').shape[0]
+        print("Original Succ: ", succ)
+        
+        #self.remove100msTrials()
+        #succ = self.data.groupby('TrialNum').first().query('coopSucc == 1').shape[0]
+        #print("New Succ: ", succ)
+        
         return succ
     
         
@@ -415,7 +468,7 @@ class levLoader:
             print("ipis", ipis)
             return 0
     
-    def returnAvgIPI_LasttoSuccess(self, test = False):
+    def returnAvgIPI_LasttoSuccess(self, test = False, returnList = False):
         """Time between last press (by same rat as first) and success press (by second rat)."""
         df = self.data.copy()
         df = df.sort_values(by=["coopSucc", "TrialNum", "AbsTime"])
@@ -452,7 +505,8 @@ class levLoader:
         numSuccessfulTrials = len(ipis)
         if (test == True):
             return ipis[:5]
-        
+        if (returnList == True):
+            return ipis
         if (numSuccessfulTrials > 0): 
             return sumTimes/numSuccessfulTrials
         else:
