@@ -196,7 +196,7 @@ class multiFileGraphsCategories:
                 file_group.append(exp)
             self.allFileGroupExperiments.append(file_group)
         
-        self.prefix = "filtered_"
+        self.prefix = "filtered_adef_"
         self.endSaveName = ""
         for cat in categoryNames:    
             self.endSaveName += f"_{cat}"
@@ -314,15 +314,15 @@ class multiFileGraphsCategories:
                     individual_datapoints[i].append(num_succ / num_total)
                     
                     # Assign color based on threshold
-                    thresh = loader.returnSuccThreshhold()
+                    thresh = loader.returnSuccThreshold()
                     if thresh > 3:
                         color = 'red'
                     elif thresh > 2:
                         color = 'orange'
                     elif thresh > 1:
-                        color = 'purple'
-                    elif thresh > 0:
                         color = 'blue'
+                    elif thresh > 0:
+                        color = 'black'
                     else:
                         color = 'gray'
                     datapoint_colors[i].append(color)
@@ -761,7 +761,7 @@ posFiles = [["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/B
 
 #Paired Testing vs. Training Cooperation
 
-
+'''
 print("Running Paired Testing vs Training Cooperation")
 dataPT = getOnlyPairedTesting()
 dataTC = getOnlyTrainingCoop()
@@ -770,7 +770,7 @@ levFiles = [dataPT[0], dataTC[0]]
 magFiles = [dataPT[1], dataTC[1]]
 posFiles = [dataPT[2], dataTC[2]]
 categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["Paired_Testing", "Training_Cooperation"])
-
+'''
 
 '''
 #Unfamiliar vs. Training Partners
@@ -785,7 +785,7 @@ categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["
 '''
 
 #Transparent vs. Translucent vs. Opaque
-'''
+
 print("Running Transparency")
 dataTransparent = getOnlyTransparent() #Transparent
 dataTranslucent = getOnlyTranslucent() #Translucent
@@ -795,17 +795,17 @@ levFiles = [dataTransparent[0], dataTranslucent[0], dataOpaque[0]]
 magFiles = [dataTransparent[1], dataTranslucent[1], dataOpaque[1]]
 posFiles = [dataTransparent[2], dataTranslucent[2], dataOpaque[2]]
 categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["Transparent", "Translucent", "Opaque"])
-'''
+
 
 
 print("0")
 categoryExperiments.compareGazeEventsCategories()
 print("1")
-#categoryExperiments.compareSuccesfulTrials()
+categoryExperiments.compareSuccesfulTrials()
 print("2")
 #categoryExperiments.compareIPI()
 print("3")
-#categoryExperiments.rePressingBehavior()
+categoryExperiments.rePressingBehavior()
 print("4")
 categoryExperiments.gazeAlignmentAngle()
 print("5")
@@ -2828,8 +2828,8 @@ class multiFileGraphs:
                     rat1_latencies.append(rat1_lat)
                     
                 for i in range(frame_count):
-                    r0 = rat0_locations[i]
-                    r1 = rat1_locations[i]
+                    r0 = rat0_locations_min[i]
+                    r1 = rat1_locations_min[i]
                     r0_in = r0 in ['lev_top', 'lev_bottom']
                     r1_in = r1 in ['lev_top', 'lev_bottom']
                     if r0_in and r1_in:
@@ -2852,7 +2852,7 @@ class multiFileGraphs:
                     in_lever = (rat0_locations[bin_frame] in ['lev_top', 'lev_bottom']) or \
                                (rat1_locations[bin_frame] in ['lev_top', 'lev_bottom'])
                                
-                    print("in_lever: ", in_lever)
+                    #print("in_lever: ", in_lever)
                     occupancy_curve[bin_idx] += in_lever
                     trial_counts[bin_idx] += 1
                 
@@ -2884,8 +2884,8 @@ class multiFileGraphs:
                 rat1_waiting_times.append(rat1_waiting)
                 waiting_symmetry.append(abs(rat0_waiting - rat1_waiting))
             
-            if (total_trial_frames != exp.endFrame): 
-                print("Inequal Frames, (self, counted): ", exp.endFrame, ", ", total_trial_frames)
+            #if (total_trial_frames != exp.endFrame): 
+                #print("Inequal Frames, (self, counted): ", exp.endFrame, ", ", total_trial_frames)
             
             return (rat0_waiting_times, rat1_waiting_times, waiting_symmetry, rat0_latencies, rat1_latencies,
                 synchronous_waiting_frames, total_trial_frames, total_waiting_frames,
@@ -3151,7 +3151,7 @@ print("Start MultiFileGraphs Regular")
 #experiment.compareAverageVelocityGazevsNot()
 
 
-'''
+
 experiment.rePressingbyDistance()
 experiment.percentSuccesfulTrials()
 experiment.interpressIntervalPlot()
@@ -3160,7 +3160,7 @@ experiment.crossingOverQuantification()
 experiment.cooperativeRegionStrategiesQuantification()
 experiment.makeHeatmapLocation()
 experiment.intersectings_vs_percentNaN()
-experiment.findTotalDistanceMoved()'''
+experiment.findTotalDistanceMoved()
 
 # ---------------------------------------------------------------------------------------------------------
 
