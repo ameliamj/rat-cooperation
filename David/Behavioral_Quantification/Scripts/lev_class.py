@@ -220,7 +220,11 @@ class levLoader:
         
         # Construct a list of length total_trials, using None for missing trials
         total_trials = self.returnNumTotalTrials()
-        trial_starts = list([float(trial_starts_dict.get(i + 1, None)) for i in range(total_trials)])
+        trial_starts = [
+            float(trial_starts_dict[i + 1])
+            for i in range(total_trials)
+            if (i + 1) in trial_starts_dict and trial_starts_dict[i + 1] is not None
+        ]
         
         #print("trial_starts: ", trial_starts)
         
