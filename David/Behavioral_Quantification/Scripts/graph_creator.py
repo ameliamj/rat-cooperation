@@ -3234,12 +3234,12 @@ class multiFileGraphs:
         other_rat_percentage = 100 - avg_dominant_rat_percentage
 
         # Create pie chart for average dominant rat percentage
-        labels = ['Dominant Rat Collects Both', 'Other Outcomes']
+        labels = ['Dominant Rat', 'Submissive Rat']
         sizes = [avg_dominant_rat_percentage, other_rat_percentage]
         colors = ['green', 'lightcoral']
         plt.figure(figsize=(6, 6))
         plt.pie(sizes, labels=labels, colors=colors, autopct='%1.1f%%', startangle=140, textprops={'fontsize': 14})
-        plt.title('Average Percentage of Dominant Rat Collecting Both Rewards', fontsize=16)
+        plt.title('Average Percentage of Dominant Rat Stealing Reward', fontsize=16)
         plt.axis('equal')
         plt.tight_layout()
         if self.save:
@@ -3248,12 +3248,12 @@ class multiFileGraphs:
         plt.close()
         
         # Create pie chart for overall percentage of same rat collecting both rewards
-        labels = ['Same Rat Collects Both', 'Different Rats Collect']
+        labels = ['Stolen', 'Equity']
         sizes = [overall_same_rat_percentage, different_rat_percentage]
         colors = ['blue', 'orange']
         plt.figure(figsize=(6, 6))
         plt.pie(sizes, labels=labels, colors=colors, autopct='%1.1f%%', startangle=140, textprops={'fontsize': 14})
-        plt.title('Percentage of Successful Trials with Same Rat Collecting Both Rewards', fontsize=16)
+        plt.title('Percentage of Successful Trials with Stolen Reward', fontsize=16)
         plt.axis('equal')
         plt.tight_layout()
         if self.save:
