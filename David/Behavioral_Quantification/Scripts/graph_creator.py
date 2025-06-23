@@ -3145,6 +3145,8 @@ class multiFileGraphs:
 
     def percentSameRatTakesBothRewards(self):
         """
+        *Only Considers Sessions where at least 80% of RatID values are non-NaN.
+        
         1) Computes the percentage of successful trials in which the same rat
         collects rewards from both magazines. (Out of the trials with data)
         
@@ -3161,10 +3163,23 @@ class multiFileGraphs:
         session_dominant_rat_percentages = []
         session_success_percentages = []
         session_same_rat_percentages = []
+        
+        sessions_considered = 0
 
         for exp in self.experiments:
             lev = exp.lev
             mag = exp.mag
+            
+            # Calculate percentage of non-NaN RatID values
+            rat_id_count = mag.data['RatID'].count()  # Non-NaN count
+            total_rows = len(mag.data)
+            non_nan_percentage = (rat_id_count / total_rows * 100) if total_rows > 0 else 0
+            
+            if (non_nan_percentage < 80):
+                continue
+            
+            sessions_considered += 1
+            
             session_successful_trials = 0
             session_same_rat_both_rewards = 0
             session_same_rat_counts = {}  # Tracks counts per RatID collecting both rewards
@@ -3314,6 +3329,7 @@ class multiFileGraphs:
         
         print(f"Overall: {same_rat_both_rewards}/{total_successful_trials} successful trials ({overall_same_rat_percentage:.1f}%) had the same rat collecting both rewards.")
         print(f"Average percentage of dominant rat collecting both rewards per session: {avg_dominant_rat_percentage:.1f}%")
+        print(f"Sessions Considered: {sessions_considered}")
 
 #Testing Multi File Graphs
 #
