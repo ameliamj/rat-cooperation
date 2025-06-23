@@ -3129,10 +3129,10 @@ initialNanList = [0.1]
 
 print("Start MultiFileGraphs Regular")
 experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "")
-#experiment.waitingStrategy()
+experiment.waitingStrategy()
 #experiment.successVsAverageDistance()
-experiment.printSummaryStats()
-experiment.compareAverageVelocityGazevsNot()
+#experiment.printSummaryStats()
+#experiment.compareAverageVelocityGazevsNot()
 
 
 '''
