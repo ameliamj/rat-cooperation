@@ -2766,6 +2766,9 @@ class multiFileGraphs:
     
             for trial_idx in range(num_trials):
                 start_time = start_times[trial_idx]
+                if (start_time[trial_idx] == None):
+                    continue
+                
                 if (start_time is None):
                     idx_counter += 1
                     continue
@@ -3004,7 +3007,7 @@ class multiFileGraphs:
         
         #Lever Entry Latency Change Over Trials
         if len(avg_latency_per_trial) >= 5:
-            smooth_avg_lat = pd.Series(avg_latency_per_trial).rolling(window=10, min_periods=1, center=True).mean()
+            smooth_avg_lat = pd.Series(avg_latency_per_trial).rolling(window=5, min_periods=1, center=True).mean()
     
             # Step 4: Plot
             plt.figure(figsize=(8, 5))
@@ -3130,7 +3133,7 @@ initialNanList = [0.1]
 
 
 print("Start MultiFileGraphs Regular")
-experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "")
+experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "", save=True)
 experiment.waitingStrategy()
 #experiment.successVsAverageDistance()
 #experiment.printSummaryStats()
