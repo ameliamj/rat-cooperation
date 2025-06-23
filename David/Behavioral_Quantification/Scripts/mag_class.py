@@ -195,6 +195,56 @@ class magLoader:
         num_mag2_entries = (rat_data['MagNum'] == 2).sum()
         return max(num_mag1_entries, num_mag2_entries)
 
+    def returnRewardRecipient(self, trial_index):
+        """
+        Returns the RatIDs of the rats that collected rewards from Mag 1 and Mag 2 for a given trial,
+        using the 'Hit' category to confirm reward collection.
+
+        Args:
+            trial_index (int): The 0-based index of the trial (TrialNum = trial_index + 1).
+
+        Returns:
+            list: A list of two RatIDs [RatID_Mag1, RatID_Mag2], or None if the trial is invalid.
+
+        Raises:
+            ValueError: If no data is loaded or the trial_index is invalid.
+        """
+        if self.data is None:
+            raise ValueError("No data loaded.")
+
+        trial_num = trial_index + 1  # Convert 0-based index to 1-based TrialNum
+
+        # Filter data for the specified trial
+        trial_data = self.data[self.data['TrialNum'] == trial_num]
+
+        if trial_data.empty:
+            return None
+
+        # Check for required columns
+        if not {'MagNum', 'RatID', 'Hit'}.issubset(trial_data.columns):
+            return None
+
+        # Filter for events where Hit == 1 (reward collected)
+        hit_data = trial_data[trial_data['Hit'] == 1]
+
+        if hit_data.empty:
+            return None
+
+        # Get events for Mag 1 and Mag 2 with Hit == 1
+        mag1_data = hit_data[hit_data['MagNum'] == 1]
+        mag2_data = hit_data[hit_data['MagNum'] == 2]
+
+        # Ensure exactly one event per magazine and non-null RatID
+        if mag1_data.empty or mag2_data.empty:
+            return None
+
+        mag1_rat = mag1_data['RatID'].iloc[0]  # Take first event if multiple
+        mag2_rat = mag2_data['RatID'].iloc[0]  # Take first event if multiple
+
+        if pd.isna(mag1_rat) or pd.isna(mag2_rat):
+            return None
+
+        return [mag1_rat, mag2_rat]
 
 #Testing
 #

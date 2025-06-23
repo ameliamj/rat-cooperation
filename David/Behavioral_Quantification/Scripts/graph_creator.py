@@ -786,7 +786,7 @@ categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["
 '''
 
 #Transparent vs. Translucent vs. Opaque
-
+'''
 print("Running Transparency")
 dataTransparent = getOnlyTransparent() #Transparent
 dataTranslucent = getOnlyTranslucent() #Translucent
@@ -796,8 +796,9 @@ levFiles = [dataTransparent[0], dataTranslucent[0], dataOpaque[0]]
 magFiles = [dataTransparent[1], dataTranslucent[1], dataOpaque[1]]
 posFiles = [dataTransparent[2], dataTranslucent[2], dataOpaque[2]]
 categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["Transparent", "Translucent", "Opaque"])
+'''
 
-
+'''
 print("0")
 categoryExperiments.compareGazeEventsCategories()
 print("1")
@@ -811,7 +812,7 @@ categoryExperiments.gazeAlignmentAngle()
 print("5")
 categoryExperiments.printSummaryStats()
 print("Done")
-
+'''
 
 # ---------------------------------------------------------------------------------------------------------
 
@@ -3096,6 +3097,158 @@ class multiFileGraphs:
             plt.savefig(f"{self.prefix}LevverZoneOccupancyOverTrialDuration.png")
         plt.show()
             
+    def successRateVsThresholdPlot(self):
+        """
+        Plots the average cooperative success rate for each threshold value.
+        Applies smoothing to visualize trends.
+        Weights trials equally (not each experiment). 
+        """
+        threshold_to_rates = defaultdict(list)
+    
+        # Aggregate success rates by threshold
+        for exp in self.experiments:
+            lev = exp.lev
+            threshold = lev.returnSuccThreshold()
+            num_succ = lev.returnNumSuccessfulTrials()
+            num_total = lev.returnNumTotalTrials()
+    
+            if num_total > 0:
+                rate = num_succ / num_total
+                threshold_to_rates[threshold].append(rate)
+    
+        # Compute average success rate per threshold
+        thresholds = sorted(threshold_to_rates.keys())
+        avg_rates = [np.mean(threshold_to_rates[t]) for t in thresholds]
+    
+        # Smooth using rolling average (pandas)
+        df = pd.DataFrame({'Threshold': thresholds, 'AvgSuccessRate': avg_rates})
+        df.set_index('Threshold', inplace=True)
+        df['Smoothed'] = df['AvgSuccessRate'].rolling(window=2, min_periods=1, center=True).mean()
+    
+        # Plot
+        plt.figure(figsize=(8, 6))
+        plt.plot(df.index, df['AvgSuccessRate'], 'o-', label='Raw Average', color='gray', alpha=0.6)
+        plt.plot(df.index, df['Smoothed'], 'r-', label='Smoothed', linewidth=2)
+    
+        plt.xlabel('Cooperation Threshold')
+        plt.ylabel('Average Success Rate')
+        plt.title('Threshold vs. Success Rate')
+        plt.xticks(df.index)
+        plt.grid(True)
+        plt.legend()
+        plt.tight_layout()
+    
+        if self.save:
+            plt.savefig(f"{self.prefix}threshold_vs_success_rate.png")
+        plt.show()
+        plt.close()
+
+    def percentSameRatTakesBothRewards(self):
+        """
+        1) Computes the percentage of successful trials in which the same rat
+        collects rewards from both magazines. (Out of the trials with data)
+        
+        2) For each session, identifies the rat that collects both rewards most frequently 
+        and computes the average percentage of times the dominant rat collects both 
+        rewards across all sessions.
+        
+        Creates pie charts to visualize the average percentages for both graphs
+        """
+        
+        total_successful_trials = 0
+        same_rat_both_rewards = 0
+        dominant_count_total = 0
+        session_dominant_rat_percentages = []
+
+        for exp in self.experiments:
+            lev = exp.lev
+            mag = exp.mag
+            session_successful_trials = 0
+            session_same_rat_counts = {}  # Tracks counts per RatID collecting both rewards
+
+            success_trials = lev.returnSuccessTrials()
+            print("Success_trials: ", success_trials)
+            print("NumSuccessful: ", sum(success_trials))
+            print("Total: ", len(success_trials))
+
+            for trial_index, is_success in enumerate(success_trials):
+                if is_success != 1:
+                    #print("\n Not Success")
+                    continue  # Skip unsuccessful trials
+                
+                #print("\n Success, idx: ", trial_index)
+                
+                reward_recipients = mag.returnRewardRecipient(trial_index)
+                if reward_recipients is None or len(reward_recipients) != 2:
+                    #print("None")
+                    continue  # Skip malformed trials
+                #else: 
+                    #print("Rewards: ", reward_recipients)
+
+                session_successful_trials += 1
+                total_successful_trials += 1
+
+                if reward_recipients[0] == reward_recipients[1]:
+                    same_rat_both_rewards += 1
+                    rat_id = reward_recipients[0]
+                    session_same_rat_counts[rat_id] = session_same_rat_counts.get(rat_id, 0) + 1
+
+            if session_successful_trials > 0:
+                # Find the rat with the most instances of collecting both rewards
+                if session_same_rat_counts:
+                    print("session_same_rat_counts: ", session_same_rat_counts)
+                    dominant_rat = max(session_same_rat_counts, key=session_same_rat_counts.get)
+                    print("dominant_rat: ", dominant_rat)
+                    dominant_count = session_same_rat_counts[dominant_rat]
+                    print("dominant_count: ", dominant_count)
+                    dominant_count_total += dominant_count
+                    #dominant_percentage = (dominant_count / session_successful_trials) * 100
+                    #session_dominant_rat_percentages.append(dominant_percentage)
+                else:
+                    # No cases where same rat got both rewards, so dominant percentage is 0
+                    session_dominant_rat_percentages.append(0)
+
+        if total_successful_trials == 0:
+            print("No successful trials found.")
+            return
+
+        # Compute overall percentage of same rat collecting both rewards
+        overall_same_rat_percentage = (same_rat_both_rewards / total_successful_trials) * 100
+        different_rat_percentage = 100 - overall_same_rat_percentage
+        
+        # Compute average percentage of dominant rat collecting both rewards
+        avg_dominant_rat_percentage = dominant_count_total/same_rat_both_rewards * 100 if total_successful_trials > 0 else 0
+        other_rat_percentage = 100 - avg_dominant_rat_percentage
+
+        # Create pie chart for average dominant rat percentage
+        labels = ['Dominant Rat Collects Both', 'Other Outcomes']
+        sizes = [avg_dominant_rat_percentage, other_rat_percentage]
+        colors = ['green', 'lightcoral']
+        plt.figure(figsize=(6, 6))
+        plt.pie(sizes, labels=labels, colors=colors, autopct='%1.1f%%', startangle=140, textprops={'fontsize': 14})
+        plt.title('Average Percentage of Dominant Rat Collecting Both Rewards', fontsize=16)
+        plt.axis('equal')
+        if self.save:
+            plt.savefig(f'{self.prefix}DominantRatBothRewards.png')
+        plt.show()
+        plt.close()
+        
+        # Create pie chart for overall percentage of same rat collecting both rewards
+        labels = ['Same Rat Collects Both', 'Different Rats Collect']
+        sizes = [overall_same_rat_percentage, different_rat_percentage]
+        colors = ['blue', 'orange']
+        plt.figure(figsize=(6, 6))
+        plt.pie(sizes, labels=labels, colors=colors, autopct='%1.1f%%', startangle=140, textprops={'fontsize': 14})
+        plt.title('Percentage of Successful Trials with Same Rat Collecting Both Rewards', fontsize=16)
+        plt.axis('equal')
+        if self.save:
+            plt.savefig(f'{self.prefix}SameRatBothRewards.png')
+        plt.show()
+        plt.close()
+        
+        print(f"Overall: {same_rat_both_rewards}/{total_successful_trials} successful trials ({overall_same_rat_percentage:.1f}%) had the same rat collecting both rewards.")
+        print(f"Average percentage of dominant rat collecting both rewards per session: {avg_dominant_rat_percentage:.1f}%")
+
 #Testing Multi File Graphs
 #
 #
@@ -3120,7 +3273,7 @@ totFramesList = [15000, 26000, 15000, 26000, 15000, 26000, 15000]
 initialNanList = [0.15, 0.12, 0.14, 0.16, 0.3, 0.04, 0.2]
 '''
 
-'''
+
 arr = getFiltered()
 lev_files = arr[0]
 mag_files = arr[1]
@@ -3128,14 +3281,14 @@ pos_files = arr[2]
 fpsList = arr[3]
 totFramesList = arr[4]
 initialNanList = arr[5]
-'''
+
 
 '''
-lev_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/4_nanerror_lev.csv"]
+lev_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/ExampleLevFile.csv"]
 
-mag_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/4_nanerror_mag.csv"]
+mag_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/ExampleMagFile.csv"]
 
-pos_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/4_nanerror_test.h5"]
+pos_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/18_nanerror_test.h5"]
 
 fpsList = [30]
 totFramesList = [14000]
@@ -3144,7 +3297,10 @@ initialNanList = [0.1]
 
 
 print("Start MultiFileGraphs Regular")
-#experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "", save=True)
+experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "", save=True)
+experiment.percentSameRatTakesBothRewards()
+#experiment.successRateVsThresholdPlot()
+
 #experiment.waitingStrategy()
 #experiment.successVsAverageDistance()
 #experiment.printSummaryStats()

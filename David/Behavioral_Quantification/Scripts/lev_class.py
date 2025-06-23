@@ -372,7 +372,7 @@ class levLoader:
     
     def returnNumSuccessfulTrials(self):
         succ = self.data.groupby('TrialNum').first().query('coopSucc == 1').shape[0]
-        print("Original Succ: ", succ)
+        #print("Original Succ: ", succ)
         
         #self.remove100msTrials()
         #succ = self.data.groupby('TrialNum').first().query('coopSucc == 1').shape[0]
