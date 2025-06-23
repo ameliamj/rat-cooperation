@@ -3151,7 +3151,7 @@ print("Start MultiFileGraphs Regular")
 #experiment.compareAverageVelocityGazevsNot()
 
 
-
+'''
 experiment.rePressingbyDistance()
 experiment.percentSuccesfulTrials()
 experiment.interpressIntervalPlot()
@@ -3161,6 +3161,7 @@ experiment.cooperativeRegionStrategiesQuantification()
 experiment.makeHeatmapLocation()
 experiment.intersectings_vs_percentNaN()
 experiment.findTotalDistanceMoved()
+'''
 
 # ---------------------------------------------------------------------------------------------------------
 
