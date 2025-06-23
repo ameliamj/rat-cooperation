@@ -3241,6 +3241,7 @@ class multiFileGraphs:
         plt.pie(sizes, labels=labels, colors=colors, autopct='%1.1f%%', startangle=140, textprops={'fontsize': 14})
         plt.title('Average Percentage of Dominant Rat Collecting Both Rewards', fontsize=16)
         plt.axis('equal')
+        plt.tight_layout()
         if self.save:
             plt.savefig(f'{self.prefix}DominantRatBothRewards.png')
         plt.show()
@@ -3254,6 +3255,7 @@ class multiFileGraphs:
         plt.pie(sizes, labels=labels, colors=colors, autopct='%1.1f%%', startangle=140, textprops={'fontsize': 14})
         plt.title('Percentage of Successful Trials with Same Rat Collecting Both Rewards', fontsize=16)
         plt.axis('equal')
+        plt.tight_layout()
         if self.save:
             plt.savefig(f'{self.prefix}SameRatBothRewards.png')
         plt.show()
