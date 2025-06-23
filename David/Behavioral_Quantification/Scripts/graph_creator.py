@@ -3175,7 +3175,7 @@ class multiFileGraphs:
             total_rows = len(mag.data)
             non_nan_percentage = (rat_id_count / total_rows * 100) if total_rows > 0 else 0
             
-            if (non_nan_percentage < 80):
+            if (non_nan_percentage < 93):
                 continue
             
             sessions_considered += 1
