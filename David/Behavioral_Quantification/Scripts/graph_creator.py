@@ -761,8 +761,8 @@ posFiles = [["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/B
 
 #Paired Testing vs. Training Cooperation
 
-
-'''print("Running Paired Testing vs Training Cooperation")
+'''
+print("Running Paired Testing vs Training Cooperation")
 dataPT = getOnlyPairedTesting()
 dataTC = getOnlyTrainingCoop()
 
@@ -801,11 +801,11 @@ categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["
 print("0")
 categoryExperiments.compareGazeEventsCategories()
 print("1")
-#categoryExperiments.compareSuccesfulTrials()
+categoryExperiments.compareSuccesfulTrials()
 print("2")
-#categoryExperiments.compareIPI()
+categoryExperiments.compareIPI()
 print("3")
-#categoryExperiments.rePressingBehavior()
+categoryExperiments.rePressingBehavior()
 print("4")
 categoryExperiments.gazeAlignmentAngle()
 print("5")
@@ -3101,8 +3101,8 @@ pos_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/B
 
 fpsList = [30, 30, 30, 30, 30, 30, 30]
 totFramesList = [15000, 26000, 15000, 26000, 15000, 26000, 15000]
-initialNanList = [0.15, 0.12, 0.14, 0.16, 0.3, 0.04, 0.2]'''
-
+initialNanList = [0.15, 0.12, 0.14, 0.16, 0.3, 0.04, 0.2]
+'''
 
 
 arr = getFiltered()
@@ -3126,12 +3126,14 @@ totFramesList = [14000]
 initialNanList = [0.1]
 '''
 
+
 print("Start MultiFileGraphs Regular")
 experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "")
 experiment.waitingStrategy()
 #experiment.successVsAverageDistance()
 #experiment.printSummaryStats()
 #experiment.compareAverageVelocityGazevsNot()
+
 
 '''
 experiment.rePressingbyDistance()
