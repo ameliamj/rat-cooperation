@@ -2766,10 +2766,8 @@ class multiFileGraphs:
     
             for trial_idx in range(num_trials):
                 start_time = start_times[trial_idx]
-                if (start_times[trial_idx] == None):
-                    continue
                 
-                if (start_time is None):
+                if (start_time is None or np.isnan(start_time)):
                     idx_counter += 1
                     continue
                 press_time = first_press_times[trial_idx - idx_counter]
@@ -2777,6 +2775,7 @@ class multiFileGraphs:
                 
                 if np.isnan(press_time) or np.isnan(rat_id) or start_time is None:
                     # Skip trials with invalid data
+                    idx_counter += 1
                     #rat0_waiting_times.append(0)
                     #rat1_waiting_times.append(0)
                     continue
@@ -2787,15 +2786,17 @@ class multiFileGraphs:
                 
                 numFrames = (press_frame - start_frame)
                 if (numFrames == 0):
+                    idx_counter += 1
                     continue
-                
-                total_trial_frames += numFrames
     
                 if press_frame < start_frame or press_frame >= pos.data.shape[-1]:
                     # Skip invalid frame ranges
                     #rat0_waiting_times.append(0)
                     #rat1_waiting_times.append(0)
+                    idx_counter += 1
                     continue
+                
+                total_trial_frames += numFrames
     
                 # Get locations for both rats in the trial window
                 rat0_locations = pos.returnMouseLocation(0)[start_frame:press_frame]
