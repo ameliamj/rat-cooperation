@@ -16,7 +16,7 @@ class fileExtractor:
         self.filename = information_path
         self.data = None
         self._load_data()
-        self.preFix = "_filtered_onlyFirst"
+        self.preFix = "_filtered"
          
     def _load_data(self):
         """
@@ -77,6 +77,11 @@ class fileExtractor:
         """
         return list(self.data.columns)
     
+    def deleteBadNaN(self):
+        self.data = self.data[self.data['initial nan'] <= 0.2]
+        
+        return self.data
+    
     def deleteInvalid(self, saveFile = False): # gets rid of all rows where trial type != coop, or levers = false, or mags = false
         """
         Remove rows where:
@@ -90,6 +95,8 @@ class fileExtractor:
             (self.data['mags'] == True) &
             (self.data['correct'] == True)
         ]
+        
+        self.data = self.deleteBadNaN()
         
         df_copy = self.data.copy()
         if (saveFile):
@@ -206,7 +213,7 @@ class fileExtractor:
         Keep only rows where test/train == 'train'
         """
         if (sortOut):
-            self.deleteAllButFirstPTvsTC()
+            #self.deleteAllButFirstPTvsTC()
             self.getTrainingPartner(sortOut=False)
             self.getTransparentSessions(sortOut=False)
             
@@ -224,7 +231,7 @@ class fileExtractor:
         Keep only rows where test/train == 'test'
         """
         if (sortOut):
-            self.deleteAllButFirstPTvsTC()
+            #self.deleteAllButFirstPTvsTC()
             self.getTrainingPartner(sortOut=False)
             self.getTransparentSessions(sortOut=False)
         
@@ -245,7 +252,7 @@ class fileExtractor:
         if (sortOut):
             self.getPairedTestingSessions(sortOut=False)
             self.getTransparentSessions(sortOut=False)
-            self.deleteAllButFirstFamiliarity()
+            #self.deleteAllButFirstFamiliarity()
             #print("deleted all but first")
         
         self.data = self.data[self.data['familiarity'] == 'TP']
@@ -264,7 +271,7 @@ class fileExtractor:
         if (sortOut):
             self.getPairedTestingSessions(sortOut=False)
             self.getTransparentSessions(sortOut=False)
-            self.deleteAllButFirstFamiliarity()
+            #self.deleteAllButFirstFamiliarity()
         
         self.data = self.data[self.data['familiarity'] == 'UF']
         
@@ -284,7 +291,7 @@ class fileExtractor:
         if (sortOut):
             self.getPairedTestingSessions(sortOut=False)
             self.getTrainingPartner(sortOut=False)
-            self.deleteAllButFirstTransparency()
+            #self.deleteAllButFirstTransparency()
         
         self.data = self.data[
             ~self.data['session'].str.endswith(('Opaque', 'Translucent'), na=False)
@@ -303,7 +310,7 @@ class fileExtractor:
         """
         if (sortOut):
             self.getPairedTestingSessions(sortOut=False)
-            self.deleteAllButFirstTransparency()
+            #self.deleteAllButFirstTransparency()
             self.getTrainingPartner(sortOut=False)
         
         self.data = self.data[
@@ -324,7 +331,7 @@ class fileExtractor:
         """
         if (sortOut):
             self.getPairedTestingSessions(sortOut=False)
-            self.deleteAllButFirstTransparency()
+            #self.deleteAllButFirstTransparency()
             self.getTrainingPartner(sortOut=False)
         
         self.data = self.data[
@@ -634,7 +641,7 @@ def saveAllCSVs():
             method = getattr(fe, method_name)
             method(sortOut=True, saveFile=True)  # call the method
 
-#saveAllCSVs()
+saveAllCSVs()
 
 
 

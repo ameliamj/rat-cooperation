@@ -13,12 +13,15 @@ import math
 import os
 
 from experiment_class import singleExperiment
+from collections import defaultdict
 from typing import List
 from file_extractor_class import fileExtractor
 from mag_class import magLoader
 from lev_class import levLoader
 from scipy.stats import linregress
 from scipy.ndimage import gaussian_filter
+from scipy.ndimage import gaussian_filter1d
+
 from matplotlib.patches import Patch
 
 import sys
@@ -782,7 +785,7 @@ categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["
 '''
 
 #Transparent vs. Translucent vs. Opaque
-
+'''
 print("Running Transparency")
 dataTransparent = getOnlyTransparent() #Transparent
 dataTranslucent = getOnlyTranslucent() #Translucent
@@ -792,9 +795,9 @@ levFiles = [dataTransparent[0], dataTranslucent[0], dataOpaque[0]]
 magFiles = [dataTransparent[1], dataTranslucent[1], dataOpaque[1]]
 posFiles = [dataTransparent[2], dataTranslucent[2], dataOpaque[2]]
 categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["Transparent", "Translucent", "Opaque"])
+'''
 
-
-
+'''
 print("0")
 categoryExperiments.compareGazeEventsCategories()
 print("1")
@@ -808,7 +811,7 @@ categoryExperiments.gazeAlignmentAngle()
 print("5")
 categoryExperiments.printSummaryStats()
 print("Done")
-
+'''
 
 # ---------------------------------------------------------------------------------------------------------
 
@@ -2704,7 +2707,8 @@ class multiFileGraphs:
         Creates a scatterplot of average waiting time vs. success rate across experiments,
         and a pie chart showing the percentage of time spent waiting in lever areas.
         """
-    
+        NUM_BINS = 30
+
         def findWaitingTimeTrials(exp):
             """
             For a single experiment, calculate 
@@ -2714,6 +2718,9 @@ class multiFileGraphs:
                    (How long after trial start did it take for a rat to enter a lever area)
                 3) How many frames were both rats in a lever area at the same time before the first press?
                 4) Change in Waiting Strategy over Time
+                5) % of time both rats wait on same vs. opposite levers
+                6) Occupancy rate over normalized trial time
+                7) % of time 0 / 1 / 2 rats are in lever area
             
             Args:
                 exp: singleExperiment object containing lev and pos loaders.
@@ -2731,11 +2738,27 @@ class multiFileGraphs:
             first_press_rat_ids = lev.returnRatIDFirstPressTrial()
             num_trials = lev.returnNumTotalTrialswithLeverPress()
     
-            total_trial_frames = 0
-            total_waiting_frames = 0
-            rat0_waiting_times = []
-            rat1_waiting_times = []
+            total_trial_frames = 0  # Total frames considered across all trials in this experiment
+            total_waiting_frames = 0 # Total frames where at least one rat is waiting near lever
+            
+            # Initialize lists to store metrics per trial
+            rat0_waiting_times = []      # Frames rat 0 spends waiting near lever
+            rat1_waiting_times = []      # Frames rat 1 spends waiting near lever
+            waiting_symmetry = []        # Absolute difference in waiting times between rats per trial
+            synchronous_waiting_frames = [] # Frames both rats waiting simultaneously per trial
+            rat0_latencies = []          # Frames until rat 0 first enters lever zone after trial start
+            rat1_latencies = []          # Same for rat 1
+            
+            same_lever_total = 0 #Number of frames in which both rats are in a lever area and are on the same lever side
+            opposite_lever_total = 0 #Number of frames where both rats are in lever areas but on opposite sides.
+            none_total = 0 #Frames where neither rat is in a lever area.
+            one_total = 0 #Frames where exactly one rat is in a lever area.
+            both_total = 0 #Frames where both rats are in lever areas.
     
+            #NUM_BINS = 30 #The number of equal-sized time bins into which you divide each trial (e.g. 30 bins = 30 time points from 0% to 100% of the trial duration).
+            occupancy_curve = np.zeros(NUM_BINS) #An array of length NUM_BINS that accumulates the number of trials where at least one rat was in a lever area at each time bin
+            trial_counts = np.zeros(NUM_BINS) #Parallel to occupancy_curve, this keeps track of how many trials actually had a valid frame in each bin.
+            
             # Get trial start times
             start_times = lev.returnTimeStartTrials()
             
@@ -2759,7 +2782,9 @@ class multiFileGraphs:
                 press_frame = int(press_time * fps)
                 start_frame = int(start_time * fps)
                 
-                total_trial_frames += press_frame - start_frame
+                numFrames = (press_frame - start_frame)
+                
+                total_trial_frames += numFrames
     
                 if press_frame < start_frame or press_frame >= pos.data.shape[-1]:
                     # Skip invalid frame ranges
@@ -2771,9 +2796,50 @@ class multiFileGraphs:
                 rat0_locations = pos.returnMouseLocation(0)[start_frame:press_frame]
                 rat1_locations = pos.returnMouseLocation(1)[start_frame:press_frame]
                 
-                
                 # Ensure both lists are the same length
                 frame_count = min(len(rat0_locations), len(rat1_locations))
+                
+                # Latency to lever area entry
+                def latency_to_lever(locations):
+                    for i, loc in enumerate(locations):
+                        if loc in ['lev_top', 'lev_bottom']:
+                            return i
+                    return None
+    
+                rat0_lat = latency_to_lever(rat0_locations)
+                rat1_lat = latency_to_lever(rat1_locations)
+                
+                if rat0_lat is not None:
+                    rat0_latencies.append(rat0_lat)
+                if rat1_lat is not None:
+                    rat1_latencies.append(rat1_lat)
+                    
+                for i in range(frame_count):
+                    r0 = rat0_locations[i]
+                    r1 = rat1_locations[i]
+                    r0_in = r0 in ['lev_top', 'lev_bottom']
+                    r1_in = r1 in ['lev_top', 'lev_bottom']
+                    if r0_in and r1_in:
+                        if r0 == r1:
+                            same_lever_total += 1
+                        else:
+                            opposite_lever_total += 1
+    
+                    if r0_in and r1_in:
+                        both_total += 1
+                    elif r0_in or r1_in:
+                        one_total += 1
+                    else:
+                        none_total += 1
+                
+                for bin_idx in range(NUM_BINS):
+                    bin_frame = int((bin_idx / NUM_BINS) * frame_count)
+                    if bin_frame >= frame_count:
+                        continue
+                    in_lever = (rat0_locations[bin_frame] in ['lev_top', 'lev_bottom']) or \
+                               (rat1_locations[bin_frame] in ['lev_top', 'lev_bottom'])
+                    occupancy_curve[bin_idx] += in_lever
+                    trial_counts[bin_idx] += 1
                 
                 # Count total waiting frames: any frame where at least one rat is at a lever
                 total_waiting_frames += sum(
@@ -2781,29 +2847,64 @@ class multiFileGraphs:
                     (rat1_locations[i] in ['lev_top', 'lev_bottom'])
                     for i in range(frame_count)
                 )
+                
+                # Per-frame: both rats waiting (synchronous waiting)
+                synchronous_waiting = sum(
+                    (rat0_locations[i] in ['lev_top', 'lev_bottom']) and
+                    (rat1_locations[i] in ['lev_top', 'lev_bottom'])
+                    for i in range(frame_count)
+                )
+                synchronous_waiting_normalized = synchronous_waiting / frame_count if frame_count > 0 else 0 # Standardize by dividing by total frames in the trial
+                synchronous_waiting_frames.append(synchronous_waiting)
     
-                # Count frames where each rat is in levTop or levBot
+                # Count frames where each rat is in levTop or levBot individually
                 rat0_waiting = sum(1 for loc in rat0_locations if loc in ['lev_top', 'lev_bottom'])
                 rat1_waiting = sum(1 for loc in rat1_locations if loc in ['lev_top', 'lev_bottom'])
                 
+                #Standardize rat0_waiting and rat1_waiting
+                rat0_waiting /= numFrames
+                rat1_waiting /= numFrames
+                
                 rat0_waiting_times.append(rat0_waiting)
                 rat1_waiting_times.append(rat1_waiting)
-    
-            return rat0_waiting_times, rat1_waiting_times, total_trial_frames, total_waiting_frames
+                waiting_symmetry.append(abs(rat0_waiting - rat1_waiting))
+            
+            if (total_trial_frames != exp.endFrame): 
+                print("Inequal Frames, (self, counted): ", exp.endFrame, ", ", total_trial_frames)
+            
+            return (rat0_waiting_times, rat1_waiting_times, waiting_symmetry, rat0_latencies, rat1_latencies,
+                synchronous_waiting_frames, total_trial_frames, total_waiting_frames,
+                same_lever_total, opposite_lever_total, none_total, one_total, both_total,
+                occupancy_curve, trial_counts)
 
         
-        
-        # Collect data across experiments
+        # Aggregate data across experiments
         avg_waiting_times = []
         success_rates = []
+        avg_symmetry_vals = []
+        avg_sync_vals = []
+        rat0_lat_per_trial = defaultdict(list)
+        rat1_lat_per_trial = defaultdict(list)
         total_waiting_frames = 0
         total_trial_frames = 0
+        
+        same_lever_sum = 0
+        opposite_lever_sum = 0
+        none_sum = 0
+        one_sum = 0
+        both_sum = 0
+        total_occupancy_curve = np.zeros(NUM_BINS)
+        total_trial_counts = np.zeros(NUM_BINS)
     
         for exp in self.experiments:
             lev = exp.lev
             pos = exp.pos
             
-            rat0_times, rat1_times, totalTrialFramesTemp, totalWaitingFramesTemp = findWaitingTimeTrials(exp)
+            (rat0_times, rat1_times, symmetry, rat0_lat, rat1_lat, 
+             sync_frames, trial_frames, waiting_frames,
+             same_lever, opposite_lever, none, one, both,
+             occupancy_curve, trial_counts) = findWaitingTimeTrials(exp)
+            
             total_trials = exp.lev.returnNumTotalTrials()
             if total_trials == 0:
                 continue
@@ -2812,15 +2913,47 @@ class multiFileGraphs:
             valid_times = [t for t in rat0_times + rat1_times if t > 0]
             avg_wait = np.mean(valid_times) if valid_times else 0
             avg_waiting_times.append(avg_wait)
-    
+            
+            avg_symmetry_vals.append(np.mean(symmetry) if symmetry else 0)
+            avg_sync_vals.append(np.mean(sync_frames) if sync_frames else 0)
+            for trial_idx, (lat0, lat1) in enumerate(zip(rat0_lat, rat1_lat)):
+                if lat0 is not None and lat1 is not None:
+                    rat0_lat_per_trial[trial_idx].append(lat0)
+                    rat1_lat_per_trial[trial_idx].append(lat1)
+            
             # Calculate success rate
             success_rate = exp.lev.returnNumSuccessfulTrials() / total_trials
             success_rates.append(success_rate)
             
-            total_trial_frames += totalTrialFramesTemp
-            total_waiting_frames += totalWaitingFramesTemp
-    
-        # Scatterplot: Waiting Time vs. Success Rate
+            total_trial_frames += trial_frames
+            total_waiting_frames += waiting_frames
+            
+            same_lever_sum += same_lever
+            opposite_lever_sum += opposite_lever
+            none_sum += none
+            one_sum += one
+            both_sum += both
+            total_occupancy_curve += occupancy_curve
+            total_trial_counts += trial_counts
+        
+        # Compute average latency per trial index
+        avg_latency_per_trial = []
+        max_trial_index = max(rat0_lat_per_trial.keys() & rat1_lat_per_trial.keys())
+        
+        for trial_idx in range(max_trial_index + 1):
+            if trial_idx in rat0_lat_per_trial and trial_idx in rat1_lat_per_trial:
+                # Only use trials where both rats have data
+                avg0 = np.mean(rat0_lat_per_trial[trial_idx])
+                avg1 = np.mean(rat1_lat_per_trial[trial_idx])
+                avg_latency_per_trial.append((avg0 + avg1) / 2)
+         
+                
+        #Graphs
+        #
+        #
+        
+        
+        # Scatterplot: Avg Waiting Time vs. Success Rate
         if len(avg_waiting_times) >= 2 and len(success_rates) >= 2:
             plt.figure(figsize=(8, 6))
             plt.scatter(avg_waiting_times, success_rates, alpha=0.7, color='blue', label='Experiments')
@@ -2866,8 +2999,87 @@ class multiFileGraphs:
             plt.close()
         else:
             print("No valid trial data for pie chart.")
+        
+        #Lever Entry Latency Change Over Trials
+        if len(avg_latency_per_trial) >= 5:
+            smooth_avg_lat = pd.Series(avg_latency_per_trial).rolling(window=10, min_periods=1, center=True).mean()
+    
+            # Step 4: Plot
+            plt.figure(figsize=(8, 5))
+            plt.plot(smooth_avg_lat, label="Avg latency (both rats)", color="blue", linewidth=2)
+            plt.xlabel("Trial Index (Across Experiments)")
+            plt.ylabel("Average Latency to Lever Entry (frames)")
+            plt.title("Smoothed Lever Entry Latency Over Trials")
+            plt.grid(True)
+            plt.legend()
+            plt.tight_layout()
+    
+            if self.save:
+                plt.savefig(f"{self.prefix}smoothed_avg_latency_over_trials.png")
+            plt.show()
+            plt.close()
+        else:
+            print("Not enough valid aligned trials for latency plot.")
+    
+        # --- Scatterplot: Waiting symmetry vs. success ---
+        if len(avg_symmetry_vals) >= 2:
+            plt.figure(figsize=(8, 6))
+            plt.scatter(avg_symmetry_vals, success_rates, color='purple', alpha=0.7)
+            slope, intercept, r_val, _, _ = linregress(avg_symmetry_vals, success_rates)
+            r2 = r_val**2
+            x = np.linspace(min(avg_symmetry_vals), max(avg_symmetry_vals), 100)
+            plt.plot(x, slope * x + intercept, 'r--')
+            plt.xlabel("Average Waiting Symmetry (|rat0 - rat1|)")
+            plt.ylabel("Cooperative Success Rate")
+            plt.title("Success Rate vs. Waiting Symmetry")
+            plt.text(0.95, 0.05, f"$R^2$ = {r2:.3f}", transform=plt.gca().transAxes,
+                     ha='right', va='bottom', fontsize=12, bbox=dict(facecolor='white', edgecolor='gray'))
+            plt.grid(True)
+            plt.tight_layout()
+            if self.save:
+                plt.savefig(f"{self.prefix}symmetry_vs_success.png")
+            plt.show()
+            plt.close()
             
-            
+        # Pie Chart: % time 0 / 1 / 2 rats in lever area
+        plt.figure()
+        plt.pie([none_sum, one_sum, both_sum],
+                labels=['Neither', 'One', 'Both'],
+                colors=['gray', 'orange', 'green'],
+                autopct='%1.1f%%', startangle=140)
+        plt.title("Lever Zone Occupancy (None / One / Both Rats)")
+        plt.axis('equal')
+        plt.tight_layout()
+        if self.save:
+            plt.savefig(f"{self.prefix}LeverZoneOccupancyDistribution.png")
+        plt.show()
+    
+        # Pie Chart: Both rats in lever — same vs. opposite lever area
+        plt.figure()
+        plt.pie([same_lever_sum, opposite_lever_sum],
+                labels=['Same Lever Area', 'Opposite Lever Areas'],
+                colors=['lightgreen', 'salmon'],
+                autopct='%1.1f%%', startangle=140)
+        plt.title("When Both Rats Wait: Same vs. Opposite Lever Area")
+        plt.axis('equal')
+        plt.tight_layout()
+        if self.save:
+            plt.savefig(f"{self.prefix}SamevsOppositeLeverArea.png")
+        plt.show()
+    
+        # Line Graph: Occupancy across normalized trial time
+        avg_occupancy = total_occupancy_curve / total_trial_counts
+        smoothed = gaussian_filter1d(avg_occupancy, sigma=2)
+        plt.figure()
+        plt.plot(np.linspace(0, 100, NUM_BINS), smoothed, color='blue')
+        plt.xlabel("Trial Time (% of trial)")
+        plt.ylabel("Probability of Lever Occupancy")
+        plt.title("Lever Zone Occupancy Over Trial Duration")
+        plt.grid(True)
+        plt.tight_layout()
+        if self.save:
+            plt.savefig(f"{self.prefix}LevverZoneOccupancyOverTrialDuration.png")
+        plt.show()
             
 #Testing Multi File Graphs
 #
@@ -2881,7 +3093,7 @@ def getFiltered():
     return [fe.getLevsDatapath(), fe.getMagsDatapath(), fe.getPosDatapath(), fpsList, totFramesList, initial_nan_list]
 
 
-lev_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/ExampleLevFile.csv"]
+'''lev_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/ExampleLevFile.csv"]
 
 mag_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_mag.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_mag.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_mag.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_mag.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_mag.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_mag.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/ExampleMagFile.csv"] 
 
@@ -2889,10 +3101,10 @@ pos_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/B
 
 fpsList = [30, 30, 30, 30, 30, 30, 30]
 totFramesList = [15000, 26000, 15000, 26000, 15000, 26000, 15000]
-initialNanList = [0.15, 0.12, 0.14, 0.16, 0.3, 0.04, 0.2]
+initialNanList = [0.15, 0.12, 0.14, 0.16, 0.3, 0.04, 0.2]'''
 
 
-'''
+
 arr = getFiltered()
 lev_files = arr[0]
 mag_files = arr[1]
@@ -2900,10 +3112,10 @@ pos_files = arr[2]
 fpsList = arr[3]
 totFramesList = arr[4]
 initialNanList = arr[5]
+
+
 '''
-
-
-'''lev_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/4_nanerror_lev.csv"]
+lev_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/4_nanerror_lev.csv"]
 
 mag_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/4_nanerror_mag.csv"]
 
@@ -2911,12 +3123,12 @@ pos_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/B
 
 fpsList = [30]
 totFramesList = [14000]
-initialNanList = [0.1]'''
-
+initialNanList = [0.1]
+'''
 
 print("Start MultiFileGraphs Regular")
-#experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "")
-#experiment.waitingStrategy()
+experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "")
+experiment.waitingStrategy()
 #experiment.successVsAverageDistance()
 #experiment.printSummaryStats()
 #experiment.compareAverageVelocityGazevsNot()
