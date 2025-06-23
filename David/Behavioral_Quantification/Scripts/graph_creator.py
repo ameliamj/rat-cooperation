@@ -2783,6 +2783,8 @@ class multiFileGraphs:
                 start_frame = int(start_time * fps)
                 
                 numFrames = (press_frame - start_frame)
+                if (numFrames == 0):
+                    continue
                 
                 total_trial_frames += numFrames
     
