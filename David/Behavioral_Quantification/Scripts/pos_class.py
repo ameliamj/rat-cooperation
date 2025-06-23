@@ -55,21 +55,21 @@ class posLoader:
         self.height = 640
         
         # Define horizontal boundaries for zones
-        self.levBoundary = self.width // 4
-        self.magBoundary = 3 * self.width // 4
+        self.levBoundary = 351
+        self.magBoundary = 1041
         
         #Subdivide Lev and Mag Zones
-        self.levTopTR = (300, 10)
+        self.levTopTR = (350, 10)
         self.levTopBL = (10, 310)
         
-        self.levBotTR = (300, 330)
+        self.levBotTR = (350, 330)
         self.levBotBL = (10, 630)
         
         self.magTopTR = (1382, 10)
-        self.magTopBL = (1080, 310)
+        self.magTopBL = (1042, 310)
         
         self.magBotTR = (1382, 330)
-        self.magBotBL = (1080, 630)
+        self.magBotBL = (1042, 630)
     
         # Define regions based on x-coordinate of headbase
         self.levRegion = (0, self.levBoundary)
@@ -370,7 +370,7 @@ class posLoader:
         #A gaze event is a single collection of frames where the mice are gazing. There has to be at least a 5 frame separation with no gazing between gaze events
         
         numGazeEvents = 0
-        isGazing = self.returnIsGazing(mouseID, alternateDef)
+        isGazing = self.returnIsGazing(mouseID, alternateDef = alternateDef)
         lastGaze = -5
         
         for i, frame in enumerate(isGazing):
@@ -382,7 +382,7 @@ class posLoader:
         return numGazeEvents
     
     def returnTotalFramesGazing(self, mouseID, alternateDef = True):
-        g0 = self.returnIsGazing(mouseID, alternateDef)
+        g0 = self.returnIsGazing(mouseID, alternateDef = alternateDef)
         print("isGazingArr: ", g0)
         totalFramesGazing = np.sum(g0)
         return totalFramesGazing

@@ -19,6 +19,7 @@ from mag_class import magLoader
 from lev_class import levLoader
 from scipy.stats import linregress
 from scipy.ndimage import gaussian_filter
+from matplotlib.patches import Patch
 
 import sys
 sys.stdout.flush()
@@ -283,6 +284,7 @@ class multiFileGraphsCategories:
         # Initialize lists to store average success probabilities and individual datapoints per category
         probs = []
         individual_datapoints = []
+        datapoint_colors = []
     
         # Iterate through each experimental group (category)
         for i, group in enumerate(self.allFileGroupExperiments):
@@ -307,8 +309,24 @@ class multiFileGraphsCategories:
                     print("Num Trials: ", num_total)
                     print("Lev File: ", self.allFileGroupExperiments[i][j].lev_file)
                     individual_datapoints[i].append(num_succ / num_total)
+                    
+                    # Assign color based on threshold
+                    thresh = loader.returnSuccThreshhold()
+                    if thresh > 3:
+                        color = 'red'
+                    elif thresh > 2:
+                        color = 'orange'
+                    elif thresh > 1:
+                        color = 'purple'
+                    elif thresh > 0:
+                        color = 'blue'
+                    else:
+                        color = 'gray'
+                    datapoint_colors[i].append(color)
+                    
                 else:
                     individual_datapoints[i].append(np.nan)
+                    datapoint_colors[i].append('gray')
                     print("\n\nTotal Trials was 0")
                     print("Lev File: ", self.allFileGroupExperiments[i][j][1])
     
@@ -325,11 +343,15 @@ class multiFileGraphsCategories:
     
         # Overlay individual datapoints as scatter plot
         for i, datapoints in enumerate(individual_datapoints):
+            jittered_x = [i + (np.random.rand() - 0.5) * 0.2 for _ in datapoints]
+            for x, y, c in zip(jittered_x, datapoints, datapoint_colors[i]):
+                plt.scatter(x, y, color=c, alpha=0.7, s=40)
+        '''for i, datapoints in enumerate(individual_datapoints):
             jittered_x = [i + (np.random.rand() - 0.5) * 0.2 for _ in datapoints]  # Add slight x jitter
             if i == 0:
                 plt.scatter(jittered_x, datapoints, color='black', alpha=0.7, s=40, label='Individual Data')
             else:
-                plt.scatter(jittered_x, datapoints, color='black', alpha=0.7, s=40)
+                plt.scatter(jittered_x, datapoints, color='black', alpha=0.7, s=40)'''
     
         # Formatting
         plt.xlabel('Category')
@@ -337,7 +359,15 @@ class multiFileGraphsCategories:
         plt.title('Success Probability per Category')
         plt.xticks(bar_positions, self.categoryNames)
         plt.ylim(0, 1)
-        plt.legend()
+        legend_patches = [
+            Patch(color='red', label='Threshold > 3'),
+            Patch(color='orange', label='Threshold > 2'),
+            Patch(color='purple', label='Threshold > 1'),
+            Patch(color='blue', label='Threshold > 0'),
+            Patch(color='gray', label='Threshold ≤ 0')
+        ]
+        plt.legend(handles=legend_patches)
+        #plt.legend()
         plt.tight_layout()
     
         # Save and display the plot
@@ -450,16 +480,25 @@ class multiFileGraphsCategories:
             total_mag_events = 0      # Total number of magazine entries
             total_gaze_frames = 0     # Total frames where gaze was detected
             total_gaze_frames_alternate = 0
-    
+                        
             # Process each experiment within the category
             for exp in group:
                 loader = exp.pos
                 
                 g0 = loader.returnIsGazing(0, alternateDef=False)
                 g1 = loader.returnIsGazing(1, alternateDef=False)
+                
+                #print("g0: ", ', '.join(map(str, g0[2000:4000])))
+                #print("g1: ", ', '.join(map(str, g1)))
+                
                 g2 = loader.returnIsGazing(0)
                 g3 = loader.returnIsGazing(1)
-    
+                
+                #print("\n" * 5)
+                
+                #print("g2 (alternate): ", ', '.join(map(str, g2[2000:4000])))
+                #print("g3 (alternate): ", ', '.join(map(str, g3)))
+                
                 # Count gaze events and sum up the frames with gazing behavior
                 total_gaze_events += loader.returnNumGazeEvents(0, alternateDef=False) + loader.returnNumGazeEvents(1, alternateDef=False)
                 total_gaze_frames += np.sum(g0) + np.sum(g1)
@@ -688,6 +727,8 @@ class multiFileGraphsCategories:
         plt.show()
         plt.close()
 
+
+
 #magFiles = [["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv"], ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv"]]
 #levFiles = [["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_mag.csv"], ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_mag.csv"]]
 #posFiles = [["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G.predictions.h5"], ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.predictions.h5"]]                   
@@ -699,23 +740,25 @@ magFiles = [["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/B
 posFiles = [["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.predictions.h5"], 
             ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.predictions.h5"]]
 
-'''
+
 levFiles = [["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv"], 
             ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv"]]
 magFiles = [["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_mag.csv"], 
             ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_mag.csv"]]
 posFiles = [["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G.predictions.h5"], 
             ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.predictions.h5"]]
-'''
 
-categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["Paired_Testing", "Training_Cooperation"], save=False)
-categoryExperiments.compareSuccesfulTrials()
+
+#categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["Paired_Testing", "Training_Cooperation"], save=False)
+#categoryExperiments.printSummaryStats()
+
+#categoryExperiments.compareSuccesfulTrials()
 #categoryExperiments.rePressingBehavior()
 #categoryExperiments.gazeAlignmentAngle()
 
 #Paired Testing vs. Training Cooperation
 
-'''
+
 print("Running Paired Testing vs Training Cooperation")
 dataPT = getOnlyPairedTesting()
 dataTC = getOnlyTrainingCoop()
@@ -724,7 +767,7 @@ levFiles = [dataPT[0], dataTC[0]]
 magFiles = [dataPT[1], dataTC[1]]
 posFiles = [dataPT[2], dataTC[2]]
 categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["Paired_Testing", "Training_Cooperation"])
-'''
+
 
 '''
 #Unfamiliar vs. Training Partners
@@ -752,9 +795,9 @@ posFiles = [dataTransparent[2], dataTranslucent[2], dataOpaque[2]]
 categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["Transparent", "Translucent", "Opaque"])
 '''
 
-'''
+
 print("0")
-#categoryExperiments.compareGazeEventsCategories()
+categoryExperiments.compareGazeEventsCategories()
 print("1")
 #categoryExperiments.compareSuccesfulTrials()
 print("2")
@@ -766,7 +809,7 @@ categoryExperiments.gazeAlignmentAngle()
 print("5")
 categoryExperiments.printSummaryStats()
 print("Done")
-'''
+
 
 # ---------------------------------------------------------------------------------------------------------
 
@@ -2657,6 +2700,176 @@ class multiFileGraphs:
         plt.show()
         plt.close()
 
+    def waitingStrategy(self): 
+        """
+        Creates a scatterplot of average waiting time vs. success rate across experiments,
+        and a pie chart showing the percentage of time spent waiting in lever areas.
+        """
+    
+        def findWaitingTimeTrials(exp):
+            """
+            For a single experiment, calculate 
+                1) the number of frames each rat spends in levTop or 
+                   levBot before the first lever press in each trial.
+                2) Frame latency to first lever entry 
+                   (How long after trial start did it take for a rat to enter a lever area)
+                3) How many frames were both rats in a lever area at the same time before the first press?
+                4) Change in Waiting Strategy over Time
+            
+            Args:
+                exp: singleExperiment object containing lev and pos loaders.
+    
+            Returns:
+                tuple: (rat0_waiting_times, rat1_waiting_times)
+                       Lists of waiting times (in frames) for each trial for Rat 0 and Rat 1.
+            """
+            lev = exp.lev
+            pos = exp.pos
+            fps = exp.fps
+    
+            # Get first press absolute times and rat IDs per trial
+            first_press_times = lev.returnFirstPressAbsTimes()
+            first_press_rat_ids = lev.returnRatIDFirstPressTrial()
+            num_trials = lev.returnNumTotalTrialswithLeverPress()
+    
+            total_trial_frames = 0
+            total_waiting_frames = 0
+            rat0_waiting_times = []
+            rat1_waiting_times = []
+    
+            # Get trial start times
+            start_times = lev.returnTimeStartTrials()
+            
+            idx_counter = 0
+    
+            for trial_idx in range(num_trials):
+                start_time = start_times[trial_idx]
+                if (start_time is None):
+                    idx_counter += 1
+                    continue
+                press_time = first_press_times[trial_idx - idx_counter]
+                rat_id = first_press_rat_ids.iloc[trial_idx - idx_counter]
+                
+                if np.isnan(press_time) or np.isnan(rat_id) or start_time is None:
+                    # Skip trials with invalid data
+                    #rat0_waiting_times.append(0)
+                    #rat1_waiting_times.append(0)
+                    continue
+    
+                rat_id = int(rat_id)
+                press_frame = int(press_time * fps)
+                start_frame = int(start_time * fps)
+                
+                total_trial_frames += press_frame - start_frame
+    
+                if press_frame < start_frame or press_frame >= pos.data.shape[-1]:
+                    # Skip invalid frame ranges
+                    #rat0_waiting_times.append(0)
+                    #rat1_waiting_times.append(0)
+                    continue
+    
+                # Get locations for both rats in the trial window
+                rat0_locations = pos.returnMouseLocation(0)[start_frame:press_frame]
+                rat1_locations = pos.returnMouseLocation(1)[start_frame:press_frame]
+                
+                
+                # Ensure both lists are the same length
+                frame_count = min(len(rat0_locations), len(rat1_locations))
+                
+                # Count total waiting frames: any frame where at least one rat is at a lever
+                total_waiting_frames += sum(
+                    (rat0_locations[i] in ['lev_top', 'lev_bottom']) or
+                    (rat1_locations[i] in ['lev_top', 'lev_bottom'])
+                    for i in range(frame_count)
+                )
+    
+                # Count frames where each rat is in levTop or levBot
+                rat0_waiting = sum(1 for loc in rat0_locations if loc in ['lev_top', 'lev_bottom'])
+                rat1_waiting = sum(1 for loc in rat1_locations if loc in ['lev_top', 'lev_bottom'])
+                
+                rat0_waiting_times.append(rat0_waiting)
+                rat1_waiting_times.append(rat1_waiting)
+    
+            return rat0_waiting_times, rat1_waiting_times, total_trial_frames, total_waiting_frames
+
+        
+        
+        # Collect data across experiments
+        avg_waiting_times = []
+        success_rates = []
+        total_waiting_frames = 0
+        total_trial_frames = 0
+    
+        for exp in self.experiments:
+            lev = exp.lev
+            pos = exp.pos
+            
+            rat0_times, rat1_times, totalTrialFramesTemp, totalWaitingFramesTemp = findWaitingTimeTrials(exp)
+            total_trials = exp.lev.returnNumTotalTrials()
+            if total_trials == 0:
+                continue
+            
+            # Calculate average waiting time for the experiment (both rats combined)
+            valid_times = [t for t in rat0_times + rat1_times if t > 0]
+            avg_wait = np.mean(valid_times) if valid_times else 0
+            avg_waiting_times.append(avg_wait)
+    
+            # Calculate success rate
+            success_rate = exp.lev.returnNumSuccessfulTrials() / total_trials
+            success_rates.append(success_rate)
+            
+            total_trial_frames += totalTrialFramesTemp
+            total_waiting_frames += totalWaitingFramesTemp
+    
+        # Scatterplot: Waiting Time vs. Success Rate
+        if len(avg_waiting_times) >= 2 and len(success_rates) >= 2:
+            plt.figure(figsize=(8, 6))
+            plt.scatter(avg_waiting_times, success_rates, alpha=0.7, color='blue', label='Experiments')
+    
+            # Add trendline and R²
+            if len(set(avg_waiting_times)) >= 2:
+                slope, intercept, r_value, _, _ = linregress(avg_waiting_times, success_rates)
+                r_squared = r_value ** 2
+                x_vals = np.linspace(min(avg_waiting_times), max(avg_waiting_times), 100)
+                plt.plot(x_vals, slope * x_vals + intercept, color='red', linestyle='--', label='Trendline')
+                plt.text(0.95, 0.05, f"$R^2$ = {r_squared:.3f}", transform=plt.gca().transAxes,
+                         ha='right', va='bottom', fontsize=12, bbox=dict(facecolor='white', edgecolor='gray'))
+    
+            plt.xlabel('Average Waiting Time (frames)')
+            plt.ylabel('Cooperative Success Rate')
+            plt.title('Waiting Time vs. Cooperative Success Rate')
+            plt.legend()
+            plt.grid(True)
+            plt.tight_layout()
+            if self.save:
+                plt.savefig(f"{self.prefix}waiting_time_vs_success_rate.png")
+            plt.show()
+            plt.close()
+        else:
+            print("Insufficient data to create scatterplot.")
+    
+        # Pie Chart: Percentage of Time Spent Waiting
+        if total_trial_frames > 0:
+            waiting_percent = (total_waiting_frames / total_trial_frames) * 100
+            non_waiting_percent = 100 - waiting_percent
+            labels = ['Waiting in Lever Areas', 'Not Waiting']
+            sizes = [waiting_percent, non_waiting_percent]
+            colors = ['green', 'gray']
+    
+            plt.figure(figsize=(6, 6))
+            plt.pie(sizes, labels=labels, colors=colors, autopct='%1.1f%%', startangle=140, textprops={'fontsize': 14})
+            plt.title('Percentage of Trial Time Spent Waiting in Lever Areas')
+            plt.axis('equal')
+            plt.tight_layout()
+            if self.save:
+                plt.savefig(f"{self.prefix}waiting_time_pie_chart.png")
+            plt.show()
+            plt.close()
+        else:
+            print("No valid trial data for pie chart.")
+            
+            
+            
 #Testing Multi File Graphs
 #
 #
@@ -2669,7 +2882,7 @@ def getFiltered():
     return [fe.getLevsDatapath(), fe.getMagsDatapath(), fe.getPosDatapath(), fpsList, totFramesList, initial_nan_list]
 
 
-'''lev_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/ExampleLevFile.csv"]
+lev_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/ExampleLevFile.csv"]
 
 mag_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_mag.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_mag.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_mag.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_mag.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_mag.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_mag.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/ExampleMagFile.csv"] 
 
@@ -2678,7 +2891,7 @@ pos_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/B
 fpsList = [30, 30, 30, 30, 30, 30, 30]
 totFramesList = [15000, 26000, 15000, 26000, 15000, 26000, 15000]
 initialNanList = [0.15, 0.12, 0.14, 0.16, 0.3, 0.04, 0.2]
-'''
+
 
 '''
 arr = getFiltered()
@@ -2704,6 +2917,7 @@ initialNanList = [0.1]'''
 
 print("Start MultiFileGraphs Regular")
 #experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "")
+#experiment.waitingStrategy()
 #experiment.successVsAverageDistance()
 #experiment.printSummaryStats()
 #experiment.compareAverageVelocityGazevsNot()

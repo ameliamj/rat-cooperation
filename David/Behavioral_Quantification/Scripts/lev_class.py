@@ -126,6 +126,9 @@ class levLoader:
     
     
     #Graph Stuff: 
+    def returnSuccThreshold(self):
+        return 1
+        
     def remove100msTrials(self):
         """
         Remove all lever presses in trials where the first lever press has a TrialTime <= 0.1.
