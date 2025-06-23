@@ -10,14 +10,14 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import math
-import os
+#import os
 
 from experiment_class import singleExperiment
 from collections import defaultdict
 from typing import List
 from file_extractor_class import fileExtractor
-from mag_class import magLoader
-from lev_class import levLoader
+#from mag_class import magLoader
+#from lev_class import levLoader
 from scipy.stats import linregress
 from scipy.ndimage import gaussian_filter
 from scipy.ndimage import gaussian_filter1d
@@ -3159,11 +3159,14 @@ class multiFileGraphs:
         same_rat_both_rewards = 0
         dominant_count_total = 0
         session_dominant_rat_percentages = []
+        session_success_percentages = []
+        session_same_rat_percentages = []
 
         for exp in self.experiments:
             lev = exp.lev
             mag = exp.mag
             session_successful_trials = 0
+            session_same_rat_both_rewards = 0
             session_same_rat_counts = {}  # Tracks counts per RatID collecting both rewards
 
             success_trials = lev.returnSuccessTrials()
@@ -3189,11 +3192,21 @@ class multiFileGraphs:
                 total_successful_trials += 1
 
                 if reward_recipients[0] == reward_recipients[1]:
+                    session_same_rat_both_rewards += 1
                     same_rat_both_rewards += 1
                     rat_id = reward_recipients[0]
                     session_same_rat_counts[rat_id] = session_same_rat_counts.get(rat_id, 0) + 1
 
             if session_successful_trials > 0:
+                # Calculate session overall same rat percentage
+                session_same_rat_percentage = (session_same_rat_both_rewards / session_successful_trials) * 100
+                session_same_rat_percentages.append(session_same_rat_percentage)
+                
+                # Calculate session success percentage
+                session_total_trials = lev.returnNumTotalTrials()
+                session_success_percentage = (session_successful_trials / session_total_trials) * 100 if session_total_trials > 0 else 0
+                session_success_percentages.append(session_success_percentage)
+                
                 # Find the rat with the most instances of collecting both rewards
                 if session_same_rat_counts:
                     print("session_same_rat_counts: ", session_same_rat_counts)
@@ -3202,8 +3215,8 @@ class multiFileGraphs:
                     dominant_count = session_same_rat_counts[dominant_rat]
                     print("dominant_count: ", dominant_count)
                     dominant_count_total += dominant_count
-                    #dominant_percentage = (dominant_count / session_successful_trials) * 100
-                    #session_dominant_rat_percentages.append(dominant_percentage)
+                    dominant_percentage = (dominant_count / session_same_rat_both_rewards) * 100
+                    session_dominant_rat_percentages.append(dominant_percentage)
                 else:
                     # No cases where same rat got both rewards, so dominant percentage is 0
                     session_dominant_rat_percentages.append(0)
@@ -3246,6 +3259,57 @@ class multiFileGraphs:
         plt.show()
         plt.close()
         
+        # Create scatter plot for success percentage vs. session same rat percentage
+        print("session_success_percentages: ", session_success_percentages)
+        print("session_same_rat_percentages: ", session_same_rat_percentages)
+        
+        if len(session_success_percentages) > 1 and len(session_same_rat_percentages) > 1:
+            success_np = np.array(session_success_percentages)
+            same_rat_np = np.array(session_same_rat_percentages)
+            
+            # Fit a linear regression (degree-1 polynomial) to the data
+            coeffs = np.polyfit(success_np, same_rat_np, 1)
+            trendline = np.poly1d(coeffs)
+            
+            # Generate smooth x and y values for plotting the line
+            xs = np.linspace(min(success_np), max(success_np), 100)
+            ys = trendline(xs)
+            
+            # Plot the scatter points and trendline
+            plt.figure(figsize=(8, 6))
+            plt.scatter(session_success_percentages, session_same_rat_percentages, color='purple', alpha=0.6, s=100)
+            plt.plot(xs, ys, color='red', linestyle='--', label='Trendline')
+            
+            # Calculate R^2
+            predicted = trendline(success_np)
+            ss_res = np.sum((same_rat_np - predicted) ** 2)
+            ss_tot = np.sum((same_rat_np - np.mean(same_rat_np)) ** 2)
+            r_squared = 1 - (ss_res / ss_tot) if ss_tot != 0 else 0
+            
+            # Display R² in the top right of the plot
+            plt.text(0.95, 0.05, f'$R^2 = {r_squared:.3f}$',
+                     transform=plt.gca().transAxes,
+                     fontsize=12,
+                     ha='right', va='bottom',
+                     bbox=dict(facecolor='white', alpha=0.7, edgecolor='gray'))
+            
+            # Print slope and intercept
+            slope, intercept = coeffs
+            print(f"Trendline: y = {slope:.3f}x + {intercept:.3f}")
+            
+            plt.xlabel('Success Percentage (%)')
+            plt.ylabel('Same Rat Both Rewards Percentage (%)')
+            plt.title('Success Percentage vs. Same Rat Reward Collection Across Sessions')
+            plt.legend()
+            plt.grid(True, linestyle='--', alpha=0.7)
+            plt.xlim(0, 100)
+            plt.ylim(0, 100)
+            plt.tight_layout()
+            if self.save:
+                plt.savefig(f'{self.prefix}SuccessVsSameRatScatter.png')
+            plt.show()
+            plt.close()
+        
         print(f"Overall: {same_rat_both_rewards}/{total_successful_trials} successful trials ({overall_same_rat_percentage:.1f}%) had the same rat collecting both rewards.")
         print(f"Average percentage of dominant rat collecting both rewards per session: {avg_dominant_rat_percentage:.1f}%")
 
@@ -3284,15 +3348,15 @@ initialNanList = arr[5]
 
 
 '''
-lev_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/ExampleLevFile.csv"]
+lev_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/ExampleLevFile.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/ExampleLevFile.csv"]
 
-mag_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/ExampleMagFile.csv"]
+mag_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/ExampleMagFile.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/ExampleMagFile.csv"]
 
-pos_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/18_nanerror_test.h5"]
+pos_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/18_nanerror_test.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/18_nanerror_test.h5"]
 
-fpsList = [30]
-totFramesList = [14000]
-initialNanList = [0.1]
+fpsList = [30, 30]
+totFramesList = [14000, 1200]
+initialNanList = [0.1, 0.5]
 '''
 
 
