@@ -2766,7 +2766,7 @@ class multiFileGraphs:
     
             for trial_idx in range(num_trials):
                 start_time = start_times[trial_idx]
-                if (start_time[trial_idx] == None):
+                if (start_times[trial_idx] == None):
                     continue
                 
                 if (start_time is None):
