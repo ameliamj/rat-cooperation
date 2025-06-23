@@ -292,6 +292,7 @@ class multiFileGraphsCategories:
         # Iterate through each experimental group (category)
         for i, group in enumerate(self.allFileGroupExperiments):
             individual_datapoints.append([])  # Holds datapoints for this category
+            datapoint_colors.append([])  # Holds datapoints for this category
             totalSucc = 0
             totalTrials = 0
     
@@ -365,8 +366,8 @@ class multiFileGraphsCategories:
         legend_patches = [
             Patch(color='red', label='Threshold > 3'),
             Patch(color='orange', label='Threshold > 2'),
-            Patch(color='purple', label='Threshold > 1'),
-            Patch(color='blue', label='Threshold > 0'),
+            Patch(color='blue', label='Threshold > 1'),
+            Patch(color='black', label='Threshold > 0'),
             Patch(color='gray', label='Threshold ≤ 0')
         ]
         plt.legend(handles=legend_patches)
@@ -795,7 +796,6 @@ levFiles = [dataTransparent[0], dataTranslucent[0], dataOpaque[0]]
 magFiles = [dataTransparent[1], dataTranslucent[1], dataOpaque[1]]
 posFiles = [dataTransparent[2], dataTranslucent[2], dataOpaque[2]]
 categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["Transparent", "Translucent", "Opaque"])
-
 
 
 print("0")
