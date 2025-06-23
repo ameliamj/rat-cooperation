@@ -2761,13 +2761,15 @@ class multiFileGraphs:
             
             # Get trial start times
             start_times = lev.returnTimeStartTrials()
+            end_times = lev.returnTimeEndTrials()
             
             idx_counter = 0
     
             for trial_idx in range(num_trials):
                 start_time = start_times[trial_idx]
+                end_time = end_times[trial_idx]
                 
-                if (start_time is None or np.isnan(start_time)):
+                if (start_time is None or np.isnan(start_time) or end_time is None or np.isnan(end_time)):
                     idx_counter += 1
                     continue
                 press_time = first_press_times[trial_idx - idx_counter]
@@ -2783,6 +2785,7 @@ class multiFileGraphs:
                 rat_id = int(rat_id)
                 press_frame = int(press_time * fps)
                 start_frame = int(start_time * fps)
+                end_frame = int(end_time * fps)
                 
                 numFrames = (press_frame - start_frame)
                 if (numFrames == 0):
@@ -2795,15 +2798,19 @@ class multiFileGraphs:
                     #rat1_waiting_times.append(0)
                     idx_counter += 1
                     continue
-                
-                total_trial_frames += numFrames
     
                 # Get locations for both rats in the trial window
-                rat0_locations = pos.returnMouseLocation(0)[start_frame:press_frame]
-                rat1_locations = pos.returnMouseLocation(1)[start_frame:press_frame]
+                rat0_locations_min = pos.returnMouseLocation(0)[start_frame:press_frame]
+                rat1_locations_min = pos.returnMouseLocation(1)[start_frame:press_frame]
+                
+                rat0_locations = pos.returnMouseLocation(0)[start_frame:end_frame]
+                rat1_locations = pos.returnMouseLocation(1)[start_frame:end_frame]
                 
                 # Ensure both lists are the same length
                 frame_count = min(len(rat0_locations), len(rat1_locations))
+                frame_count_min = min(len(rat0_locations_min), len(rat1_locations_min))
+                
+                total_trial_frames += numFrames
                 
                 # Latency to lever area entry
                 def latency_to_lever(locations):
@@ -2844,28 +2851,30 @@ class multiFileGraphs:
                         continue
                     in_lever = (rat0_locations[bin_frame] in ['lev_top', 'lev_bottom']) or \
                                (rat1_locations[bin_frame] in ['lev_top', 'lev_bottom'])
+                               
+                    print("in_lever: ", in_lever)
                     occupancy_curve[bin_idx] += in_lever
                     trial_counts[bin_idx] += 1
                 
                 # Count total waiting frames: any frame where at least one rat is at a lever
                 total_waiting_frames += sum(
-                    (rat0_locations[i] in ['lev_top', 'lev_bottom']) or
-                    (rat1_locations[i] in ['lev_top', 'lev_bottom'])
-                    for i in range(frame_count)
+                    (rat0_locations_min[i] in ['lev_top', 'lev_bottom']) or
+                    (rat1_locations_min[i] in ['lev_top', 'lev_bottom'])
+                    for i in range(frame_count_min)
                 )
                 
                 # Per-frame: both rats waiting (synchronous waiting)
                 synchronous_waiting = sum(
-                    (rat0_locations[i] in ['lev_top', 'lev_bottom']) and
-                    (rat1_locations[i] in ['lev_top', 'lev_bottom'])
-                    for i in range(frame_count)
+                    (rat0_locations_min[i] in ['lev_top', 'lev_bottom']) and
+                    (rat1_locations_min[i] in ['lev_top', 'lev_bottom'])
+                    for i in range(frame_count_min)
                 )
                 synchronous_waiting_normalized = synchronous_waiting / frame_count if frame_count > 0 else 0 # Standardize by dividing by total frames in the trial
                 synchronous_waiting_frames.append(synchronous_waiting)
     
                 # Count frames where each rat is in levTop or levBot individually
-                rat0_waiting = sum(1 for loc in rat0_locations if loc in ['lev_top', 'lev_bottom'])
-                rat1_waiting = sum(1 for loc in rat1_locations if loc in ['lev_top', 'lev_bottom'])
+                rat0_waiting = sum(1 for loc in rat0_locations_min if loc in ['lev_top', 'lev_bottom'])
+                rat1_waiting = sum(1 for loc in rat1_locations_min if loc in ['lev_top', 'lev_bottom'])
                 
                 #Standardize rat0_waiting and rat1_waiting
                 rat0_waiting /= numFrames
@@ -3093,6 +3102,7 @@ class multiFileGraphs:
 
 def getFiltered():
     fe = fileExtractor(filtered)
+    fe.data = fe.deleteBadNaN()
     fpsList, totFramesList = fe.returnFPSandTotFrames()
     initial_nan_list = fe.returnNaNPercentage()
     #print("initial_nan_list: ", initial_nan_list)
