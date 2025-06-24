@@ -2,7 +2,7 @@
 csvPath = '/gpfs/radev/project/saxena/drb83/rat-cooperation/David/Behavioral_Quantification/Sorted_Data_Files/dyed_preds_all_valid.csv';
 
 % Read the table
-T = readtable(csvPath);
+T = readtable(csvPath, 'VariableNamingRule', 'preserve');
 
 % Initialize file path list
 filePaths = {};
