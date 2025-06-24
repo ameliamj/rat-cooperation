@@ -699,7 +699,7 @@ class levLoader:
         """
         if self.data is None or self.data.empty:
             return set()
-        press_data = self.data[(self.data['coopSucc'] == 1) & (self.data['RatID'] == rat_id)]
+        press_data = self.data[(self.data['RatID'] == rat_id)]
         frames = (press_data['AbsTime'] * self.fps).astype(int)
         return set(frames)
         

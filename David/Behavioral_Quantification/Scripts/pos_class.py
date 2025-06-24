@@ -15,6 +15,8 @@ import shutil
 import subprocess
 from pathlib import Path
 from shapely.geometry import LineString, Polygon
+from mag_class import magLoader
+from lev_class import levLoader
 
 
 class posLoader:
@@ -554,7 +556,9 @@ class posLoader:
         
         # Check if gaze is facing left (negative x-direction)
         # Gaze vector's x-component should be negative and significant
-        return gaze_vector[0] < -1e-6  # Small threshold to avoid numerical noise
+        print("gaze_vector: ", gaze_vector)
+        print("gaze_vector[0]: ", gaze_vector[0])
+        return gaze_vector[0] < -20  # Small threshold to avoid numerical noise
     
     def approachingMagazine(self, rat_id, t):
         """
@@ -586,15 +590,17 @@ class posLoader:
         
         # Check if gaze is facing right (positive x-direction)
         # Gaze vector's x-component should be positive and significant
-        return gaze_vector[0] > 1e-6  # Small threshold to avoid numerical noise
+        return gaze_vector[0] > 20  # Small threshold to avoid numerical noise
     
 def visualize_gaze_overlay(
     video_path,
     loader,
+    lev,
+    mag,
     mouseID=0,
     save_path="output.mp4",
     start_frame=0,
-    max_frames=600,
+    max_frames=400,
     gaze_length=250
 ):
     '''
@@ -636,6 +642,17 @@ def visualize_gaze_overlay(
     is_still = loader.returnIsStill(mouseID)
     mouse_region = loader.returnMouseLocation(mouseID)
     other_region = loader.returnMouseLocation(1 - mouseID)
+    
+    # State-related data
+    state_names = ["idle", "approaching lever", "approaching reward", "waiting", "pressed", "reward taken", "exploring", "false mag"]
+    pos_data = loader.getHeadBodyTrajectory(mouseID).T  # Shape: (num_frames, 2)
+    velocities = loader.computeVelocity(mouseID)
+    lever_zone = loader.getLeverZone(mouseID)
+    reward_zone = loader.getRewardZone(mouseID)
+    press_frames = lev.getLeverPressFrames(mouseID)
+    reward_frames = mag.getRewardReceivedFrames(mouseID)
+    false_mag_entry = mag.getEnteredMagFrames(mouseID)
+    print("Reward_Frames: ", reward_frames)
     
     self_intersecting_rat1 = loader.checkSelfIntersection(1)
     #print("self_intersecting_rat1: ", self_intersecting_rat1)
@@ -738,7 +755,38 @@ def visualize_gaze_overlay(
 
         for j in range(len(polygon_points) - 1):
             cv2.line(frame, polygon_points[j], polygon_points[j+1], (128, 128, 128), 1)
-
+            
+        # Compute and display state
+        if np.any(np.isnan(pos_data[frame_idx])):
+            state = 6  # exploring (NaN case)
+        else:
+            x, y = pos_data[frame_idx]
+            vel = velocities[frame_idx]
+            if (frame_idx>2):
+                vel_before = np.mean(velocities[frame_idx - 2:frame_idx])
+            else:
+                vel_before = 0
+            
+        
+            cv2.putText(frame, f"Vel: {vel}", (10, height - 60), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
+            if frame_idx in press_frames:
+                state = 4  # pressed
+            elif frame_idx in reward_frames:
+                state = 5  # reward taken
+            elif frame_idx in false_mag_entry:
+                state = 7 #mag entered but no reward
+            elif lever_zone[frame_idx]:
+                state = 3  # waiting
+            elif vel > 8 and loader.approachingMagazine(mouseID, frame_idx):
+                state = 2  # approaching reward
+            elif vel < 10 and vel_before < 10:
+                state = 0  # idle
+            elif vel > 8 and loader.approachingLever(mouseID, frame_idx):
+                state = 1  # approaching lever
+            else:
+                state = 6  # exploring
+        cv2.putText(frame, f"State: {state_names[state]}", (10, height - 20), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
+        
         frame_filename = temp_dir / f"frame_{frame_count:05d}.png"
         cv2.imwrite(str(frame_filename), frame)
         print (f"Frame {frame_count}")
@@ -769,6 +817,8 @@ def visualize_gaze_overlay(
     
  
 h5_file = "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/4_nanerror_test.h5"
+lev_file = "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/4_nanerror_lev.csv"
+mag_file = "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/4_nanerror_mag.csv"
 video_file = "/Users/david/Downloads/4%_nan_test.mp4"    
 
 #h5_file = "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/18_nanerror_test.h5"
@@ -777,10 +827,12 @@ video_file = "/Users/david/Downloads/4%_nan_test.mp4"
 #h5_file = "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G.predictions.h5"
 #video_file = "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G.mp4"    
 
-
-#loader = posLoader(h5_file)
-#visualize_gaze_overlay(video_file, loader, mouseID=0, save_path = "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Graphs/Videos/18percentErrorTestVid.mp4")
-
+#'''
+loader = posLoader(h5_file)
+lev = levLoader(lev_file)
+mag = magLoader(mag_file)
+visualize_gaze_overlay(video_file, loader, lev, mag, mouseID=0, save_path = "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Graphs/Videos/4percentErrorTestVid_states.mp4")
+#'''
     
     
     

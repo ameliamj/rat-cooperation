@@ -3344,7 +3344,7 @@ class multiFileGraphs:
             6 - exploring
         """
         
-        state_names = ["idle", "approaching lever", "approaching reward", "waiting", "pressed", "reward taken", "exploring"]
+        state_names = ["idle", "approaching lever", "approaching reward", "waiting", "pressed", "reward taken", "exploring", "false mag"]
         num_states = len(state_names)
         transition_counts = np.zeros((num_states, num_states))
     
@@ -3358,12 +3358,13 @@ class multiFileGraphs:
             
             for rat_id in [0, 1]:
                 pos_data = pos.getHeadBodyTrajectory(rat_id).T  # shape: (num_frames, 2) for x, y
-                print("pos_data: ", pos_data[0])
+                #print("pos_data: ", pos_data[0])
                 velocities = pos.computeVelocity(rat_id)
                 lever_zone = pos.getLeverZone(rat_id)
                 reward_zone = pos.getRewardZone(rat_id)
                 press_frames = lev.getLeverPressFrames(rat_id)
                 reward_frames = mag.getRewardReceivedFrames(rat_id)
+                false_mag_entry = mag.getEnteredMagFrames(rat_id)
     
                 state_sequence = []
                 for t in range(total_frames):
@@ -3371,17 +3372,24 @@ class multiFileGraphs:
                     vel = velocities[t]
     
                     # Determine state
+                    if (t > 2):
+                        vel_before = np.mean(velocities[t - 2:t])
+                    else:
+                        vel_before = 0
+                                    
                     if t in press_frames:
                         state = 4  # pressed
                     elif t in reward_frames:
                         state = 5  # reward taken
+                    elif t in false_mag_entry:
+                        state = 7 #mag entered but no reward
                     elif lever_zone[t]:
                         state = 3  # waiting
-                    elif vel > 2.5 and pos.approachingMagazine(rat_id, t):
+                    elif vel > 8 and pos.approachingMagazine(rat_id, t):
                         state = 2  # approaching reward
-                    elif vel < 0.5:
+                    elif vel < 10 and vel_before < 10:
                         state = 0  # idle
-                    elif vel > 2.5 and pos.approachingLever(rat_id, t):
+                    elif vel > 8 and pos.approachingLever(rat_id, t):
                         state = 1  # approaching lever
                     else:
                         state = 6  # exploring
