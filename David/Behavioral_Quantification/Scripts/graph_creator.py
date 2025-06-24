@@ -197,7 +197,7 @@ class multiFileGraphsCategories:
                 file_group.append(exp)
             self.allFileGroupExperiments.append(file_group)
         
-        self.prefix = "filtered_adef_"
+        self.prefix = "filtered_"
         self.endSaveName = ""
         for cat in categoryNames:    
             self.endSaveName += f"_{cat}"
@@ -763,7 +763,7 @@ posFiles = [["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/B
 
 #Paired Testing vs. Training Cooperation
 
-'''
+
 print("Running Paired Testing vs Training Cooperation")
 dataPT = getOnlyPairedTesting()
 dataTC = getOnlyTrainingCoop()
@@ -772,9 +772,10 @@ levFiles = [dataPT[0], dataTC[0]]
 magFiles = [dataPT[1], dataTC[1]]
 posFiles = [dataPT[2], dataTC[2]]
 categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["Paired_Testing", "Training_Cooperation"])
-'''
+categoryExperiments.compareSuccesfulTrials()
 
-'''
+
+
 #Unfamiliar vs. Training Partners
 print("Running UF vs TP")
 dataUF = getOnlyUnfamiliar() #Unfamiliar
@@ -784,10 +785,12 @@ levFiles = [dataUF[0], dataTP[0]]
 magFiles = [dataUF[1], dataTP[1]]
 posFiles = [dataUF[2], dataTP[2]]
 categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["Unfamiliar", "Training Partners"])
-'''
+categoryExperiments.compareSuccesfulTrials()
+
+
 
 #Transparent vs. Translucent vs. Opaque
-'''
+
 print("Running Transparency")
 dataTransparent = getOnlyTransparent() #Transparent
 dataTranslucent = getOnlyTranslucent() #Translucent
@@ -797,21 +800,22 @@ levFiles = [dataTransparent[0], dataTranslucent[0], dataOpaque[0]]
 magFiles = [dataTransparent[1], dataTranslucent[1], dataOpaque[1]]
 posFiles = [dataTransparent[2], dataTranslucent[2], dataOpaque[2]]
 categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["Transparent", "Translucent", "Opaque"])
-'''
+categoryExperiments.compareSuccesfulTrials()
+
 
 '''
 print("0")
-categoryExperiments.compareGazeEventsCategories()
+#categoryExperiments.compareGazeEventsCategories()
 print("1")
 categoryExperiments.compareSuccesfulTrials()
 print("2")
 #categoryExperiments.compareIPI()
 print("3")
-categoryExperiments.rePressingBehavior()
+#categoryExperiments.rePressingBehavior()
 print("4")
-categoryExperiments.gazeAlignmentAngle()
+#categoryExperiments.gazeAlignmentAngle()
 print("5")
-categoryExperiments.printSummaryStats()
+#categoryExperiments.printSummaryStats()
 print("Done")
 '''
 
@@ -3483,8 +3487,8 @@ initialNanList = [0.1, 0.5]
 
 
 print("Start MultiFileGraphs Regular")
-experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "", save=True)
-experiment.stateTransitionModel()
+#experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "", save=True)
+#experiment.stateTransitionModel()
 #experiment.percentSameRatTakesBothRewards()
 #experiment.successRateVsThresholdPlot()
 

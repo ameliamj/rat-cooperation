@@ -102,6 +102,15 @@ class fileExtractor:
         if (saveFile):
             df_copy.to_csv("dyed_preds_all_valid.csv", index=False)
 
+    def filterOutCNO(self):
+        self.data = self.data[~self.data['session'].str.endswith('CNO')]
+    
+    def filterOutVEH(self):
+        self.data = self.data[~self.data['session'].str.endswith('VEH')]
+    
+    def filterOutFiberPho(self):
+        self.data = self.data[self.data['fiber pho'] == False]
+
     def deleteAllButFirstPTvsTC(self, saveFile = False):
         """
         For each unique mice pair, retain only:
@@ -216,6 +225,7 @@ class fileExtractor:
             #self.deleteAllButFirstPTvsTC()
             self.getTrainingPartner(sortOut=False)
             self.getTransparentSessions(sortOut=False)
+            self.filterOutCNO()
             
         self.data = self.data[self.data['test/train'] == 'train']
         
@@ -234,6 +244,7 @@ class fileExtractor:
             #self.deleteAllButFirstPTvsTC()
             self.getTrainingPartner(sortOut=False)
             self.getTransparentSessions(sortOut=False)
+            self.filterOutCNO()
         
         self.data = self.data[self.data['test/train'] == 'test']
         
@@ -252,6 +263,7 @@ class fileExtractor:
         if (sortOut):
             self.getPairedTestingSessions(sortOut=False)
             self.getTransparentSessions(sortOut=False)
+            self.filterOutCNO()
             #self.deleteAllButFirstFamiliarity()
             #print("deleted all but first")
         
@@ -271,6 +283,7 @@ class fileExtractor:
         if (sortOut):
             self.getPairedTestingSessions(sortOut=False)
             self.getTransparentSessions(sortOut=False)
+            self.filterOutCNO()
             #self.deleteAllButFirstFamiliarity()
         
         self.data = self.data[self.data['familiarity'] == 'UF']
@@ -291,6 +304,9 @@ class fileExtractor:
         if (sortOut):
             self.getPairedTestingSessions(sortOut=False)
             self.getTrainingPartner(sortOut=False)
+            self.filterOutCNO()
+            self.filterOutVEH()
+            self.filterOutFiberPho()
             #self.deleteAllButFirstTransparency()
         
         self.data = self.data[
@@ -312,6 +328,9 @@ class fileExtractor:
             self.getPairedTestingSessions(sortOut=False)
             #self.deleteAllButFirstTransparency()
             self.getTrainingPartner(sortOut=False)
+            self.filterOutCNO()
+            self.filterOutVEH()
+            self.filterOutFiberPho()
         
         self.data = self.data[
             self.data['session'].str.endswith('Translucent', na=False)
@@ -333,6 +352,9 @@ class fileExtractor:
             self.getPairedTestingSessions(sortOut=False)
             #self.deleteAllButFirstTransparency()
             self.getTrainingPartner(sortOut=False)
+            self.filterOutCNO()
+            self.filterOutVEH()
+            self.filterOutFiberPho()
         
         self.data = self.data[
             self.data['session'].str.endswith('Opaque', na=False)
