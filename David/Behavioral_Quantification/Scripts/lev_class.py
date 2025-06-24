@@ -18,6 +18,7 @@ class levLoader:
         self.categories = ["TrialNum", "LeverNum", "AbsTime", "TrialCond", "DispTime", "TrialTime", "coopTS", "coopSucc", "Hit", "TrialEnd", "AnimalID", "RatID"]
         self.endFrame = endFrame
         self.fps = fps
+        print("Columns in DataFrame:", self.data.columns.tolist())
         
     def _load_data(self): #Uses pandas to read csv file and store in a pandas datastructure
         """
