@@ -765,7 +765,7 @@ posFiles = [["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/B
 
 
 print("Running Paired Testing vs Training Cooperation")
-dataPT = getOnlyPairedTesting()
+'''dataPT = getOnlyPairedTesting()
 dataTC = getOnlyTrainingCoop()
 
 levFiles = [dataPT[0], dataTC[0]]
@@ -773,7 +773,7 @@ magFiles = [dataPT[1], dataTC[1]]
 posFiles = [dataPT[2], dataTC[2]]
 categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["Paired_Testing", "Training_Cooperation"])
 #categoryExperiments.compareSuccesfulTrials()
-
+'''
 
 '''
 #Unfamiliar vs. Training Partners
@@ -815,7 +815,7 @@ print("3")
 print("4")
 #categoryExperiments.gazeAlignmentAngle()
 print("5")
-categoryExperiments.printSummaryStats()
+#categoryExperiments.printSummaryStats()
 print("Done")
 
 
@@ -2736,7 +2736,11 @@ class multiFileGraphs:
             lev = exp.lev
             pos = exp.pos
             fps = exp.fps
-    
+            
+            #framesWaitingBeforeTrialStarted
+            maxFramesWaitingBeforeTrialStarted = []
+            framesWaitedSucc = 0
+            
             # Get first press absolute times and rat IDs per trial
             first_press_times = lev.returnFirstPressAbsTimes()
             first_press_rat_ids = lev.returnRatIDFirstPressTrial()
@@ -2768,7 +2772,9 @@ class multiFileGraphs:
             end_times = lev.returnTimeEndTrials()
             
             idx_counter = 0
-    
+            
+            succTrials = lev.returnSuccessTrials()
+            
             for trial_idx in range(num_trials):
                 start_time = start_times[trial_idx]
                 end_time = end_times[trial_idx]
@@ -2785,11 +2791,16 @@ class multiFileGraphs:
                     #rat0_waiting_times.append(0)
                     #rat1_waiting_times.append(0)
                     continue
-    
+                
+                
                 rat_id = int(rat_id)
                 press_frame = int(press_time * fps)
                 start_frame = int(start_time * fps)
                 end_frame = int(end_time * fps)
+                
+                print("\nStart Frame: ", start_frame)
+                print("\nPress Frame: ", press_frame)
+                print("\nEnd Frame: ", end_frame)
                 
                 numFrames = (press_frame - start_frame)
                 if (numFrames == 0):
@@ -2802,13 +2813,44 @@ class multiFileGraphs:
                     #rat1_waiting_times.append(0)
                     idx_counter += 1
                     continue
-    
-                # Get locations for both rats in the trial window
-                rat0_locations_min = pos.returnMouseLocation(0)[start_frame:press_frame]
-                rat1_locations_min = pos.returnMouseLocation(1)[start_frame:press_frame]
                 
-                rat0_locations = pos.returnMouseLocation(0)[start_frame:end_frame]
-                rat1_locations = pos.returnMouseLocation(1)[start_frame:end_frame]
+                rat0_locations_before = pos.returnMouseLocation(0)
+                rat1_locations_before = pos.returnMouseLocation(1)
+                
+                t = start_frame
+                stillIn0 = True
+                stillIn1 = True
+                countWait0 = 0
+                countWait1 = 0
+                
+                while(t >= 0 and t < len(rat0_locations_before) and t < len(rat1_locations_before) and rat0_locations_before[t] is not None):
+                    t -= 1
+                    
+                    if (rat0_locations_before[t] in ['lev_top', 'lev_bottom'] and stillIn0):
+                        countWait0 += 1
+                    else:
+                        stillIn0 = False
+                    
+                    if (rat1_locations_before[t] in ['lev_top', 'lev_bottom'] and stillIn1):
+                        countWait1 += 1
+                    else:
+                        stillIn1 = False
+                        
+                    if (stillIn0 == False and stillIn1 == False):
+                        break
+                    
+                maxFramesWaitingBeforeTrialStarted.append(max(countWait0, countWait1))
+                
+                if (succTrials[trial_idx]):
+                    framesWaitedSucc += max(countWait0, countWait1)
+                    
+                
+                # Get locations for both rats in the trial window
+                rat0_locations_min = rat0_locations_before[start_frame:press_frame]
+                rat1_locations_min = rat1_locations_before[start_frame:press_frame]
+                
+                rat0_locations = rat0_locations_before[start_frame:end_frame]
+                rat1_locations = rat1_locations_before[start_frame:end_frame]
                 
                 # Ensure both lists are the same length
                 frame_count = min(len(rat0_locations), len(rat1_locations))
@@ -2830,8 +2872,10 @@ class multiFileGraphs:
                     rat0_latencies.append(rat0_lat)
                 if rat1_lat is not None:
                     rat1_latencies.append(rat1_lat)
-                    
-                for i in range(frame_count):
+                
+                print("frame_count is: ", frame_count)
+                print("len(rat0_locations_min): ", len(rat0_locations_min))
+                for i in range(frame_count_min):
                     r0 = rat0_locations_min[i]
                     r1 = rat1_locations_min[i]
                     r0_in = r0 in ['lev_top', 'lev_bottom']
@@ -2849,23 +2893,39 @@ class multiFileGraphs:
                     else:
                         none_total += 1
                 
+                bin_edges = np.linspace(0, frame_count, NUM_BINS + 1, dtype=int)
+
                 for bin_idx in range(NUM_BINS):
-                    bin_frame = int((bin_idx / NUM_BINS) * frame_count)
-                    if bin_frame >= frame_count:
+                    start_frame = bin_edges[bin_idx]
+                    end_frame = bin_edges[bin_idx + 1]
+                
+                    # Ensure we stay within frame limits
+                    if start_frame >= frame_count:
                         continue
-                    in_lever = (rat0_locations[bin_frame] in ['lev_top', 'lev_bottom']) or \
-                               (rat1_locations[bin_frame] in ['lev_top', 'lev_bottom'])
-                               
-                    #print("in_lever: ", in_lever)
+                
+                    # Slice the frame window for this bin
+                    rat0_bin = rat0_locations[start_frame:end_frame]
+                    rat1_bin = rat1_locations[start_frame:end_frame]
+                
+                    # Count how many frames either rat is in lever zone
+                    in_lever = sum(
+                        (loc in ['lev_top', 'lev_bottom']) for loc in rat0_bin
+                    ) + sum(
+                        (loc in ['lev_top', 'lev_bottom']) for loc in rat1_bin
+                    )
+                
                     occupancy_curve[bin_idx] += in_lever
-                    trial_counts[bin_idx] += 1
+                    trial_counts[bin_idx] += (end_frame - start_frame)
                 
                 # Count total waiting frames: any frame where at least one rat is at a lever
-                total_waiting_frames += sum(
+                
+                waitingFrames = sum(
                     (rat0_locations_min[i] in ['lev_top', 'lev_bottom']) or
                     (rat1_locations_min[i] in ['lev_top', 'lev_bottom'])
                     for i in range(frame_count_min)
                 )
+                total_waiting_frames += waitingFrames
+                print("waitingFrames: ", waitingFrames)
                 
                 # Per-frame: both rats waiting (synchronous waiting)
                 synchronous_waiting = sum(
@@ -2881,8 +2941,8 @@ class multiFileGraphs:
                 rat1_waiting = sum(1 for loc in rat1_locations_min if loc in ['lev_top', 'lev_bottom'])
                 
                 #Standardize rat0_waiting and rat1_waiting
-                rat0_waiting /= numFrames
-                rat1_waiting /= numFrames
+                rat0_waiting #/= numFrames
+                rat1_waiting #/= numFrames
                 
                 rat0_waiting_times.append(rat0_waiting)
                 rat1_waiting_times.append(rat1_waiting)
@@ -2891,10 +2951,12 @@ class multiFileGraphs:
             #if (total_trial_frames != exp.endFrame): 
                 #print("Inequal Frames, (self, counted): ", exp.endFrame, ", ", total_trial_frames)
             
+            avgWaitingBeforeTrialStarted = np.mean(maxFramesWaitingBeforeTrialStarted)
+            
             return (rat0_waiting_times, rat1_waiting_times, waiting_symmetry, rat0_latencies, rat1_latencies,
                 synchronous_waiting_frames, total_trial_frames, total_waiting_frames,
                 same_lever_total, opposite_lever_total, none_total, one_total, both_total,
-                occupancy_curve, trial_counts)
+                occupancy_curve, trial_counts, avgWaitingBeforeTrialStarted, framesWaitedSucc)
 
         
         # Aggregate data across experiments
@@ -2906,6 +2968,12 @@ class multiFileGraphs:
         rat1_lat_per_trial = defaultdict(list)
         total_waiting_frames = 0
         total_trial_frames = 0
+        total_trials_all = 0
+        total_succ_trials = 0
+        
+        maxWaitBeforeMeans = []
+        maxWaitBeforeSucc = 0
+        maxWaitBeforeAll = 0
         
         same_lever_sum = 0
         opposite_lever_sum = 0
@@ -2919,14 +2987,24 @@ class multiFileGraphs:
             lev = exp.lev
             pos = exp.pos
             
+            numSucc = lev.returnNumSuccessfulTrials()
+            
             (rat0_times, rat1_times, symmetry, rat0_lat, rat1_lat, 
              sync_frames, trial_frames, waiting_frames,
              same_lever, opposite_lever, none, one, both,
-             occupancy_curve, trial_counts) = findWaitingTimeTrials(exp)
+             occupancy_curve, trial_counts, avgWaitBeforeSession, totalWaitBeforeSucc) = findWaitingTimeTrials(exp)
+            
+            maxWaitBeforeMeans.append(avgWaitBeforeSession)
             
             total_trials = exp.lev.returnNumTotalTrials()
             if total_trials == 0:
                 continue
+            
+            maxWaitBeforeAll += (avgWaitBeforeSession * total_trials)
+            
+            total_trials_all += total_trials
+            maxWaitBeforeSucc += totalWaitBeforeSucc
+            total_succ_trials += numSucc
             
             # Calculate average waiting time for the experiment (both rats combined)
             valid_times = [t for t in rat0_times + rat1_times if t > 0]
@@ -2972,7 +3050,33 @@ class multiFileGraphs:
         #
         
         
-        # Scatterplot: Avg Waiting Time vs. Success Rate
+        #Bar Chart: Avg Wait Before Successful Trials vs. Avg Wait Before All Trials
+        # Compute averages
+        avg_wait_succ_trials = maxWaitBeforeSucc / total_succ_trials if total_succ_trials > 0 else 0
+        avg_wait_all_trials = maxWaitBeforeAll / total_trials_all if total_trials_all > 0 else 0
+        
+        # Create bar plot
+        labels = ['Successful Trials', 'All Trials']
+        wait_times = [avg_wait_succ_trials, avg_wait_all_trials]
+        
+        plt.figure(figsize=(6, 5))
+        bars = plt.bar(labels, wait_times, color=['green', 'gray'])
+        plt.ylabel('Average Wait Time (frames or seconds)')
+        plt.title('Average Wait Time: Successful vs. All Trials')
+        
+        # Annotate values on top of bars
+        for bar in bars:
+            height = bar.get_height()
+            plt.text(bar.get_x() + bar.get_width()/2., height + 0.01, f'{height:.2f}', ha='center', va='bottom')
+        
+        plt.tight_layout()
+        if self.save:
+            plt.savefig(f"{self.prefix}barplot_avgWaitBefore_successfulvsAllTrials.png")
+        plt.show()
+        plt.close()
+        
+        
+        # Scatterplot: Avg Waiting Time Prior to Press vs. Success Rate
         if len(avg_waiting_times) >= 2 and len(success_rates) >= 2:
             plt.figure(figsize=(8, 6))
             plt.scatter(avg_waiting_times, success_rates, alpha=0.7, color='blue', label='Experiments')
@@ -2986,18 +3090,47 @@ class multiFileGraphs:
                 plt.text(0.95, 0.05, f"$R^2$ = {r_squared:.3f}", transform=plt.gca().transAxes,
                          ha='right', va='bottom', fontsize=12, bbox=dict(facecolor='white', edgecolor='gray'))
     
-            plt.xlabel('Average Waiting Time (frames)')
+            plt.xlabel('Average Waiting Time before Press (frames)')
             plt.ylabel('Cooperative Success Rate')
-            plt.title('Waiting Time vs. Cooperative Success Rate')
+            plt.title('Waiting Time during Trial vs. Cooperative Success Rate')
             plt.legend()
             plt.grid(True)
             plt.tight_layout()
             if self.save:
-                plt.savefig(f"{self.prefix}waiting_time_vs_success_rate.png")
+                plt.savefig(f"{self.prefix}waiting_time_during_trial_vs_success_rate.png")
             plt.show()
             plt.close()
         else:
             print("Insufficient data to create scatterplot.")
+            
+        
+        # Scatterplot: Avg Waiting Time Before vs. Success Rate
+        if len(maxWaitBeforeMeans) >= 2 and len(success_rates) >= 2:
+            plt.figure(figsize=(8, 6))
+            plt.scatter(maxWaitBeforeMeans, success_rates, alpha=0.7, color='blue', label='Experiments')
+    
+            # Add trendline and R²
+            if len(set(maxWaitBeforeMeans)) >= 2:
+                slope, intercept, r_value, _, _ = linregress(maxWaitBeforeMeans, success_rates)
+                r_squared = r_value ** 2
+                x_vals = np.linspace(min(maxWaitBeforeMeans), max(maxWaitBeforeMeans), 100)
+                plt.plot(x_vals, slope * x_vals + intercept, color='red', linestyle='--', label='Trendline')
+                plt.text(0.95, 0.05, f"$R^2$ = {r_squared:.3f}", transform=plt.gca().transAxes,
+                         ha='right', va='bottom', fontsize=12, bbox=dict(facecolor='white', edgecolor='gray'))
+    
+            plt.xlabel('Average Waiting Time (frames)')
+            plt.ylabel('Cooperative Success Rate')
+            plt.title('Waiting Time Before vs. Cooperative Success Rate')
+            plt.legend()
+            plt.grid(True)
+            plt.tight_layout()
+            if self.save:
+                plt.savefig(f"{self.prefix}waiting_time_before_vs_success_rate.png")
+            plt.show()
+            plt.close()
+        else:
+            print("Insufficient data to create scatterplot.")
+        
     
         # Pie Chart: Percentage of Time Spent Waiting
         if total_trial_frames > 0:
@@ -3460,8 +3593,8 @@ pos_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/B
 
 fpsList = [30, 30, 30, 30, 30, 30, 30]
 totFramesList = [15000, 26000, 15000, 26000, 15000, 26000, 15000]
-initialNanList = [0.15, 0.12, 0.14, 0.16, 0.3, 0.04, 0.2]'''
-
+initialNanList = [0.15, 0.12, 0.14, 0.16, 0.3, 0.04, 0.2]
+'''
 
 
 arr = getFiltered()
@@ -3473,6 +3606,7 @@ totFramesList = arr[4]
 initialNanList = arr[5]
 
 
+
 '''
 lev_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/ExampleLevFile.csv"]
 
@@ -3480,15 +3614,17 @@ mag_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/B
 
 pos_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/18_nanerror_test.h5"]
 
-fpsList = [30, 30]
-totFramesList = [14000, 1200]
-initialNanList = [0.1, 0.5]
+fpsList = [28]
+totFramesList = [14000]
+initialNanList = [0.1]
 '''
 
 
 print("Start MultiFileGraphs Regular")
-#experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "", save=True)
-#experiment.stateTransitionModel()
+experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "", save=True)
+experiment.waitingStrategy()
+experiment.stateTransitionModel()
+
 #experiment.percentSameRatTakesBothRewards()
 #experiment.successRateVsThresholdPlot()
 
