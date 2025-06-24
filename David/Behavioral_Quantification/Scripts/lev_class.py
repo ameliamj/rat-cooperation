@@ -691,6 +691,17 @@ class levLoader:
         num_true = sum(region_bool)
         num_zones = self.returnNumCooperationSuccessZones()
         return num_true/num_zones
+    
+    def getLeverPressFrames(self, rat_id):
+        """
+        Returns a set of frame indices where the specified rat pressed the lever.
+        Assumes lever press occurs at AbsTime when RatID matches and coopSucc == 1.
+        """
+        if self.data is None or self.data.empty:
+            return set()
+        press_data = self.data[(self.data['coopSucc'] == 1) & (self.data['RatID'] == rat_id)]
+        frames = (press_data['AbsTime'] * self.fps).astype(int)
+        return set(frames)
         
         
 #Testing

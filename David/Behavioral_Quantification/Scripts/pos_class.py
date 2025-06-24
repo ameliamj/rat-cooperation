@@ -493,8 +493,101 @@ class posLoader:
             return total_distance / self.totalFrames
         else:
             return 0
-        
+    
+    def getHeadBodyTrajectory(self, rat_id):
+        """
+        Returns: ndarray of shape (2, num_frames), where each column is the headbase (x, y) position.
+        """
+        return self.data[rat_id, :, self.HB_INDEX, :]
+    
+    def computeVelocity(self, rat_id):
+        """
+        Returns: ndarray of shape (num_frames,), velocity (pixels/frame) of the headbase.
+        """
+        pos = self.getHeadBodyTrajectory(rat_id)  # shape: (2, num_frames)
+        diffs = np.diff(pos, axis=1)
+        speeds = np.linalg.norm(diffs, axis=0)
+        speeds = np.concatenate(([0], speeds))  # Add zero velocity for the first frame
+        return speeds
 
+    def getLeverZone(self, rat_id):
+        """
+        Returns a boolean array where True indicates the rat is in the lever zone.
+        """
+        locations = self.returnMouseLocation(rat_id)
+        return np.array([loc.startswith("lev") for loc in locations])
+
+    def getRewardZone(self, rat_id):
+        """
+        Returns a boolean array where True indicates the rat is in the reward zone.
+        """
+        locations = self.returnMouseLocation(rat_id)
+        return np.array([loc.startswith("mag") for loc in locations])
+    
+    def approachingLever(self, rat_id, t):
+        """
+        Returns True if the rat is facing the lever (left side) and its headbase is in
+        'lev_top', 'lev_bottom', or 'mid' regions at frame t.
+        
+        Args:
+            rat_id (int): 0 or 1, indicating which rat.
+            t (int): Frame index.
+        
+        Returns:
+            bool: True if rat is facing left and in specified regions, False otherwise.
+        """
+        # Check location
+        locations = self.returnMouseLocation(rat_id)
+        if t >= len(locations) or locations[t] not in ['lev_top', 'lev_bottom', 'mid']:
+            return False
+        
+        # Get headbase and nose positions
+        headbase = self.data[rat_id, :, self.HB_INDEX, t]  # Shape: (2,)
+        nose = self.data[rat_id, :, self.NOSE_INDEX, t]    # Shape: (2,)
+        
+        # Check for NaN values
+        if np.any(np.isnan(headbase)) or np.any(np.isnan(nose)):
+            return False
+        
+        # Calculate gaze vector (nose - headbase)
+        gaze_vector = nose - headbase  # Shape: (2,)
+        
+        # Check if gaze is facing left (negative x-direction)
+        # Gaze vector's x-component should be negative and significant
+        return gaze_vector[0] < -1e-6  # Small threshold to avoid numerical noise
+    
+    def approachingMagazine(self, rat_id, t):
+        """
+        Returns True if the rat is facing the magazine (right side) and its headbase is in
+        'mag_top', 'mag_bottom', or 'mid' regions at frame t.
+        
+        Args:
+            rat_id (int): 0 or 1, indicating which rat.
+            t (int): Frame index.
+        
+        Returns:
+            bool: True if rat is facing right and in specified regions, False otherwise.
+        """
+        # Check location
+        locations = self.returnMouseLocation(rat_id)
+        if t >= len(locations) or locations[t] not in ['mag_top', 'mag_bottom', 'mid']:
+            return False
+        
+        # Get headbase and nose positions
+        headbase = self.data[rat_id, :, self.HB_INDEX, t]  # Shape: (2,)
+        nose = self.data[rat_id, :, self.NOSE_INDEX, t]    # Shape: (2,)
+        
+        # Check for NaN values
+        if np.any(np.isnan(headbase)) or np.any(np.isnan(nose)):
+            return False
+        
+        # Calculate gaze vector (nose - headbase)
+        gaze_vector = nose - headbase  # Shape: (2,)
+        
+        # Check if gaze is facing right (positive x-direction)
+        # Gaze vector's x-component should be positive and significant
+        return gaze_vector[0] > 1e-6  # Small threshold to avoid numerical noise
+    
 def visualize_gaze_overlay(
     video_path,
     loader,

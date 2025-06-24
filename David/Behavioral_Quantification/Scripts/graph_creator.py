@@ -10,6 +10,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import math
+import networkx as nx
 #import os
 
 from experiment_class import singleExperiment
@@ -1325,7 +1326,6 @@ class multiFileGraphs:
             self.experiments.append(exp)
         
         print(f"Deleted {deleted_count} experiment(s) due to missing categories.")
-            
     
     def magFileDataAvailabilityGraph(self):
         # Expected column structure
@@ -1646,7 +1646,6 @@ class multiFileGraphs:
         plt.savefig(f"{self.prefix}avg_repress_first_mouse_success_vs_non.png")
         plt.show()
         plt.close()
-
 
     def gazeAlignmentAngleHistogram(self, both_mice=True):
         """
@@ -3175,7 +3174,7 @@ class multiFileGraphs:
             total_rows = len(mag.data)
             non_nan_percentage = (rat_id_count / total_rows * 100) if total_rows > 0 else 0
             
-            if (non_nan_percentage < 93 or total_rows < 50):
+            if (non_nan_percentage < 80 or total_rows < 50):
                 continue
             
             sessions_considered += 1
@@ -3331,6 +3330,103 @@ class multiFileGraphs:
         print(f"Average percentage of dominant rat collecting both rewards per session: {avg_dominant_rat_percentage:.1f}%")
         print(f"Sessions Considered: {sessions_considered}")
 
+    
+    def stateTransitionModel(self):
+        """
+        Constructs a behavioral state transition model based on spatial and event data.
+        States:
+            0 - idle
+            1 - approaching lever
+            2 - approaching reward
+            3 - waiting
+            4 - pressed
+            5 - reward taken
+            6 - exploring
+        """
+        
+        state_names = ["idle", "approaching lever", "approaching reward", "waiting", "pressed", "reward taken", "exploring"]
+        num_states = len(state_names)
+        transition_counts = np.zeros((num_states, num_states))
+    
+        for exp in self.experiments:
+            pos = exp.pos
+            lev = exp.lev
+            mag = exp.mag
+            fps = exp.fps
+    
+            total_frames = min(pos.returnNumFrames(), lev.endFrame)
+            
+            for rat_id in [0, 1]:
+                pos_data = pos.getHeadBodyTrajectory(rat_id).T  # shape: (num_frames, 2) for x, y
+                print("pos_data: ", pos_data[0])
+                velocities = pos.computeVelocity(rat_id)
+                lever_zone = pos.getLeverZone(rat_id)
+                reward_zone = pos.getRewardZone(rat_id)
+                press_frames = lev.getLeverPressFrames(rat_id)
+                reward_frames = mag.getRewardReceivedFrames(rat_id)
+    
+                state_sequence = []
+                for t in range(total_frames):
+                    x, y = pos_data[t]
+                    vel = velocities[t]
+    
+                    # Determine state
+                    if t in press_frames:
+                        state = 4  # pressed
+                    elif t in reward_frames:
+                        state = 5  # reward taken
+                    elif lever_zone[t]:
+                        state = 3  # waiting
+                    elif vel > 2.5 and pos.approachingMagazine(rat_id, t):
+                        state = 2  # approaching reward
+                    elif vel < 0.5:
+                        state = 0  # idle
+                    elif vel > 2.5 and pos.approachingLever(rat_id, t):
+                        state = 1  # approaching lever
+                    else:
+                        state = 6  # exploring
+    
+                    state_sequence.append(state)
+    
+                # Update transition matrix
+                for a, b in zip(state_sequence[:-1], state_sequence[1:]):
+                    transition_counts[a][b] += 1
+    
+        # Normalize to get probabilities
+        row_sums = transition_counts.sum(axis=1)
+        transition_matrix = np.divide(transition_counts, row_sums[:, np.newaxis], where=row_sums[:, np.newaxis] != 0)
+    
+        # --- Heatmap ---
+        plt.figure(figsize=(8, 6))
+        plt.imshow(transition_matrix, cmap='Blues')
+        plt.colorbar(label='Transition Probability')
+        plt.xticks(range(num_states), state_names, rotation=45)
+        plt.yticks(range(num_states), state_names)
+        plt.title("State Transition Probability Matrix")
+        plt.tight_layout()
+        plt.savefig(f"{self.prefix}state_transition_matrix.png")
+        plt.show()
+        plt.close()
+    
+        # --- Network Graph ---
+        G = nx.DiGraph()
+        for i in range(num_states):
+            for j in range(num_states):
+                prob = transition_matrix[i][j]
+                if prob > 0:
+                    G.add_edge(state_names[i], state_names[j], weight=prob)
+    
+        plt.figure(figsize=(10, 8))
+        pos_layout = nx.spring_layout(G, seed=42)
+        weights = [G[u][v]['weight'] * 10 for u, v in G.edges()]
+        nx.draw(G, pos_layout, with_labels=True, node_color='lightblue', node_size=2000,
+                arrows=True, width=weights, edge_color='gray', font_size=10)
+        plt.title("State Transition Network (Edge Width = Frequency)")
+        plt.tight_layout()
+        plt.savefig(f"{self.prefix}state_transition_graph.png")
+        plt.show()
+        plt.close()
+        
 #Testing Multi File Graphs
 #
 #
@@ -3352,8 +3448,8 @@ pos_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/B
 
 fpsList = [30, 30, 30, 30, 30, 30, 30]
 totFramesList = [15000, 26000, 15000, 26000, 15000, 26000, 15000]
-initialNanList = [0.15, 0.12, 0.14, 0.16, 0.3, 0.04, 0.2]
-'''
+initialNanList = [0.15, 0.12, 0.14, 0.16, 0.3, 0.04, 0.2]'''
+
 
 
 arr = getFiltered()
@@ -3366,11 +3462,11 @@ initialNanList = arr[5]
 
 
 '''
-lev_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/ExampleLevFile.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/ExampleLevFile.csv"]
+lev_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/ExampleLevFile.csv"]
 
-mag_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/ExampleMagFile.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/ExampleMagFile.csv"]
+mag_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/ExampleMagFile.csv"]
 
-pos_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/18_nanerror_test.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/18_nanerror_test.h5"]
+pos_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/18_nanerror_test.h5"]
 
 fpsList = [30, 30]
 totFramesList = [14000, 1200]
@@ -3380,7 +3476,8 @@ initialNanList = [0.1, 0.5]
 
 print("Start MultiFileGraphs Regular")
 experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "", save=True)
-experiment.percentSameRatTakesBothRewards()
+experiment.stateTransitionModel()
+#experiment.percentSameRatTakesBothRewards()
 #experiment.successRateVsThresholdPlot()
 
 #experiment.waitingStrategy()

@@ -16,7 +16,7 @@ import pandas as pd
 
 class magLoader: 
     
-    def __init__(self, filename): #Constructor
+    def __init__(self, filename, fps = 30): #Constructor
         self.filename = filename
         self.data = None
         self._load_data()
@@ -26,6 +26,7 @@ class magLoader:
         #print("Data after: ")
         #print(self.data)
         self.categories = ["TrialNum", "MagNum", "AbsTime", "Duration", "TrialCond", "DispTime", "TrialTime", "Hit", "TrialEnd", "RatID"]
+        self.fps = fps
         
     def _load_data(self): #Uses pandas to read csv file and store in a pandas datastructure
         """
@@ -245,6 +246,18 @@ class magLoader:
             return None
 
         return [mag1_rat, mag2_rat]
+
+    def getRewardReceivedFrames(self, rat_id):
+        """
+        Returns a set of frame indices where the specified rat received a reward.
+        Assumes reward is received at AbsTime when RatID matches and Hit == 1.
+        """
+        if self.data is None or self.data.empty:
+            return set()
+        reward_data = self.data[(self.data['Hit'] == 1) & (self.data['RatID'] == rat_id)]
+        frames = (reward_data['AbsTime'] * self.fps).astype(int)
+        return set(frames)
+
 
 #Testing
 #
