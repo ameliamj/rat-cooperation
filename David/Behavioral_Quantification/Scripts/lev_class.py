@@ -18,7 +18,7 @@ class levLoader:
         self.categories = ["TrialNum", "LeverNum", "AbsTime", "TrialCond", "DispTime", "TrialTime", "coopTS", "coopSucc", "Hit", "TrialEnd", "AnimalID", "RatID"]
         self.endFrame = endFrame
         self.fps = fps
-        print("Columns in DataFrame:", self.data.columns.tolist())
+        #print("Columns in DataFrame:", self.data.columns.tolist())
         
     def _load_data(self): #Uses pandas to read csv file and store in a pandas datastructure
         """
@@ -128,7 +128,10 @@ class levLoader:
     
     #Graph Stuff: 
     def returnSuccThreshold(self):
-        return self.data['CoopTimeLimit'].iloc(0)
+        if ('CoopTimeLimit' in self.data.columns.tolist()):
+            return self.data['CoopTimeLimit'].iloc(0)
+        else:
+            return 1
         
     def remove100msTrials(self):
         """
