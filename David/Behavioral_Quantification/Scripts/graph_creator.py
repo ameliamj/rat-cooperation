@@ -772,10 +772,10 @@ levFiles = [dataPT[0], dataTC[0]]
 magFiles = [dataPT[1], dataTC[1]]
 posFiles = [dataPT[2], dataTC[2]]
 categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["Paired_Testing", "Training_Cooperation"])
-categoryExperiments.compareSuccesfulTrials()
+#categoryExperiments.compareSuccesfulTrials()
 
 
-
+'''
 #Unfamiliar vs. Training Partners
 print("Running UF vs TP")
 dataUF = getOnlyUnfamiliar() #Unfamiliar
@@ -785,10 +785,10 @@ levFiles = [dataUF[0], dataTP[0]]
 magFiles = [dataUF[1], dataTP[1]]
 posFiles = [dataUF[2], dataTP[2]]
 categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["Unfamiliar", "Training Partners"])
-categoryExperiments.compareSuccesfulTrials()
+#categoryExperiments.compareSuccesfulTrials()
+'''
 
-
-
+'''
 #Transparent vs. Translucent vs. Opaque
 
 print("Running Transparency")
@@ -800,14 +800,14 @@ levFiles = [dataTransparent[0], dataTranslucent[0], dataOpaque[0]]
 magFiles = [dataTransparent[1], dataTranslucent[1], dataOpaque[1]]
 posFiles = [dataTransparent[2], dataTranslucent[2], dataOpaque[2]]
 categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["Transparent", "Translucent", "Opaque"])
-categoryExperiments.compareSuccesfulTrials()
-
-
+#categoryExperiments.compareSuccesfulTrials()
 '''
+
+
 print("0")
 #categoryExperiments.compareGazeEventsCategories()
 print("1")
-categoryExperiments.compareSuccesfulTrials()
+#categoryExperiments.compareSuccesfulTrials()
 print("2")
 #categoryExperiments.compareIPI()
 print("3")
@@ -815,9 +815,9 @@ print("3")
 print("4")
 #categoryExperiments.gazeAlignmentAngle()
 print("5")
-#categoryExperiments.printSummaryStats()
+categoryExperiments.printSummaryStats()
 print("Done")
-'''
+
 
 # ---------------------------------------------------------------------------------------------------------
 
