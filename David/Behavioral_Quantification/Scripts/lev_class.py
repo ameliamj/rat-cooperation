@@ -129,8 +129,7 @@ class levLoader:
     #Graph Stuff: 
     def returnSuccThreshold(self):
         if ('CoopTimeLimit' in self.data.columns.tolist()):
-            print(self.data['CoopTimeLimit'].iloc(0))
-            return int(self.data['CoopTimeLimit'].iloc(0))
+            return self.data['CoopTimeLimit'].iloc[0]
         else:
             return 1
         
