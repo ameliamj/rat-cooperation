@@ -27,6 +27,7 @@ addParameter(p, 'WindowSize', [-5 10], @isnumeric);
 addParameter(p, 'DownsampleFactor', 10, @isnumeric);
 addParameter(p, 'SmoothingWindow', 20, @isnumeric);
 addParameter(p, 'PlotFigures', true, @islogical);
+addParameter(p, 'SavePath', '', @ischar);  % <-- NEW
 parse(p, varargin{:});
 
 % Extract parameters
@@ -147,6 +148,16 @@ processedData.uniqueCodes = uniqueCodes;
 % If plotting is requested
 if p.Results.PlotFigures
     plotFiberPhotoResults(processedData, timeVector, uniqueCodes, TTLs, SMOOTH_WINDOW);
+end
+
+% Save the processed data if SavePath is provided
+if ~isempty(p.Results.SavePath)
+    try
+        save(p.Results.SavePath, 'processedData');
+        fprintf('Processed data saved to: %s\n', p.Results.SavePath);
+    catch saveErr
+        warning('Failed to save processed data: %s', saveErr.message);
+    end
 end
 
 end

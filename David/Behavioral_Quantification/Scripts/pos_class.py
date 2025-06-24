@@ -827,12 +827,12 @@ video_file = "/Users/david/Downloads/4%_nan_test.mp4"
 #h5_file = "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G.predictions.h5"
 #video_file = "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G.mp4"    
 
-#'''
+'''
 loader = posLoader(h5_file)
 lev = levLoader(lev_file)
 mag = magLoader(mag_file)
 visualize_gaze_overlay(video_file, loader, lev, mag, mouseID=0, save_path = "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Graphs/Videos/4percentErrorTestVid_states.mp4")
-#'''
+'''
     
     
     

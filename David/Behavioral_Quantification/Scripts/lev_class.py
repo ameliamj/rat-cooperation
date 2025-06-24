@@ -127,7 +127,7 @@ class levLoader:
     
     #Graph Stuff: 
     def returnSuccThreshold(self):
-        return 1
+        return self.data['CoopTimeLimit'].iloc(0)
         
     def remove100msTrials(self):
         """
