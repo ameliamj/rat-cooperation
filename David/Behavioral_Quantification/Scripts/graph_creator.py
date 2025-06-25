@@ -3676,7 +3676,6 @@ totFramesList = arr[4]
 initialNanList = arr[5]
 
 
-
 '''
 lev_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv"]
 mag_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_mag.csv"]
@@ -3692,7 +3691,7 @@ initialNanList = [0.1]
 print("Start MultiFileGraphs Regular")
 experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "", save=True)
 
-#experiment.waitingStrategy()
+experiment.waitingStrategy()
 #experiment.stateTransitionModel()
 
 #experiment.percentSameRatTakesBothRewards()
