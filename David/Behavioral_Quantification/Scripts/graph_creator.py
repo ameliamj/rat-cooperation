@@ -2970,12 +2970,13 @@ class multiFileGraphs:
                 
                 rat0_waiting += (rat0_waiting_after_start)
                 rat1_waiting += (rat1_waiting_after_start)
+                waiting_symmetry += abs(rat0_waiting - rat1_waiting)
                 #waiting_symmetry.append(abs(rat0_waiting_after_start - rat1_waiting_after_start))
             
             #if (total_trial_frames != exp.endFrame): 
                 #print("Inequal Frames, (self, counted): ", exp.endFrame, ", ", total_trial_frames)
             
-            waiting_symmetry = abs(rat0_waiting - rat1_waiting)
+            #waiting_symmetry = abs(rat0_waiting - rat1_waiting)
             avgWaitingBeforeTrialStarted = np.mean(maxFramesWaitingBeforeTrialStarted)
             
             return (rat0_waiting_times, rat1_waiting_times, waiting_symmetry, rat0_latencies, rat1_latencies,
