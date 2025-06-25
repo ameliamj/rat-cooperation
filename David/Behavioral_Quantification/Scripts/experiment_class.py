@@ -20,7 +20,7 @@ class singleExperiment:
         
         self.mag = magLoader(mag_file, fps=fps)
         self.lev = levLoader(lev_file, endFrame, fps)
-        self.pos = posLoader(pos_file, endFrame)
+        #self.pos = posLoader(pos_file, endFrame)
         self.fps = fps
         self.endFrame = endFrame
         self.initialNan = initialNan
