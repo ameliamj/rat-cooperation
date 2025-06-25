@@ -66,6 +66,18 @@ only_PairedTesting_filtered_onlyFirst = "/gpfs/radev/project/saxena/drb83/rat-co
 only_TrainingCoop_filtered_onlyFirst = "/gpfs/radev/project/saxena/drb83/rat-cooperation/David/Behavioral_Quantification/Sorted_Data_Files/only_TrainingCooperation_filtered_onlyFirst.csv"
 
 
+only_opaque_filtered_partiallyValid = "/gpfs/radev/project/saxena/drb83/rat-cooperation/David/Behavioral_Quantification/Sorted_Data_Files/only_opaque_sessions_filtered_partiallyValid.csv"
+only_translucent_filtered_partiallyValid = "/gpfs/radev/project/saxena/drb83/rat-cooperation/David/Behavioral_Quantification/Sorted_Data_Files/only_translucent_sessions_filtered_partiallyValid.csv"
+only_transparent_filtered_partiallyValid = "/gpfs/radev/project/saxena/drb83/rat-cooperation/David/Behavioral_Quantification/Sorted_Data_Files/only_transparent_sessions_filtered_partiallyValid.csv"
+
+only_unfamiliar_filtered_partiallyValid = "/gpfs/radev/project/saxena/drb83/rat-cooperation/David/Behavioral_Quantification/Sorted_Data_Files/only_unfamiliar_partners_filtered_partiallyValid.csv"
+only_trainingpartners_filtered_partiallyValid = "/gpfs/radev/project/saxena/drb83/rat-cooperation/David/Behavioral_Quantification/Sorted_Data_Files/only_training_partners_filtered_partiallyValid.csv"
+
+only_PairedTesting_filtered_partiallyValid = "/gpfs/radev/project/saxena/drb83/rat-cooperation/David/Behavioral_Quantification/Sorted_Data_Files/only_PairedTesting_filtered_partiallyValid.csv"
+only_TrainingCoop_filtered_partiallyValid = "/gpfs/radev/project/saxena/drb83/rat-cooperation/David/Behavioral_Quantification/Sorted_Data_Files/only_TrainingCooperation_filtered_partiallyValid.csv"
+
+
+
 filtered = "/gpfs/radev/project/saxena/drb83/rat-cooperation/David/Behavioral_Quantification/Sorted_Data_Files/Filtered.csv"
 
 
@@ -156,7 +168,46 @@ def getOnlyTrainingCoop(filtered = True, onlyFirst = False):
     initial_nan_list = fe.returnNaNPercentage()
     
     return [fe.getLevsDatapath(), fe.getMagsDatapath(), fe.getPosDatapath(), fpsList, totFramesList, initial_nan_list]     
-        
+
+def getAllTrainingCoop():
+    fe = fileExtractor(only_TrainingCoop_filtered_partiallyValid)
+    #fe.data = fe.deleteBadNaN()
+    fpsList, totFramesList = fe.returnFPSandTotFrames()
+    initial_nan_list = fe.returnNaNPercentage()
+    #print("initial_nan_list: ", initial_nan_list)
+    return [fe.getLevsDatapath(), fe.getMagsDatapath(), fe.getPosDatapath(), fpsList, totFramesList, initial_nan_list]
+
+def getAllPairedTesting():
+    fe = fileExtractor(only_PairedTesting_filtered_partiallyValid)
+    #fe.data = fe.deleteBadNaN()
+    fpsList, totFramesList = fe.returnFPSandTotFrames()
+    initial_nan_list = fe.returnNaNPercentage()
+    #print("initial_nan_list: ", initial_nan_list)
+    return [fe.getLevsDatapath(), fe.getMagsDatapath(), fe.getPosDatapath(), fpsList, totFramesList, initial_nan_list]
+
+def getAllTransparent():
+    fe = fileExtractor(only_transparent_filtered_partiallyValid)
+    #fe.data = fe.deleteBadNaN()
+    fpsList, totFramesList = fe.returnFPSandTotFrames()
+    initial_nan_list = fe.returnNaNPercentage()
+    #print("initial_nan_list: ", initial_nan_list)
+    return [fe.getLevsDatapath(), fe.getMagsDatapath(), fe.getPosDatapath(), fpsList, totFramesList, initial_nan_list]
+
+def getAllTranslucent():
+    fe = fileExtractor(only_translucent_filtered_partiallyValid)
+    #fe.data = fe.deleteBadNaN()
+    fpsList, totFramesList = fe.returnFPSandTotFrames()
+    initial_nan_list = fe.returnNaNPercentage()
+    #print("initial_nan_list: ", initial_nan_list)
+    return [fe.getLevsDatapath(), fe.getMagsDatapath(), fe.getPosDatapath(), fpsList, totFramesList, initial_nan_list]
+
+def getAllOpaque():
+    fe = fileExtractor(only_opaque_filtered_partiallyValid)
+    #fe.data = fe.deleteBadNaN()
+    fpsList, totFramesList = fe.returnFPSandTotFrames()
+    initial_nan_list = fe.returnNaNPercentage()
+    #print("initial_nan_list: ", initial_nan_list)
+    return [fe.getLevsDatapath(), fe.getMagsDatapath(), fe.getPosDatapath(), fpsList, totFramesList, initial_nan_list]
 
 # ---------------------------------------------------------------------------------------------------------
 
@@ -3651,14 +3702,6 @@ def getFiltered():
     #print("initial_nan_list: ", initial_nan_list)
     return [fe.getLevsDatapath(), fe.getMagsDatapath(), fe.getPosDatapath(), fpsList, totFramesList, initial_nan_list]
 
-def getAllTrainingCoop():
-    fe = fileExtractor(filtered)
-    #fe.data = fe.deleteBadNaN()
-    fpsList, totFramesList = fe.returnFPSandTotFrames()
-    initial_nan_list = fe.returnNaNPercentage()
-    #print("initial_nan_list: ", initial_nan_list)
-    return [fe.getLevsDatapath(), fe.getMagsDatapath(), fe.getPosDatapath(), fpsList, totFramesList, initial_nan_list]
-
 '''
 lev_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/ExampleLevFile.csv"]
 
@@ -3671,7 +3714,8 @@ totFramesList = [15000, 26000, 15000, 26000, 15000, 26000, 15000]
 initialNanList = [0.15, 0.12, 0.14, 0.16, 0.3, 0.04, 0.2]
 '''
 
-arr = getFiltered()
+#arr = getFiltered()
+arr = getAllTrainingCoop()
 lev_files = arr[0]
 mag_files = arr[1]
 pos_files = arr[2]
@@ -3695,7 +3739,8 @@ initialNanList = [0.1]
 print("Start MultiFileGraphs Regular")
 experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "", save=True)
 
-experiment.waitingStrategy()
+experiment.successRateVsThresholdPlot()
+#experiment.waitingStrategy()
 #experiment.stateTransitionModel()
 
 #experiment.percentSameRatTakesBothRewards()
