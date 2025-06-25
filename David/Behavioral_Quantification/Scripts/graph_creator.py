@@ -2755,7 +2755,10 @@ class multiFileGraphs:
             # Initialize lists to store metrics per trial
             rat0_waiting_times = []      # Frames rat 0 spends waiting near lever
             rat1_waiting_times = []      # Frames rat 1 spends waiting near lever
-            waiting_symmetry = []        # Absolute difference in waiting times between rats per trial
+            
+            rat0_waiting = 0
+            rat1_waiting = 0
+            waiting_symmetry = 0        # Absolute difference in waiting times between rats per trial
             synchronous_waiting_frames = [] # Frames both rats waiting simultaneously per trial
             rat0_latencies = []          # Frames until rat 0 first enters lever zone after trial start
             rat1_latencies = []          # Same for rat 1
@@ -2965,13 +2968,14 @@ class multiFileGraphs:
                 #rat0_waiting_after_start /= numFrames
                 #rat1_waiting_after_start /= numFrames
                 
-                rat0_waiting_times.append(rat0_waiting_after_start)
-                rat1_waiting_times.append(rat1_waiting_after_start)
-                waiting_symmetry.append(abs(rat0_waiting_after_start - rat1_waiting_after_start))
+                rat0_waiting += (rat0_waiting_after_start)
+                rat1_waiting += (rat1_waiting_after_start)
+                #waiting_symmetry.append(abs(rat0_waiting_after_start - rat1_waiting_after_start))
             
             #if (total_trial_frames != exp.endFrame): 
                 #print("Inequal Frames, (self, counted): ", exp.endFrame, ", ", total_trial_frames)
             
+            waiting_symmetry = abs(rat0_waiting - rat1_waiting)
             avgWaitingBeforeTrialStarted = np.mean(maxFramesWaitingBeforeTrialStarted)
             
             return (rat0_waiting_times, rat1_waiting_times, waiting_symmetry, rat0_latencies, rat1_latencies,
@@ -3041,6 +3045,10 @@ class multiFileGraphs:
                 print("old: ", num1)
                 print("new: ", num2)
             
+            #NumFrames Waited vs. All
+            total_trial_frames += trial_frames
+            total_waiting_frames += waiting_frames
+            
             maxWaitBeforeAll += framesWaitedAll
             
             total_trials_all += total_trials
@@ -3048,15 +3056,16 @@ class multiFileGraphs:
             total_succ_trials += numSucc
             
             # Calculate average waiting time for the experiment (both rats combined)
-            valid_times = [t for t in rat0_times + rat1_times if t > 0]
-            avg_wait = np.mean(valid_times) if valid_times else 0
-            avg_waiting_times.append(avg_wait)
+            #valid_times = [t for t in rat0_times + rat1_times if t > 0]
+            #avg_wait = np.mean(valid_times) if valid_times else 0
+            avg_waiting_times.append(waiting_frames / trial_frames)
             
 
             print("Symmetry")
             print(symmetry)
-            print(total_trials)
-            sym = np.sum(symmetry) / total_trials
+            #print(total_trials)
+            #sym = np.sum(symmetry) / total_trials
+            sym = symmetry / trial_frames
             print(sym)
             
             avg_symmetry_vals.append(sym)
@@ -3069,9 +3078,6 @@ class multiFileGraphs:
             # Calculate success rate
             success_rate = exp.lev.returnNumSuccessfulTrials() / total_trials_overall
             success_rates.append(success_rate)
-            
-            total_trial_frames += trial_frames
-            total_waiting_frames += waiting_frames
             
             same_lever_sum += same_lever
             opposite_lever_sum += opposite_lever
@@ -3507,15 +3513,15 @@ class multiFileGraphs:
             print(f"Trendline: y = {slope:.3f}x + {intercept:.3f}")
             
             plt.xlabel('Success Percentage (%)')
-            plt.ylabel('Same Rat Both Rewards Percentage (%)')
-            plt.title('Success Percentage vs. Same Rat Reward Collection Across Sessions')
+            plt.ylabel('Stealing Rewards Percentage (%)')
+            plt.title('Success Percentage vs. Stealing Reward Collection Across Sessions')
             plt.legend()
             plt.grid(True, linestyle='--', alpha=0.7)
             plt.xlim(0, 100)
             plt.ylim(0, 100)
             plt.tight_layout()
             if self.save:
-                plt.savefig(f'{self.prefix}SuccessVsSameRatScatter.png')
+                plt.savefig(f'{self.prefix}SuccessVsStealingScatter.png')
             plt.show()
             plt.close()
         
@@ -3640,6 +3646,14 @@ def getFiltered():
     #print("initial_nan_list: ", initial_nan_list)
     return [fe.getLevsDatapath(), fe.getMagsDatapath(), fe.getPosDatapath(), fpsList, totFramesList, initial_nan_list]
 
+def getAllTrainingCoop():
+    fe = fileExtractor(filtered)
+    #fe.data = fe.deleteBadNaN()
+    fpsList, totFramesList = fe.returnFPSandTotFrames()
+    initial_nan_list = fe.returnNaNPercentage()
+    #print("initial_nan_list: ", initial_nan_list)
+    return [fe.getLevsDatapath(), fe.getMagsDatapath(), fe.getPosDatapath(), fpsList, totFramesList, initial_nan_list]
+
 '''
 lev_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/ExampleLevFile.csv"]
 
@@ -3677,7 +3691,8 @@ initialNanList = [0.1]
 
 print("Start MultiFileGraphs Regular")
 experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "", save=True)
-experiment.waitingStrategy()
+
+#experiment.waitingStrategy()
 #experiment.stateTransitionModel()
 
 #experiment.percentSameRatTakesBothRewards()
