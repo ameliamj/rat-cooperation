@@ -763,7 +763,7 @@ posFiles = [["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/B
 
 #Paired Testing vs. Training Cooperation
 
-
+'''
 print("Running Paired Testing vs Training Cooperation")
 dataPT = getOnlyPairedTesting()
 dataTC = getOnlyTrainingCoop()
@@ -773,6 +773,7 @@ magFiles = [dataPT[1], dataTC[1]]
 posFiles = [dataPT[2], dataTC[2]]
 categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["Paired_Testing", "Training_Cooperation"])
 #categoryExperiments.compareSuccesfulTrials()
+'''
 
 '''
 #Unfamiliar vs. Training Partners
@@ -814,7 +815,7 @@ print("3")
 print("4")
 #categoryExperiments.gazeAlignmentAngle()
 print("5")
-categoryExperiments.printSummaryStats()
+#categoryExperiments.printSummaryStats()
 print("Done")
 
 
@@ -3595,7 +3596,7 @@ totFramesList = [15000, 26000, 15000, 26000, 15000, 26000, 15000]
 initialNanList = [0.15, 0.12, 0.14, 0.16, 0.3, 0.04, 0.2]
 '''
 
-'''
+
 arr = getFiltered()
 lev_files = arr[0]
 mag_files = arr[1]
@@ -3603,7 +3604,7 @@ pos_files = arr[2]
 fpsList = arr[3]
 totFramesList = arr[4]
 initialNanList = arr[5]
-'''
+
 
 
 '''
@@ -3618,11 +3619,11 @@ totFramesList = [14000]
 initialNanList = [0.1]
 '''
 
-'''
+
 print("Start MultiFileGraphs Regular")
 experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "", save=True)
 experiment.waitingStrategy()
-experiment.stateTransitionModel()
+#experiment.stateTransitionModel()
 
 #experiment.percentSameRatTakesBothRewards()
 #experiment.successRateVsThresholdPlot()
@@ -3631,7 +3632,7 @@ experiment.stateTransitionModel()
 #experiment.successVsAverageDistance()
 #experiment.printSummaryStats()
 #experiment.compareAverageVelocityGazevsNot()
-'''
+
 
 '''
 experiment.rePressingbyDistance()
