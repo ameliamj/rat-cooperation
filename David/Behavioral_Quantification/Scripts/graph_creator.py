@@ -2970,7 +2970,7 @@ class multiFileGraphs:
                 
                 rat0_waiting += (rat0_waiting_after_start)
                 rat1_waiting += (rat1_waiting_after_start)
-                waiting_symmetry += abs(rat0_waiting - rat1_waiting)
+                waiting_symmetry += abs(rat0_waiting_after_start - rat1_waiting_after_start)
                 #waiting_symmetry.append(abs(rat0_waiting_after_start - rat1_waiting_after_start))
             
             #if (total_trial_frames != exp.endFrame): 
