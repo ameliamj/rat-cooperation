@@ -3367,6 +3367,7 @@ class multiFileGraphs:
         Plots the average cooperative success rate for each threshold value.
         Applies smoothing to visualize trends.
         Weights trials equally (not each experiment). 
+        Annotates each point with number of sessions (experiments) used.
         """
         threshold_to_rates = defaultdict(list)
     
@@ -3384,6 +3385,7 @@ class multiFileGraphs:
         # Compute average success rate per threshold
         thresholds = sorted(threshold_to_rates.keys())
         avg_rates = [np.mean(threshold_to_rates[t]) for t in thresholds]
+        session_counts = [len(threshold_to_rates[t]) for t in thresholds]
     
         # Smooth using rolling average (pandas)
         df = pd.DataFrame({'Threshold': thresholds, 'AvgSuccessRate': avg_rates})
@@ -3394,7 +3396,11 @@ class multiFileGraphs:
         plt.figure(figsize=(8, 6))
         plt.plot(df.index, df['AvgSuccessRate'], 'o-', label='Raw Average', color='gray', alpha=0.6)
         plt.plot(df.index, df['Smoothed'], 'r-', label='Smoothed', linewidth=2)
-    
+        
+        # Add text annotations above each point
+        for x, y, n in zip(df.index, df['AvgSuccessRate'], df['NumSessions']):
+            plt.text(x, y + 0.02, f"{n} sess", ha='center', va='bottom', fontsize=9, color='blue')
+        
         plt.xlabel('Cooperation Threshold')
         plt.ylabel('Average Success Rate')
         plt.title('Threshold vs. Success Rate')
