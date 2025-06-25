@@ -3019,12 +3019,11 @@ class multiFileGraphs:
              same_lever, opposite_lever, none, one, both,
              occupancy_curve, trial_counts, avgWaitBeforeSession, totalWaitBeforeSucc, framesWaitedAll, numTrialsUsed) = findWaitingTimeTrials(exp)
             
-            total_trials = exp.lev.returnNumTotalTrials()
+            total_trials_overall = exp.lev.returnNumTotalTrials()
             total_trials = numTrialsUsed
             
             if total_trials == 0:
                 continue
-            
             
             #print("Hi")
             if (avgWaitBeforeSession != framesWaitedAll/total_trials):
@@ -3068,7 +3067,7 @@ class multiFileGraphs:
                     rat1_lat_per_trial[trial_idx].append(lat1)
             
             # Calculate success rate
-            success_rate = exp.lev.returnNumSuccessfulTrials() / total_trials
+            success_rate = exp.lev.returnNumSuccessfulTrials() / total_trials_overall
             success_rates.append(success_rate)
             
             total_trial_frames += trial_frames
