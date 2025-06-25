@@ -195,6 +195,7 @@ class levLoader:
         Returns a list of absolute times (in seconds) each trial started at.
         The function groups the data by 'TrialNum' and finds the smallest 'AbsTime' per trial, 
         and then subtracts the 'TrialTime' to get the result.
+        Length is equal to the number of trials with a press
         
         Returns:
             list: A list of floats, each being the absolute time of the trial starting
