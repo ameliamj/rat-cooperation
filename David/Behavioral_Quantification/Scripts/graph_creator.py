@@ -343,6 +343,9 @@ class multiFileGraphsCategories:
     
         # Iterate through each experimental group (category)
         for i, group in enumerate(self.allFileGroupExperiments):
+            print("Category: ", self.categoryNames[i])
+            print("Quantity: ", len(self.allFileGroupExperiments[i]))
+            
             individual_datapoints.append([])  # Holds datapoints for this category
             datapoint_colors.append([])  # Holds datapoints for this category
             totalSucc = 0
@@ -417,15 +420,15 @@ class multiFileGraphsCategories:
         plt.title('Success Probability per Category')
         plt.xticks(bar_positions, self.categoryNames)
         plt.ylim(0, 1)
-        legend_patches = [
+        '''legend_patches = [
             Patch(color='red', label='Threshold > 3'),
             Patch(color='orange', label='Threshold > 2'),
             Patch(color='blue', label='Threshold > 1'),
             Patch(color='black', label='Threshold > 0'),
             Patch(color='gray', label='Threshold ≤ 0')
         ]
-        plt.legend(handles=legend_patches)
-        #plt.legend()
+        plt.legend(handles=legend_patches)'''
+        plt.legend()
         plt.tight_layout()
     
         # Save and display the plot
