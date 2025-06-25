@@ -3388,7 +3388,7 @@ class multiFileGraphs:
         session_counts = [len(threshold_to_rates[t]) for t in thresholds]
     
         # Smooth using rolling average (pandas)
-        df = pd.DataFrame({'Threshold': thresholds, 'AvgSuccessRate': avg_rates}, 'NumSessions': session_counts)
+        df = pd.DataFrame({'Threshold': thresholds, 'AvgSuccessRate': avg_rates, 'NumSessions': session_counts})
         df.set_index('Threshold', inplace=True)
         df['Smoothed'] = df['AvgSuccessRate'].rolling(window=2, min_periods=1, center=True).mean()
     
