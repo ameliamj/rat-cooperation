@@ -361,9 +361,9 @@ class multiFileGraphsCategories:
     
                 # Store individual success probability for this experiment
                 if num_total > 0:
-                    print("\n\nProb: ",  num_succ / num_total)
-                    print("Num Trials: ", num_total)
-                    print("Lev File: ", self.allFileGroupExperiments[i][j].lev_file)
+                    #print("\n\nProb: ",  num_succ / num_total)
+                    #print("Num Trials: ", num_total)
+                    #print("Lev File: ", self.allFileGroupExperiments[i][j].lev_file)
                     individual_datapoints[i].append(num_succ / num_total)
                     
                     # Assign color based on threshold
@@ -379,11 +379,13 @@ class multiFileGraphsCategories:
                     else:
                         color = 'gray'
                     datapoint_colors[i].append(color)
+                    print(f"\nSuccess Rate is: {num_succ/num_total}")
+                    print(f"Lev is: {exp.lev_file}")
                     
                 else:
                     individual_datapoints[i].append(np.nan)
                     datapoint_colors[i].append('gray')
-                    print("\n\nTotal Trials was 0")
+                    print("\nTotal Trials was 0")
                     print("Lev File: ", self.allFileGroupExperiments[i][j][1])
     
             # Compute overall success probability for the category
@@ -431,6 +433,7 @@ class multiFileGraphsCategories:
             plt.savefig(f'{self.path}ProbofSuccesfulTrial_{self.endSaveName}')
         plt.show()
         plt.close()
+        
 
     def compareIPI(self):
         """
@@ -813,7 +816,7 @@ posFiles = [["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/B
 #categoryExperiments.gazeAlignmentAngle()
 
 #Paired Testing vs. Training Cooperation
-'''print("Running Transparency")
+print("Running Transparency")
 dataTransparent = getAllTransparent() #Transparent
 dataTranslucent = getAllTranslucent() #Translucent
 dataOpaque = getAllOpaque() #Opaque
@@ -823,7 +826,7 @@ magFiles = [dataTransparent[1], dataTranslucent[1], dataOpaque[1]]
 posFiles = [dataTransparent[2], dataTranslucent[2], dataOpaque[2]]
 categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["Transparent", "Translucent", "Opaque"])
 categoryExperiments.compareSuccesfulTrials()
-'''
+
 
 '''
 print("Running Paired Testing vs Training Cooperation")
@@ -3731,7 +3734,7 @@ totFramesList = [15000, 26000, 15000, 26000, 15000, 26000, 15000]
 initialNanList = [0.15, 0.12, 0.14, 0.16, 0.3, 0.04, 0.2]
 '''
 
-
+'''
 #arr = getFiltered()
 arr = getAllTrainingCoop()
 lev_files = arr[0]
@@ -3740,7 +3743,7 @@ pos_files = arr[2]
 fpsList = arr[3]
 totFramesList = arr[4]
 initialNanList = arr[5]
-
+'''
 
 '''
 lev_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/040124_KL005B-KL005Y_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/040124_KL006R-KL006G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/040124_KL007G-KL007Y_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv"]
@@ -3752,7 +3755,7 @@ ftotFramesList = [14000, 12000, 13000, 10000]
 finitialNanList = [0.1, 0.3, 0.2, 0.14   ]
 '''
 
-
+'''
 print("Start MultiFileGraphs Regular")
 experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "", save=True)
 
@@ -3768,7 +3771,7 @@ print("Done")
 #experiment.successVsAverageDistance()
 #experiment.printSummaryStats()
 #experiment.compareAverageVelocityGazevsNot()
-
+'''
 
 '''
 experiment.rePressingbyDistance()
