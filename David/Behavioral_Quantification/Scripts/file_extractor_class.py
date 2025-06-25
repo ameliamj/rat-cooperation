@@ -16,7 +16,7 @@ class fileExtractor:
         self.filename = information_path
         self.data = None
         self._load_data()
-        self.preFix = "_filtered"
+        self.preFix = "_filtered_partiallyValid"
          
     def _load_data(self):
         """
@@ -101,6 +101,25 @@ class fileExtractor:
         df_copy = self.data.copy()
         if (saveFile):
             df_copy.to_csv("dyed_preds_all_valid.csv", index=False)
+
+    def deleteOnlyFullyInvalid(self, saveFile = False):
+        """
+        Remove rows where:
+        - trial type is not 'coop'
+        - OR levers is not TRUE
+        - OR mags is not TRUE
+        """
+        self.data = self.data[
+            (self.data['trial type'] == 'coop') &
+            (self.data['levers'] == True) &
+            (self.data['mags'] == True)
+        ]
+        
+        self.data = self.deleteBadNaN()
+        
+        df_copy = self.data.copy()
+        if (saveFile):
+            df_copy.to_csv("dyed_preds_somewhat_valid.csv", index=False)
 
     def filterOutCNO(self):
         self.data = self.data[~self.data['session'].str.endswith('CNO')]
@@ -659,7 +678,7 @@ def saveAllCSVs():
             fe.writeNewFixedFile()
         else:
             fe = fileExtractor(fixedExpanded)
-            fe.deleteInvalid()  # ensure you start from the cleaned data
+            fe.deleteOnlyFullyInvalid()  # ensure you start from the cleaned data
             method = getattr(fe, method_name)
             method(sortOut=True, saveFile=True)  # call the method
 

@@ -1,0 +1,13 @@
+vid,session,single/multi,test/train,pred,color pair,initial nan,vel nan,correct,final nan,levers,mags,trial type,familiarity,fiber pho,dividers
+043024_Cam4_TrNum7_Coop_KL004G-KL004R,043024_KL004_TimeOut_Opaque,multi,test,True,KL004G-KL004R,0.1466560073092736,0.1526678848789401,True,0.0076541799908634,True,True,coop,TP,False,opaque
+043024_Cam4_TrNum9_Coop_KL004G-KL004R,043024_KL004_TimeOut_Opaque,multi,test,True,KL004G-KL004R,0.1524407069180737,0.1613264568687996,True,0.0024226397739964,True,True,coop,TP,False,opaque
+050124_Cam2_TrNum6_Coop_KL005Y-KL005B,050124_KL005_TimeOut_Opaque,multi,test,True,KL005Y-KL005B,0.0652913112621078,0.0691687147607344,True,0.000925256614139,True,True,coop,TP,False,opaque
+050124_Cam2_TrNum8_Coop_KL005Y-KL005B,050124_KL005_TimeOut_Opaque,multi,test,True,KL005Y-KL005B,0.0508969759097898,0.0526960533059969,True,0.0001537672988211,True,True,coop,TP,False,opaque
+050124_Cam4_TrNum7_Coop_KL008B-KL008G,050124_KL008_TimeOut_Opaque,multi,test,False,KL008B-KL008G,-1.0,-1.0,False,-1.0,True,True,coop,TP,False,opaque
+050124_Cam4_TrNum9_Coop_KL008B-KL008G,050124_KL008_TimeOut_Opaque,multi,test,False,KL008B-KL008G,-1.0,-1.0,False,-1.0,True,True,coop,TP,False,opaque
+050324_Cam1_TrNum9_Coop_KL002B-KL002Y,050324_KL002_TimeOut_Opaque,multi,test,True,KL002B-KL002Y,0.0308453140201059,0.0314992973732569,True,0.0002351097178683,True,True,coop,TP,False,opaque
+050324_Cam1_TrNum11_Coop_KL002B-KL002Y,050324_KL002_TimeOut_Opaque,multi,test,True,KL002B-KL002Y,0.0391428970917226,0.0403803131991051,True,0.0003635346756152,True,True,coop,TP,False,opaque
+050324_Cam3_TrNum7_Coop_KL003G-KL003B,050324_KL003_TimeOut_Opaque,multi,test,False,KL003G-KL003B,-1.0,-1.0,False,-1.0,True,True,coop,TP,False,opaque
+050324_Cam3_TrNum12_Coop_KL003G-KL003B,050324_KL003_TimeOut_Opaque,multi,test,False,KL003G-KL003B,-1.0,-1.0,False,-1.0,True,True,coop,TP,False,opaque
+050524_Cam3_TrNum7_Coop_KL006G-KL006R,050524_KL006_TimeOut_Opaque,multi,test,True,KL006G-KL006R,0.0628579489349696,0.0642403724079559,True,0.0005607278882776,True,True,coop,TP,False,opaque
+050524_Cam3_TrNum10_Coop_KL006G-KL006R,050524_KL006_TimeOut_Opaque,multi,test,True,KL006G-KL006R,0.0968220193561672,0.0988674583018738,True,0.0013762097604502,True,True,coop,TP,False,opaque

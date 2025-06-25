@@ -2758,7 +2758,7 @@ class multiFileGraphs:
             
             rat0_waiting = 0
             rat1_waiting = 0
-            waiting_symmetry = 0        # Absolute difference in waiting times between rats per trial
+            waiting_symmetry = []       # Absolute difference in waiting times between rats per trial
             synchronous_waiting_frames = [] # Frames both rats waiting simultaneously per trial
             rat0_latencies = []          # Frames until rat 0 first enters lever zone after trial start
             rat1_latencies = []          # Same for rat 1
@@ -2968,10 +2968,10 @@ class multiFileGraphs:
                 #rat0_waiting_after_start /= numFrames
                 #rat1_waiting_after_start /= numFrames
                 
-                rat0_waiting += (rat0_waiting_after_start)
-                rat1_waiting += (rat1_waiting_after_start)
-                waiting_symmetry += abs(rat0_waiting_after_start - rat1_waiting_after_start)
-                #waiting_symmetry.append(abs(rat0_waiting_after_start - rat1_waiting_after_start))
+                #rat0_waiting += (rat0_waiting_after_start)
+                #rat1_waiting += (rat1_waiting_after_start)
+                #waiting_symmetry += abs(rat0_waiting_after_start - rat1_waiting_after_start)
+                waiting_symmetry.append(abs(rat0_waiting_after_start - rat1_waiting_after_start))
             
             #if (total_trial_frames != exp.endFrame): 
                 #print("Inequal Frames, (self, counted): ", exp.endFrame, ", ", total_trial_frames)
@@ -3024,6 +3024,9 @@ class multiFileGraphs:
              same_lever, opposite_lever, none, one, both,
              occupancy_curve, trial_counts, avgWaitBeforeSession, totalWaitBeforeSucc, framesWaitedAll, numTrialsUsed) = findWaitingTimeTrials(exp)
             
+            #print("rat0_times: ", rat0_times)
+            #print("rat1_times: ", rat1_times)
+            
             total_trials_overall = exp.lev.returnNumTotalTrials()
             total_trials = numTrialsUsed
             
@@ -3059,15 +3062,16 @@ class multiFileGraphs:
             # Calculate average waiting time for the experiment (both rats combined)
             #valid_times = [t for t in rat0_times + rat1_times if t > 0]
             #avg_wait = np.mean(valid_times) if valid_times else 0
+            #avg_waiting_times.append(avg_wait)
             avg_waiting_times.append(waiting_frames / trial_frames)
             
 
             print("Symmetry")
             print(symmetry)
             #print(total_trials)
-            #sym = np.sum(symmetry) / total_trials
-            sym = symmetry / trial_frames
-            print(sym)
+            sym = np.sum(symmetry) / total_trials
+            #sym = symmetry / trial_frames
+            #print(sym)
             
             avg_symmetry_vals.append(sym)
             avg_sync_vals.append(np.mean(sync_frames) if sync_frames else 0)
@@ -3666,7 +3670,6 @@ fpsList = [30, 30, 30, 30, 30, 30, 30]
 totFramesList = [15000, 26000, 15000, 26000, 15000, 26000, 15000]
 initialNanList = [0.15, 0.12, 0.14, 0.16, 0.3, 0.04, 0.2]
 '''
-
 
 arr = getFiltered()
 lev_files = arr[0]
