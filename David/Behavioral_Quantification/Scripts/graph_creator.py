@@ -4314,6 +4314,7 @@ def getFiberPhoto():
     fpsList, totFramesList = fe.returnFPSandTotFrames()
     initial_nan_list = fe.returnNaNPercentage()
     fiberFiles = fe.getFiberPhotoDataPath()
+    print("fiberFiles: ", fiberFiles)
     #print("initial_nan_list: ", initial_nan_list)
     return [fe.getLevsDatapath(), fe.getMagsDatapath(), fe.getPosDatapath(), fpsList, totFramesList, initial_nan_list, fiberFiles]
 
