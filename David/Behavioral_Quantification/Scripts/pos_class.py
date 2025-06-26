@@ -595,6 +595,32 @@ class posLoader:
         # Gaze vector's x-component should be positive and significant
         return gaze_vector[0] > 20  # Small threshold to avoid numerical noise
     
+    def distanceFromLever(self, rat_id, t):
+        '''
+        Returns the minimum distance of the rat with id rat_id from either lever 
+        at time/frame index `t`. The location of the rat is defined by its headbase.
+        
+        Assumes:
+        - self.data has shape (num_rats, num_coords=2, num_bodyparts, num_frames)
+        - self.HB_INDEX is the index corresponding to the headbase location
+        '''
+    
+        # Get headbase coordinates of the specified rat at time t
+        headbase = self.data[rat_id, :, self.HB_INDEX, t]  # Shape: (2,)
+    
+        # Define lever positions
+        lever1 = np.array([75, 160])
+        lever2 = np.array([75, 480])
+    
+        # Compute Euclidean distances to each lever
+        dist1 = np.linalg.norm(headbase - lever1)
+        dist2 = np.linalg.norm(headbase - lever2)
+    
+        # Return the minimum of the two
+        return min(dist1, dist2)
+    
+
+
 def visualize_gaze_overlay(
     video_path,
     loader,

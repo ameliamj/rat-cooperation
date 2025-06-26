@@ -515,14 +515,26 @@ class multiFileGraphsCategories:
             plt.show()
             plt.close()
             
-    def make_bar_plot(self, data, ylabel, title, saveFileName):
+    def make_bar_plot(self, data, ylabel, title, saveFileName, individual_data = None):
         plt.figure(figsize=(8, 5))
-        plt.bar(range(len(data)), data, color='skyblue')
-        plt.xticks(range(len(data)), self.categoryNames)
+        x = range(len(data))
+        
+        # Create bar plot
+        plt.bar(x, data, color='skyblue', alpha=0.6, label='Mean')
+        
+        # Overlay scatter points for individual data if provided
+        if individual_data is not None:
+            for i, cat_data in enumerate(individual_data):
+                # Generate slight jitter for x-coordinates to avoid overlap
+                x_jitter = np.random.normal(i, 0.1, size=len(cat_data))
+                plt.scatter(x_jitter, cat_data, color='darkblue', alpha=0.5, s=50, label='Individual Data' if i == 0 else None)
+        
+        plt.xticks(x, self.categoryNames)
         plt.ylabel(ylabel)
         plt.title(title)
+        plt.legend()
         plt.tight_layout()
-        if (self.save):
+        if self.save:
             plt.savefig(f'{self.path}{saveFileName}{self.endSaveName}')
         plt.show()
         plt.close()
@@ -532,6 +544,14 @@ class multiFileGraphsCategories:
         avg_gaze_lengths_alternate = [] # Stores average gaze duration (in frames) per category for alternate definition
         avg_lever_per_trial = []    # Stores average number of lever presses per trial
         avg_mag_per_trial = []      # Stores average number of magazine entries per trial
+    
+        percent_gazing = []         # Stores percent frames gazing per category
+        percent_gazing_alternate = [] # Stores percent frames gazing (alternate) per category
+        individual_gaze_lengths = [] # Stores individual gaze lengths per category
+        individual_gaze_lengths_alternate = [] # Stores individual gaze lengths (alternate) per category
+        individual_lever_per_trial = [] # Stores individual lever presses per trial
+        individual_mag_per_trial = []   # Stores individual magazine entries per trial
+        individual_percentGazing_per_trial = []
     
         # Loop through each experimental group (i.e., category)
         for idx, group in enumerate(self.allFileGroupExperiments):
@@ -544,6 +564,12 @@ class multiFileGraphsCategories:
             total_mag_events = 0      # Total number of magazine entries
             total_gaze_frames = 0     # Total frames where gaze was detected
             total_gaze_frames_alternate = 0
+            
+            cat_gaze_lengths = []     # Individual gaze lengths for this category
+            cat_gaze_lengths_alternate = [] # Individual gaze lengths (alternate) for this category
+            cat_lever_per_trial = []  # Individual lever presses per trial
+            cat_mag_per_trial = []    # Individual magazine entries per trial
+            cat_percentGazing_per_trial = []
                         
             # Process each experiment within the category
             for exp in group:
@@ -570,7 +596,15 @@ class multiFileGraphsCategories:
                 
                 total_gaze_events_alternate += loader.returnNumGazeEvents(0) + loader.returnNumGazeEvents(1)
                 total_gaze_frames_alternate += np.sum(g2) + np.sum(g3)
-    
+                
+                # Calculate individual experiment metrics
+                if total_gaze_events > 0:
+                    cat_gaze_lengths.append(total_gaze_frames / total_gaze_events)
+                if total_gaze_events_alternate > 0:
+                    cat_gaze_lengths_alternate.append(total_gaze_frames_alternate / total_gaze_events_alternate)
+                if total_frames > 0:
+                    cat_percentGazing_per_trial.append(total_gaze_frames_alternate / total_frames * 100) 
+                
                 # Access lever press data and compute trial/success counts
                 lev = exp.lev.data
                 trials = lev['TrialNum'].nunique()
@@ -578,22 +612,35 @@ class multiFileGraphsCategories:
                 total_trials += trials
                 successful_trials += succ
                 total_lever_presses += lev.shape[0]
+                if trials > 0:
+                    cat_lever_per_trial.append(lev.shape[0] / trials)
     
                 # Count magazine events
                 mag = exp.mag.data
                 total_mag_events += mag.shape[0]
+                if trials > 0:
+                    cat_mag_per_trial.append(mag.shape[0] / trials)
     
             # Calculate averages for the category
             avg_gaze_len = (total_gaze_frames / total_gaze_events) if total_gaze_events > 0 else 0
             avg_gaze_len_alternate = (total_gaze_frames_alternate / total_gaze_events_alternate) if total_gaze_events_alternate > 0 else 0
             avg_lever = (total_lever_presses / total_trials) if total_trials > 0 else 0
             avg_mag = (total_mag_events / total_trials) if total_trials > 0 else 0
+            percent_gaze = (100 * total_gaze_frames / total_frames) if total_frames > 0 else 0
+            percent_gaze_alt = (100 * total_gaze_frames_alternate / total_frames) if total_frames > 0 else 0
     
             # Store for plotting
             avg_gaze_lengths.append(avg_gaze_len)
             avg_gaze_lengths_alternate.append(avg_gaze_len_alternate)
             avg_lever_per_trial.append(avg_lever)
             avg_mag_per_trial.append(avg_mag)
+            percent_gazing.append(percent_gaze)
+            percent_gazing_alternate.append(percent_gaze_alt)
+            individual_gaze_lengths.append(cat_gaze_lengths)
+            individual_gaze_lengths_alternate.append(cat_gaze_lengths_alternate)
+            individual_lever_per_trial.append(cat_lever_per_trial)
+            individual_mag_per_trial.append(cat_mag_per_trial)
+            individual_percentGazing_per_trial.append(cat_percentGazing_per_trial)
     
             # Print summary statistics for the current category
             print(f"\nCategory: {self.categoryNames[idx]}")
@@ -605,7 +652,7 @@ class multiFileGraphsCategories:
             print(f"  Frames Gazing: {total_gaze_frames}")
             print(f"  Total Gaze Events: {total_gaze_events}")
             print(f"  Average Gaze Length: {total_gaze_frames / total_gaze_events:.2f}")
-            print(f"  Percent Gazing: {100 * total_gaze_events / total_frames:.2f}%")
+            print(f"  Percent Gazing: {100 * total_gaze_frames / total_frames:.2f}%")
             print(f"  Total Gaze Events (Alternate): {total_gaze_events_alternate}")
             print(f"  Average Gaze Length (Alternate): {total_gaze_frames_alternate / total_gaze_events_alternate:.2f}")
             print(f"  Percent Gazing (Alternate): {100 * total_gaze_frames_alternate / total_frames:.2f}%")
@@ -614,33 +661,44 @@ class multiFileGraphsCategories:
             print(f"  Avg Mag Events per Trial: {total_mag_events / total_trials:.2f}")
             print(f"  Total Mag Events: {total_mag_events}")
     
-        # --- Plot results for each metric ---
         self.make_bar_plot(
             avg_gaze_lengths,
             'Avg Gaze Length (frames)',
             'Average Gaze Length per Category',
-            "Avg_Gaze_Length"
+            "Avg_Gaze_Length",
+            individual_data=individual_gaze_lengths
         )
         
         self.make_bar_plot(
             avg_gaze_lengths_alternate,
             'Avg Gaze Length (frames)',
             'Average Gaze Length per Category (Alternate Def)',
-            "Avg_Gaze_Length"
+            "Avg_Gaze_Length_Alternate",
+            individual_data=individual_gaze_lengths_alternate
         )
     
         self.make_bar_plot(
             avg_lever_per_trial,
             'Avg Lever Presses per Trial',
             'Lever Presses per Trial per Category',
-            "Avg_Lev_Presses_perTrial"
+            "Avg_Lev_Presses_perTrial",
+            individual_data=individual_lever_per_trial
         )
     
         self.make_bar_plot(
             avg_mag_per_trial,
             'Avg Mag Events per Trial',
             'Mag Events per Trial per Category',
-            "Avg_Mag_Events_perTrial"
+            "Avg_Mag_Events_perTrial",
+            individual_data=individual_mag_per_trial
+        )
+        
+        self.make_bar_plot(
+            percent_gazing_alternate,
+            'Percent Gazing per Trial',
+            'Percent Gazing (Alternate) per Category',
+            "Avg_PercentGazing_Alternate_perTrial",
+            individual_data=individual_percentGazing_per_trial
         )
         
     def rePressingBehavior(self):
@@ -805,13 +863,13 @@ posFiles = [["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/B
             ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.predictions.h5"]]
 
 
-levFiles = [["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv"], 
+'''levFiles = [["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv"], 
             ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv"]]
 magFiles = [["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_mag.csv"], 
             ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_mag.csv"]]
 posFiles = [["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G.predictions.h5"], 
             ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.predictions.h5"]]
-
+'''
 
 #categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["Paired_Testing", "Training_Cooperation"], save=False)
 #categoryExperiments.printSummaryStats()
@@ -821,7 +879,7 @@ posFiles = [["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/B
 #categoryExperiments.gazeAlignmentAngle()
 
 #Paired Testing vs. Training Cooperation
-'''
+
 print("Running Transparency")
 dataTransparent = getAllTransparent() #Transparent
 dataTranslucent = getAllTranslucent() #Translucent
@@ -831,8 +889,8 @@ levFiles = [dataTransparent[0], dataTranslucent[0], dataOpaque[0]]
 magFiles = [dataTransparent[1], dataTranslucent[1], dataOpaque[1]]
 posFiles = [dataTransparent[2], dataTranslucent[2], dataOpaque[2]]
 categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["Transparent", "Translucent", "Opaque"])
-categoryExperiments.compareSuccesfulTrials()
-'''
+#categoryExperiments.compareSuccesfulTrials()
+
 
 '''
 print("Running Paired Testing vs Training Cooperation")
@@ -874,9 +932,9 @@ categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["
 categoryExperiments.compareSuccesfulTrials()
 '''
 
-'''
+
 print("0")
-#categoryExperiments.compareGazeEventsCategories()
+categoryExperiments.compareGazeEventsCategories()
 print("1")
 #categoryExperiments.compareSuccesfulTrials()
 print("2")
@@ -886,9 +944,9 @@ print("3")
 print("4")
 #categoryExperiments.gazeAlignmentAngle()
 print("5")
-#categoryExperiments.printSummaryStats()
+categoryExperiments.printSummaryStats()
 print("Done")
-'''
+
 
 # ---------------------------------------------------------------------------------------------------------
 
@@ -4336,7 +4394,7 @@ totFramesList = [15000, 26000, 15000, 26000, 15000, 26000, 15000]
 initialNanList = [0.15, 0.12, 0.14, 0.16, 0.3, 0.04, 0.2]
 '''
 
-
+'''
 arr = getFiltered()
 #arr = getAllTrainingCoop()
 #arr = getFiberPhoto()
@@ -4347,7 +4405,7 @@ fpsList = arr[3]
 totFramesList = arr[4]
 initialNanList = arr[5]
 #fiberPhoto = arr[6]
-
+'''
 
 '''
 lev_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/4_nanerror_lev.csv"]
@@ -4367,7 +4425,7 @@ initialNanList = [0.3]
 
 
 print("Start MultiFileGraphs Regular")
-experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "", save=True)
+#experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "", save=True)
 #experiment.fiberPhoto()
 #experiment.compareGazeEventsbyRat()
 #experiment.trialStateModel()
@@ -4381,7 +4439,7 @@ print("Done")
 #experiment.successRateVsThresholdPlot()
 
 #experiment.waitingStrategy()
-experiment.successVsAverageDistance()
+#experiment.successVsAverageDistance()
 #experiment.printSummaryStats()
 #experiment.compareAverageVelocityGazevsNot()
 
