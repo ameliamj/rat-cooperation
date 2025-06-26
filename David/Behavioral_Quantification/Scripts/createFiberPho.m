@@ -79,20 +79,16 @@ for i = 1:length(filePaths)
         for ch = {'x405', 'x465', 'x560'}
             chName = ch{1};
 
-            if ~isfield(TTLs, chName)
+            % Check column exists in TTLs table
+            if ~ismember(chName, TTLs.Properties.VariableNames)
                 warning('Field %s missing in TTLs for %s. Skipping.', chName, name);
                 continue;
             end
-
-            nestedField = TTLs.(chName);
-
-            % Sanity check: make sure it's a table or cell array of tables
-            if ~iscell(nestedField) && ~istable(nestedField)
-                warning('%s is not a cell or table for file %s. Skipping.', chName, name);
-                continue;
-            end
-
+        
+            nestedColumn = TTLs.(chName);  % This is a column of nested tables
             numRows = height(TTLs);
+        
+            % Preallocate output
             expandedData = cell(numRows, 1528);
             baseCols = table2cell(TTLs(:, {'code', 'ts'}));
 
@@ -101,21 +97,20 @@ for i = 1:length(filePaths)
                     expandedData{r, 1} = baseCols{r, 1};  % code
                     expandedData{r, 2} = baseCols{r, 2};  % ts
 
-                    % Extract the row of numeric data
-                    rowContent = nestedField{r};  % should be a 1x1526 table
-                    if istable(rowContent)
-                        rowArray = table2array(rowContent);
-                    elseif isnumeric(rowContent)
-                        rowArray = rowContent;
+                    % Get 1x1526 table and convert to array
+                    nestedTable = nestedColumn{r,1};  % This is the 1x1526 table
+                    if istable(nestedTable)
+                        rowArray = table2array(nestedTable);
                     else
-                        error('Unexpected format in %s row %d.', chName, r);
+                        error('Nested entry at row %d is not a table.', r);
                     end
-
+        
                     if length(rowArray) ~= 1526
-                        error('Length of %s row %d is not 1526.', chName, r);
+                        error('Row %d in %s has %d values (expected 1526).', r, chName, length(rowArray));
                     end
-
+        
                     expandedData(r, 3:end) = num2cell(rowArray);
+                    
                 catch innerErr
                     warning('Skipping row %d of %s in file %s: %s', r, chName, name, innerErr.message);
                 end

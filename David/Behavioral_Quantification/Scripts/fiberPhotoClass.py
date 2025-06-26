@@ -12,8 +12,16 @@ import numpy as np
 class fiberPhotoLoader:
     def __init__(self, x405_path, x465_path, x560_path):
         '''
-        Reads and Stores the x405, x465, and x560 data
+        Reads and Stores the x405, x465, and x560 data around 4 events
+        
+        Events: 
+            1) ttlLabels('1') = 'Session Start'
+            2) ttlLabels('2') = 'Left Lever Press'
+            3) ttlLabels('4') = 'Right Lever Press'
+            4) ttlLabels('8') = 'Left Magazine Entry'
+            5) ttlLabels('16') = 'Right Magazine Entry'
         '''
+        
         self.x405_path = x405_path
         self.x465_path = x465_path
         self.x560_path = x560_path
@@ -73,5 +81,21 @@ class fiberPhotoLoader:
             raise FileNotFoundError(f"CSV file not found at: {self.x560_path}")
         except pd.errors.ParserError:
             raise ValueError("Error parsing CSV file. Ensure it is properly formatted.")
+    
+    def getLevAverage405(self):
+        '''
+        '''
+        a = 1
+    
+    def getLevAverage465(self):
+        '''
+        '''
+        a = 1
+        
+    def getLevAverage560(self):
+        '''
+        '''
+        a = 1
+
             
     
