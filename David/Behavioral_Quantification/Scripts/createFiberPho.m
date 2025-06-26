@@ -1,5 +1,5 @@
 % Path to the CSV
-csvPath = '/gpfs/radev/project/saxena/drb83/rat-cooperation/David/Behavioral_Quantification/Sorted_Data_Files/dyed_preds_all_valid.csv';
+csvPath = '/gpfs/radev/project/saxena/drb83/rat-cooperation/David/Behavioral_Quantification/Sorted_Data_Files/fiber_photo.csv';
 
 % Read the table with original column headers preserved
 T = readtable(csvPath, 'VariableNamingRule', 'preserve');
