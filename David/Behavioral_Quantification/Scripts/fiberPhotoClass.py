@@ -40,6 +40,38 @@ class fiberPhotoLoader:
                     except:
                         pass
         except FileNotFoundError:
-            raise FileNotFoundError(f"CSV file not found at: {self.filename}")
+            raise FileNotFoundError(f"CSV file not found at: {self.x405_path}")
         except pd.errors.ParserError:
             raise ValueError("Error parsing CSV file. Ensure it is properly formatted.")
+            
+        try:
+            self.x465 = pd.read_csv(self.x465, sep=',', na_values=[''])
+            # Ensure numeric columns are properly typed
+            for col in self.data.columns:
+                if self.data[col].dtype == 'object':
+                    # Try converting to numeric, but preserve strings if not possible
+                    try:
+                        self.data[col] = pd.to_numeric(self.data[col], errors='coerce')
+                    except:
+                        pass
+        except FileNotFoundError:
+            raise FileNotFoundError(f"CSV file not found at: {self.x465_path}")
+        except pd.errors.ParserError:
+            raise ValueError("Error parsing CSV file. Ensure it is properly formatted.")
+        
+        try:
+            self.x560 = pd.read_csv(self.x560, sep=',', na_values=[''])
+            # Ensure numeric columns are properly typed
+            for col in self.data.columns:
+                if self.data[col].dtype == 'object':
+                    # Try converting to numeric, but preserve strings if not possible
+                    try:
+                        self.data[col] = pd.to_numeric(self.data[col], errors='coerce')
+                    except:
+                        pass
+        except FileNotFoundError:
+            raise FileNotFoundError(f"CSV file not found at: {self.x560_path}")
+        except pd.errors.ParserError:
+            raise ValueError("Error parsing CSV file. Ensure it is properly formatted.")
+            
+    

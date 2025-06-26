@@ -78,28 +78,60 @@ for i = 1:length(filePaths)
 
         for ch = {'x405', 'x465', 'x560'}
             chName = ch{1};
-            nestedData = TTLs.(chName);  % cell array of 1x1526 tables
 
-            % Preallocate cell array for all rows
-            numRows = height(TTLs);
-            expandedData = cell(numRows, 1528);
-
-            for r = 1:numRows
-                expandedData{r, 1} = baseCols{r, 1};  % code
-                expandedData{r, 2} = baseCols{r, 2};  % ts
-
-                % Extract the 1x1526 numeric row from the nested table
-                nestedRow = table2array(nestedData{r});  % Convert 1x1526 table to 1x1526 array
-                expandedData(r, 3:end) = num2cell(nestedRow);
+            if ~isfield(TTLs, chName)
+                warning('Field %s missing in TTLs for %s. Skipping.', chName, name);
+                continue;
             end
 
-            % Create table with column names
+            nestedField = TTLs.(chName);
+
+            % Sanity check: make sure it's a table or cell array of tables
+            if ~iscell(nestedField) && ~istable(nestedField)
+                warning('%s is not a cell or table for file %s. Skipping.', chName, name);
+                continue;
+            end
+
+            numRows = height(TTLs);
+            expandedData = cell(numRows, 1528);
+            baseCols = table2cell(TTLs(:, {'code', 'ts'}));
+
+            for r = 1:numRows
+                try
+                    expandedData{r, 1} = baseCols{r, 1};  % code
+                    expandedData{r, 2} = baseCols{r, 2};  % ts
+
+                    % Extract the row of numeric data
+                    rowContent = nestedField{r};  % should be a 1x1526 table
+                    if istable(rowContent)
+                        rowArray = table2array(rowContent);
+                    elseif isnumeric(rowContent)
+                        rowArray = rowContent;
+                    else
+                        error('Unexpected format in %s row %d.', chName, r);
+                    end
+
+                    if length(rowArray) ~= 1526
+                        error('Length of %s row %d is not 1526.', chName, r);
+                    end
+
+                    expandedData(r, 3:end) = num2cell(rowArray);
+                catch innerErr
+                    warning('Skipping row %d of %s in file %s: %s', r, chName, name, innerErr.message);
+                end
+            end
+
+            % Create and save table
             colNames = [{'code', 'ts'}, arrayfun(@num2str, 1:1526, 'UniformOutput', false)];
             expandedTable = cell2table(expandedData, 'VariableNames', colNames);
-
-            % Write to CSV
             outPath = fullfile(outputCSVFolder, chName, [name '_' chName '_TTLs.csv']);
-            writetable(expandedTable, outPath);
+
+            try
+                writetable(expandedTable, outPath);
+                fprintf('Saved: %s\n', outPath);
+            catch writeErr
+                warning('Could not write %s: %s', outPath, writeErr.message);
+            end
         end
         
         % Save CSVs to respective folders
