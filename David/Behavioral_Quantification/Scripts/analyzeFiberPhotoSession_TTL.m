@@ -109,20 +109,23 @@ for c = 1:length(chan)
             
             validIdx = ~isnan(F465) & ~isnan(F405);
             if sum(validIdx) > 2
+                % Extract x (405) and y (465)
                 x = F405(validIdx);
                 y = F465(validIdx);
                 
-                % Remove any remaining NaNs
-                valid = ~isnan(x) & ~isnan(y);
+                % Remove NaNs/Infs from both x and y
+                valid = isfinite(x) & isfinite(y);
                 x = x(valid);
                 y = y(valid);
                 
-                % Only proceed if we have enough and varied points
-                if numel(x) > 2 && range(x) > 1e-6
-                    bls = polyfit(x, y, 1);
+                % Check for enough distinct x-values and enough points
+                if numel(x) >= 3 && range(x) > 1e-6 && numel(unique(x)) > 2
+                    % Optionally center x to improve conditioning
+                    xc = x - mean(x);
+                    bls = polyfit(xc, y, 1);
                 else
-                    warning('polyfit skipped: insufficient or flat F405 data');
-                    bls = [NaN NaN];  % or use fallback baseline
+                    warning('Skipping polyfit: data ill-conditioned. Points: %d, Range: %.2e', numel(x), range(x));
+                    bls = [NaN, NaN];  % or fallback value like [0, mean(y)] or zeros(1,2)
                 end
                 
                 Y_fit = bls(1) .* F405 + bls(2);
