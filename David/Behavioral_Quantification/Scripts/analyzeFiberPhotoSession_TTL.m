@@ -109,7 +109,22 @@ for c = 1:length(chan)
             
             validIdx = ~isnan(F465) & ~isnan(F405);
             if sum(validIdx) > 2
-                bls = polyfit(F405(validIdx), F465(validIdx), 1);
+                x = F405(validIdx);
+                y = F465(validIdx);
+                
+                % Remove any remaining NaNs
+                valid = ~isnan(x) & ~isnan(y);
+                x = x(valid);
+                y = y(valid);
+                
+                % Only proceed if we have enough and varied points
+                if numel(x) > 2 && range(x) > 1e-6
+                    bls = polyfit(x, y, 1);
+                else
+                    warning('polyfit skipped: insufficient or flat F405 data');
+                    bls = [NaN NaN];  % or use fallback baseline
+                end
+                
                 Y_fit = bls(1) .* F405 + bls(2);
                 correctedSignal(i, :) = F465 - Y_fit;
             else
