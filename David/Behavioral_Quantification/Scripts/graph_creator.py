@@ -4307,7 +4307,7 @@ def getFiltered():
     return [fe.getLevsDatapath(), fe.getMagsDatapath(), fe.getPosDatapath(), fpsList, totFramesList, initial_nan_list]
 
 
-fiberPhoto = "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Sorted_Data_Files/fiber_photo.csv"
+fiberPhoto = "/gpfs/radev/home/drb83/project/rat-cooperation/David/Behavioral_Quantification/Sorted_Data_Files/fiber_photo.csv"
 def getFiberPhoto():
     fe = fileExtractor(fiberPhoto)
     #fe.data = fe.deleteBadNaN()
