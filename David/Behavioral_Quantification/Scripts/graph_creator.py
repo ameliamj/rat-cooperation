@@ -4095,7 +4095,11 @@ class multiFileGraphs:
             print("Warning: No successful trials found. Check lev.returnSuccessTrials() for valid success flags.")
         create_visualizations(successful_trials_df, '_SuccessfulTrials')
             
-
+    def fiberPhoto(self):
+        
+        for exp in self.experiments:
+            lev = exp.lev
+    
 #Testing Multi File Graphs
 #
 #

@@ -21,12 +21,13 @@ for i = 1:height(T)
             warning('File does not exist: %s', fullPath);
         end
     end
-end
+    end
 
 % Output folders
 outputMatFolder = '/gpfs/radev/pi/saxena/aj764/neuronalData/processed';
 outputCSVFolder = '/gpfs/radev/pi/saxena/aj764/neuronalData/processed_csv';
-csvSubfolders = {'x465_corrected', 'x560_corrected', 'TTLs', 'timeVector'};
+%csvSubfolders = {'x465_corrected', 'x560_corrected', 'TTLs', 'timeVector'};
+csvSubfolders = {'x465', 'x560', 'TTLs'};
 
 % Create output directories if they don’t exist
 if ~exist(outputMatFolder, 'dir'), mkdir(outputMatFolder); end
@@ -71,11 +72,41 @@ for i = 1:length(filePaths)
             'SavePath', outputMatFile, ...
             'PlotFigures', false);
 
+        % Create expanded TTL tables for x405, x465, x560
+        TTLs = processedData.TTLs;
+        baseCols = table2cell(TTLs(:, {'code', 'ts'}));
+
+        for ch = {'x405', 'x465', 'x560'}
+            chName = ch{1};
+            nestedData = TTLs.(chName);  % cell array of 1x1526 tables
+
+            % Preallocate cell array for all rows
+            numRows = height(TTLs);
+            expandedData = cell(numRows, 1528);
+
+            for r = 1:numRows
+                expandedData{r, 1} = baseCols{r, 1};  % code
+                expandedData{r, 2} = baseCols{r, 2};  % ts
+
+                % Extract the 1x1526 numeric row from the nested table
+                nestedRow = table2array(nestedData{r});  % Convert 1x1526 table to 1x1526 array
+                expandedData(r, 3:end) = num2cell(nestedRow);
+            end
+
+            % Create table with column names
+            colNames = [{'code', 'ts'}, arrayfun(@num2str, 1:1526, 'UniformOutput', false)];
+            expandedTable = cell2table(expandedData, 'VariableNames', colNames);
+
+            % Write to CSV
+            outPath = fullfile(outputCSVFolder, chName, [name '_' chName '_TTLs.csv']);
+            writetable(expandedTable, outPath);
+        end
+        
         % Save CSVs to respective folders
-        writematrix(processedData.x465_corrected, fullfile(outputCSVFolder, 'x465_corrected', [name '_x465_corrected.csv']));
-        writematrix(processedData.x560_corrected, fullfile(outputCSVFolder, 'x560_corrected', [name '_x560_corrected.csv']));
-        writetable(processedData.TTLs, fullfile(outputCSVFolder, 'TTLs', [name '_TTLs.csv']));
-        writematrix(processedData.timeVector(:), fullfile(outputCSVFolder, 'timeVector', [name '_timeVector.csv']));
+        %writematrix(processedData.x465_corrected, fullfile(outputCSVFolder, 'x465_corrected', [name '_x465_corrected.csv']));
+        %writematrix(processedData.x560_corrected, fullfile(outputCSVFolder, 'x560_corrected', [name '_x560_corrected.csv']));
+        %writetable(processedData.TTLs, fullfile(outputCSVFolder, 'TTLs', [name '_TTLs.csv']));
+        %writematrix(processedData.timeVector(:), fullfile(outputCSVFolder, 'timeVector', [name '_timeVector.csv']));
 
     catch ME
         warning('Error processing %s: %s', inputFile, ME.message);
