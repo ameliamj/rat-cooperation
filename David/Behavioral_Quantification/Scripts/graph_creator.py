@@ -4346,7 +4346,7 @@ pos_files = arr[2]
 fpsList = arr[3]
 totFramesList = arr[4]
 initialNanList = arr[5]
-fiberPhoto = arr[6]
+#fiberPhoto = arr[6]
 
 
 '''
