@@ -120,6 +120,17 @@ class fileExtractor:
         df_copy = self.data.copy()
         if (saveFile):
             df_copy.to_csv("dyed_preds_somewhat_valid.csv", index=False)
+            
+    def onlyFiberPhoto(self, saveFile = True):
+        self.data = self.data[
+            (self.data['fiber pho'] == True)
+        ]
+        
+        #self.data = self.deleteBadNaN()
+        
+        df_copy = self.data.copy()
+        if (saveFile):
+            df_copy.to_csv("fiber_photo.csv", index=False)
 
     def filterOutCNO(self):
         self.data = self.data[~self.data['session'].str.endswith('CNO')]
@@ -568,6 +579,22 @@ class fileExtractor:
                 grouped_paths.append(group_paths)
             return grouped_paths
     
+    def getFiberPhotoDataPath(self):
+        base_path = "/gpfs/radev/pi/saxena/aj764/neuronalData/processed_csv"
+        post405 = "_x405_TTLs.csv"
+        post465 = "_x465_TTLs.csv"
+        post560 = "_x560_TTLs.csv"
+        
+        def construct_path(row, folder, post):
+            return f"{base_path}/{folder}/{row['vid']}{post}"
+    
+        return [
+            [construct_path(row, "x405", post405), construct_path(row, "x465", post465), construct_path(row, "x560", post560)]
+            for _, row in self.data.iterrows()
+        ]
+        
+        
+    
     def returnFPSandTotFrames(self, grouped = False):
         '''
         Return a list of numbers, representing the fps for each file
@@ -643,11 +670,9 @@ only_transparent = "/Users/david/Documents/Research/Saxena Lab/rat-cooperation/D
 only_unfamiliar = "/Users/david/Documents/Research/Saxena Lab/rat-cooperation/David/Behavioral_Quantification/Sorted Data Files/only_unfamiliar_partners.csv"
 only_trainingpartners = "/Users/david/Documents/Research/Saxena Lab/rat-cooperation/David/Behavioral_Quantification/Sorted Data Files/only_training_partners.csv"
 
-'''fe = fileExtractor(fixedExpanded)
-fe.deleteInvalid()
-fe.getTransparentSessions(sortOut=False)
-fe.getPairedTestingSessions(sortOut=False)
-fe.getTrainingPartner(sortOut=False,saveFile=True)'''
+#fe = fileExtractor(fixedExpanded)
+#fe.deleteOnlyFullyInvalid()
+#fe.onlyFiberPhoto()
 
 #print("Res: ", fe.returnFPSandTotFrames())
 #fe.getFirstSessionPerMicePair()
@@ -658,6 +683,7 @@ fe.getTrainingPartner(sortOut=False,saveFile=True)'''
 #fe.getTrainingCoopSessions()
 #fe.getPairedTestingSessions()
 #print(fe.getLevsDatapath())
+
 
 
 def saveAllCSVs():

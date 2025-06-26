@@ -11,9 +11,10 @@ import pandas as pd
 from mag_class import magLoader
 from lev_class import levLoader
 from pos_class import posLoader
+from fiberPhotoClass import fiberPhotoLoader
 
 class singleExperiment:
-    def __init__(self, mag_file, lev_file, pos_file, fps = 30, endFrame = 5000, initialNan = 0.1):
+    def __init__(self, mag_file, lev_file, pos_file, fps = 30, endFrame = 5000, initialNan = 0.1, fp_files = None):
         self.mag_file = mag_file
         self.lev_file = lev_file
         self.pos_file = pos_file
@@ -21,6 +22,9 @@ class singleExperiment:
         self.mag = magLoader(mag_file, fps=fps)
         self.lev = levLoader(lev_file, endFrame, fps)
         self.pos = posLoader(pos_file, endFrame)
+        if (not fp_files is None and len(fp_files) == 3):
+            self.fp = fiberPhotoLoader(fp_files[0], fp_files[1], fp_files[2])
+        
         self.fps = fps
         self.endFrame = endFrame
         self.initialNan = initialNan
