@@ -27,7 +27,7 @@ for i = 1:height(T)
 outputMatFolder = '/gpfs/radev/pi/saxena/aj764/neuronalData/processed';
 outputCSVFolder = '/gpfs/radev/pi/saxena/aj764/neuronalData/processed_csv';
 %csvSubfolders = {'x465_corrected', 'x560_corrected', 'TTLs', 'timeVector'};
-csvSubfolders = {'x465', 'x560', 'TTLs'};
+csvSubfolders = {'x405', 'x465', 'x560'};
 
 % Create output directories if they don’t exist
 if ~exist(outputMatFolder, 'dir'), mkdir(outputMatFolder); end
