@@ -79,53 +79,46 @@ for i = 1:length(filePaths)
         for ch = {'x405', 'x465', 'x560'}
             chName = ch{1};
 
-            % Check column exists in TTLs table
             if ~ismember(chName, TTLs.Properties.VariableNames)
                 warning('Field %s missing in TTLs for %s. Skipping.', chName, name);
                 continue;
             end
         
-            nestedColumn = TTLs.(chName);  % This is a column of nested tables
+            nestedColumn = TTLs.(chName);  % This is a cell array of 1×1526 numeric arrays
             numRows = height(TTLs);
         
             % Preallocate output
             expandedData = cell(numRows, 1528);
             baseCols = table2cell(TTLs(:, {'code', 'ts'}));
-
+        
             for r = 1:numRows
                 try
                     expandedData{r, 1} = baseCols{r, 1};  % code
                     expandedData{r, 2} = baseCols{r, 2};  % ts
-
-                    % Get 1x1526 table and convert to array
-                    nestedTable = nestedColumn{r,1};  % This is the 1x1526 table
-                    if istable(nestedTable)
-                        rowArray = table2array(nestedTable);
+        
+                    rowArray = nestedColumn{r,1};  % 1×1526 numeric array
+        
+                    if isnumeric(rowArray) && isvector(rowArray) && length(rowArray) == 1526
+                        expandedData(r, 3:end) = num2cell(rowArray);
                     else
-                        error('Nested entry at row %d is not a table.', r);
+                        error('Row %d in %s is not a 1x1526 numeric array.', r, chName);
                     end
         
-                    if length(rowArray) ~= 1526
-                        error('Row %d in %s has %d values (expected 1526).', r, chName, length(rowArray));
-                    end
-        
-                    expandedData(r, 3:end) = num2cell(rowArray);
-                    
-                catch innerErr
-                    warning('Skipping row %d of %s in file %s: %s', r, chName, name, innerErr.message);
+                catch err
+                    warning('Skipping row %d of %s in file %s: %s', r, chName, name, err.message);
                 end
             end
-
-            % Create and save table
+        
+            % Create table and save to CSV
             colNames = [{'code', 'ts'}, arrayfun(@num2str, 1:1526, 'UniformOutput', false)];
             expandedTable = cell2table(expandedData, 'VariableNames', colNames);
+        
             outPath = fullfile(outputCSVFolder, chName, [name '_' chName '_TTLs.csv']);
-
             try
                 writetable(expandedTable, outPath);
-                fprintf('Saved: %s\n', outPath);
+                fprintf('Saved: %s (%d rows)\n', outPath, numRows);
             catch writeErr
-                warning('Could not write %s: %s', outPath, writeErr.message);
+                warning('Failed to write %s: %s', outPath, writeErr.message);
             end
         end
         
