@@ -257,10 +257,15 @@ class levLoader:
         if self.data is None:
             raise ValueError("No data loaded.")
     
-        if not {'TrialNum', 'RatID'}.issubset(self.data.columns):
-            raise ValueError("Required columns 'TrialNum'or 'RatID' are missing from data.")
+        if not {'TrialNum', 'RatID', 'AbsTime'}.issubset(self.data.columns):
+            raise ValueError("Required columns 'TrialNum'or 'RatID' or 'AbsTime' are missing from data.")
         
-        first_ratids = self.data.groupby('TrialNum')['RatID'].first()
+        # Sort by time if needed, assuming earlier rows correspond to earlier presses
+        self.data = self.data.sort_values(['TrialNum', 'AbsTime'], ascending=[True, True])
+    
+        # Group by trial and get the first RatID that appears
+        first_ratids = self.data.groupby('TrialNum')['RatID'].first().tolist()
+        print("first_ratids: ", first_ratids)
         
         return first_ratids
     

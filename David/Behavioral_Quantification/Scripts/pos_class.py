@@ -318,6 +318,29 @@ class posLoader:
                 locations.append("other")
     
         return locations
+    
+    def returnRatLocationTime(self, ratID, t):
+        """
+        Returns a list of strings indicating the region of the mouse's headbase for each frame.
+        Possible regions: 'lev_top', 'lev_bottom', 'mag_top', 'mag_bottom', 'mid', 'other'
+        """
+        x = self.data[ratID, 0, self.HB_INDEX, t]  # x-coordinate of headbase
+        y = self.data[ratID, 1, self.HB_INDEX, t]  # y-coordinate of headbase
+    
+        if self.levTopBL[0] <= x <= self.levTopTR[0] and self.levTopTR[1] <= y <= self.levTopBL[1]:
+            locations = ("lev_top")
+        elif self.levBotBL[0] <= x <= self.levBotTR[0] and self.levBotTR[1] <= y <= self.levBotBL[1]:
+            locations = ("lev_bottom")
+        elif self.magTopBL[0] <= x <= self.magTopTR[0] and self.magTopTR[1] <= y <= self.magTopBL[1]:
+            locations = ("mag_top")
+        elif self.magBotBL[0] <= x <= self.magBotTR[0] and self.magBotTR[1] <= y <= self.magBotBL[1]:
+            locations = ("mag_bottom")
+        elif self.levBoundary <= x < self.magBoundary:
+            locations = ("mid")
+        else:
+            locations = ("other")
+    
+        return locations
         
     def returnGazeAlignmentHistogram(self, mouseID):
         """

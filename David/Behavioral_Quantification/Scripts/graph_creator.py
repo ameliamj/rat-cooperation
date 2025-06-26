@@ -891,7 +891,7 @@ categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["
 #categoryExperiments.compareSuccesfulTrials()
 '''
 
-
+'''
 #Unfamiliar vs. Training Partners
 print("Running UF vs TP")
 dataUF = getOnlyUnfamiliar() #Unfamiliar
@@ -902,7 +902,7 @@ magFiles = [dataUF[1], dataTP[1]]
 posFiles = [dataUF[2], dataTP[2]]
 categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["Unfamiliar", "Training Partners"])
 categoryExperiments.compareSuccesfulTrials()
-
+'''
 
 
 #Transparent vs. Translucent vs. Opaque
@@ -919,7 +919,7 @@ categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["
 categoryExperiments.compareSuccesfulTrials()
 '''
 
-
+'''
 print("0")
 categoryExperiments.compareGazeEventsCategories()
 print("1")
@@ -933,7 +933,7 @@ print("4")
 print("5")
 categoryExperiments.printSummaryStats()
 print("Done")
-
+'''
 
 # ---------------------------------------------------------------------------------------------------------
 
@@ -4153,6 +4153,89 @@ class multiFileGraphs:
             print("Warning: No successful trials found. Check lev.returnSuccessTrials() for valid success flags.")
         create_visualizations(successful_trials_df, '_SuccessfulTrials')
             
+    def trueCooperationTesting(self):
+        
+        individual_datapoints_avgDistance = []
+        individual_datapoints_timeUntilPress = []
+        
+        for exp_idx, exp in enumerate(self.experiments): 
+            lev = exp.lev
+            pos = exp.pos
+            fps = exp.fps
+            
+            trial_starts = lev.returnTimeStartTrials()  # List of trial start times
+            first_presses = lev.returnFirstPressAbsTimes()  # List of first press times
+            ids_first_press = lev.returnRatIDFirstPressTrial()
+            
+            if (len(trial_starts) != len(first_presses) or len(first_presses) != len(ids_first_press)):
+                print("len(trial_starts): ", len(trial_starts))
+                print("len(ids_first_press): ", len(ids_first_press))
+                raise ValueError("Inequal Sizes")
+             
+            sumDistances = 0
+            sumNumConsidered = 0
+            sumTimeUntilPress = 0
+            
+            for trial_idx, trialStart in enumerate(trial_starts):
+                t_begin = trial_starts[trial_idx]
+                t_first_press = first_presses[trial_idx]
+                rat_first_press = ids_first_press[trial_idx]
+                
+                if (t_begin == None or t_first_press == None or rat_first_press == None):
+                    continue
+                
+                # Check for NaN in timings
+                if any(np.isnan(t) for t in [t_begin, t_first_press, rat_first_press]):
+                    print(f"[Exp {exp_idx}, Trial {trial_idx}] Skipped: NaN in timings (begin={t_begin}, first_press={t_first_press}, rat_first_press={rat_first_press})")
+                    continue
+                                
+                frameStart = int(t_begin * fps)
+                frameFirstPress = int(t_first_press * fps)
+                
+                levAreas = ['lev_top', 'lev_bottom']
+                dist = 0
+                if (pos.returnRatLocationTime(0, frameStart) in levAreas or pos.returnRatLocationTime(1, frameStart) in levAreas):
+                    dist = max(pos.distanceFromLever(0, frameStart), pos.distanceFromLever(1, frameStart))
+                    if (dist == pos.distanceFromLever(0, frameStart) and rat_first_press != 0):
+                        continue
+                    elif (pos.distanceFromLever(1, frameStart) and rat_first_press != 1):
+                        continue
+                    sumDistances += dist
+                    sumNumConsidered += 1
+                    sumTimeUntilPress += t_first_press - t_begin
+            
+            if sumNumConsidered > 0:
+                individual_datapoints_avgDistance.append(sumDistances / sumNumConsidered)
+                individual_datapoints_timeUntilPress.append(sumTimeUntilPress / sumNumConsidered)
+
+        # Plotting
+        if len(individual_datapoints_avgDistance) >= 2 and len(individual_datapoints_timeUntilPress) >= 2:
+            plt.figure(figsize=(8, 6))
+            plt.scatter(individual_datapoints_avgDistance, individual_datapoints_timeUntilPress,
+                        alpha=0.7, color='blue', label='Experiments')
+    
+            if len(set(individual_datapoints_avgDistance)) >= 2:
+                slope, intercept, r_value, _, _ = linregress(individual_datapoints_avgDistance, individual_datapoints_timeUntilPress)
+                r_squared = r_value ** 2
+    
+                x_vals = np.linspace(min(individual_datapoints_avgDistance), max(individual_datapoints_avgDistance), 100)
+                plt.plot(x_vals, slope * x_vals + intercept, color='red', linestyle='--', label='Trendline')
+                plt.text(0.95, 0.05, f"$R^2$ = {r_squared:.3f}", transform=plt.gca().transAxes,
+                         ha='right', va='bottom', fontsize=12, bbox=dict(facecolor='white', edgecolor='gray'))
+    
+            plt.xlabel('Average Distance from Lever')
+            plt.ylabel('Average Time Until First Press (s)')
+            plt.title('Lever Distance vs. Time Until First Press')
+            plt.legend()
+            plt.grid(True)
+            plt.tight_layout()
+            if self.save:
+                plt.savefig(f"{self.prefix}distance_vs_time_until_press.png")
+            plt.show()
+            plt.close()
+        else:
+            print("Insufficient data to create scatterplot.")
+
     def fiberPhoto(self):
         # Lists to store sums and counts for each wavelength and event type
         sum405List_lev = []
@@ -4369,7 +4452,7 @@ def getFiberPhoto():
     return [fe.getLevsDatapath(), fe.getMagsDatapath(), fe.getPosDatapath(), fpsList, totFramesList, initial_nan_list, fiberFiles]
 
 
-'''
+
 lev_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/ExampleLevFile.csv"]
 
 mag_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_mag.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_mag.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_mag.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_mag.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_mag.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_mag.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/ExampleMagFile.csv"] 
@@ -4379,9 +4462,9 @@ pos_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/B
 fpsList = [30, 30, 30, 30, 30, 30, 30]
 totFramesList = [15000, 26000, 15000, 26000, 15000, 26000, 15000]
 initialNanList = [0.15, 0.12, 0.14, 0.16, 0.3, 0.04, 0.2]
-'''
 
-'''
+
+
 arr = getFiltered()
 #arr = getAllTrainingCoop()
 #arr = getFiberPhoto()
@@ -4392,7 +4475,7 @@ fpsList = arr[3]
 totFramesList = arr[4]
 initialNanList = arr[5]
 #fiberPhoto = arr[6]
-'''
+
 
 '''
 lev_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/4_nanerror_lev.csv"]
@@ -4412,7 +4495,8 @@ initialNanList = [0.3]
 
 
 print("Start MultiFileGraphs Regular")
-#experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "", save=True)
+experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "", save=True)
+experiment.trueCooperationTesting()
 #experiment.fiberPhoto()
 #experiment.compareGazeEventsbyRat()
 #experiment.trialStateModel()
