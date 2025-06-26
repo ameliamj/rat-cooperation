@@ -2028,7 +2028,7 @@ class multiFileGraphs:
         plt.tight_layout()
         plt.show()
         if (self.save):
-            plt.savefig(f'{self.prefix}MaxvsMin.png')
+            plt.savefig(f'{self.prefix}LevPreference.png')
         plt.close()
         
         
@@ -2055,7 +2055,7 @@ class multiFileGraphs:
         plt.tight_layout()
         plt.show()
         if (self.save):
-            plt.savefig(f'{self.prefix}MagMaxvsMin.png')
+            plt.savefig(f'{self.prefix}MagPreference.png')
         plt.close()
         
         
@@ -3879,6 +3879,11 @@ class multiFileGraphs:
                 if (t_begin == None or t_first_press == None or t_coop_last == None or t_first_mag == None):
                     continue
                 
+                # Check for NaN in timings
+                if any(np.isnan(t) for t in [t_begin, t_first_press, t_coop_last, t_first_mag]):
+                    print(f"[Exp {exp_idx}, Trial {trial_idx}] Skipped: NaN in timings (begin={t_begin}, first_press={t_first_press}, coop_last={t_coop_last}, first_mag={t_first_mag})")
+                    continue
+                
                 # Convert times to frame indices
                 f_begin = int(t_begin * fps)
                 f_first_press = int(t_first_press * fps)
@@ -4363,9 +4368,9 @@ initialNanList = [0.3]
 
 print("Start MultiFileGraphs Regular")
 experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, fiberFiles=fiberPhoto, prefix = "", save=True)
-experiment.fiberPhoto()
+#experiment.fiberPhoto()
 #experiment.compareGazeEventsbyRat()
-#experiment.trialStateModel()
+experiment.trialStateModel()
 #experiment.waitingStrategy()
 #experiment.successRateVsThresholdPlot()
 print("Done")
