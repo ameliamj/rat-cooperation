@@ -21,7 +21,7 @@ class singleExperiment:
         
         self.mag = magLoader(mag_file, fps=fps)
         self.lev = levLoader(lev_file, endFrame, fps)
-        #self.pos = posLoader(pos_file, endFrame)
+        self.pos = posLoader(pos_file, endFrame)
         if (not fp_files is None and len(fp_files) == 3):
             self.fp = fiberPhotoLoader(fp_files[0], fp_files[1], fp_files[2])
         
