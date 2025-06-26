@@ -4205,6 +4205,9 @@ class multiFileGraphs:
                     sumTimeUntilPress += t_first_press - t_begin
             
             if sumNumConsidered > 0:
+                print("\nlev file: ", exp.lev_file)
+                print("avgDistance: ", sumDistances / sumNumConsidered)
+                print("timeUntilPress: ", sumTimeUntilPress / sumNumConsidered)
                 individual_datapoints_avgDistance.append(sumDistances / sumNumConsidered)
                 individual_datapoints_timeUntilPress.append(sumTimeUntilPress / sumNumConsidered)
 

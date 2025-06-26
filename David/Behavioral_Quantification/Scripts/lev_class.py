@@ -265,7 +265,7 @@ class levLoader:
     
         # Group by trial and get the first RatID that appears
         first_ratids = self.data.groupby('TrialNum')['RatID'].first().tolist()
-        print("first_ratids: ", first_ratids)
+        #print("first_ratids: ", first_ratids)
         
         return first_ratids
     
