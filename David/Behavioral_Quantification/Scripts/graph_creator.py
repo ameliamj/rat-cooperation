@@ -590,20 +590,28 @@ class multiFileGraphsCategories:
                 #print("g3 (alternate): ", ', '.join(map(str, g3)))
                 
                 # Count gaze events and sum up the frames with gazing behavior
-                total_gaze_events += loader.returnNumGazeEvents(0, alternateDef=False) + loader.returnNumGazeEvents(1, alternateDef=False)
-                total_gaze_frames += np.sum(g0) + np.sum(g1)
-                total_frames += g0.shape[0]
+                curGazeEvents = loader.returnNumGazeEvents(0, alternateDef=False) + loader.returnNumGazeEvents(1, alternateDef=False)
+                curGazeFrames = np.sum(g0) + np.sum(g1)
                 
-                total_gaze_events_alternate += loader.returnNumGazeEvents(0) + loader.returnNumGazeEvents(1)
-                total_gaze_frames_alternate += np.sum(g2) + np.sum(g3)
+                curGazeEventsAlternate = loader.returnNumGazeEvents(0) + loader.returnNumGazeEvents(1)
+                curGazeFramesAlternate = np.sum(g2) + np.sum(g3)
+                
+                curFrames = g0.shape[0]
+                
+                total_gaze_events += curGazeEvents
+                total_gaze_frames += curGazeFrames
+                total_frames += curFrames
+                
+                total_gaze_events_alternate += curGazeEventsAlternate
+                total_gaze_frames_alternate += curGazeFramesAlternate
                 
                 # Calculate individual experiment metrics
                 if total_gaze_events > 0:
-                    cat_gaze_lengths.append(total_gaze_frames / total_gaze_events)
+                    cat_gaze_lengths.append(curGazeFrames / curGazeEvents)
                 if total_gaze_events_alternate > 0:
-                    cat_gaze_lengths_alternate.append(total_gaze_frames_alternate / total_gaze_events_alternate)
+                    cat_gaze_lengths_alternate.append(curGazeFramesAlternate / curGazeEventsAlternate)
                 if total_frames > 0:
-                    cat_percentGazing_per_trial.append(total_gaze_frames_alternate / total_frames * 100) 
+                    cat_percentGazing_per_trial.append(curGazeFramesAlternate / curFrames * 100) 
                 
                 # Access lever press data and compute trial/success counts
                 lev = exp.lev.data
@@ -906,7 +914,7 @@ categoryExperiments.compareSuccesfulTrials()
 
 
 #Transparent vs. Translucent vs. Opaque
-'''
+
 print("Running Transparency")
 dataTransparent = getOnlyTransparent() #Transparent
 dataTranslucent = getOnlyTranslucent() #Translucent
@@ -916,10 +924,10 @@ levFiles = [dataTransparent[0], dataTranslucent[0], dataOpaque[0]]
 magFiles = [dataTransparent[1], dataTranslucent[1], dataOpaque[1]]
 posFiles = [dataTransparent[2], dataTranslucent[2], dataOpaque[2]]
 categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["Transparent", "Translucent", "Opaque"])
-categoryExperiments.compareSuccesfulTrials()
-'''
+#categoryExperiments.compareSuccesfulTrials()
 
-'''
+
+#'''
 print("0")
 categoryExperiments.compareGazeEventsCategories()
 print("1")
@@ -933,7 +941,7 @@ print("4")
 print("5")
 categoryExperiments.printSummaryStats()
 print("Done")
-'''
+#'''
 
 # ---------------------------------------------------------------------------------------------------------
 
@@ -4468,7 +4476,7 @@ initialNanList = [0.15, 0.12, 0.14, 0.16, 0.3, 0.04, 0.2]
 
 
 
-arr = getFiltered()
+'''arr = getFiltered()
 #arr = getAllTrainingCoop()
 #arr = getFiberPhoto()
 lev_files = arr[0]
@@ -4478,6 +4486,7 @@ fpsList = arr[3]
 totFramesList = arr[4]
 initialNanList = arr[5]
 #fiberPhoto = arr[6]
+'''
 
 
 '''
@@ -4498,8 +4507,8 @@ initialNanList = [0.3]
 
 
 print("Start MultiFileGraphs Regular")
-experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "", save=True)
-experiment.trueCooperationTesting()
+#experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "", save=True)
+#experiment.trueCooperationTesting()
 #experiment.fiberPhoto()
 #experiment.compareGazeEventsbyRat()
 #experiment.trialStateModel()
