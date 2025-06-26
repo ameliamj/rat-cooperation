@@ -4361,7 +4361,7 @@ initialNanList = [0.3]
 
 
 print("Start MultiFileGraphs Regular")
-experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, fiberFiles=fiberPhoto, prefix = "", save=False)
+experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, fiberFiles=fiberPhoto, prefix = "", save=True)
 experiment.fiberPhoto()
 #experiment.compareGazeEventsbyRat()
 #experiment.trialStateModel()
