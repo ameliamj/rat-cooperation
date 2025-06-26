@@ -234,12 +234,13 @@ class posLoader:
             '''
             Alternate definition: gaze intersects body for minFramesStill consecutive frames
             '''
-            
             num_frames = self.data.shape[-1]
+            #print("num_frames (isStill): ", num_frames)
             still_mask = np.zeros(num_frames, dtype=bool)
     
             other_mouse = 1 - mouseID
             for t in range(self.minFramesStill, num_frames):
+                #print("t: ", t)
                 intersected_all = True
     
                 for tau in range(t - self.minFramesStill, t):
@@ -269,6 +270,7 @@ class posLoader:
         any body part of the other mouse.
         """
         num_frames = self.data.shape[-1]
+        #print("num_frames is: ", num_frames)
         result = np.zeros(num_frames, dtype=bool)
 
         still_mask = self.returnIsStill(mouseID, alternateDef)
@@ -278,6 +280,7 @@ class posLoader:
         other_body = self.data[otherID]  # shape (2, 5, num_frames)
 
         for t in range(num_frames):
+            #print("t: ", t)
             if not still_mask[t]:
                 continue
             gaze_vec = gaze_vector[:, t]

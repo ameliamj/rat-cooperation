@@ -264,6 +264,7 @@ class magLoader:
         reward_data = self.data[(self.data['Hit'] == 0) & (self.data['RatID'] == rat_id)]
         frames = (reward_data['AbsTime'] * self.fps).astype(int)
         return set(frames)
+    
 
 
 #Testing

@@ -24,6 +24,7 @@ from scipy.ndimage import gaussian_filter
 from scipy.ndimage import gaussian_filter1d
 
 from matplotlib.patches import Patch
+import seaborn as sns
 
 import sys
 sys.stdout.flush()
@@ -3728,13 +3729,371 @@ class multiFileGraphs:
         
     def trialStateModel(self):
         '''
-        trial begin -> first press -> coopPress/lastPress -> first mag -> trialBegin
+        Define 4 Stages to each Trial: 
+            trial begin -> first press -> coopPress/lastPress -> first mag -> back to next trialBegin
+                - Use lev.returnTimeStartTrials, lev.returnFirstPressAbsTimes, lev.returnCoopTimeorLastPressTime, mag.returnMagStartAbsTimes 
+        
+        Creates bar plots comparing all the following information across the 4 stages
+        
+        Classify Different Behaviors: 
+            1) Make a heatmap for each category
+            2) Classify Interactions
+                a) How far apart are the rats? 
+                b) How much do they gaze at each other? 
+            3) Classify Individual Behavior
+                a) How often are they idle? at Lever? at Magazine? 
+                    - Create a single bar plot that shows percentage of time idle for each stage, with the bars colored in to show percentage of idle time that was spent at a lever, magazine, or other area
+            4) Repeat 1-3 but only for successful trials
+                 - Use lev.returnSuccessTrials
         '''
         
-        for exp in self.experiments:
+        def returnMagStartAbsTimes(lev, mag):
+            """
+            For each trial number present in lev.data (i.e., trials with lever presses),
+            find the first magazine entry in mag.data with the same TrialNum.
+        
+            Returns:
+                list: A list of relative times (AbsTime - TrialTime) for mag entries
+                      corresponding to lever press trials. Returns None if no mag entry exists.
+                      Length equals lev.returnNumTotalTrialswithLeverPress().
+            """
+            if lev.data is None or mag.data is None:
+                raise ValueError("Lever or magazine data is missing.")
+        
+            required_cols = {'TrialNum', 'AbsTime'}
+            for loader_name, df in [('lev', lev.data), ('mag', mag.data)]:
+                if not required_cols.issubset(df.columns):
+                    raise ValueError(f"{loader_name}.data missing required columns: {required_cols - set(df.columns)}")
+        
+            # All trials with lever presses
+            lever_trials = sorted(lev.data['TrialNum'].dropna().unique())
+            #print("lever_trials: ", lever_trials)
+            mag_grouped = mag.data.groupby('TrialNum')
+        
+            rel_times = []
+            for trial in lever_trials:
+                if trial not in mag_grouped.groups:
+                    rel_times.append(None)
+                else:
+                    group = mag_grouped.get_group(trial)
+                    if group.empty:
+                        rel_times.append(None)
+                    else:
+                        first_row = group.loc[group['AbsTime'].idxmin()]
+                        
+                        if pd.isna(first_row['AbsTime']):
+                            rel_times.append(None)
+                        else:
+                            rel_time = first_row['AbsTime']
+                            rel_times.append(rel_time)
+                        '''if pd.isna(first_row['AbsTime']) or pd.isna(first_row['TrialTime']):
+                            rel_times.append(None)
+                        else:
+                            rel_time = first_row['AbsTime'] - first_row['TrialTime']
+                            rel_times.append(rel_time)'''
+        
+            return rel_times
+        
+        def filterToLeverPressTrials(original_list, lev):
+            """
+            Filters a list of length lev.returnNumTotalTrials() down to only those trials
+            that have lever press data (i.e., appear in lev.data['TrialNum']).
+        
+            Assumes original_list is 0-indexed, while TrialNum starts at 1.
+        
+            Args:
+                original_list (list): Full list, one entry per trial (indexed from 0).
+                lev (levLoader): The lever data loader object.
+        
+            Returns:
+                list: Filtered list with entries only from trials that had lever presses.
+            """
+            if len(original_list) != lev.returnNumTotalTrials():
+                raise ValueError("Length of input list does not match total number of trials.")
+        
+            # Convert trial numbers to integers and subtract 1 to use as 0-based indices
+            lever_trials = sorted(lev.data['TrialNum'].dropna().unique().astype(int))
+            filtered_list = [original_list[trial_num - 1] for trial_num in lever_trials]
+        
+            return filtered_list
+        
+        # Initialize data structures to aggregate across experiments
+        stages = ['Begin to First Press', 'First Press to Coop/Last Press', 'Coop/Last Press to First Mag', 'First Mag to Next Begin']
+        all_trials_data = []
+        successful_trials_data = []
+        
+        for exp_idx, exp in enumerate(self.experiments):
             lev = exp.lev
             mag = exp.mag
+            pos = exp.pos
+            fps = exp.fps
+            total_frames = exp.endFrame
             
+            # Get trial timings
+            trial_starts = lev.returnTimeStartTrials()  # List of trial start times
+            first_presses = lev.returnFirstPressAbsTimes()  # List of first press times
+            coop_or_last_press = lev.returnCoopTimeorLastPressTime()  # List of coop/last press times
+            print("hi")
+            first_mags = returnMagStartAbsTimes(lev, mag)  # List of first magazine entry times
+            success_status = lev.returnSuccessTrials()  # List of trial success status (1, 0, -1)
+            
+            print("trial_starts: ", trial_starts)
+            print("first_presses: ", first_presses)
+            print("coop_or_last_press: ", coop_or_last_press)
+            print("first_mags: ", returnMagStartAbsTimes(lev, mag))
+            
+            success_status = filterToLeverPressTrials(success_status, lev)
+            
+            print("Got Trial timings")
+            
+            numTrialsPress = lev.returnNumTotalTrialswithLeverPress()
+            numTrialsTot = lev.returnNumTotalTrials()
+            print(f"lengths: {len(trial_starts)}, {len(first_presses)}, {len(coop_or_last_press)}, {len(first_mags)}, {len(success_status)}, {numTrialsPress}, {numTrialsTot}")
+            
+            # Ensure consistent trial lengths
+            n_trials = min(len(trial_starts), len(first_presses), len(coop_or_last_press), len(first_mags), len(success_status))
+            print("n_trials: ", n_trials)
+            
+            # Compute stage durations and frame indices
+            trial_info = []
+            for trial_idx in range(n_trials):
+                if success_status[trial_idx] == -1:  # Skip missing trials
+                    continue
+                
+                # Define stage boundaries (in seconds)
+                t_begin = trial_starts[trial_idx]
+                t_first_press = first_presses[trial_idx]
+                t_coop_last = coop_or_last_press[trial_idx]
+                t_first_mag = first_mags[trial_idx]
+                # Next trial begin or end of session
+                t_next_begin = trial_starts[trial_idx + 1] if trial_idx + 1 < len(trial_starts) else total_frames / fps
+                
+                if (t_begin == None or t_first_press == None or t_coop_last == None or t_first_mag == None):
+                    continue
+                
+                # Convert times to frame indices
+                f_begin = int(t_begin * fps)
+                f_first_press = int(t_first_press * fps)
+                f_coop_last = int(t_coop_last * fps)
+                f_first_mag = int(t_first_mag * fps)
+                f_next_begin = int(t_next_begin * fps)
+                
+                # Stage durations (in seconds)
+                durations = [
+                    t_first_press - t_begin,  # Begin to First Press
+                    t_coop_last - t_first_press,  # First Press to Coop/Last Press
+                    t_first_mag - t_coop_last,  # Coop/Last Press to First Mag
+                    t_next_begin - t_first_mag  # First Mag to Next Begin
+                ]
+                
+                #print("durations: ", durations)
+                
+                # Frame ranges for each stage
+                frame_ranges = [
+                    (f_begin, f_first_press),
+                    (f_first_press, f_coop_last),
+                    (f_coop_last, f_first_mag),
+                    (f_first_mag, f_next_begin)
+                ]
+                
+                print("frame_ranges: ", frame_ranges)
+                
+                # Collect behavioral data for each stage
+                for stage_idx, (start_frame, end_frame) in enumerate(frame_ranges):
+                    if start_frame >= end_frame or end_frame > total_frames:
+                        continue  # Skip invalid ranges
+                    
+                    #print("stage_idx: ", stage_idx)
+                    #print("start_frame: ", start_frame)
+                    #print("end_frame: ", end_frame)
+                    
+                    # Interaction metrics
+                    distances = pos.returnInterMouseDistance()[start_frame:end_frame]
+                    avg_distance = np.nanmean(distances) if len(distances) > 0 else np.nan
+                    
+                    #print("0")
+                    
+                    gaze_frames_rat0 = pos.returnIsGazing(mouseID=0)[start_frame:end_frame]
+                    #print("gaze_frames_rat0: ", gaze_frames_rat0)
+                    gaze_frames_rat1 = pos.returnIsGazing(mouseID=1)[start_frame:end_frame]
+                    #print("0.5")
+                    gaze_percent_rat0 = np.mean(gaze_frames_rat0) * 100 if len(gaze_frames_rat0) > 0 else 0
+                    gaze_percent_rat1 = np.mean(gaze_frames_rat1) * 100 if len(gaze_frames_rat1) > 0 else 0
+                    avg_gaze_percent = (gaze_percent_rat0 + gaze_percent_rat1) / 2
+                    
+                    #print("1")
+                    
+                    # Individual behavior (idle, lever, magazine)
+                    locations_rat0 = pos.returnMouseLocation(0)[start_frame:end_frame]
+                    locations_rat1 = pos.returnMouseLocation(1)[start_frame:end_frame]
+                    
+                    # Idle detection using velocity
+                    velocities_rat0 = pos.computeVelocity(0)[start_frame:end_frame]
+                    velocities_rat1 = pos.computeVelocity(1)[start_frame:end_frame]
+                    idle_rat0 = velocities_rat0 < 10  # Velocity threshold for idle
+                    idle_rat1 = velocities_rat1 < 10
+                    
+                    #print("2")
+                    
+                    # Compute idle percentages
+                    idle_percent_rat0 = np.mean(idle_rat0) * 100 if len(idle_rat0) > 0 else 0
+                    idle_percent_rat1 = np.mean(idle_rat1) * 100 if len(idle_rat1) > 0 else 0
+                    avg_idle_percent = (idle_percent_rat0 + idle_percent_rat1) / 2
+                    
+                    # Breakdown of idle time by location
+                    for rat_id, locations, idle in [(0, locations_rat0, idle_rat0), (1, locations_rat1, idle_rat1)]:
+                        #print("rat_id: ", rat_id)
+                        if not locations or not idle.any():
+                            continue
+                        idle_locations = np.array(locations)[idle]
+                        lever_count = np.sum(np.array([loc.startswith('lev') for loc in idle_locations]))
+                        mag_count = np.sum(np.array([loc.startswith('mag') for loc in idle_locations]))
+                        other_count = len(idle_locations) - lever_count - mag_count
+                        total_idle = len(idle_locations)
+                        lever_percent = (lever_count / total_idle * 100) if total_idle > 0 else 0
+                        mag_percent = (mag_count / total_idle * 100) if total_idle > 0 else 0
+                        other_percent = (other_count / total_idle * 100) if total_idle > 0 else 0
+                        
+                        # Store trial data
+                        trial_data = {
+                            'Experiment': exp_idx,
+                            'Trial': trial_idx,
+                            'Stage': stage_idx,
+                            'Stage_Name': stages[stage_idx],
+                            'Duration': durations[stage_idx],
+                            'Avg_Distance': avg_distance,
+                            'Avg_Gaze_Percent': avg_gaze_percent,
+                            'Avg_Idle_Percent': avg_idle_percent,
+                            'Idle_Lever_Percent': lever_percent,
+                            'Idle_Mag_Percent': mag_percent,
+                            'Idle_Other_Percent': other_percent,
+                            'Is_Successful': success_status[trial_idx] == 1
+                        }
+                        all_trials_data.append(trial_data)
+                        if trial_data['Is_Successful']:
+                            successful_trials_data.append(trial_data)
+            
+        # Convert to DataFrames
+        all_trials_df = pd.DataFrame(all_trials_data)
+        successful_trials_df = pd.DataFrame(successful_trials_data)
+        
+        # Function to create visualizations
+        def create_visualizations(df, suffix=''):
+            if df.empty:
+                print(f"No data available for visualizations{suffix}. Check if trials exist or if success filtering is too restrictive.")
+                return
+            
+            # Ensure all stages are represented
+            for stage in stages:
+                if stage not in df['Stage_Name'].values:
+                    print(f"Warning: Stage '{stage}' missing in {suffix}. Adding placeholder data.")
+                    placeholder = {
+                        'Experiment': -1,
+                        'Trial': -1,
+                        'Stage': stages.index(stage),
+                        'Stage_Name': stage,
+                        'Duration': np.nan,
+                        'Avg_Distance': np.nan,
+                        'Avg_Gaze_Percent': np.nan,
+                        'Avg_Idle_Percent': np.nan,
+                        'Idle_Lever_Percent': np.nan,
+                        'Idle_Mag_Percent': np.nan,
+                        'Idle_Other_Percent': np.nan,
+                        'Is_Successful': suffix == '_SuccessfulTrials'
+                    }
+                    df = pd.concat([df, pd.DataFrame([placeholder])], ignore_index=True)
+            
+            # Aggregate mean and collect individual session data
+            agg_data = df.groupby('Stage_Name').agg({
+                'Duration': ['mean', list],
+                'Avg_Distance': ['mean', list],
+                'Avg_Gaze_Percent': ['mean', list],
+                'Avg_Idle_Percent': ['mean', list],
+                'Idle_Lever_Percent': 'mean',
+                'Idle_Mag_Percent': 'mean',
+                'Idle_Other_Percent': 'mean'
+            }).reset_index()
+            
+            # Flatten multi-level column names
+            agg_data.columns = ['Stage_Name', 'Duration_mean', 'Duration_list', 
+                               'Avg_Distance_mean', 'Avg_Distance_list',
+                               'Avg_Gaze_Percent_mean', 'Avg_Gaze_Percent_list',
+                               'Avg_Idle_Percent_mean', 'Avg_Idle_Percent_list',
+                               'Idle_Lever_Percent_mean', 'Idle_Mag_Percent_mean', 'Idle_Other_Percent_mean']
+            
+            # Order stages correctly
+            agg_data['Stage_Name'] = pd.Categorical(agg_data['Stage_Name'], categories=stages, ordered=True)
+            agg_data = agg_data.sort_values('Stage_Name')
+            
+            # Plot individual bar plots for each metric
+            metrics = [
+                ('Duration', 'Duration (seconds)', f'Duration Across Stages{suffix}'),
+                ('Avg_Distance', 'Distance (pixels)', f'Average Inter-Mouse Distance Across Stages{suffix}'),
+                ('Avg_Gaze_Percent', 'Gaze Percentage (%)', f'Average Gaze Percentage Across Stages{suffix}'),
+                ('Avg_Idle_Percent', 'Idle Percentage (%)', f'Average Idle Percentage Across Stages{suffix}')
+            ]
+            
+            for metric, ylabel, title in metrics:
+                plt.figure(figsize=(10, 6))
+                # Bar plot for mean values
+                sns.barplot(data=agg_data, x='Stage_Name', y=f'{metric}_mean', color='skyblue', label='Mean')
+                
+                # Scatter individual session data
+                for idx, row in agg_data.iterrows():
+                    stage_idx = stages.index(row['Stage_Name'])
+                    values = [v for v in row[f'{metric}_list'] if not np.isnan(v)]
+                    x_positions = [stage_idx + np.random.uniform(-0.2, 0.2) for _ in values]
+                    plt.scatter(x_positions, values, color='black', alpha=0.5, label='Individual Sessions' if idx == 0 else None)
+                
+                plt.title(title)
+                plt.xlabel('Stage')
+                plt.ylabel(ylabel)
+                plt.xticks(rotation=45)
+                plt.legend()
+                plt.tight_layout()
+                if self.save:
+                    plt.savefig(f'{self.prefix}{metric}{suffix}.png')
+                plt.show()
+                plt.close()
+            
+            # Stacked bar plot for idle time breakdown
+            plt.figure(figsize=(10, 6))
+            x = np.arange(len(stages))
+            idle_means = agg_data['Avg_Idle_Percent_mean']
+            lever_proportions = agg_data['Idle_Lever_Percent_mean'] * idle_means / 100
+            mag_proportions = agg_data['Idle_Mag_Percent_mean'] * idle_means / 100
+            other_proportions = agg_data['Idle_Other_Percent_mean'] * idle_means / 100
+            
+            # Plot stacked bars with total height as Avg_Idle_Percent
+            plt.bar(x, lever_proportions, label='Idle at Lever', color='blue')
+            plt.bar(x, mag_proportions, bottom=lever_proportions, label='Idle at Magazine', color='green')
+            plt.bar(x, other_proportions, bottom=lever_proportions + mag_proportions, label='Idle Elsewhere', color='red')
+            
+            # Scatter individual session data for total idle percentage
+            for idx, row in agg_data.iterrows():
+                stage_idx = stages.index(row['Stage_Name'])
+                values = [v for v in row['Avg_Idle_Percent_list'] if not np.isnan(v)]
+                x_positions = [stage_idx + np.random.uniform(-0.2, 0.2) for _ in values]
+                plt.scatter(x_positions, values, color='black', alpha=0.5, label='Individual Sessions' if idx == 0 else None)
+            
+            plt.xlabel('Stage')
+            plt.ylabel('Idle Percentage (%)')
+            plt.title(f'Idle Time Breakdown Across Stages{suffix}')
+            plt.xticks(x, stages, rotation=45)
+            plt.legend()
+            plt.tight_layout()
+            if self.save:
+                plt.savefig(f'{self.prefix}IdleBreakdown{suffix}.png')
+            plt.show()
+            plt.close()
+        
+        # Create visualizations for all trials
+        create_visualizations(all_trials_df, '_AllTrials')
+        
+        # Create visualizations for successful trials
+        if successful_trials_df.empty:
+            print("Warning: No successful trials found. Check lev.returnSuccessTrials() for valid success flags.")
+        create_visualizations(successful_trials_df, '_SuccessfulTrials')
             
 
 #Testing Multi File Graphs
@@ -3773,20 +4132,26 @@ initialNanList = arr[5]
 
 
 '''
-lev_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/040124_KL005B-KL005Y_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/040124_KL006R-KL006G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/040124_KL007G-KL007Y_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv"]
-mag_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/040124_KL005B-KL005Y_mag.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/040124_KL006R-KL006G_mag.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/040124_KL007G-KL007Y_mag.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_mag.csv"]
-pos_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/040124_COOPTRAIN_LARGEARENA_KL005B-KL005Y_Camera1.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/040124_COOPTRAIN_LARGEARENA_KL006R-KL006G_Camera2.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/040124_COOPTRAIN_LARGEARENA_KL007G-KL007Y_Camera3.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G.predictions.h5"]
+lev_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/4_nanerror_lev.csv"]
+mag_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/4_nanerror_mag.csv"]
+pos_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/4_nanerror_test.h5"]
 
-fpsList = [28, 29, 29, 28]
-totFramesList = [14000, 12000, 13000, 10000]
-initialNanList = [0.1, 0.3, 0.2, 0.14]
+#Missing Trial Nums
+#lev_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/040124_KL005B-KL005Y_lever.csv"]
+#mag_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/040124_KL005B-KL005Y_mag.csv"]
+#pos_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/040124_COOPTRAIN_LARGEARENA_KL005B-KL005Y_Camera1.predictions.h5"]
+
+fpsList = [29]
+totFramesList = [12000]
+initialNanList = [0.3]
 '''
 
 
 print("Start MultiFileGraphs Regular")
 experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "", save=True)
-
-experiment.waitingStrategy()
+#experiment.compareGazeEventsbyRat()
+experiment.trialStateModel()
+#experiment.waitingStrategy()
 #experiment.successRateVsThresholdPlot()
 print("Done")
 #experiment.waitingStrategy()
