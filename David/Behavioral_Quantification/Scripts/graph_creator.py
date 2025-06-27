@@ -20,6 +20,7 @@ from file_extractor_class import fileExtractor
 #from mag_class import magLoader
 #from lev_class import levLoader
 from scipy.stats import linregress
+from scipy.interpolate import make_interp_spline
 from scipy.stats import mannwhitneyu, kruskal
 from scipy.ndimage import gaussian_filter
 from scipy.ndimage import gaussian_filter1d
@@ -475,7 +476,6 @@ class multiFileGraphsCategories:
         plt.show()
         plt.close()
         
-
     def compareIPI(self):
         """
         Function Purpose:
@@ -974,7 +974,7 @@ categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["
 
 
 #Transparent vs. Translucent vs. Opaque
-
+'''
 print("Running Transparency")
 dataTransparent = getOnlyTransparent() #Transparent
 dataTranslucent = getOnlyTranslucent() #Translucent
@@ -985,9 +985,9 @@ magFiles = [dataTransparent[1], dataTranslucent[1], dataOpaque[1]]
 posFiles = [dataTransparent[2], dataTranslucent[2], dataOpaque[2]]
 categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["Transparent", "Translucent", "Opaque"])
 #categoryExperiments.compareSuccesfulTrials()
+'''
 
-
-#'''
+'''
 print("0")
 categoryExperiments.compareGazeEventsCategories()
 print("1")
@@ -1001,7 +1001,7 @@ print("4")
 print("5")
 categoryExperiments.printSummaryStats()
 print("Done")
-#'''
+'''
 
 # ---------------------------------------------------------------------------------------------------------
 
@@ -2317,6 +2317,19 @@ class multiFileGraphs:
         
         """
         
+        def numSuccessinaRow(successTrials):
+            n = len(successTrials)
+            res = [0] * n
+            count = 0
+            for i, succ in enumerate(successTrials):
+                if (succ == 1):
+                    count += 1
+                else:
+                    count = 0
+                
+                res[i] = count
+            return res
+        
         averageDistance_NoSuccess = 0
         averageDistance_SuccessZone = 0
         averageDistance_Success_NoZone = 0
@@ -2333,6 +2346,8 @@ class multiFileGraphs:
         totDifference_NoSuccess = 0
         datapoints_NoSuccess = []
         
+        successInARowvsDistance = defaultdict(list)
+        
         for exp in self.experiments:
             lev = exp.lev
             pos = exp.pos
@@ -2343,14 +2358,25 @@ class multiFileGraphs:
             endTimeTrials = lev.returnTimeEndTrials()
             
             successTrial = lev.returnSuccessTrials()
+            successInARow = numSuccessinaRow(successTrial)
             
+            cat_totFrames_SuccessZone = 0
+            cat_totDifference_SuccessZone = 0
+            
+            cat_totFrames_Success_NoZone = 0 
+            cat_totDifference_Success_NoZone = 0
+            
+            cat_totFrames_NoSuccess = 0
+            cat_totDifference_NoSuccess = 0
+            
+            temp_successInARowvsDistance = defaultdict(list)
             
             print("Lengths:", len(listTrials), len(startTimeTrials), len(endTimeTrials))
             if (len(listTrials) != len(startTimeTrials) or  len(startTimeTrials) != len(endTimeTrials)):
                 print("levFiles: ", exp.lev_file)
             
             for i, trialBool in enumerate(listTrials):
-                if (startTimeTrials[i] == None or endTimeTrials[i] == None):
+                if (startTimeTrials[i] == None or endTimeTrials[i] == None or successInARow[i] == None):
                     continue
                 
                 startFrame = int(startTimeTrials[i] * fps)
@@ -2366,22 +2392,43 @@ class multiFileGraphs:
                 
                 difference = sum(abs(a - b) for a, b in zip(rat1_xlocations, rat2_xlocations))            
                 
+                temp_successInARowvsDistance[successInARow[i]].append(difference / numFrames)
+                
                 if (trialBool):
                     totFrames_SuccessZone += numFrames
                     totDifference_SuccessZone += difference
-                    if (numFrames > 0):
-                        datapoints_SuccessZone.append(difference / numFrames)
+                    cat_totFrames_SuccessZone += numFrames
+                    cat_totDifference_SuccessZone += difference
+                    #if (numFrames > 0):
+                        #datapoints_SuccessZone.append(difference / numFrames)
                         
                 elif(successTrial[i] == 1):
                     totFrames_Success_NoZone += numFrames
                     totDifference_Success_NoZone += difference
-                    if (numFrames > 0):
-                        datapoints_Success_NoZone.append(difference / numFrames)
+                    cat_totFrames_Success_NoZone += numFrames
+                    cat_totDifference_Success_NoZone += difference
+                    #if (numFrames > 0):
+                        #datapoints_Success_NoZone.append(difference / numFrames)
                 else:
                     totFrames_NoSuccess += numFrames
                     totDifference_NoSuccess += difference
-                    if (numFrames > 0):
-                        datapoints_NoSuccess.append(difference / numFrames)
+                    cat_totFrames_NoSuccess += numFrames
+                    cat_totDifference_NoSuccess += difference
+                    #if (numFrames > 0):
+                        #datapoints_NoSuccess.append(difference / numFrames)
+                        
+            if (cat_totFrames_SuccessZone > 0):
+                datapoints_SuccessZone.append(cat_totDifference_SuccessZone / cat_totFrames_SuccessZone)
+            
+            if (cat_totFrames_Success_NoZone > 0):
+                datapoints_Success_NoZone.append(cat_totDifference_Success_NoZone / cat_totFrames_Success_NoZone)
+            
+            if (cat_totFrames_NoSuccess > 0):
+                datapoints_NoSuccess.append(cat_totDifference_NoSuccess / cat_totFrames_NoSuccess)
+                
+            for key, value in temp_successInARowvsDistance.items():
+                avg = np.mean(value)
+                successInARowvsDistance[key].append(avg)
         
         print("totFrames_NoSuccess: ", totFrames_NoSuccess)
         print("totFrames_SuccessZone: ", totFrames_SuccessZone)
@@ -2398,9 +2445,9 @@ class multiFileGraphs:
         
         #Make Graphs: 
         # Labels and values for the bar plot
-        labels = ['No Success', 'Success Zone', 'Success No Zone']
-        averages = [averageDistance_NoSuccess, averageDistance_SuccessZone, averageDistance_Success_NoZone]
-        datapoints = [datapoints_NoSuccess, datapoints_SuccessZone, datapoints_Success_NoZone]
+        labels = ['No Success', 'Success No Zone', 'Success Zone']
+        averages = [averageDistance_NoSuccess, averageDistance_Success_NoZone, averageDistance_SuccessZone]
+        datapoints = [datapoints_NoSuccess, datapoints_Success_NoZone, datapoints_SuccessZone]
         
         # X locations for the bars and jittered scatter points
         x = np.arange(len(labels))
@@ -2410,7 +2457,7 @@ class multiFileGraphs:
         fig, ax = plt.subplots(figsize=(8, 6))
         
         # Plot bar chart
-        bars = ax.bar(x, averages, width, color=['red', 'green'], alpha=0.6, edgecolor='black')
+        bars = ax.bar(x, averages, width, color=['red', 'yellow', 'green'], alpha=0.6, edgecolor='black')
         
         # Overlay individual data points
         for i, points in enumerate(datapoints):
@@ -2419,15 +2466,60 @@ class multiFileGraphs:
             ax.scatter(jittered_x, points, alpha=0.8, color='black', s=20)
         
         # Labels and formatting
-        ax.set_ylabel('Average Distance')
-        ax.set_title('Average Head-Body X-Distance per Trial')
+        ax.set_ylabel('Average Distance', fontsize = 13)
+        ax.set_title('Average Head-Body X-Distance per Trial', fontsize = 15)
         ax.set_xticks(x)
-        ax.set_xticklabels(labels)
+        ax.set_xticklabels(labels, fontsize = 13)
+        ax.tick_params(axis='y', labelsize=13)  # Set y-axis tick font size for consistency
         ax.axhline(0, color='gray', linewidth=0.8, linestyle='--')
         
         plt.tight_layout()
-        plt.savefig(f"{self.prefix}X_Distance_SuccessZonevsNoSuccess.png")
+        if (self.save):
+            plt.savefig(f"{self.prefix}X_Distance_SuccessZonevsNoSuccess.png")
         plt.show()
+        
+        # Prepare data: calculate averages for each key and collect individual points
+        keys = sorted(successInARowvsDistance.keys())
+        averages = [np.mean(successInARowvsDistance[k]) for k in keys]
+        individual_points = [(k, v) for k in keys for v in successInARowvsDistance[k]]
+    
+        # Create smoothed line using spline interpolation
+        x_smooth = np.linspace(min(keys), max(keys), 300)
+        spl = make_interp_spline(keys, averages, k=3)  # Cubic spline
+        y_smooth = spl(x_smooth)
+    
+        # Calculate R² for the smoothed fit (using linear regression on averages for simplicity)
+        slope, intercept, r_value, _, _ = linregress(keys, averages)
+        r_squared = r_value**2
+    
+        # Create the plot
+        fig, ax = plt.subplots(figsize=(8, 6))
+        
+        # Plot smoothed line
+        ax.plot(x_smooth, y_smooth, color='blue', label='Smoothed Average Distance')
+        
+        # Plot individual data points as faint grey dots
+        if individual_points:
+            x_points, y_points = zip(*individual_points)
+            ax.scatter(x_points, y_points, color='grey', alpha=0.3, s=20, label='Individual Data Points')
+        
+        # Add R² value to the plot
+        ax.text(0.05, 0.95, f'R² = {r_squared:.4f}', transform=ax.transAxes, 
+                fontsize=12, verticalalignment='top', bbox=dict(facecolor='white', alpha=0.8))
+        
+        # Labels and formatting
+        ax.set_xlabel('Number of Successes in a Row', fontsize = 13)
+        ax.set_ylabel('Average Distance', fontsize = 13)
+        ax.set_title('Successes in a Row vs. Average Head-Body X-Distance', fontsize = 15)
+        ax.legend()
+        ax.grid(True, linestyle='--', alpha=0.7)
+        
+        # Save and show the plot
+        plt.tight_layout()
+        if (self.save):
+            plt.savefig(f"{self.prefix}Smoothed_X_Distance_vs_SuccessInARow.png")
+        plt.show()
+        
         
     def compareAverageVelocityGazevsNot(self):
         '''
@@ -4536,7 +4628,7 @@ initialNanList = [0.15, 0.12, 0.14, 0.16, 0.3, 0.04, 0.2]
 
 
 
-'''arr = getFiltered()
+arr = getFiltered()
 #arr = getAllTrainingCoop()
 #arr = getFiberPhoto()
 lev_files = arr[0]
@@ -4546,7 +4638,7 @@ fpsList = arr[3]
 totFramesList = arr[4]
 initialNanList = arr[5]
 #fiberPhoto = arr[6]
-'''
+
 
 
 '''
@@ -4567,7 +4659,8 @@ initialNanList = [0.3]
 
 
 print("Start MultiFileGraphs Regular")
-#experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "", save=True)
+experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "", save=True)
+experiment.cooperativeRegionStrategiesQuantification()
 #experiment.trueCooperationTesting()
 #experiment.fiberPhoto()
 #experiment.compareGazeEventsbyRat()
