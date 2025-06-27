@@ -4356,7 +4356,7 @@ class multiFileGraphs:
                     sumNumConsidered += 1
                     sumTimeUntilPress += t_first_press - t_begin
             
-            if sumNumConsidered > 0:
+            if sumNumConsidered > 0 and sumTimeUntilPress / sumNumConsidered < 40:
                 print("\nlev file: ", exp.lev_file)
                 print("avgDistance: ", sumDistances / sumNumConsidered)
                 print("timeUntilPress: ", sumTimeUntilPress / sumNumConsidered)
@@ -4652,10 +4652,9 @@ initialNanList = [0.3]
 
 print("Start MultiFileGraphs Regular")
 experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "", save=True)
-experiment.waitingStrategy()
-#experiment.analyze_and_plot()
+#experiment.waitingStrategy()
 #experiment.cooperativeRegionStrategiesQuantification()
-#experiment.trueCooperationTesting()
+experiment.trueCooperationTesting()
 #experiment.fiberPhoto()
 #experiment.compareGazeEventsbyRat()
 #experiment.trialStateModel()
