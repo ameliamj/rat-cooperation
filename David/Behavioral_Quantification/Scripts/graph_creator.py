@@ -583,14 +583,14 @@ class multiFileGraphsCategories:
         
         if self.numCategories == 2:
             # Mann-Whitney U test
-            stat, p = mannwhitneyu(data[0], data[1], alternative='two-sided')
+            stat, p = mannwhitneyu(individual_data[0], individual_data[1], alternative='two-sided')
             plt.text(0.5, y_max * 1.05, f"Mann-Whitney U: p = {p:.3g}", ha='center', fontsize=13)
             # Optional: line between the bars
             #plt.plot([0, 1], [y_max * 1.1, y_max * 1.1], color='black', lw=1.2)
         
         elif self.numCategories > 2:
             # Kruskal-Wallis test
-            stat, p = kruskal(*data)
+            stat, p = kruskal(*individual_data)
             plt.text(len(data)/2 - 0.5, y_max * 1.05, f"Kruskal-Wallis: p = {p:.3g}", ha='center', fontsize=12)
         
         plt.tight_layout()
@@ -4619,7 +4619,7 @@ totFramesList = [15000, 26000, 15000, 26000, 15000, 26000, 15000]
 initialNanList = [0.15, 0.12, 0.14, 0.16, 0.3, 0.04, 0.2]
 
 
-
+'''
 arr = getFiltered()
 #arr = getAllTrainingCoop()
 #arr = getFiberPhoto()
@@ -4630,7 +4630,7 @@ fpsList = arr[3]
 totFramesList = arr[4]
 initialNanList = arr[5]
 #fiberPhoto = arr[6]
-
+'''
 
 
 '''
@@ -4651,10 +4651,10 @@ initialNanList = [0.3]
 
 
 print("Start MultiFileGraphs Regular")
-experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "", save=True)
+#experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "", save=True)
 #experiment.waitingStrategy()
 #experiment.cooperativeRegionStrategiesQuantification()
-experiment.trueCooperationTesting()
+#experiment.trueCooperationTesting()
 #experiment.fiberPhoto()
 #experiment.compareGazeEventsbyRat()
 #experiment.trialStateModel()
