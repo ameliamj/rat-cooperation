@@ -24,6 +24,7 @@ from scipy.interpolate import make_interp_spline
 from scipy.stats import mannwhitneyu, kruskal
 from scipy.ndimage import gaussian_filter
 from scipy.ndimage import gaussian_filter1d
+from scipy.optimize import curve_fit
 import itertools
 
 from matplotlib.patches import Patch
@@ -1478,6 +1479,8 @@ class multiFileGraphs:
         self.prefix = prefix
         self.save = save
         self.NUM_BINS = 30 # Number of time bins for trial chunking
+        self.labelSize = 13
+        self.titleSize = 15
         deleted_count = 0
         
         print("There are ", len(magFiles), " experiments in this data session. ")
@@ -2988,704 +2991,589 @@ class multiFileGraphs:
         plt.show()
         plt.close()
 
-    def waitingStrategy(self): 
+    def _calculate_trial_metrics(self, experiment):
         """
-        Creates a scatterplot of average waiting time vs. success rate across experiments,
-        and a pie chart showing the percentage of time spent waiting in lever areas.
-        """
-        NUM_BINS = 30
+        Calculates waiting-related metrics for a single experiment.
 
-        def findWaitingTimeTrials(exp):
-            """
-            For a single experiment, calculate 
-                1) the number of frames each rat spends in levTop or 
-                   levBot before the first lever press in each trial.
-                2) Frame latency to first lever entry 
-                   (How long after trial start did it take for a rat to enter a lever area)
-                3) How many frames were both rats in a lever area at the same time before the first press?
-                4) Change in Waiting Strategy over Time
-                5) % of time both rats wait on same vs. opposite levers
-                6) Occupancy rate over normalized trial time
-                7) % of time 0 / 1 / 2 rats are in lever area
+        Args:
+            experiment: Object containing lever (lev) and position (pos) data loaders.
+
+        Returns:
+            tuple: Comprehensive metrics for the experiment including waiting times,
+                   latencies, symmetry, and occupancy curves.
+        """
+        lever_data = experiment.lev
+        position_data = experiment.pos
+        fps = experiment.fps
+
+        # Initialize counters and accumulators
+        trial_count = 0 #Number of trials used
+        successful_trials_used = 0 #Number of trials used that were successful
+        total_trial_frames = 0 #Number of frames in trials used
+        total_waiting_frames = 0 #Number of frames waited (between queue and first lever press) in trials used
+        same_lever_frames = 0 #Out of frames in which both rats were in the lever area (between queue and first lever press), the number in which both were in the same lever area
+        opposite_lever_frames = 0 #Out of frames in which both rats were in the lever area (between queue and first lever press), the number in which both were in a different lever area
+        no_rat_frames = 0 #Out of all frames (between queue and first lever press), number of frames in which no rat was in lever area
+        one_rat_frames = 0 #Out of all frames (between queue and first lever press), number of frames in which one rat was in lever area
+        both_rats_frames = 0 #Out of all frames (between queue and first lever press), number of frames in which both rats were in lever area
+        frames_both_waited_before = 0  # Total number of frames before trial start where both rats were simultaneously in a lever area (lev_top or lev_bottom)
+        frames_both_waited_before_success = 0  # Total number of frames before trial start where both rats were simultaneously in a lever area, for successful trials only
+        frames_waited_success = 0  # Total number of frames waited (maximum of rat0 or rat1) before trial start in successful trials
+        frames_waited_all = 0  # Total number of frames waited (maximum of rat0 or rat1) before trial start across all trials
+        max_frames_waited_before = []  # List of maximum waiting frames (max of rat0 or rat1) before trial start for each trial
+        
+        # Initialize lists for per-trial metrics
+        rat0_wait_times = []  # List of frames rat0 spent waiting in a lever area (lev_top or lev_bottom) per trial, before first lever press
+        rat1_wait_times = []  # List of frames rat1 spent waiting in a lever area (lev_top or lev_bottom) per trial, before first lever press
+        waiting_symmetry = []  # List of absolute differences in waiting frames between rat0 and rat1 per trial, before first lever press
+        synchronous_wait_frames = []  # List of frames per trial where both rats were simultaneously in a lever area, before first lever press
+        rat0_latencies = []  # List of frames until rat0 first enters a lever area after trial start, per trial
+        rat1_latencies = []  # List of frames until rat1 first enters a lever area after trial start, per trial
+        max_wait_before_press = []
+        
+        # Initialize occupancy curves
+        occupancy_curve = np.zeros(self.NUM_BINS)  # Array tracking total frames where at least one rat was in a lever area, across normalized trial time bins
+        occupancy_curve_mag = np.zeros(self.NUM_BINS)
+        occupancy_curve_both = np.zeros(self.NUM_BINS)  # Array tracking total frames where both rats were in a lever area, across normalized trial time bins
+        occupancy_curve_both_mag = np.zeros(self.NUM_BINS)
+        trial_counts = np.zeros(self.NUM_BINS)  # Array tracking the number of valid frames contributing to each time bin for normalization
+        
+        # Retrieve trial data
+        start_times = lever_data.returnTimeStartTrials()  # Array of trial start times (in seconds) for all trials
+        end_times = lever_data.returnTimeEndTrials()  # Array of trial end times (in seconds) for all trials
+        press_times = lever_data.returnFirstPressAbsTimes()  # Array of first lever press times (in seconds) for each trial
+        press_rat_ids = lever_data.returnRatIDFirstPressTrial()  # Array of rat IDs (0 or 1) that made the first lever press in each trial
+        total_trials = lever_data.returnNumTotalTrialswithLeverPress()  # Total number of trials with at least one lever press
+        success_trials = lever_data.returnSuccessTrials()  # Array indicating whether each trial was successful (True/False)
+
+        invalid_trial_count = 0
+
+        for trial_idx in range(total_trials):
+            start_time = start_times[trial_idx]
+            end_time = end_times[trial_idx]
+            press_time = press_times[trial_idx]
+            rat_id = press_rat_ids[trial_idx]
+
+            # Validate trial data
+            if any(np.isnan([start_time, end_time, press_time, rat_id])) or start_time is None or end_time is None:
+                invalid_trial_count += 1
+                continue
+
+            # Convert times to frames
+            start_frame = int(start_time * fps)
+            press_frame = int(press_time * fps)
+            end_frame = int(end_time * fps)
+
+            if press_frame <= start_frame or press_frame >= position_data.data.shape[-1] or end_frame < start_frame:
+                invalid_trial_count += 1
+                continue
+
+            trial_count += 1
+            trial_frames = press_frame - start_frame
+            total_trial_frames += trial_frames
+
+            # Calculate waiting before trial start
+            rat0_locations = position_data.returnMouseLocation(0)
+            rat1_locations = position_data.returnMouseLocation(1)
             
-            Args:
-                exp: singleExperiment object containing lev and pos loaders.
-    
-            Returns:
-                tuple: (rat0_waiting_times, rat1_waiting_times)
-                       Lists of waiting times (in frames) for each trial for Rat 0 and Rat 1.
-            """
-            lev = exp.lev
-            pos = exp.pos
-            fps = exp.fps
-            
-            numTrialCounter = 0
-            numSuccUsed = 0
-            
-            #framesWaitingBeforeTrialStarted
-            maxFramesWaitingBeforeTrialStarted = []
-            framesBothWaitedBeforeTrialStartedTot = 0
-            framesBothWaitedBeforeTrialSucc = 0
-            
-            framesWaitedSucc = 0
-            framesWaitedAll = 0
-            
-            # Get first press absolute times and rat IDs per trial
-            first_press_times = lev.returnFirstPressAbsTimes()
-            first_press_rat_ids = lev.returnRatIDFirstPressTrial()
-            num_trials = lev.returnNumTotalTrialswithLeverPress()
-            #num_trials = lev.returnNumTotalTrials()
-    
-            total_trial_frames = 0  # Total frames considered across all trials in this experiment
-            total_waiting_frames = 0 # Total frames where at least one rat is waiting near lever
-            
-            # Initialize lists to store metrics per trial
-            rat0_waiting_times = []      # Frames rat 0 spends waiting near lever
-            rat1_waiting_times = []      # Frames rat 1 spends waiting near lever
-            
+            #Wait Before Queue Analysis
+            t = start_frame - 1
             rat0_waiting = 0
             rat1_waiting = 0
-            waiting_symmetry = []       # Absolute difference in waiting times between rats per trial
-            synchronous_waiting_frames = [] # Frames both rats waiting simultaneously per trial
-            rat0_latencies = []          # Frames until rat 0 first enters lever zone after trial start
-            rat1_latencies = []          # Same for rat 1
-            
-            same_lever_total = 0 #Number of frames in which both rats are in a lever area and are on the same lever side
-            opposite_lever_total = 0 #Number of frames where both rats are in lever areas but on opposite sides.
-            none_total = 0 #Frames where neither rat is in a lever area.
-            one_total = 0 #Frames where exactly one rat is in a lever area.
-            both_total = 0 #Frames where both rats are in lever areas.
-    
-            #NUM_BINS = 30 #The number of equal-sized time bins into which you divide each trial (e.g. 30 bins = 30 time points from 0% to 100% of the trial duration).
-            occupancy_curve = np.zeros(NUM_BINS) #An array of length NUM_BINS that accumulates the number of trials where at least one rat was in a lever area at each time bin
-            occupancy_curve_both = np.zeros(NUM_BINS)
-            trial_counts = np.zeros(NUM_BINS) #Parallel to occupancy_curve, this keeps track of how many trials actually had a valid frame in each bin.
-            
-            # Get trial start times            
-            start_times = lev.returnTimeStartTrials()
-            end_times = lev.returnTimeEndTrials()
-            
-            print("\nlen(start_times): ", len(start_times))
-            print("len(end_times): ", len(end_times))
-            print("len(press_times): ", len(first_press_times))
-            print("len(rat_id): ", len(first_press_rat_ids))
-            print("numTrials is: ", lev.returnNumTotalTrials())
-            print("numTrials w/ Press is: ", lev.returnNumTotalTrialswithLeverPress())
-            
-            idx_counter = 0
-            
-            succTrials = lev.returnSuccessTrials()
-            
-            for trial_idx in range(num_trials):
-                #print("\ntrial_idx: ", trial_idx)
-                #print("idx_counter: ", idx_counter)
-                
-                start_time = start_times[trial_idx]
-                end_time = end_times[trial_idx]
-                
-                if (start_time is None or np.isnan(start_time) or end_time is None or np.isnan(end_time)):
-                    print("Error 1, trial_idx is ", trial_idx)
-                    print("Start Time: ", start_time, ";  End Time: ", end_time)
-                    #idx_counter += 1
-                    continue
-                press_time = first_press_times[trial_idx - idx_counter]
-                rat_id = first_press_rat_ids[trial_idx - idx_counter]
-                
-                if np.isnan(press_time) or np.isnan(rat_id):
-                    # Skip trials with invalid data
-                    print("Error 2, trial_idx is ", trial_idx)
-                    print("rat_id: ", rat_id)
-                    #idx_counter += 1
-                    #rat0_waiting_times.append(0)
-                    #rat1_waiting_times.append(0)
-                    continue
-                
-                
-                rat_id = int(rat_id)
-                press_frame = int(press_time * fps)
-                start_frame = int(start_time * fps)
-                end_frame = int(end_time * fps)
-                
-                #print("\nStart Frame: ", start_frame)
-                #print("Press Frame: ", press_frame)
-                #print("End Frame: ", end_frame)
-                
-                numFrames = (press_frame - start_frame)
-                if (numFrames <= 0 or end_frame < start_frame):
-                    print("Error 3, trial_idx is ", trial_idx)
-                    print("Start Frame: ", start_frame, ";  Press Frame: ", press_frame, ";  End Frame: ", end_frame)
-                    #idx_counter += 1
-                    continue
-    
-                if press_frame < start_frame or press_frame >= pos.data.shape[-1]:
-                    print("Error 4, trial_idx is ", trial_idx)
-                    # Skip invalid frame ranges
-                    #rat0_waiting_times.append(0)
-                    #rat1_waiting_times.append(0)
-                    #idx_counter += 1
-                    continue
-                
-                numTrialCounter += 1
-                
-                rat0_locations_before = pos.returnMouseLocation(0)
-                rat1_locations_before = pos.returnMouseLocation(1)
-                
-                t = start_frame
-                stillIn0 = True
-                stillIn1 = True
-                countWait0 = 0
-                countWait1 = 0
-                
-                while(t >= 0 and t < len(rat0_locations_before) and t < len(rat1_locations_before) and rat0_locations_before[t] is not None):
-                    t -= 1
-                    
-                    if (rat0_locations_before[t] in ['lev_top', 'lev_bottom'] and stillIn0):
-                        countWait0 += 1
-                    else:
-                        stillIn0 = False
-                    
-                    if (rat1_locations_before[t] in ['lev_top', 'lev_bottom'] and stillIn1):
-                        countWait1 += 1
-                    else:
-                        stillIn1 = False
-                        
-                    if (stillIn0 == False and stillIn1 == False):
-                        break
-                    
-                maxFramesWaitingBeforeTrialStarted.append(max(countWait0, countWait1))
-                framesWaitedAll += max(countWait0, countWait1)
-                framesBothWaitedBeforeTrialStartedTot = min(countWait0, countWait1)
-                if (succTrials[trial_idx]):
-                    framesBothWaitedBeforeTrialSucc += min(countWait0, countWait1)
-                    numSuccUsed += 1
-                    framesWaitedSucc += max(countWait0, countWait1)
-                    
-                
-                # Get locations for both rats in the trial window
-                rat0_locations_min = rat0_locations_before[start_frame:press_frame]
-                rat1_locations_min = rat1_locations_before[start_frame:press_frame]
-                
-                rat0_locations = rat0_locations_before[start_frame:end_frame]
-                rat1_locations = rat1_locations_before[start_frame:end_frame]
-                
-                # Ensure both lists are the same length
-                frame_count = min(len(rat0_locations), len(rat1_locations))
-                frame_count_min = min(len(rat0_locations_min), len(rat1_locations_min))
-                
-                total_trial_frames += numFrames
-                
-                # Latency to lever area entry
-                def latency_to_lever(locations):
-                    for i, loc in enumerate(locations):
-                        if loc in ['lev_top', 'lev_bottom']:
-                            return i
-                    return None
-    
-                rat0_lat = latency_to_lever(rat0_locations)
-                rat1_lat = latency_to_lever(rat1_locations)
-                
-                if rat0_lat is not None:
-                    rat0_latencies.append(rat0_lat)
-                if rat1_lat is not None:
-                    rat1_latencies.append(rat1_lat)
-                
-                #print("frame_count is: ", frame_count)
-                #print("len(rat0_locations_min): ", len(rat0_locations_min))
-                for i in range(frame_count_min):
-                    r0 = rat0_locations_min[i]
-                    r1 = rat1_locations_min[i]
-                    r0_in = r0 in ['lev_top', 'lev_bottom']
-                    r1_in = r1 in ['lev_top', 'lev_bottom']
-                    if r0_in and r1_in:
-                        if r0 == r1:
-                            same_lever_total += 1
-                        else:
-                            opposite_lever_total += 1
-    
-                    if r0_in and r1_in:
-                        both_total += 1
-                    elif r0_in or r1_in:
-                        one_total += 1
-                    else:
-                        none_total += 1
-                
-                #print("\nframe_count: ", frame_count)
-                bin_edges = np.linspace(0, frame_count, NUM_BINS + 1, dtype=int)
-                #print("bin_edges: ", bin_edges)
+            rat0_active = True
+            rat1_active = True
 
-    
-                for bin_idx in range(NUM_BINS):
-                    start_bin = bin_edges[bin_idx]
-                    end_bin = bin_edges[bin_idx + 1]
-                    
-                    #print("start_bin: ", start_bin)
-                    #print("end_bin: ", end_bin)
-                
-                    # Ensure we stay within frame limits
-                    if start_bin >= frame_count:
-                        continue
-                
-                    # Slice the frame window for this bin
-                    rat0_bin = rat0_locations[start_bin:end_bin]
-                    rat1_bin = rat1_locations[start_bin:end_bin]
-                    #print("rat0 bin: ", rat0_bin)
-                
-                    lever_zones = {'lev_top', 'lev_bottom'}
+            while t >= 0 and t < len(rat0_locations) and t < len(rat1_locations) and rat0_locations[t] is not None:
+                if rat0_locations[t] in ['lev_top', 'lev_bottom'] and rat0_active:
+                    rat0_waiting += 1
+                else:
+                    rat0_active = False
 
-                    # Count frames where either rat is in the lever zone
-                    in_lever = sum(
-                        (r0 in lever_zones) or (r1 in lever_zones)
-                        for r0, r1 in zip(rat0_bin, rat1_bin)
-                    )
-                    in_lever_both = sum(
-                        (r0 in lever_zones) and (r1 in lever_zones)
-                        for r0, r1 in zip(rat0_bin, rat1_bin)
-                    )
+                if rat1_locations[t] in ['lev_top', 'lev_bottom'] and rat1_active:
+                    rat1_waiting += 1
+                else:
+                    rat1_active = False
+
+                if not (rat0_active or rat1_active):
+                    break
+                t -= 1
+
+            max_wait_before = max(rat0_waiting, rat1_waiting)
+            max_frames_waited_before.append(max_wait_before)
+            frames_waited_all += max_wait_before
+            frames_both_waited_before += min(rat0_waiting, rat1_waiting)
+
+            if success_trials[trial_idx]:
+                frames_both_waited_before_success += min(rat0_waiting, rat1_waiting)
+                successful_trials_used += 1
+                frames_waited_success += max_wait_before
+
+
+            #Wait Before Press Analaysis
+            t = press_frame - 1
+            rat0_waiting_before_press = 0
+            rat1_waiting_before_press = 0
+            rat0_active = True
+            rat1_active = True
+
+            while t >= 0 and t < len(rat0_locations) and t < len(rat1_locations) and rat0_locations[t] is not None:
+                if rat0_locations[t] in ['lev_top', 'lev_bottom'] and rat0_active:
+                    rat0_waiting_before_press += 1
+                else:
+                    rat0_active = False
+
+                if rat1_locations[t] in ['lev_top', 'lev_bottom'] and rat1_active:
+                    rat1_waiting_before_press += 1
+                else:
+                    rat1_active = False
+
+                if not (rat0_active or rat1_active):
+                    break
+                t -= 1
+            
+            waitBeforePress = max(rat0_waiting_before_press, rat1_waiting_before_press)
+            max_wait_before_press.append(waitBeforePress)
+            
+            # Process trial window
+            rat0_trial_locations = rat0_locations[start_frame:press_frame]
+            rat1_trial_locations = rat1_locations[start_frame:press_frame]
+            rat0_full_locations = rat0_locations[start_frame:end_frame]
+            rat1_full_locations = rat1_locations[start_frame:end_frame]
+
+            frame_count_min = min(len(rat0_trial_locations), len(rat1_trial_locations))
+            frame_count_full = min(len(rat0_full_locations), len(rat1_full_locations))
+
+            # Calculate latency to lever entry
+            def get_latency_to_lever(locations):
+                for i, loc in enumerate(locations):
+                    if loc in ['lev_top', 'lev_bottom']:
+                        return i
+                return None
+
+            rat0_latency = get_latency_to_lever(rat0_trial_locations)
+            rat1_latency = get_latency_to_lever(rat1_trial_locations)
+            
+            if rat0_latency is not None:
+                rat0_latencies.append(rat0_latency)
+            if rat1_latency is not None:
+                rat1_latencies.append(rat1_latency)
+
+            # Count lever occupancy
+            for i in range(frame_count_min):
+                r0 = rat0_trial_locations[i]
+                r1 = rat1_trial_locations[i]
+                r0_in_lever = r0 in ['lev_top', 'lev_bottom']
+                r1_in_lever = r1 in ['lev_top', 'lev_bottom']
                 
-                    occupancy_curve[bin_idx] += in_lever
-                    occupancy_curve_both[bin_idx] += in_lever_both
-                    trial_counts[bin_idx] += (end_bin - start_bin)
+                if r0_in_lever and r1_in_lever:
+                    if r0 == r1:
+                        same_lever_frames += 1
+                    else:
+                        opposite_lever_frames += 1
+                    both_rats_frames += 1
+                elif r0_in_lever or r1_in_lever:
+                    one_rat_frames += 1
+                else:
+                    no_rat_frames += 1
+
+            # Calculate occupancy curves
+            bin_edges = np.linspace(0, frame_count_full, self.NUM_BINS + 1, dtype=int)
+            for bin_idx in range(self.NUM_BINS):
+                start_bin = bin_edges[bin_idx]
+                end_bin = bin_edges[bin_idx + 1]
                 
-                # Count total waiting frames: any frame where at least one rat is at a lever
+                if start_bin >= frame_count_full:
+                    continue
+
+                rat0_bin = rat0_full_locations[start_bin:end_bin]
+                rat1_bin = rat1_full_locations[start_bin:end_bin]
                 
-                waitingFrames = sum(
-                    (rat0_locations_min[i] in ['lev_top', 'lev_bottom']) or
-                    (rat1_locations_min[i] in ['lev_top', 'lev_bottom'])
-                    for i in range(frame_count_min)
+                mag_zones = {'mag_top', 'mag_bottom'}
+                lever_zones = {'lev_top', 'lev_bottom'}
+                in_lever = sum(
+                    (r0 in lever_zones) or (r1 in lever_zones)
+                    for r0, r1 in zip(rat0_bin, rat1_bin)
                 )
-                total_waiting_frames += waitingFrames
-                #print("waitingFrames: ", waitingFrames)
-                
-                # Per-frame: both rats waiting (synchronous waiting)
-                synchronous_waiting = sum(
-                    (rat0_locations_min[i] in ['lev_top', 'lev_bottom']) and
-                    (rat1_locations_min[i] in ['lev_top', 'lev_bottom'])
-                    for i in range(frame_count_min)
+                in_lever_both = sum(
+                    (r0 in lever_zones) and (r1 in lever_zones)
+                    for r0, r1 in zip(rat0_bin, rat1_bin)
                 )
-                synchronous_waiting_normalized = synchronous_waiting / frame_count if frame_count > 0 else 0 # Standardize by dividing by total frames in the trial
-                synchronous_waiting_frames.append(synchronous_waiting)
-    
-                # Count frames where each rat is in levTop or levBot individually
-                rat0_waiting_after_start = sum(1 for loc in rat0_locations_min if loc in ['lev_top', 'lev_bottom'])
-                rat1_waiting_after_start = sum(1 for loc in rat1_locations_min if loc in ['lev_top', 'lev_bottom'])
                 
-                #Standardize rat0_waiting and rat1_waiting
-                #rat0_waiting_after_start /= numFrames
-                #rat1_waiting_after_start /= numFrames
+                in_mag = sum(
+                    (r0 in lever_zones) or (r1 in mag_zones)
+                    for r0, r1 in zip(rat0_bin, rat1_bin)
+                )
+                in_mag_both = sum(
+                    (r0 in lever_zones) and (r1 in mag_zones)
+                    for r0, r1 in zip(rat0_bin, rat1_bin)
+                )
                 
-                #rat0_waiting += (rat0_waiting_after_start)
-                #rat1_waiting += (rat1_waiting_after_start)
-                #waiting_symmetry += abs(rat0_waiting_after_start - rat1_waiting_after_start)
-                waiting_symmetry.append(abs(rat0_waiting_after_start - rat1_waiting_after_start))
-            
-            #if (total_trial_frames != exp.endFrame): 
-                #print("Inequal Frames, (self, counted): ", exp.endFrame, ", ", total_trial_frames)
-            
-            #waiting_symmetry = abs(rat0_waiting - rat1_waiting)
-            avgWaitingBeforeTrialStarted = np.mean(maxFramesWaitingBeforeTrialStarted)
-            
-            return (rat0_waiting_times, rat1_waiting_times, waiting_symmetry, rat0_latencies, rat1_latencies,
-                synchronous_waiting_frames, total_trial_frames, total_waiting_frames,
-                same_lever_total, opposite_lever_total, none_total, one_total, both_total,
-                occupancy_curve, occupancy_curve_both, trial_counts, avgWaitingBeforeTrialStarted, framesBothWaitedBeforeTrialStartedTot, framesWaitedSucc, framesWaitedAll, numTrialCounter, numSuccUsed, framesBothWaitedBeforeTrialSucc)
+                occupancy_curve[bin_idx] += in_lever
+                occupancy_curve_both[bin_idx] += in_lever_both
+                occupancy_curve_mag[bin_idx] += in_mag
+                occupancy_curve_both_mag[bin_idx] += in_mag_both
+                trial_counts[bin_idx] += (end_bin - start_bin)
 
-        
-        # Aggregate data across experiments
+            # Calculate waiting metrics
+            waiting_frames = sum(
+                (rat0_trial_locations[i] in ['lev_top', 'lev_bottom']) or
+                (rat1_trial_locations[i] in ['lev_top', 'lev_bottom'])
+                for i in range(frame_count_min)
+            )
+            total_waiting_frames += waiting_frames
+
+            sync_waiting = sum(
+                (rat0_trial_locations[i] in ['lev_top', 'lev_bottom']) and
+                (rat1_trial_locations[i] in ['lev_top', 'lev_bottom'])
+                for i in range(frame_count_min)
+            )
+            synchronous_wait_frames.append(sync_waiting)
+
+            rat0_trial_waiting = sum(1 for loc in rat0_trial_locations if loc in ['lev_top', 'lev_bottom'])
+            rat1_trial_waiting = sum(1 for loc in rat1_trial_locations if loc in ['lev_top', 'lev_bottom'])
+            waiting_symmetry.append(abs(rat0_trial_waiting - rat1_trial_waiting))
+
+        return (
+            rat0_wait_times, rat1_wait_times, waiting_symmetry, rat0_latencies, rat1_latencies,
+            synchronous_wait_frames, total_trial_frames, total_waiting_frames,
+            same_lever_frames, opposite_lever_frames, no_rat_frames, one_rat_frames, both_rats_frames,
+            occupancy_curve, occupancy_curve_mag, occupancy_curve_both, occupancy_curve_both_mag,
+            trial_counts, np.mean(max_frames_waited_before) if max_frames_waited_before else 0, 
+            np.mean(max_wait_before_press) if max_wait_before_press else 0,
+            frames_both_waited_before, frames_waited_success, frames_waited_all,
+            trial_count, successful_trials_used, frames_both_waited_before_success
+        )
+
+    def analyze_and_plot(self):
+        """
+        Aggregates data across experiments and generates visualizations including:
+        - Bar plots comparing waiting times
+        - Scatter plots of waiting times vs. success rates
+        - Pie charts of lever occupancy
+        - Line plots of latency and occupancy over trials
+        """
+        # Aggregate metrics across experiments
         avg_waiting_times = []
         success_rates = []
-        avg_symmetry_vals = []
-        avg_sync_vals = []
-        rat0_lat_per_trial = defaultdict(list)
-        rat1_lat_per_trial = defaultdict(list)
-        total_waiting_frames = 0
+        avg_symmetry_values = []
+        avg_sync_values = []
+        rat0_latencies_per_trial = defaultdict(list)
+        rat1_latencies_per_trial = defaultdict(list)
         total_trial_frames = 0
-        total_trials_all = 0
-        total_succ_trials = 0
-        
-        maxWaitBeforeMeans = []
-        maxWaitBeforeSucc = 0
-        maxWaitBeforeAll = 0
-        
-        bothWaitBeforeMeans = []
-        sumBothWaitBefore = 0
-        sumBothWaitBeforeSucc = 0
-        
+        total_waiting_frames = 0
+        total_trials = 0
+        total_successful_trials = 0
+        max_wait_before_means = []
+        max_wait_before_press_means = []
+        total_wait_before_success = 0
+        total_wait_before_all = 0
+        both_wait_before_means = []
+        total_both_wait_before = 0
+        total_both_wait_before_success = 0
         same_lever_sum = 0
         opposite_lever_sum = 0
-        none_sum = 0
-        one_sum = 0
-        both_sum = 0
-        total_occupancy_curve = np.zeros(NUM_BINS)
-        total_occupancy_curve_both = np.zeros(NUM_BINS)
-        total_trial_counts = np.zeros(NUM_BINS)
-    
-        
-        print("len(self.experiments): ", len(self.experiments))
-        
+        no_rat_sum = 0
+        one_rat_sum = 0
+        both_rats_sum = 0
+        total_occupancy_curve = np.zeros(self.NUM_BINS)
+        total_occupancy_curve_both = np.zeros(self.NUM_BINS)
+        total_occupancy_curve_mag = np.zeros(self.NUM_BINS)
+        total_occupancy_curve_both_mag = np.zeros(self.NUM_BINS)
+        total_trial_counts = np.zeros(self.NUM_BINS)
+
         for exp in self.experiments:
-            print("Lev File: ", exp.lev_file)
-            lev = exp.lev
-            pos = exp.pos
-            
-            #numSucc = lev.returnNumSuccessfulTrials()
-            
-            (rat0_times, rat1_times, symmetry, rat0_lat, rat1_lat, 
-             sync_frames, trial_frames, waiting_frames,
-             same_lever, opposite_lever, none, one, both,
-             occupancy_curve, occupancy_curve_both, trial_counts, 
-             avgWaitBeforeSession, framesBothWaitedBeforeTrialStartedTot, 
-             totalWaitBeforeSucc, framesWaitedAll, numTrialsUsed, numSuccTrialsUsed,
-             framesBothWaitedBeforeTrialSucc) = findWaitingTimeTrials(exp)
-            
-            #print("rat0_times: ", rat0_times)
-            #print("rat1_times: ", rat1_times)
-            
+            metrics = self._calculate_trial_metrics(exp)
+            (
+                rat0_times, rat1_times, symmetry, rat0_lat, rat1_lat, sync_frames,
+                trial_frames, waiting_frames, same_lever, opposite_lever, no_rat,
+                one_rat, both_rats, occupancy_curve, occupancy_curve_mag, occupancy_curve_both,
+                occupancy_curve_both_mag, trial_counts, avg_wait_before, avg_wait_before_press, 
+                frames_both_waited_before, frames_wait_before_success, frames_waited_all, num_trials, 
+                num_success_trials, frames_both_waited_before_success
+            ) = metrics
+
             total_trials_overall = exp.lev.returnNumTotalTrials()
-            total_trials = numTrialsUsed
-            
-            sumBothWaitBeforeSucc += framesBothWaitedBeforeTrialSucc
-            
-            if total_trials == 0:
+            if num_trials == 0:
                 continue
-            
-            #print("Hi")
-            if (avgWaitBeforeSession != framesWaitedAll/total_trials):
-                print("total_trials: ", total_trials)
-                print("numTrialsUsed: ", numTrialsUsed)
-                print("avgWaitBeforeSession: ", avgWaitBeforeSession)
-                print("framesWaitedAll/total_trials: ", framesWaitedAll/total_trials)
-            
-            maxWaitBeforeMeans.append(avgWaitBeforeSession)
-            
-            num1 = int(avgWaitBeforeSession * total_trials)
-            num2 = framesWaitedAll
-            if (num1 != num2):
-                print("Not Equal: ")
-                print("old: ", num1)
-                print("new: ", num2)
-            
-            #NumFrames Waited vs. All
+
             total_trial_frames += trial_frames
             total_waiting_frames += waiting_frames
-            
-            maxWaitBeforeAll += framesWaitedAll
-            
-            total_trials_all += total_trials
-            maxWaitBeforeSucc += totalWaitBeforeSucc
-            total_succ_trials += numSuccTrialsUsed
-            
-            bothWaitBeforeMeans.append(framesBothWaitedBeforeTrialStartedTot / numTrialsUsed)
-            sumBothWaitBefore += framesBothWaitedBeforeTrialStartedTot
-            
-            # Calculate average waiting time for the experiment (both rats combined)
-            #valid_times = [t for t in rat0_times + rat1_times if t > 0]
-            #avg_wait = np.mean(valid_times) if valid_times else 0
-            #avg_waiting_times.append(avg_wait)
-            avg_waiting_times.append(waiting_frames / trial_frames)
-            
+            total_trials += num_trials
+            total_successful_trials += num_success_trials
+            total_wait_before_all += frames_waited_all
+            total_wait_before_success += frames_wait_before_success
+            total_both_wait_before += frames_both_waited_before
+            total_both_wait_before_success += frames_both_waited_before_success
+            max_wait_before_means.append(avg_wait_before)
+            max_wait_before_press_means.append(avg_wait_before_press)
+            both_wait_before_means.append(frames_both_waited_before / num_trials if num_trials > 0 else 0)
 
-            #print("Symmetry")
-            #print(symmetry)
-            #print(total_trials)
-            sym = np.sum(symmetry) / total_trials
-            #sym = symmetry / trial_frames
-            #print(sym)
-            
-            avg_symmetry_vals.append(sym)
-            avg_sync_vals.append(np.mean(sync_frames) if sync_frames else 0)
+            avg_waiting_times.append(waiting_frames / trial_frames if trial_frames > 0 else 0)
+            success_rates.append(exp.lev.returnNumSuccessfulTrials() / total_trials_overall if total_trials_overall > 0 else 0)
+            avg_symmetry_values.append(np.sum(symmetry) / num_trials if num_trials > 0 else 0)
+            avg_sync_values.append(np.mean(sync_frames) if sync_frames else 0)
+
             for trial_idx, (lat0, lat1) in enumerate(zip(rat0_lat, rat1_lat)):
                 if lat0 is not None and lat1 is not None:
-                    rat0_lat_per_trial[trial_idx].append(lat0)
-                    rat1_lat_per_trial[trial_idx].append(lat1)
-            
-            # Calculate success rate
-            success_rate = exp.lev.returnNumSuccessfulTrials() / total_trials_overall
-            success_rates.append(success_rate)
-            
+                    rat0_latencies_per_trial[trial_idx].append(lat0)
+                    rat1_latencies_per_trial[trial_idx].append(lat1)
+
             same_lever_sum += same_lever
             opposite_lever_sum += opposite_lever
-            none_sum += none
-            one_sum += one
-            both_sum += both
-            
-            #print("Occupancy Curve: ", occupancy_curve)
-            #print("Trial_Counts: ", trial_counts)
-            #print("Total_Occupancy_Curve: ", total_occupancy_curve)
+            no_rat_sum += no_rat
+            one_rat_sum += one_rat
+            both_rats_sum += both_rats
             total_occupancy_curve += occupancy_curve
             total_occupancy_curve_both += occupancy_curve_both
+            total_occupancy_curve_mag += occupancy_curve_mag
+            total_occupancy_curve_both_mag += occupancy_curve_both_mag
             total_trial_counts += trial_counts
-        
-        # Compute average latency per trial index
+
+        # Calculate average latency per trial
         avg_latency_per_trial = []
-        max_trial_index = max(rat0_lat_per_trial.keys() & rat1_lat_per_trial.keys())
-        
+        max_trial_index = max(rat0_latencies_per_trial.keys() & rat1_latencies_per_trial.keys(), default=-1)
         for trial_idx in range(max_trial_index + 1):
-            if trial_idx in rat0_lat_per_trial and trial_idx in rat1_lat_per_trial:
-                # Only use trials where both rats have data
-                avg0 = np.mean(rat0_lat_per_trial[trial_idx])
-                avg1 = np.mean(rat1_lat_per_trial[trial_idx])
+            if trial_idx in rat0_latencies_per_trial and trial_idx in rat1_latencies_per_trial:
+                avg0 = np.mean(rat0_latencies_per_trial[trial_idx])
+                avg1 = np.mean(rat1_latencies_per_trial[trial_idx])
                 avg_latency_per_trial.append((avg0 + avg1) / 2)
-         
-                
-        #Graphs
-        #
-        #
-        
-        #Bar Chart: Avg Wait Before Successful Trials vs. Avg Wait Before All Trials
-        # Compute averages
-        avgWaitBothBeforeSucc = sumBothWaitBeforeSucc / total_succ_trials if total_succ_trials > 0 else 0
-        avgWaitBothBefore = sumBothWaitBefore / total_trials_all if total_trials_all > 0 else 0
-        #print("avg_wait_succ_trials: ", avg_wait_succ_trials)
-        #print("avg_wait_all_trials: ", avg_wait_all_trials)
-        
-        # Create bar plot
-        labels = ['Successful Trials', 'All Trials']
-        wait_times = [avgWaitBothBeforeSucc, avgWaitBothBefore]
-        
-        plt.figure(figsize=(6, 5))
-        bars = plt.bar(labels, wait_times, color=['green', 'gray'])
-        plt.ylabel('Average Wait Before Time (frames)')
-        plt.title('Average Wait Time by Both Rats: Successful vs. All Trials')
-        
-        # Annotate values on top of bars
-        for bar in bars:
-            height = bar.get_height()
-            plt.text(bar.get_x() + bar.get_width()/2., height + 0.01, f'{height:.2f}', ha='center', va='bottom')
-        
-        plt.tight_layout()
-        if self.save:
-            plt.savefig(f"{self.prefix}barplot_avgWaitBeforeBothRats_successfulvsAllTrials.png")
-        plt.show()
-        plt.close()
         
         
-        #Scatterplot: Avg Both Waiting Time Prior to Queue vs. Success Rate
-        if len(bothWaitBeforeMeans) >= 2 and len(success_rates) >= 2:
-            plt.figure(figsize=(8, 6))
-            plt.scatter(bothWaitBeforeMeans, success_rates, alpha=0.7, color='blue', label='Experiments')
-    
-            # Add trendline and R²
-            if len(set(bothWaitBeforeMeans)) >= 2:
-                slope, intercept, r_value, _, _ = linregress(bothWaitBeforeMeans, success_rates)
-                r_squared = r_value ** 2
-                x_vals = np.linspace(min(bothWaitBeforeMeans), max(bothWaitBeforeMeans), 100)
-                plt.plot(x_vals, slope * x_vals + intercept, color='red', linestyle='--', label='Trendline')
-                plt.text(0.95, 0.05, f"$R^2$ = {r_squared:.3f}", transform=plt.gca().transAxes,
-                         ha='right', va='bottom', fontsize=12, bbox=dict(facecolor='white', edgecolor='gray'))
-    
-            plt.xlabel('Average Waiting Time before Queue (frames)')
-            plt.ylabel('Cooperative Success Rate')
-            plt.title('Avg Waiting Time of Both Rats Before Trial \nvs. Cooperative Success Rate')
-            plt.legend()
-            plt.grid(True)
-            plt.tight_layout()
-            if self.save:
-                plt.savefig(f"{self.prefix}both_rats_waiting_time_before_trial_vs_success_rate.png")
-            plt.show()
-            plt.close()
-        else:
-            print("Insufficient data to create scatterplot.")
+        # Generate visualizations
+        self._plot_bar_wait_times(
+            total_both_wait_before_success / total_successful_trials if total_successful_trials > 0 else 0,
+            total_both_wait_before / total_trials if total_trials > 0 else 0,
+            "both_rats_success_vs_all.png",
+            "Average Wait Time by Both Rats: Successful vs. All Trials"
+        )
+
+        self._plot_bar_wait_times(
+            total_wait_before_success / total_successful_trials if total_successful_trials > 0 else 0,
+            total_wait_before_all / total_trials if total_trials > 0 else 0,
+            "max_wait_success_vs_all.png",
+            "Average Wait Time: Successful vs. All Trials"
+        )
+
+        self._plot_scatter(
+            both_wait_before_means, success_rates,
+            "both_rats_waiting_before_vs_success.png",
+            "Avg Waiting Time of Both Rats Before Trial vs. Cooperative Success Rate",
+            "Average Waiting Time before Queue (frames)"
+        )
+
+        self._plot_scatter(
+            avg_waiting_times, success_rates,
+            "waiting_during_trial_vs_success.png",
+            "Waiting Time during Trial vs. Cooperative Success Rate",
+            "Average Waiting Time before Press (frames)"
+        )
+
+        self._plot_scatter(
+            max_wait_before_means, success_rates,
+            "waiting_before_vs_success.png",
+            "Waiting Time Before Trial vs. Cooperative Success Rate",
+            "Average Waiting Time Before (frames)"
+        )
         
-        #Bar Chart: Avg Wait Before Successful Trials vs. Avg Wait Before All Trials
-        # Compute averages
-        avg_wait_succ_trials = maxWaitBeforeSucc / total_succ_trials if total_succ_trials > 0 else 0
-        avg_wait_all_trials = maxWaitBeforeAll / total_trials_all if total_trials_all > 0 else 0
-        print("avg_wait_succ_trials: ", avg_wait_succ_trials)
-        print("avg_wait_all_trials: ", avg_wait_all_trials)
+        self._plot_scatter(
+            max_wait_before_press_means, success_rates,
+            "waiting_before_press_vs_success.png",
+            "Waiting Time Before Press vs. Cooperative Success Rate",
+            "Average Waiting Time Before (frames)"
+        )
+
+        self._plot_scatter(
+            avg_symmetry_values, success_rates,
+            "symmetry_vs_success.png",
+            "Success Rate vs. Waiting Symmetry",
+            "Average Waiting Symmetry (|rat0 - rat1|)",
+            color_data=max_wait_before_press_means
+        )
+
+        self._plot_pie(
+            [total_waiting_frames / total_trial_frames * 100 if total_trial_frames > 0 else 0,
+             100 - (total_waiting_frames / total_trial_frames * 100 if total_trial_frames > 0 else 0)],
+            ['Waiting in Lever Areas', 'Not Waiting'],
+            ['green', 'gray'],
+            "waiting_time_distribution.png",
+            "Percentage of Trial Time Spent Waiting in Lever Areas"
+        )
+
+        self._plot_pie(
+            [no_rat_sum, one_rat_sum, both_rats_sum],
+            ['Neither', 'One', 'Both'],
+            ['gray', 'orange', 'green'],
+            "lever_zone_occupancy.png",
+            "Lever Zone Occupancy (None / One / Both Rats)"
+        )
+
+        self._plot_pie(
+            [same_lever_sum, opposite_lever_sum],
+            ['Same Lever Area', 'Opposite Lever Areas'],
+            ['lightgreen', 'salmon'],
+            "same_vs_opposite_lever.png",
+            "When Both Rats Wait: \nSame vs. Opposite Lever Area"
+        )
         
-        # Create bar plot
-        labels = ['Successful Trials', 'All Trials']
-        wait_times = [avg_wait_succ_trials, avg_wait_all_trials]
-        
-        plt.figure(figsize=(6, 5))
-        bars = plt.bar(labels, wait_times, color=['green', 'gray'])
-        plt.ylabel('Average Wait Before Time (frames)')
-        plt.title('Average Wait Time: Successful vs. All Trials')
-        
-        # Annotate values on top of bars
-        for bar in bars:
-            height = bar.get_height()
-            plt.text(bar.get_x() + bar.get_width()/2., height + 0.01, f'{height:.2f}', ha='center', va='bottom')
-        
-        plt.tight_layout()
-        if self.save:
-            plt.savefig(f"{self.prefix}barplot_avgWaitBefore_successfulvsAllTrials.png")
-        plt.show()
-        plt.close()
-        
-        
-        # Scatterplot: Avg Waiting Time Prior to Press vs. Success Rate
-        if len(avg_waiting_times) >= 2 and len(success_rates) >= 2:
-            plt.figure(figsize=(8, 6))
-            plt.scatter(avg_waiting_times, success_rates, alpha=0.7, color='blue', label='Experiments')
-    
-            # Add trendline and R²
-            if len(set(avg_waiting_times)) >= 2:
-                slope, intercept, r_value, _, _ = linregress(avg_waiting_times, success_rates)
-                r_squared = r_value ** 2
-                x_vals = np.linspace(min(avg_waiting_times), max(avg_waiting_times), 100)
-                plt.plot(x_vals, slope * x_vals + intercept, color='red', linestyle='--', label='Trendline')
-                plt.text(0.95, 0.05, f"$R^2$ = {r_squared:.3f}", transform=plt.gca().transAxes,
-                         ha='right', va='bottom', fontsize=12, bbox=dict(facecolor='white', edgecolor='gray'))
-    
-            plt.xlabel('Average Waiting Time before Press (frames)')
-            plt.ylabel('Cooperative Success Rate')
-            plt.title('Waiting Time during Trial vs. Cooperative Success Rate')
-            plt.legend()
-            plt.grid(True)
-            plt.tight_layout()
-            if self.save:
-                plt.savefig(f"{self.prefix}waiting_time_during_trial_vs_success_rate.png")
-            plt.show()
-            plt.close()
-        else:
-            print("Insufficient data to create scatterplot.")
-            
-        
-        print("maxWaitBeforeMeans: ", maxWaitBeforeMeans)
-        
-        # Scatterplot: Avg Waiting Time Before vs. Success Rate
-        if len(maxWaitBeforeMeans) >= 2 and len(success_rates) >= 2:
-            plt.figure(figsize=(8, 6))
-            plt.scatter(maxWaitBeforeMeans, success_rates, alpha=0.7, color='blue', label='Experiments')
-    
-            # Add trendline and R²
-            if len(set(maxWaitBeforeMeans)) >= 2:
-                slope, intercept, r_value, _, _ = linregress(maxWaitBeforeMeans, success_rates)
-                r_squared = r_value ** 2
-                x_vals = np.linspace(min(maxWaitBeforeMeans), max(maxWaitBeforeMeans), 100)
-                plt.plot(x_vals, slope * x_vals + intercept, color='red', linestyle='--', label='Trendline')
-                plt.text(0.95, 0.05, f"$R^2$ = {r_squared:.3f}", transform=plt.gca().transAxes,
-                         ha='right', va='bottom', fontsize=12, bbox=dict(facecolor='white', edgecolor='gray'))
-    
-            plt.xlabel('Average Waiting Time Before (frames)')
-            plt.ylabel('Cooperative Success Rate')
-            plt.title('Waiting Time Before Trial vs. Cooperative Success Rate')
-            plt.legend()
-            plt.grid(True)
-            plt.tight_layout()
-            if self.save:
-                plt.savefig(f"{self.prefix}waiting_time_before_vs_success_rate.png")
-            plt.show()
-            plt.close()
-        else:
-            print("Insufficient data to create scatterplot.")
-        
-    
-        # Pie Chart: Percentage of Time Spent Waiting
-        if total_trial_frames > 0:
-            waiting_percent = (total_waiting_frames / total_trial_frames) * 100
-            non_waiting_percent = 100 - waiting_percent
-            labels = ['Waiting in Lever Areas', 'Not Waiting']
-            sizes = [waiting_percent, non_waiting_percent]
-            colors = ['green', 'gray']
-    
-            plt.figure(figsize=(6, 6))
-            plt.pie(sizes, labels=labels, colors=colors, autopct='%1.1f%%', startangle=140, textprops={'fontsize': 14})
-            plt.title('Percentage of Trial Time Spent Waiting in Lever Areas')
-            plt.axis('equal')
-            plt.tight_layout()
-            if self.save:
-                plt.savefig(f"{self.prefix}waiting_time_pie_chart.png")
-            plt.show()
-            plt.close()
-        else:
-            print("No valid trial data for pie chart.")
-        
-        #Lever Entry Latency Change Over Trials
         if len(avg_latency_per_trial) >= 5:
-            smooth_avg_lat = pd.Series(avg_latency_per_trial).rolling(window=5, min_periods=1, center=True).mean()
-    
-            # Step 4: Plot
-            plt.figure(figsize=(8, 5))
-            plt.plot(smooth_avg_lat, label="Avg latency (both rats)", color="blue", linewidth=2)
-            plt.xlabel("Trial Index (Across Experiments)")
-            plt.ylabel("Average Latency to Lever Entry (frames)")
-            plt.title("Smoothed Lever Entry Latency Over Trials")
-            plt.grid(True)
-            plt.legend()
-            plt.tight_layout()
-    
-            if self.save:
-                plt.savefig(f"{self.prefix}smoothed_avg_latency_over_trials.png")
-            plt.show()
-            plt.close()
-        else:
-            print("Not enough valid aligned trials for latency plot.")
-    
-        # --- Scatterplot: Waiting symmetry vs. success ---
-        if len(avg_symmetry_vals) >= 2:
-            plt.figure(figsize=(8, 6))
-            plt.scatter(avg_symmetry_vals, success_rates, color='purple', alpha=0.7)
-            slope, intercept, r_val, _, _ = linregress(avg_symmetry_vals, success_rates)
-            r2 = r_val**2
-            x = np.linspace(min(avg_symmetry_vals), max(avg_symmetry_vals), 100)
-            plt.plot(x, slope * x + intercept, 'r--')
-            plt.xlabel("Average Waiting Symmetry (|rat0 - rat1|)")
-            plt.ylabel("Cooperative Success Rate")
-            plt.title("Success Rate vs. Waiting Symmetry")
-            plt.text(0.95, 0.05, f"$R^2$ = {r2:.3f}", transform=plt.gca().transAxes,
-                     ha='right', va='bottom', fontsize=12, bbox=dict(facecolor='white', edgecolor='gray'))
-            plt.grid(True)
-            plt.tight_layout()
-            if self.save:
-                plt.savefig(f"{self.prefix}symmetry_vs_success.png")
-            plt.show()
-            plt.close()
-            
-        # Pie Chart: % time 0 / 1 / 2 rats in lever area
-        plt.figure()
-        plt.pie([none_sum, one_sum, both_sum],
-                labels=['Neither', 'One', 'Both'],
-                colors=['gray', 'orange', 'green'],
-                autopct='%1.1f%%', startangle=140)
-        plt.title("Lever Zone Occupancy (None / One / Both Rats)")
-        plt.axis('equal')
-        plt.tight_layout()
-        if self.save:
-            plt.savefig(f"{self.prefix}LeverZoneOccupancyDistribution.png")
-        plt.show()
-    
-        # Pie Chart: Both rats in lever — same vs. opposite lever area
-        plt.figure()
-        plt.pie([same_lever_sum, opposite_lever_sum],
-                labels=['Same Lever Area', 'Opposite Lever Areas'],
-                colors=['lightgreen', 'salmon'],
-                autopct='%1.1f%%', startangle=140)
-        plt.title("When Both Rats Wait: Same vs. Opposite Lever Area")
-        plt.axis('equal')
-        plt.tight_layout()
-        if self.save:
-            plt.savefig(f"{self.prefix}SamevsOppositeLeverArea.png")
-        plt.show()
-    
-        # Line Graph: Occupancy across normalized trial time
-        avg_occupancy = total_occupancy_curve / total_trial_counts
-        smoothed = gaussian_filter1d(avg_occupancy, sigma=2)
-        plt.figure()
-        plt.plot(np.linspace(0, 100, NUM_BINS), smoothed, color='blue')
-        plt.xlabel("Trial Time (% of trial)")
-        plt.ylabel("Probability of Lever Occupancy")
-        plt.title("Lever Zone Occupancy Over Trial Duration")
-        plt.grid(True)
-        plt.tight_layout()
-        if self.save:
-            plt.savefig(f"{self.prefix}LeverZoneOccupancyOverTrialDuration.png")
-        plt.show()
+            self._plot_line(
+                pd.Series(avg_latency_per_trial).rolling(window=5, min_periods=1, center=True).mean(),
+                "smoothed_latency_over_trials.png",
+                "Smoothed Lever Entry Latency Over Trials",
+                "Trial Index (Across Experiments)",
+                "Average Latency to Lever Entry (frames)"
+            )
         
-        # Line Graph: Occupancy across normalized trial time
-        avg_occupancy_both = total_occupancy_curve_both / total_trial_counts
-        smoothed = gaussian_filter1d(avg_occupancy_both, sigma=2)
-        plt.figure()
-        plt.plot(np.linspace(0, 100, NUM_BINS), smoothed, color='blue')
-        plt.xlabel("Trial Time (% of trial)")
-        plt.ylabel("Probability of Lever Occupancy by Both Rats")
-        plt.title("Dual Lever Zone Occupancy Over Trial Duration")
+        avg_occupancy = total_occupancy_curve / total_trial_counts if np.any(total_trial_counts) else np.zeros(self.NUM_BINS)
+        self._plot_line(
+            gaussian_filter1d(avg_occupancy, sigma=2),
+            "lever_occupancy_over_time.png",
+            "Lever Zone Occupancy Over Trial Duration",
+            "Trial Time (% of trial)",
+            "Probability of Lever Occupancy",
+            x_vals=np.linspace(0, 100, self.NUM_BINS)
+        )
+
+        avg_occupancy_both = total_occupancy_curve_both / total_trial_counts if np.any(total_trial_counts) else np.zeros(self.NUM_BINS)
+        self._plot_line(
+            gaussian_filter1d(avg_occupancy_both, sigma=2),
+            "dual_lever_occupancy_over_time.png",
+            "Dual Lever Zone Occupancy Over Trial Duration",
+            "Trial Time (% of trial)",
+            "Probability of Lever Occupancy by Both Rats",
+            x_vals=np.linspace(0, 100, self.NUM_BINS)
+        )
+        
+        avg_occupancy = total_occupancy_curve_mag / total_trial_counts if np.any(total_trial_counts) else np.zeros(self.NUM_BINS)
+        self._plot_line(
+            gaussian_filter1d(avg_occupancy, sigma=2),
+            "mag_occupancy_over_time.png",
+            "Mag Zone Occupancy Over Trial Duration",
+            "Trial Time (% of trial)",
+            "Probability of Mag Occupancy",
+            x_vals=np.linspace(0, 100, self.NUM_BINS)
+        )
+
+        avg_occupancy_both = total_occupancy_curve_both_mag / total_trial_counts if np.any(total_trial_counts) else np.zeros(self.NUM_BINS)
+        self._plot_line(
+            gaussian_filter1d(avg_occupancy_both, sigma=2),
+            "dual_mag_occupancy_over_time.png",
+            "Dual Mag Zone Occupancy Over Trial Duration",
+            "Trial Time (% of trial)",
+            "Probability of Mag Occupancy by Both Rats",
+            x_vals=np.linspace(0, 100, self.NUM_BINS)
+        )
+        
+
+    def _plot_bar_wait_times(self, success_value, all_value, filename, title):
+        """Plots a bar chart comparing wait times for successful vs. all trials."""
+        plt.figure(figsize=(6, 5))
+        bars = plt.bar(['Successful Trials', 'All Trials'], [success_value, all_value], color=['green', 'gray'])
+        plt.ylabel('Average Wait Time (frames)', fontsize = self.labelSize)
+        plt.title(title, fontsize = self.titleSize)
+        plt.xticks(fontsize=self.labelSize)
+        plt.yticks(fontsize=self.labelSize)
+        for bar in bars:
+            plt.text(bar.get_x() + bar.get_width()/2, bar.get_height() + 0.01, f'{bar.get_height():.2f}', ha='center', va='bottom')
+        plt.tight_layout()
+        if self.save:
+            plt.savefig(f"{self.prefix}{filename}")
+        plt.show()
+        plt.close()
+
+    def _plot_scatter(self, x_data, y_data, filename, title, x_label, color_data=None):
+        """Plots a scatter plot with trendline and R² value, optionally with gradient coloring."""
+        if len(x_data) < 2 or len(y_data) < 2:
+            print(f"Insufficient data to create scatterplot for {filename}")
+            return
+    
+        plt.figure(figsize=(8, 6))
+        
+        if color_data is not None:
+            # Use a colormap for gradient coloring based on color_data
+            norm = plt.Normalize(min(color_data), max(color_data))
+            cmap = plt.cm.viridis
+            scatter = plt.scatter(x_data, y_data, c=color_data, cmap=cmap, norm=norm, alpha=0.7, 
+                             edgecolors='black', linewidths=0.5, label='Experiments')
+            plt.colorbar(scatter, label='Average Waiting Time Before Press (frames)')
+        else:
+            plt.scatter(x_data, y_data, alpha=0.7, color='blue', label='Experiments')
+        
+        if len(set(x_data)) >= 2:
+            if color_data is not None:
+                # Define negative exponential decay function: y = a * exp(-b * x) + c
+                def exp_decay(x, a, b, c):
+                    return a * np.exp(-b * x) + c
+                
+                # Fit exponential model
+                try:
+                    popt, _ = curve_fit(exp_decay, x_data, y_data, p0=[max(y_data), 0.1, min(y_data)])
+                    x_vals = np.linspace(min(x_data), max(x_data), 100)
+                    y_fit = exp_decay(x_vals, *popt)
+                    
+                    # Calculate pseudo-R²
+                    y_mean = np.mean(y_data)
+                    ss_tot = sum((y - y_mean) ** 2 for y in y_data)
+                    ss_res = sum((y - exp_decay(x, *popt)) ** 2 for x, y in zip(x_data, y_data))
+                    r_squared = 1 - ss_res / ss_tot if ss_tot > 0 else 0
+                    
+                    # Plot exponential fit
+                    plt.plot(x_vals, y_fit, color='red', linestyle='--', label='Exponential Fit')
+                    plt.text(0.68, 0.93, f"Pseudo-R² = {r_squared:.3f}", transform=plt.gca().transAxes,
+                             ha='right', va='bottom', fontsize=12, bbox=dict(facecolor='white', edgecolor='gray'))
+                except RuntimeError:
+                    print(f"Exponential fit failed for {filename}, falling back to scatter without fit")
+            else:
+                # Linear regression for non-colored case
+                slope, intercept, r_value, _, _ = linregress(x_data, y_data)
+                x_vals = np.linspace(min(x_data), max(x_data), 100)
+                plt.plot(x_vals, slope * x_vals + intercept, color='red', linestyle='--', label='Trendline')
+                plt.text(0.95, 0.05, f"$R^2$ = {r_value**2:.3f}", transform=plt.gca().transAxes,
+                         ha='right', va='bottom', fontsize=12, bbox=dict(facecolor='white', edgecolor='gray'))
+        
+        plt.xlabel(x_label, fontsize=self.labelSize)
+        plt.ylabel('Cooperative Success Rate', fontsize=self.labelSize)
+        plt.title(title, fontsize=self.titleSize)
+        plt.legend()
         plt.grid(True)
         plt.tight_layout()
         if self.save:
-            plt.savefig(f"{self.prefix}BothRatsLeverZoneOccupancyOverTrialDuration.png")
+            plt.savefig(f"{self.prefix}{filename}")
         plt.show()
+        plt.close()
+
+    def _plot_pie(self, sizes, labels, colors, filename, title):
+        """Plots a pie chart with percentage labels."""
+        if sum(sizes) == 0:
+            print(f"No valid data for pie chart {filename}")
+            return
+
+        plt.figure(figsize=(6, 6))
+        plt.pie(sizes, labels=labels, colors=colors, autopct='%1.1f%%', startangle=140, textprops={'fontsize': self.labelSize})
+        plt.title(title, fontsize = self.titleSize)
+        plt.axis('equal')
+        plt.tight_layout()
+        if self.save:
+            plt.savefig(f"{self.prefix}{filename}")
+        plt.show()
+        plt.close()
+
+    def _plot_line(self, y_data, filename, title, x_label, y_label, x_vals=None):
+        """Plots a line graph with optional custom x-values."""
+        plt.figure(figsize=(8, 5))
+        if x_vals is None:
+            plt.plot(y_data, color='blue', linewidth=2)
+        else:
+            plt.plot(x_vals, y_data, color='blue', linewidth=2)
+        plt.xlabel(x_label, fontsize = self.labelSize)
+        plt.ylabel(y_label, fontsize = self.labelSize)
+        plt.title(title, fontsize = self.titleSize)
+        plt.grid(True)
+        plt.tight_layout()
+        if self.save:
+            plt.savefig(f"{self.prefix}{filename}")
+        plt.show()
+        plt.close()
             
     def successRateVsThresholdPlot(self):
         """
@@ -4719,7 +4607,7 @@ totFramesList = [15000, 26000, 15000, 26000, 15000, 26000, 15000]
 initialNanList = [0.15, 0.12, 0.14, 0.16, 0.3, 0.04, 0.2]
 
 
-'''
+
 arr = getFiltered()
 #arr = getAllTrainingCoop()
 #arr = getFiberPhoto()
@@ -4730,7 +4618,7 @@ fpsList = arr[3]
 totFramesList = arr[4]
 initialNanList = arr[5]
 #fiberPhoto = arr[6]
-'''
+
 
 
 '''
@@ -4752,7 +4640,7 @@ initialNanList = [0.3]
 
 print("Start MultiFileGraphs Regular")
 experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "", save=True)
-experiment.waitingStrategy()
+experiment.analyze_and_plot()
 #experiment.cooperativeRegionStrategiesQuantification()
 #experiment.trueCooperationTesting()
 #experiment.fiberPhoto()
