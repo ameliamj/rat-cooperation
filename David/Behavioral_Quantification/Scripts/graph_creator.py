@@ -960,7 +960,7 @@ categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["
 #categoryExperiments.compareSuccesfulTrials()
 '''
 
-
+'''
 #Unfamiliar vs. Training Partners
 print("Running UF vs TP")
 dataUF = getOnlyUnfamiliar() #Unfamiliar
@@ -971,7 +971,7 @@ magFiles = [dataUF[1], dataTP[1]]
 posFiles = [dataUF[2], dataTP[2]]
 categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["Unfamiliar", "Training Partners"])
 #categoryExperiments.compareSuccesfulTrials()
-
+'''
 
 
 #Transparent vs. Translucent vs. Opaque
@@ -988,7 +988,7 @@ categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["
 #categoryExperiments.compareSuccesfulTrials()
 '''
 
-#'''
+'''
 print("0")
 categoryExperiments.compareGazeEventsCategories()
 print("1")
@@ -1002,7 +1002,7 @@ print("4")
 print("5")
 categoryExperiments.printSummaryStats()
 print("Done")
-#'''
+'''
 
 # ---------------------------------------------------------------------------------------------------------
 
@@ -3203,11 +3203,11 @@ class multiFileGraphs:
                 )
                 
                 in_mag = sum(
-                    (r0 in lever_zones) or (r1 in mag_zones)
+                    (r0 in mag_zones) or (r1 in mag_zones)
                     for r0, r1 in zip(rat0_bin, rat1_bin)
                 )
                 in_mag_both = sum(
-                    (r0 in lever_zones) and (r1 in mag_zones)
+                    (r0 in mag_zones) and (r1 in mag_zones)
                     for r0, r1 in zip(rat0_bin, rat1_bin)
                 )
                 
@@ -4619,7 +4619,7 @@ totFramesList = [15000, 26000, 15000, 26000, 15000, 26000, 15000]
 initialNanList = [0.15, 0.12, 0.14, 0.16, 0.3, 0.04, 0.2]
 
 
-'''
+
 arr = getFiltered()
 #arr = getAllTrainingCoop()
 #arr = getFiberPhoto()
@@ -4630,7 +4630,7 @@ fpsList = arr[3]
 totFramesList = arr[4]
 initialNanList = arr[5]
 #fiberPhoto = arr[6]
-'''
+
 
 
 '''
@@ -4651,8 +4651,8 @@ initialNanList = [0.3]
 
 
 print("Start MultiFileGraphs Regular")
-#experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "", save=True)
-#experiment.waitingStrategy()
+experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "", save=True)
+experiment.waitingStrategy()
 #experiment.cooperativeRegionStrategiesQuantification()
 #experiment.trueCooperationTesting()
 #experiment.fiberPhoto()
