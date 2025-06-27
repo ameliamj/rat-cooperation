@@ -938,7 +938,7 @@ posFiles = [["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/B
             ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.predictions.h5"]]
 
 
-categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["Paired_Testing", "Training_Cooperation"], save=False)
+#categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["Paired_Testing", "Training_Cooperation"], save=False)
 #categoryExperiments.compareGazeEventsCategories()
 #categoryExperiments.printSummaryStats()
 
@@ -959,7 +959,7 @@ categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["
 #categoryExperiments.compareSuccesfulTrials()
 '''
 
-'''
+
 #Unfamiliar vs. Training Partners
 print("Running UF vs TP")
 dataUF = getOnlyUnfamiliar() #Unfamiliar
@@ -970,11 +970,11 @@ magFiles = [dataUF[1], dataTP[1]]
 posFiles = [dataUF[2], dataTP[2]]
 categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["Unfamiliar", "Training Partners"])
 #categoryExperiments.compareSuccesfulTrials()
-'''
+
 
 
 #Transparent vs. Translucent vs. Opaque
-
+'''
 print("Running Transparency")
 dataTransparent = getOnlyTransparent() #Transparent
 dataTranslucent = getOnlyTranslucent() #Translucent
@@ -985,7 +985,7 @@ magFiles = [dataTransparent[1], dataTranslucent[1], dataOpaque[1]]
 posFiles = [dataTransparent[2], dataTranslucent[2], dataOpaque[2]]
 categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["Transparent", "Translucent", "Opaque"])
 #categoryExperiments.compareSuccesfulTrials()
-
+'''
 
 #'''
 print("0")
