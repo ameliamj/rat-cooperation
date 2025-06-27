@@ -325,7 +325,12 @@ class multiFileGraphsCategories:
         plt.xticks(range(len(avg_events)), self.categoryNames, fontsize = 13)
         
         # --- Statistical Significance Tests ---
-        y_max = max(avg_events)
+        if (group_events is not None):
+            y_max = 0
+            for cat_data in group_events:
+                y_max = max(y_max, max(cat_data))
+        else: 
+            y_max = max(avg_events)
         
         plt.ylim(0, y_max * 1.13)  # Adjust ylim so text doesn't overlap title
 
@@ -560,10 +565,33 @@ class multiFileGraphsCategories:
                 x_jitter = np.random.normal(i, 0.1, size=len(cat_data))
                 plt.scatter(x_jitter, cat_data, color='darkblue', alpha=0.5, s=50, label='Individual Data' if i == 0 else None)
         
-        plt.xticks(x, self.categoryNames)
-        plt.ylabel(ylabel)
-        plt.title(title)
+        plt.xticks(x, self.categoryNames, fontsize = 13)
+        plt.ylabel(ylabel, fontsize = 13)
+        plt.title(title, fontsize = 15)
         plt.legend()
+        
+        # --- Statistical Significance Tests ---
+        if (individual_data is not None):
+            y_max = 0
+            for cat_data in individual_data:
+                y_max = max(y_max, max(cat_data))
+        else: 
+            y_max = max(data)
+        
+        plt.ylim(0, y_max * 1.13)  # Adjust ylim so text doesn't overlap title
+        
+        if self.numCategories == 2:
+            # Mann-Whitney U test
+            stat, p = mannwhitneyu(data[0], data[1], alternative='two-sided')
+            plt.text(0.5, y_max * 1.05, f"Mann-Whitney U: p = {p:.3g}", ha='center', fontsize=13)
+            # Optional: line between the bars
+            #plt.plot([0, 1], [y_max * 1.1, y_max * 1.1], color='black', lw=1.2)
+        
+        elif self.numCategories > 2:
+            # Kruskal-Wallis test
+            stat, p = kruskal(*data)
+            plt.text(len(data)/2 - 0.5, y_max * 1.05, f"Kruskal-Wallis: p = {p:.3g}", ha='center', fontsize=12)
+        
         plt.tight_layout()
         if self.save:
             plt.savefig(f'{self.path}{saveFileName}{self.endSaveName}')
@@ -910,7 +938,7 @@ posFiles = [["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/B
             ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.predictions.h5"]]
 
 
-#categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["Paired_Testing", "Training_Cooperation"], save=False)
+categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["Paired_Testing", "Training_Cooperation"], save=False)
 #categoryExperiments.compareGazeEventsCategories()
 #categoryExperiments.printSummaryStats()
 
@@ -931,7 +959,7 @@ categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["
 #categoryExperiments.compareSuccesfulTrials()
 '''
 
-
+'''
 #Unfamiliar vs. Training Partners
 print("Running UF vs TP")
 dataUF = getOnlyUnfamiliar() #Unfamiliar
@@ -942,11 +970,11 @@ magFiles = [dataUF[1], dataTP[1]]
 posFiles = [dataUF[2], dataTP[2]]
 categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["Unfamiliar", "Training Partners"])
 #categoryExperiments.compareSuccesfulTrials()
-
+'''
 
 
 #Transparent vs. Translucent vs. Opaque
-'''
+
 print("Running Transparency")
 dataTransparent = getOnlyTransparent() #Transparent
 dataTranslucent = getOnlyTranslucent() #Translucent
@@ -957,7 +985,7 @@ magFiles = [dataTransparent[1], dataTranslucent[1], dataOpaque[1]]
 posFiles = [dataTransparent[2], dataTranslucent[2], dataOpaque[2]]
 categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["Transparent", "Translucent", "Opaque"])
 #categoryExperiments.compareSuccesfulTrials()
-'''
+
 
 #'''
 print("0")
@@ -971,7 +999,7 @@ print("3")
 print("4")
 #categoryExperiments.gazeAlignmentAngle()
 print("5")
-#categoryExperiments.printSummaryStats()
+categoryExperiments.printSummaryStats()
 print("Done")
 #'''
 
