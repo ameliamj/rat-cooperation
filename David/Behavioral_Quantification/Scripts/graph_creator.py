@@ -20,8 +20,10 @@ from file_extractor_class import fileExtractor
 #from mag_class import magLoader
 #from lev_class import levLoader
 from scipy.stats import linregress
+from scipy.stats import mannwhitneyu, kruskal
 from scipy.ndimage import gaussian_filter
 from scipy.ndimage import gaussian_filter1d
+import itertools
 
 from matplotlib.patches import Patch
 import seaborn as sns
@@ -278,13 +280,15 @@ class multiFileGraphsCategories:
         '''
         
         avg_events = []  # Stores the average gaze events per minute for each category
+        group_events = []  # List of lists: per-experiment values for each category
         FRAME_WINDOW = 1800  # Defines the number of frames corresponding to one minute
     
         # Iterate over each group of experiments (i.e., each category)
         for group in self.allFileGroupExperiments:
             sumEvents = 0     # Total number of gaze events for this category
             sumFrames = 0     # Total number of frames across all experiments in this category
-    
+            events_per_exp = []
+            
             # Process each experiment in the current category
             for exp in group:
                 loader = exp.pos  # Get positional data loader
@@ -298,18 +302,45 @@ class multiFileGraphsCategories:
                 if countEvents0 is not None and countEvents1 is not None and numFrames is not None:
                     sumEvents += countEvents0 + countEvents1
                     sumFrames += numFrames
+                    events_per_exp.append((countEvents0 + countEvents1) / numFrames * FRAME_WINDOW)
     
             # Compute average gaze events per 1800 frames if data is available
-            if sumFrames > 0:
+            if sumFrames > 0 and events_per_exp:
+                group_events.append(events_per_exp)
                 avg_events.append(sumEvents / sumFrames * FRAME_WINDOW)
     
         # --- Plot: Bar chart of average gaze events per minute (1800 frames) ---
         plt.figure(figsize=(8, 6))
         plt.bar(range(len(avg_events)), avg_events, color='skyblue')
-        plt.xlabel('Category')
-        plt.ylabel('Avg. Gaze Events per 1800 Frames')
-        plt.title('Average Gaze Events (per Minute) per Category')
-        plt.xticks(range(len(avg_events)), self.categoryNames)
+        
+        if group_events is not None:
+            for i, cat_data in enumerate(group_events):
+                # Generate slight jitter for x-coordinates to avoid overlap
+                x_jitter = np.random.normal(i, 0.1, size=len(cat_data))
+                plt.scatter(x_jitter, cat_data, color='darkblue', alpha=0.5, s=50, label='Individual Data' if i == 0 else None)
+        
+        #plt.xlabel('Category')
+        plt.ylabel('Avg. Gaze Events per 1800 Frames', fontsize=13)
+        plt.title('Average Gaze Events (per Minute) per Category', fontsize=15)
+        plt.xticks(range(len(avg_events)), self.categoryNames, fontsize = 13)
+        
+        # --- Statistical Significance Tests ---
+        y_max = max(avg_events)
+        
+        plt.ylim(0, y_max * 1.13)  # Adjust ylim so text doesn't overlap title
+
+        if self.numCategories == 2:
+            # Mann-Whitney U test
+            stat, p = mannwhitneyu(group_events[0], group_events[1], alternative='two-sided')
+            plt.text(0.5, y_max * 1.05, f"Mann-Whitney U: p = {p:.3g}", ha='center', fontsize=13)
+            # Optional: line between the bars
+            #plt.plot([0, 1], [y_max * 1.1, y_max * 1.1], color='black', lw=1.2)
+        
+        elif self.numCategories > 2:
+            # Kruskal-Wallis test
+            stat, p = kruskal(*group_events)
+            plt.text(len(avg_events)/2 - 0.5, y_max * 1.05, f"Kruskal-Wallis: p = {p:.3g}", ha='center', fontsize=12)
+
         plt.tight_layout()
         
         # Save and display the plot
@@ -871,15 +902,16 @@ posFiles = [["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/B
             ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.predictions.h5"]]
 
 
-'''levFiles = [["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv"], 
+levFiles = [["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv"], 
             ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv"]]
 magFiles = [["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_mag.csv"], 
             ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_mag.csv"]]
 posFiles = [["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G.predictions.h5"], 
             ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.predictions.h5"]]
-'''
+
 
 #categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["Paired_Testing", "Training_Cooperation"], save=False)
+#categoryExperiments.compareGazeEventsCategories()
 #categoryExperiments.printSummaryStats()
 
 #categoryExperiments.compareSuccesfulTrials()
@@ -939,7 +971,7 @@ print("3")
 print("4")
 #categoryExperiments.gazeAlignmentAngle()
 print("5")
-categoryExperiments.printSummaryStats()
+#categoryExperiments.printSummaryStats()
 print("Done")
 #'''
 
