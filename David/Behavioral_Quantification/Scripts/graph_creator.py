@@ -3026,6 +3026,7 @@ class multiFileGraphs:
         rat0_wait_times = []  # List of frames rat0 spent waiting in a lever area (lev_top or lev_bottom) per trial, before first lever press
         rat1_wait_times = []  # List of frames rat1 spent waiting in a lever area (lev_top or lev_bottom) per trial, before first lever press
         waiting_symmetry = []  # List of absolute differences in waiting frames between rat0 and rat1 per trial, before first lever press
+        waiting_symmetry_before = [] # List of absolute differences in waiting frames between rat0 and rat1 per trial, before queue
         synchronous_wait_frames = []  # List of frames per trial where both rats were simultaneously in a lever area, before first lever press
         rat0_latencies = []  # List of frames until rat0 first enters a lever area after trial start, per trial
         rat1_latencies = []  # List of frames until rat1 first enters a lever area after trial start, per trial
@@ -3102,6 +3103,8 @@ class multiFileGraphs:
             max_frames_waited_before.append(max_wait_before)
             frames_waited_all += max_wait_before
             frames_both_waited_before += min(rat0_waiting, rat1_waiting)
+            
+            waiting_symmetry_before.append(abs(rat0_waiting - rat1_waiting))
 
             if success_trials[trial_idx]:
                 frames_both_waited_before_success += min(rat0_waiting, rat1_waiting)
@@ -3234,7 +3237,7 @@ class multiFileGraphs:
             waiting_symmetry.append(abs(rat0_trial_waiting - rat1_trial_waiting))
 
         return (
-            rat0_wait_times, rat1_wait_times, waiting_symmetry, rat0_latencies, rat1_latencies,
+            rat0_wait_times, rat1_wait_times, waiting_symmetry, waiting_symmetry_before, rat0_latencies, rat1_latencies,
             synchronous_wait_frames, total_trial_frames, total_waiting_frames,
             same_lever_frames, opposite_lever_frames, no_rat_frames, one_rat_frames, both_rats_frames,
             occupancy_curve, occupancy_curve_mag, occupancy_curve_both, occupancy_curve_both_mag,
@@ -3244,7 +3247,7 @@ class multiFileGraphs:
             trial_count, successful_trials_used, frames_both_waited_before_success
         )
 
-    def analyze_and_plot(self):
+    def waitingStrategy(self):
         """
         Aggregates data across experiments and generates visualizations including:
         - Bar plots comparing waiting times
@@ -3256,6 +3259,7 @@ class multiFileGraphs:
         avg_waiting_times = []
         success_rates = []
         avg_symmetry_values = []
+        avg_symmetry_values_before = []
         avg_sync_values = []
         rat0_latencies_per_trial = defaultdict(list)
         rat1_latencies_per_trial = defaultdict(list)
@@ -3284,7 +3288,7 @@ class multiFileGraphs:
         for exp in self.experiments:
             metrics = self._calculate_trial_metrics(exp)
             (
-                rat0_times, rat1_times, symmetry, rat0_lat, rat1_lat, sync_frames,
+                rat0_times, rat1_times, symmetry, symmetry_before, rat0_lat, rat1_lat, sync_frames,
                 trial_frames, waiting_frames, same_lever, opposite_lever, no_rat,
                 one_rat, both_rats, occupancy_curve, occupancy_curve_mag, occupancy_curve_both,
                 occupancy_curve_both_mag, trial_counts, avg_wait_before, avg_wait_before_press, 
@@ -3311,6 +3315,7 @@ class multiFileGraphs:
             avg_waiting_times.append(waiting_frames / trial_frames if trial_frames > 0 else 0)
             success_rates.append(exp.lev.returnNumSuccessfulTrials() / total_trials_overall if total_trials_overall > 0 else 0)
             avg_symmetry_values.append(np.sum(symmetry) / num_trials if num_trials > 0 else 0)
+            avg_symmetry_values_before.append(np.sum(symmetry_before) / num_trials if num_trials > 0 else 0)
             avg_sync_values.append(np.mean(sync_frames) if sync_frames else 0)
 
             for trial_idx, (lat0, lat1) in enumerate(zip(rat0_lat, rat1_lat)):
@@ -3388,6 +3393,13 @@ class multiFileGraphs:
             "Success Rate vs. Waiting Symmetry",
             "Average Waiting Symmetry (|rat0 - rat1|)",
             color_data=max_wait_before_press_means
+        )
+        
+        self._plot_scatter(
+            avg_symmetry_values_before, success_rates,
+            "symmetryBefore_vs_success.png",
+            "Success Rate vs. Waiting Symmetry Before Queue",
+            "Average Waiting Symmetry (|rat0 - rat1|)",
         )
 
         self._plot_pie(
@@ -3494,7 +3506,7 @@ class multiFileGraphs:
             norm = plt.Normalize(min(color_data), max(color_data))
             cmap = plt.cm.viridis
             scatter = plt.scatter(x_data, y_data, c=color_data, cmap=cmap, norm=norm, alpha=0.7, 
-                             edgecolors='black', linewidths=0.5, label='Experiments')
+                             edgecolors='black', linewidths=1, label='Experiments', s=70)
             plt.colorbar(scatter, label='Average Waiting Time Before Press (frames)')
         else:
             plt.scatter(x_data, y_data, alpha=0.7, color='blue', label='Experiments')
@@ -4640,7 +4652,8 @@ initialNanList = [0.3]
 
 print("Start MultiFileGraphs Regular")
 experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "", save=True)
-experiment.analyze_and_plot()
+experiment.waitingStrategy()
+#experiment.analyze_and_plot()
 #experiment.cooperativeRegionStrategiesQuantification()
 #experiment.trueCooperationTesting()
 #experiment.fiberPhoto()
