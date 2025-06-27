@@ -24,6 +24,7 @@ from scipy.interpolate import make_interp_spline
 from scipy.stats import mannwhitneyu, kruskal
 from scipy.ndimage import gaussian_filter
 from scipy.ndimage import gaussian_filter1d
+from scipy.ndimage import uniform_filter1d
 from scipy.optimize import curve_fit
 import itertools
 
@@ -4582,6 +4583,76 @@ class multiFileGraphs:
             plt.savefig('magazine_entry_line_plot.png')
         plt.show()
     
+    def testMotivation(self):
+        '''
+        Calculate the percent success rate for each trial number across all experiments
+        and create a smoothed line graph with annotations showing the number of experiments
+        contributing to each trial's data.
+    
+        Steps:
+        - Loop through experiments to collect success status for each trial number.
+        - Compute percent success rate as (# successful trials / # experiments with that trial).
+        - Plot a smoothed line graph using a moving average.
+        - Annotate each point with the number of experiments.
+        - Save the plot if self.save is True.
+        '''
+        # Collect success rates and experiment counts per trial number
+        trial_successes = {}
+        trial_counts = {}
+        
+        for exp_idx, exp in enumerate(self.experiments):
+            success_status = exp.lev.returnSuccessTrials()  # List of success statuses (1, 0, -1)
+            for trial_idx, status in enumerate(success_status):
+                if status == -1:  # Skip missing trials
+                    continue
+                if trial_idx not in trial_successes:
+                    trial_successes[trial_idx] = []
+                    trial_counts[trial_idx] = 0
+                trial_successes[trial_idx].append(status == 1)
+                trial_counts[trial_idx] += 1
+        
+        # Calculate percent success rate for each trial number
+        trial_numbers = sorted(trial_successes.keys())
+        success_rates = [
+            np.mean(trial_successes[trial_idx]) * 100 if trial_successes[trial_idx] else 0
+            for trial_idx in trial_numbers
+        ]
+        experiment_counts = [trial_counts[trial_idx] for trial_idx in trial_numbers]
+        
+        # Apply smoothing (moving average with window size 3)
+        if len(success_rates) > 2:  # Need at least 3 points for smoothing
+            smoothed_rates = uniform_filter1d(success_rates, size=3, mode='nearest')
+        else:
+            smoothed_rates = success_rates  # No smoothing if too few points
+        
+        # Create the plot
+        plt.figure(figsize=(10, 6))
+        plt.plot(trial_numbers, smoothed_rates, color='blue', label='Smoothed Success Rate')
+        
+        # Plot scatter points every 5 trials
+        scatter_indices = [i for i in range(len(trial_numbers)) if trial_numbers[i] % 3 == 0]
+        scatter_trials = [trial_numbers[i] for i in scatter_indices]
+        scatter_rates = [success_rates[i] for i in scatter_indices]
+        plt.scatter(scatter_trials, scatter_rates, color='black', alpha=0.5, label='Actual Success Rate')
+        
+        # Annotate points with number of experiments
+        for trial_idx, rate, count in zip(trial_numbers, success_rates, experiment_counts):
+            if (trial_idx % 15 == 0):
+                plt.text(trial_idx, rate + 2, f'n={count}', ha='center', va='bottom', fontsize=11, fontweight='bold')
+        
+        plt.xlabel('Trial Number', fontsize = 13)
+        plt.ylabel('Success Rate (%)', fontsize = 13)
+        plt.title('Success Rate by Trial Number Across Experiments', fontsize = 15)
+        plt.legend()
+        plt.grid(True, linestyle='--', alpha=0.7)
+        plt.tight_layout()
+        
+        if self.save:
+            plt.savefig(f'{self.prefix}SuccessRateByTrialNumber.png')
+        plt.show()
+        plt.close()
+        
+
 #Testing Multi File Graphs
 #
 #
@@ -4652,7 +4723,8 @@ initialNanList = [0.3]
 
 print("Start MultiFileGraphs Regular")
 experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "", save=True)
-experiment.waitingStrategy()
+experiment.testMotivation()
+#experiment.waitingStrategy()
 #experiment.cooperativeRegionStrategiesQuantification()
 #experiment.trueCooperationTesting()
 #experiment.fiberPhoto()
