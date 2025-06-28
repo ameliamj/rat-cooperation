@@ -137,7 +137,6 @@ def getOnlyUnfamiliar(filtered = True, onlyFirst = False):
     
     return [fe.getLevsDatapath(), fe.getMagsDatapath(), fe.getPosDatapath(), fpsList, totFramesList, initial_nan_list]
 
-
 def getOnlyTrainingPartners(filtered = True, onlyFirst = False):
     if (onlyFirst):
         fe = fileExtractor(only_trainingpartners_filtered_onlyFirst)
@@ -3477,7 +3476,6 @@ class multiFileGraphs:
             x_vals=np.linspace(0, 100, self.NUM_BINS)
         )
         
-
     def _plot_bar_wait_times(self, success_value, all_value, filename, title):
         """Plots a bar chart comparing wait times for successful vs. all trials."""
         plt.figure(figsize=(6, 5))
@@ -3828,7 +3826,6 @@ class multiFileGraphs:
         print(f"Average percentage of dominant rat collecting both rewards per session: {avg_dominant_rat_percentage:.1f}%")
         print(f"Sessions Considered: {sessions_considered}")
         
-    
     def stateTransitionModel(self):
         """
         Constructs a behavioral state transition model based on spatial and event data.
@@ -4723,7 +4720,8 @@ initialNanList = [0.3]
 
 print("Start MultiFileGraphs Regular")
 experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "", save=True)
-experiment.testMotivation()
+experiment.trialStateModel()
+#experiment.testMotivation()
 #experiment.waitingStrategy()
 #experiment.cooperativeRegionStrategiesQuantification()
 #experiment.trueCooperationTesting()
