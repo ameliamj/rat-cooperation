@@ -987,8 +987,18 @@ posFiles = [dataTransparent[2], dataTranslucent[2], dataOpaque[2]]
 categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["Transparent", "Translucent", "Opaque"])
 #categoryExperiments.compareSuccesfulTrials()
 '''
+print("Running Transparency")
+dataTransparent = getAllTransparent() #Transparent
+dataTranslucent = getAllTranslucent() #Translucent
+dataOpaque = getAllOpaque() #Opaque
 
-'''
+levFiles = [dataTransparent[0], dataTranslucent[0], dataOpaque[0]]
+magFiles = [dataTransparent[1], dataTranslucent[1], dataOpaque[1]]
+posFiles = [dataTransparent[2], dataTranslucent[2], dataOpaque[2]]
+categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["Transparent", "Translucent", "Opaque"])
+#categoryExperiments.compareSuccesfulTrials()
+
+
 print("0")
 categoryExperiments.compareGazeEventsCategories()
 print("1")
@@ -1002,7 +1012,7 @@ print("4")
 print("5")
 categoryExperiments.printSummaryStats()
 print("Done")
-'''
+
 
 # ---------------------------------------------------------------------------------------------------------
 
