@@ -987,18 +987,8 @@ posFiles = [dataTransparent[2], dataTranslucent[2], dataOpaque[2]]
 categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["Transparent", "Translucent", "Opaque"])
 #categoryExperiments.compareSuccesfulTrials()
 '''
-print("Running Transparency")
-dataTransparent = getAllTransparent() #Transparent
-dataTranslucent = getAllTranslucent() #Translucent
-dataOpaque = getAllOpaque() #Opaque
 
-levFiles = [dataTransparent[0], dataTranslucent[0], dataOpaque[0]]
-magFiles = [dataTransparent[1], dataTranslucent[1], dataOpaque[1]]
-posFiles = [dataTransparent[2], dataTranslucent[2], dataOpaque[2]]
-categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["Transparent", "Translucent", "Opaque"])
-#categoryExperiments.compareSuccesfulTrials()
-
-
+'''
 print("0")
 categoryExperiments.compareGazeEventsCategories()
 print("1")
@@ -1012,7 +1002,7 @@ print("4")
 print("5")
 categoryExperiments.printSummaryStats()
 print("Done")
-
+'''
 
 # ---------------------------------------------------------------------------------------------------------
 
@@ -3044,10 +3034,16 @@ class multiFileGraphs:
         
         # Initialize occupancy curves
         occupancy_curve = np.zeros(self.NUM_BINS)  # Array tracking total frames where at least one rat was in a lever area, across normalized trial time bins
+        occupancy_curve_fail = np.zeros(self.NUM_BINS)
+        occupancy_curve_success = np.zeros(self.NUM_BINS)
+        occupancy_curve_fail_mag = np.zeros(self.NUM_BINS)
+        occupancy_curve_success_mag = np.zeros(self.NUM_BINS)
         occupancy_curve_mag = np.zeros(self.NUM_BINS)
         occupancy_curve_both = np.zeros(self.NUM_BINS)  # Array tracking total frames where both rats were in a lever area, across normalized trial time bins
         occupancy_curve_both_mag = np.zeros(self.NUM_BINS)
         trial_counts = np.zeros(self.NUM_BINS)  # Array tracking the number of valid frames contributing to each time bin for normalization
+        trial_counts_fail = np.zeros(self.NUM_BINS)
+        trial_counts_success = np.zeros(self.NUM_BINS)
         
         # Retrieve trial data
         start_times = lever_data.returnTimeStartTrials()  # Array of trial start times (in seconds) for all trials
@@ -3226,6 +3222,16 @@ class multiFileGraphs:
                 occupancy_curve_mag[bin_idx] += in_mag
                 occupancy_curve_both_mag[bin_idx] += in_mag_both
                 trial_counts[bin_idx] += (end_bin - start_bin)
+                
+                if (success_trials[trial_idx]):
+                    occupancy_curve_success[bin_idx] += in_lever
+                    occupancy_curve_success_mag[bin_idx] += in_mag
+                    trial_counts_success[bin_idx] += (end_bin - start_bin)
+                else:
+                    occupancy_curve_fail[bin_idx] += in_lever
+                    occupancy_curve_fail_mag[bin_idx] += in_mag
+                    trial_counts_fail[bin_idx] += (end_bin - start_bin)
+                    
 
             # Calculate waiting metrics
             waiting_frames = sum(
@@ -3250,8 +3256,9 @@ class multiFileGraphs:
             rat0_wait_times, rat1_wait_times, waiting_symmetry, waiting_symmetry_before, rat0_latencies, rat1_latencies,
             synchronous_wait_frames, total_trial_frames, total_waiting_frames,
             same_lever_frames, opposite_lever_frames, no_rat_frames, one_rat_frames, both_rats_frames,
-            occupancy_curve, occupancy_curve_mag, occupancy_curve_both, occupancy_curve_both_mag,
-            trial_counts, np.mean(max_frames_waited_before) if max_frames_waited_before else 0, 
+            occupancy_curve, occupancy_curve_success, occupancy_curve_fail, occupancy_curve_mag, 
+            occupancy_curve_success_mag, occupancy_curve_fail_mag, occupancy_curve_both, occupancy_curve_both_mag,
+            trial_counts, trial_counts_success, trial_counts_fail, np.mean(max_frames_waited_before) if max_frames_waited_before else 0, 
             np.mean(max_wait_before_press) if max_wait_before_press else 0,
             frames_both_waited_before, frames_waited_success, frames_waited_all,
             trial_count, successful_trials_used, frames_both_waited_before_success
@@ -3290,18 +3297,32 @@ class multiFileGraphs:
         one_rat_sum = 0
         both_rats_sum = 0
         total_occupancy_curve = np.zeros(self.NUM_BINS)
-        total_occupancy_curve_both = np.zeros(self.NUM_BINS)
+        total_occupancy_curve_succ = np.zeros(self.NUM_BINS)
+        total_occupancy_curve_fail = np.zeros(self.NUM_BINS)
+        all_occupancy_curves = []
+        all_occupancy_curves_succ = []
+        all_occupancy_curves_fail = []
+        
         total_occupancy_curve_mag = np.zeros(self.NUM_BINS)
+        total_occupancy_curve_succ_mag = np.zeros(self.NUM_BINS)
+        total_occupancy_curve_fail_mag = np.zeros(self.NUM_BINS)
+        all_occupancy_curves_mag = []
+        all_occupancy_curves_succ_mag = []
+        all_occupancy_curves_fail_mag = []
+        
+        total_occupancy_curve_both = np.zeros(self.NUM_BINS)
         total_occupancy_curve_both_mag = np.zeros(self.NUM_BINS)
         total_trial_counts = np.zeros(self.NUM_BINS)
+        total_trial_counts_succ = np.zeros(self.NUM_BINS)
+        total_trial_counts_fail = np.zeros(self.NUM_BINS)
 
         for exp in self.experiments:
             metrics = self._calculate_trial_metrics(exp)
             (
                 rat0_times, rat1_times, symmetry, symmetry_before, rat0_lat, rat1_lat, sync_frames,
                 trial_frames, waiting_frames, same_lever, opposite_lever, no_rat,
-                one_rat, both_rats, occupancy_curve, occupancy_curve_mag, occupancy_curve_both,
-                occupancy_curve_both_mag, trial_counts, avg_wait_before, avg_wait_before_press, 
+                one_rat, both_rats, occupancy_curve, occupancy_curve_success, occupancy_curve_fail, occupancy_curve_mag, occupancy_curve_success_mag, occupancy_curve_fail_mag, occupancy_curve_both,
+                occupancy_curve_both_mag, trial_counts, trial_counts_success, trial_counts_fail, avg_wait_before, avg_wait_before_press, 
                 frames_both_waited_before, frames_wait_before_success, frames_waited_all, num_trials, 
                 num_success_trials, frames_both_waited_before_success
             ) = metrics
@@ -3339,10 +3360,32 @@ class multiFileGraphs:
             one_rat_sum += one_rat
             both_rats_sum += both_rats
             total_occupancy_curve += occupancy_curve
-            total_occupancy_curve_both += occupancy_curve_both
+            total_occupancy_curve_succ += occupancy_curve_success
+            total_occupancy_curve_fail += occupancy_curve_fail
+            
             total_occupancy_curve_mag += occupancy_curve_mag
+            total_occupancy_curve_succ_mag += occupancy_curve_success_mag
+            total_occupancy_curve_fail_mag += occupancy_curve_fail_mag
+            
+            if np.any(trial_counts):
+                all_occupancy_curves.append(occupancy_curve / trial_counts)
+            if np.any(trial_counts_success):
+                all_occupancy_curves_succ.append(occupancy_curve_success / trial_counts_success)
+            if np.any(trial_counts_fail):
+                all_occupancy_curves_fail.append(occupancy_curve_fail / trial_counts_fail)
+                
+            if np.any(trial_counts):
+                all_occupancy_curves_mag.append(occupancy_curve_mag / trial_counts)
+            if np.any(trial_counts_success):
+                all_occupancy_curves_succ_mag.append(occupancy_curve_success_mag / trial_counts_success)
+            if np.any(trial_counts_fail):
+                all_occupancy_curves_fail_mag.append(occupancy_curve_fail_mag / trial_counts_fail)
+            
+            total_occupancy_curve_both += occupancy_curve_both
             total_occupancy_curve_both_mag += occupancy_curve_both_mag
             total_trial_counts += trial_counts
+            total_trial_counts_succ += trial_counts_success
+            total_trial_counts_fail += trial_counts_fail
 
         # Calculate average latency per trial
         avg_latency_per_trial = []
@@ -3447,14 +3490,53 @@ class multiFileGraphs:
             )
         
         avg_occupancy = total_occupancy_curve / total_trial_counts if np.any(total_trial_counts) else np.zeros(self.NUM_BINS)
-        self._plot_line(
+        avg_occupancy_succ = total_occupancy_curve_succ / total_trial_counts_succ if np.any(total_trial_counts_succ) else np.zeros(self.NUM_BINS)
+        avg_occupancy_fail = total_occupancy_curve_fail / total_trial_counts_fail if np.any(total_trial_counts_fail) else np.zeros(self.NUM_BINS)
+        # Calculate standard deviations
+        std_occupancy = np.std(all_occupancy_curves, axis=0) if all_occupancy_curves else np.zeros(self.NUM_BINS)
+        std_occupancy_succ = np.std(all_occupancy_curves_succ, axis=0) if all_occupancy_curves_succ else np.zeros(self.NUM_BINS)
+        std_occupancy_fail = np.std(all_occupancy_curves_fail, axis=0) if all_occupancy_curves_fail else np.zeros(self.NUM_BINS)
+        plt.figure(figsize=(8, 5))
+        x_vals = np.linspace(0, 100, self.NUM_BINS)
+        
+        # Plot lines with Gaussian smoothing
+        plt.plot(x_vals, gaussian_filter1d(avg_occupancy, sigma=2), color='red', linewidth=2, label='All Trials')
+        plt.plot(x_vals, gaussian_filter1d(avg_occupancy_succ, sigma=2), color='green', linewidth=2, label='Successful Trials')
+        plt.plot(x_vals, gaussian_filter1d(avg_occupancy_fail, sigma=2), color='purple', linewidth=2, label='Failed Trials')
+        
+        # Plot standard deviation shaded areas
+        plt.fill_between(x_vals, 
+                         gaussian_filter1d(avg_occupancy - std_occupancy, sigma=2), 
+                         gaussian_filter1d(avg_occupancy + std_occupancy, sigma=2), 
+                         color='red', alpha=0.2)
+        plt.fill_between(x_vals, 
+                         gaussian_filter1d(avg_occupancy_succ - std_occupancy_succ, sigma=2), 
+                         gaussian_filter1d(avg_occupancy_succ + std_occupancy_succ, sigma=2), 
+                         color='green', alpha=0.2)
+        plt.fill_between(x_vals, 
+                         gaussian_filter1d(avg_occupancy_fail - std_occupancy_fail, sigma=2), 
+                         gaussian_filter1d(avg_occupancy_fail + std_occupancy_fail, sigma=2), 
+                         color='purple', alpha=0.2)
+        
+        plt.xlabel("Trial Time (% of trial)", fontsize=self.labelSize)
+        plt.ylabel("Probability of Lever Occupancy", fontsize=self.labelSize)
+        plt.title("Lever Zone Occupancy Over Trial Duration", fontsize=self.titleSize)
+        plt.grid(True)
+        plt.legend()
+        plt.tight_layout()
+        if self.save:
+            plt.savefig(f"{self.prefix}lever_occupancy_over_time.png")
+        plt.show()
+        plt.close()
+        
+        '''self._plot_line(
             gaussian_filter1d(avg_occupancy, sigma=2),
             "lever_occupancy_over_time.png",
             "Lever Zone Occupancy Over Trial Duration",
             "Trial Time (% of trial)",
             "Probability of Lever Occupancy",
             x_vals=np.linspace(0, 100, self.NUM_BINS)
-        )
+        )'''
 
         avg_occupancy_both = total_occupancy_curve_both / total_trial_counts if np.any(total_trial_counts) else np.zeros(self.NUM_BINS)
         self._plot_line(
@@ -3466,6 +3548,47 @@ class multiFileGraphs:
             x_vals=np.linspace(0, 100, self.NUM_BINS)
         )
         
+        avg_occupancy_mag = total_occupancy_curve_mag / total_trial_counts if np.any(total_trial_counts) else np.zeros(self.NUM_BINS)
+        avg_occupancy_succ_mag = total_occupancy_curve_succ_mag / total_trial_counts_succ if np.any(total_trial_counts_succ) else np.zeros(self.NUM_BINS)
+        avg_occupancy_fail_mag = total_occupancy_curve_fail_mag / total_trial_counts_fail if np.any(total_trial_counts_fail) else np.zeros(self.NUM_BINS)
+        # Calculate standard deviations
+        std_occupancy = np.std(all_occupancy_curves_mag, axis=0) if all_occupancy_curves_mag else np.zeros(self.NUM_BINS)
+        std_occupancy_succ = np.std(all_occupancy_curves_succ_mag, axis=0) if all_occupancy_curves_succ_mag else np.zeros(self.NUM_BINS)
+        std_occupancy_fail = np.std(all_occupancy_curves_fail_mag, axis=0) if all_occupancy_curves_fail_mag else np.zeros(self.NUM_BINS)
+        plt.figure(figsize=(8, 5))
+        x_vals = np.linspace(0, 100, self.NUM_BINS)
+        
+        # Plot lines with Gaussian smoothing
+        plt.plot(x_vals, gaussian_filter1d(avg_occupancy_mag, sigma=2), color='red', linewidth=2, label='All Trials')
+        plt.plot(x_vals, gaussian_filter1d(avg_occupancy_succ_mag, sigma=2), color='green', linewidth=2, label='Successful Trials')
+        plt.plot(x_vals, gaussian_filter1d(avg_occupancy_fail_mag, sigma=2), color='purple', linewidth=2, label='Failed Trials')
+        
+        # Plot standard deviation shaded areas
+        plt.fill_between(x_vals, 
+                         gaussian_filter1d(avg_occupancy_mag - std_occupancy, sigma=2), 
+                         gaussian_filter1d(avg_occupancy_mag + std_occupancy, sigma=2), 
+                         color='red', alpha=0.2)
+        plt.fill_between(x_vals, 
+                         gaussian_filter1d(avg_occupancy_succ_mag - std_occupancy_succ, sigma=2), 
+                         gaussian_filter1d(avg_occupancy_succ_mag + std_occupancy_succ, sigma=2), 
+                         color='green', alpha=0.2)
+        plt.fill_between(x_vals, 
+                         gaussian_filter1d(avg_occupancy_fail_mag - std_occupancy_fail, sigma=2), 
+                         gaussian_filter1d(avg_occupancy_fail_mag + std_occupancy_fail, sigma=2), 
+                         color='purple', alpha=0.2)
+        
+        plt.xlabel("Trial Time (% of trial)", fontsize=self.labelSize)
+        plt.ylabel("Probability of Magazine Occupancy", fontsize=self.labelSize)
+        plt.title("Mag Zone Occupancy Over Trial Duration", fontsize=self.titleSize)
+        plt.grid(True)
+        plt.legend()
+        plt.tight_layout()
+        if self.save:
+            plt.savefig(f"{self.prefix}mag_occupancy_over_time.png")
+        plt.show()
+        plt.close()
+        
+        '''
         avg_occupancy = total_occupancy_curve_mag / total_trial_counts if np.any(total_trial_counts) else np.zeros(self.NUM_BINS)
         self._plot_line(
             gaussian_filter1d(avg_occupancy, sigma=2),
@@ -3475,6 +3598,7 @@ class multiFileGraphs:
             "Probability of Mag Occupancy",
             x_vals=np.linspace(0, 100, self.NUM_BINS)
         )
+        '''
 
         avg_occupancy_both = total_occupancy_curve_both_mag / total_trial_counts if np.any(total_trial_counts) else np.zeros(self.NUM_BINS)
         self._plot_line(
@@ -4730,7 +4854,8 @@ initialNanList = [0.3]
 
 print("Start MultiFileGraphs Regular")
 experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "", save=True)
-experiment.trialStateModel()
+experiment.waitingStrategy()
+#experiment.trialStateModel()
 #experiment.testMotivation()
 #experiment.waitingStrategy()
 #experiment.cooperativeRegionStrategiesQuantification()
