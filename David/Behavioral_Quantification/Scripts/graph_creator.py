@@ -5107,7 +5107,7 @@ class multiFileGraphs:
         
         # Apply smoothing (moving average with window size 3)
         if len(avg_distances) > 2:  # Need at least 3 points for smoothing
-            smoothed_distances = uniform_filter1d(avg_distances, size=3, mode='nearest')
+            smoothed_distances = uniform_filter1d(avg_distances, size=5, mode='nearest')
         else:
             smoothed_distances = avg_distances  # No smoothing if too few points
         
@@ -5176,7 +5176,7 @@ totFramesList = [15000, 15000]
 initialNanList = [0.15, 0.12]
 
 
-
+'''
 arr = getFiltered()
 #arr = getAllTrainingCoop()
 #arr = getFiberPhoto()
@@ -5188,7 +5188,7 @@ totFramesList = arr[4]
 initialNanList = arr[5]
 #fiberPhoto = arr[6]
 
-
+'''
 
 '''
 lev_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/4_nanerror_lev.csv"]
@@ -5208,46 +5208,15 @@ pos_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/B
 #initialNanList = [0.3]
 
 
-
+'''
 print("Start MultiFileGraphs Regular")
 experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "", save=True)
 #experiment.trialStateModel()
 experiment.testMotivation()
 #experiment.waitingStrategy()
-#experiment.trialStateModel()
-#experiment.testMotivation()
-#experiment.waitingStrategy()
-#experiment.cooperativeRegionStrategiesQuantification()
-#experiment.trueCooperationTesting()
-#experiment.fiberPhoto()
-#experiment.compareGazeEventsbyRat()
-#experiment.trialStateModel()
-#experiment.waitingStrategy()
-#experiment.successRateVsThresholdPlot()
-print("Done")
-#experiment.waitingStrategy()
-#experiment.stateTransitionModel()
-
-#experiment.percentSameRatTakesBothRewards()
-#experiment.successRateVsThresholdPlot()
-
-#experiment.waitingStrategy()
-#experiment.successVsAverageDistance()
-#experiment.printSummaryStats()
-#experiment.compareAverageVelocityGazevsNot()
-
 
 '''
-experiment.rePressingbyDistance()
-experiment.percentSuccesfulTrials()
-experiment.interpressIntervalPlot()
-experiment.quantifyRePressingBehavior()
-experiment.crossingOverQuantification()
-experiment.cooperativeRegionStrategiesQuantification()
-experiment.makeHeatmapLocation()
-experiment.intersectings_vs_percentNaN()
-experiment.findTotalDistanceMoved()
-'''
+
 
 # ---------------------------------------------------------------------------------------------------------
 
