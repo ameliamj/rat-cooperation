@@ -341,6 +341,12 @@ class posLoader:
             locations = ("other")
     
         return locations
+    
+    def returnRatHBPosition(self, ratID, t):
+        x = self.data[ratID, 0, self.HB_INDEX, t]  # x-coordinate of headbase
+        y = self.data[ratID, 1, self.HB_INDEX, t]  # y-coordinate of headbase
+        
+        return(x, y)
         
     def returnGazeAlignmentHistogram(self, mouseID):
         """

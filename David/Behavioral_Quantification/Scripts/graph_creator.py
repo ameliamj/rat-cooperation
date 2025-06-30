@@ -930,14 +930,14 @@ magFiles = [["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/B
 posFiles = [["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.predictions.h5"], 
             ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.predictions.h5"]]
 
-
+'''
 levFiles = [["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv"], 
             ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv"]]
 magFiles = [["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_mag.csv"], 
             ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_mag.csv"]]
 posFiles = [["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G.predictions.h5"], 
             ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.predictions.h5"]]
-
+'''
 
 #categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["Paired_Testing", "Training_Cooperation"], save=False)
 #categoryExperiments.compareGazeEventsCategories()
@@ -4088,6 +4088,8 @@ class multiFileGraphs:
             """
             For each trial number present in lev.data (i.e., trials with lever presses),
             find the first magazine entry in mag.data with the same TrialNum.
+            However, there's the additional condition that the abs time has to be greater 
+            than that of the last lever press.
         
             Returns:
                 list: A list of relative times (AbsTime - TrialTime) for mag entries
@@ -4103,31 +4105,31 @@ class multiFileGraphs:
                     raise ValueError(f"{loader_name}.data missing required columns: {required_cols - set(df.columns)}")
         
             # All trials with lever presses
+            coopOrLastPress = lev.returnCoopTimeorLastPressTime()
             lever_trials = sorted(lev.data['TrialNum'].dropna().unique())
             #print("lever_trials: ", lever_trials)
             mag_grouped = mag.data.groupby('TrialNum')
         
             rel_times = []
-            for trial in lever_trials:
+            for trial_idx, trial in enumerate(lever_trials):
                 if trial not in mag_grouped.groups:
                     rel_times.append(None)
+                    continue
+        
+                group = mag_grouped.get_group(trial)
+                if group.empty:
+                    rel_times.append(None)
+                    continue
+        
+                press_time = coopOrLastPress[trial_idx]
+                # Filter for mag entries that occur after the press time
+                valid_mags = group[group['AbsTime'] > press_time]
+        
+                if valid_mags.empty:
+                    rel_times.append(None)
                 else:
-                    group = mag_grouped.get_group(trial)
-                    if group.empty:
-                        rel_times.append(None)
-                    else:
-                        first_row = group.loc[group['AbsTime'].idxmin()]
-                        
-                        if pd.isna(first_row['AbsTime']):
-                            rel_times.append(None)
-                        else:
-                            rel_time = first_row['AbsTime']
-                            rel_times.append(rel_time)
-                        '''if pd.isna(first_row['AbsTime']) or pd.isna(first_row['TrialTime']):
-                            rel_times.append(None)
-                        else:
-                            rel_time = first_row['AbsTime'] - first_row['TrialTime']
-                            rel_times.append(rel_time)'''
+                    first_valid = valid_mags.loc[valid_mags['AbsTime'].idxmin()]
+                    rel_times.append(first_valid['AbsTime'])
         
             return rel_times
         
@@ -4159,7 +4161,19 @@ class multiFileGraphs:
         all_trials_data = []
         successful_trials_data = []
         
+        # Initialize lists to collect heatmap for averaging per stage
+        heatmap_data = {stage_idx: {
+            'X_Coords': [],  # Store x coordinates for heatmap
+            'Y_Coords': []   # Store y coordinates for heatmap
+        } for stage_idx in range(len(stages))}
+        heatmap_data_successful = {stage_idx: {
+            'X_Coords': [],  # Store x coordinates for heatmap
+            'Y_Coords': []   # Store y coordinates for heatmap
+        } for stage_idx in range(len(stages))}
+        
+        
         for exp_idx, exp in enumerate(self.experiments):
+            print("exp_idx: ", exp_idx)
             lev = exp.lev
             mag = exp.mag
             pos = exp.pos
@@ -4191,6 +4205,26 @@ class multiFileGraphs:
             n_trials = min(len(trial_starts), len(first_presses), len(coop_or_last_press), len(first_mags), len(success_status))
             print("n_trials: ", n_trials)
             
+            # Initialize lists to collect data for averaging per stage
+            stage_data = {stage_idx: {
+                'Durations': [],
+                'Distances': [],
+                'Gaze_Percents': [],
+                'Idle_Percents': [],
+                'Idle_Lever_Percents': [],
+                'Idle_Mag_Percents': [],
+                'Idle_Other_Percents': [],
+            } for stage_idx in range(len(stages))}
+            stage_data_successful = {stage_idx: {
+                'Durations': [],
+                'Distances': [],
+                'Gaze_Percents': [],
+                'Idle_Percents': [],
+                'Idle_Lever_Percents': [],
+                'Idle_Mag_Percents': [],
+                'Idle_Other_Percents': [],
+            } for stage_idx in range(len(stages))}
+            
             # Compute stage durations and frame indices
             trial_info = []
             for trial_idx in range(n_trials):
@@ -4219,6 +4253,12 @@ class multiFileGraphs:
                 f_coop_last = int(t_coop_last * fps)
                 f_first_mag = int(t_first_mag * fps)
                 f_next_begin = int(t_next_begin * fps)
+                
+                if (f_coop_last <= f_first_press):
+                    print("SKIP")
+                    print("f_first_press: ", f_first_press)
+                    print("f_coop_last: ", f_coop_last)
+                    continue
                 
                 # Stage durations (in seconds)
                 durations = [
@@ -4249,12 +4289,25 @@ class multiFileGraphs:
                     #print("start_frame: ", start_frame)
                     #print("end_frame: ", end_frame)
                     
+                    #Heatmap
+                    # Collect position data for heatmap
+                    x_coords_rat0 = pos.data[0, 0, pos.HB_INDEX, start_frame:end_frame]
+                    y_coords_rat0 = pos.data[0, 1, pos.HB_INDEX, start_frame:end_frame]
+                    x_coords_rat1 = pos.data[1, 0, pos.HB_INDEX, start_frame:end_frame]
+                    y_coords_rat1 = pos.data[1, 1, pos.HB_INDEX, start_frame:end_frame]
+                    # Combine coordinates from both rats
+                    x_coords = np.concatenate([x_coords_rat0[~np.isnan(x_coords_rat0)], x_coords_rat1[~np.isnan(x_coords_rat1)]])
+                    y_coords = np.concatenate([y_coords_rat0[~np.isnan(y_coords_rat0)], y_coords_rat1[~np.isnan(y_coords_rat1)]])
+                    heatmap_data[stage_idx]['X_Coords'].extend(x_coords.tolist())
+                    heatmap_data[stage_idx]['Y_Coords'].extend(y_coords.tolist())
+                    if success_status[trial_idx] == 1:
+                        heatmap_data_successful[stage_idx]['X_Coords'].extend(x_coords.tolist())
+                        heatmap_data_successful[stage_idx]['Y_Coords'].extend(y_coords.tolist())
+                    
                     # Interaction metrics
                     distances = pos.returnInterMouseDistance()[start_frame:end_frame]
                     avg_distance = np.nanmean(distances) if len(distances) > 0 else np.nan
-                    
-                    #print("0")
-                    
+                                        
                     gaze_frames_rat0 = pos.returnIsGazing(mouseID=0)[start_frame:end_frame]
                     #print("gaze_frames_rat0: ", gaze_frames_rat0)
                     gaze_frames_rat1 = pos.returnIsGazing(mouseID=1)[start_frame:end_frame]
@@ -4262,9 +4315,7 @@ class multiFileGraphs:
                     gaze_percent_rat0 = np.mean(gaze_frames_rat0) * 100 if len(gaze_frames_rat0) > 0 else 0
                     gaze_percent_rat1 = np.mean(gaze_frames_rat1) * 100 if len(gaze_frames_rat1) > 0 else 0
                     avg_gaze_percent = (gaze_percent_rat0 + gaze_percent_rat1) / 2
-                    
-                    #print("1")
-                    
+                                        
                     # Individual behavior (idle, lever, magazine)
                     locations_rat0 = pos.returnMouseLocation(0)[start_frame:end_frame]
                     locations_rat1 = pos.returnMouseLocation(1)[start_frame:end_frame]
@@ -4275,12 +4326,18 @@ class multiFileGraphs:
                     idle_rat0 = velocities_rat0 < 10  # Velocity threshold for idle
                     idle_rat1 = velocities_rat1 < 10
                     
-                    #print("2")
+                    #print("idle_rat0: ", idle_rat0)
                     
                     # Compute idle percentages
                     idle_percent_rat0 = np.mean(idle_rat0) * 100 if len(idle_rat0) > 0 else 0
                     idle_percent_rat1 = np.mean(idle_rat1) * 100 if len(idle_rat1) > 0 else 0
                     avg_idle_percent = (idle_percent_rat0 + idle_percent_rat1) / 2
+                    
+                    #Breakdown of idle time by location
+                    lever_count = 0
+                    mag_count = 0
+                    other_count = 0
+                    total_idle = 0
                     
                     # Breakdown of idle time by location
                     for rat_id, locations, idle in [(0, locations_rat0, idle_rat0), (1, locations_rat1, idle_rat1)]:
@@ -4288,15 +4345,15 @@ class multiFileGraphs:
                         if not locations or not idle.any():
                             continue
                         idle_locations = np.array(locations)[idle]
-                        lever_count = np.sum(np.array([loc.startswith('lev') for loc in idle_locations]))
-                        mag_count = np.sum(np.array([loc.startswith('mag') for loc in idle_locations]))
-                        other_count = len(idle_locations) - lever_count - mag_count
-                        total_idle = len(idle_locations)
-                        lever_percent = (lever_count / total_idle * 100) if total_idle > 0 else 0
-                        mag_percent = (mag_count / total_idle * 100) if total_idle > 0 else 0
-                        other_percent = (other_count / total_idle * 100) if total_idle > 0 else 0
+                        lever_count += np.sum(np.array([loc.startswith('lev') for loc in idle_locations]))
+                        mag_count += np.sum(np.array([loc.startswith('mag') for loc in idle_locations]))
+                        other_count += len(idle_locations) - np.sum(np.array([loc.startswith('lev') for loc in idle_locations])) - np.sum(np.array([loc.startswith('mag') for loc in idle_locations]))
+                        total_idle += len(idle_locations)
+                        #lever_percent = (lever_count / total_idle * 100) if total_idle > 0 else 0
+                        #mag_percent = (mag_count / total_idle * 100) if total_idle > 0 else 0
+                        #other_percent = (other_count / total_idle * 100) if total_idle > 0 else 0
                         
-                        # Store trial data
+                        '''# Store trial data
                         trial_data = {
                             'Experiment': exp_idx,
                             'Trial': trial_idx,
@@ -4313,11 +4370,134 @@ class multiFileGraphs:
                         }
                         all_trials_data.append(trial_data)
                         if trial_data['Is_Successful']:
-                            successful_trials_data.append(trial_data)
+                            successful_trials_data.append(trial_data)'''
+                    lever_percent = (lever_count / total_idle * 100) if total_idle > 0 else 0
+                    mag_percent = (mag_count / total_idle * 100) if total_idle > 0 else 0
+                    other_percent = (other_count / total_idle * 100) if total_idle > 0 else 0
+                    
+                    # Append to stage data
+                    stage_data[stage_idx]['Durations'].append(durations[stage_idx])
+                    stage_data[stage_idx]['Distances'].append(avg_distance)
+                    stage_data[stage_idx]['Gaze_Percents'].append(avg_gaze_percent)
+                    stage_data[stage_idx]['Idle_Percents'].append(avg_idle_percent)
+                    stage_data[stage_idx]['Idle_Lever_Percents'].append(lever_percent)
+                    stage_data[stage_idx]['Idle_Mag_Percents'].append(mag_percent)
+                    stage_data[stage_idx]['Idle_Other_Percents'].append(other_percent)
+                    
+                    print("stage_idx: ", stage_idx)
+                    print("avg_idle_percent: ", avg_idle_percent)
+                    print("lever_percent: ", lever_percent)
+                    print("mag_percent: ", mag_percent)
+                    print("other_percent: ", other_percent)
+                    
+                    # If trial is successful, append to successful stage data
+                    if success_status[trial_idx] == 1:
+                        stage_data_successful[stage_idx]['Durations'].append(durations[stage_idx])
+                        stage_data_successful[stage_idx]['Distances'].append(avg_distance)
+                        stage_data_successful[stage_idx]['Gaze_Percents'].append(avg_gaze_percent)
+                        stage_data_successful[stage_idx]['Idle_Percents'].append(avg_idle_percent)
+                        stage_data_successful[stage_idx]['Idle_Lever_Percents'].append(lever_percent)
+                        stage_data_successful[stage_idx]['Idle_Mag_Percents'].append(mag_percent)
+                        stage_data_successful[stage_idx]['Idle_Other_Percents'].append(other_percent)
+            
+            # Compute averages for each stage and store as single data point per experiment
+            for stage_idx, stage_name in enumerate(stages):
+                # All trials
+                if stage_data[stage_idx]['Durations']:  # Only append if data exists
+                    trial_data = {
+                        'Experiment': exp_idx,
+                        'Trial': -1,  # No specific trial since we're averaging
+                        'Stage': stage_idx,
+                        'Stage_Name': stage_name,
+                        'Duration': np.nanmean(stage_data[stage_idx]['Durations']),
+                        'Avg_Distance': np.nanmean(stage_data[stage_idx]['Distances']),
+                        'Avg_Gaze_Percent': np.nanmean(stage_data[stage_idx]['Gaze_Percents']),
+                        'Avg_Idle_Percent': np.nanmean(stage_data[stage_idx]['Idle_Percents']),
+                        'Idle_Lever_Percent': np.nanmean(stage_data[stage_idx]['Idle_Lever_Percents']),
+                        'Idle_Mag_Percent': np.nanmean(stage_data[stage_idx]['Idle_Mag_Percents']),
+                        'Idle_Other_Percent': np.nanmean(stage_data[stage_idx]['Idle_Other_Percents']),
+                        'Is_Successful': False
+                    }
+                    all_trials_data.append(trial_data)
+                
+                # Successful trials
+                if stage_data_successful[stage_idx]['Durations']:  # Only append if data exists
+                    trial_data = {
+                        'Experiment': exp_idx,
+                        'Trial': -1,  # No specific trial since we're averaging
+                        'Stage': stage_idx,
+                        'Stage_Name': stage_name,
+                        'Duration': np.nanmean(stage_data_successful[stage_idx]['Durations']),
+                        'Avg_Distance': np.nanmean(stage_data_successful[stage_idx]['Distances']),
+                        'Avg_Gaze_Percent': np.nanmean(stage_data_successful[stage_idx]['Gaze_Percents']),
+                        'Avg_Idle_Percent': np.nanmean(stage_data_successful[stage_idx]['Idle_Percents']),
+                        'Idle_Lever_Percent': np.nanmean(stage_data_successful[stage_idx]['Idle_Lever_Percents']),
+                        'Idle_Mag_Percent': np.nanmean(stage_data_successful[stage_idx]['Idle_Mag_Percents']),
+                        'Idle_Other_Percent': np.nanmean(stage_data_successful[stage_idx]['Idle_Other_Percents']),
+                        'Is_Successful': True
+                    }
+                    successful_trials_data.append(trial_data)
             
         # Convert to DataFrames
         all_trials_df = pd.DataFrame(all_trials_data)
+        df_copy = all_trials_df.copy()
+        df_copy.to_csv("all_trials_data_test.csv", index=False)
         successful_trials_df = pd.DataFrame(successful_trials_data)
+        
+        
+        # Generate heatmaps for each stage
+        def generate_heatmaps(df, suffix=''):
+            bin_size = 5
+            height, width = 640, 1392
+            heatmap_height = height // bin_size
+            heatmap_width = width // bin_size
+            
+            stage_names = ['Begin_to_First_Press', 'First_Press_to_Coop_or_Last_Press', 'Coop_or_Last_Press_to_First_Mag', 'First_Mag_to_Next_Begin']
+            
+            
+            for stage_idx, stage_name in enumerate(stage_names):
+                heatmap = np.zeros((heatmap_height, heatmap_width))
+                if suffix == '_AllTrials':
+                    x_coords = heatmap_data[stage_idx]['X_Coords']
+                    y_coords = heatmap_data[stage_idx]['Y_Coords']
+                else:
+                    x_coords = heatmap_data_successful[stage_idx]['X_Coords']
+                    y_coords = heatmap_data_successful[stage_idx]['Y_Coords']
+                
+                if not x_coords or not y_coords:
+                    print(f"No data for stage {stage_name} in {suffix}. Skipping heatmap.")
+                    continue
+                
+                for x, y in zip(x_coords, y_coords):
+                    if not np.isnan(x) and not np.isnan(y):
+                        x_bin = int(min(max(x // bin_size, 0), heatmap_width - 1))
+                        y_bin = int(min(max(y // bin_size, 0), heatmap_height - 1))
+                        heatmap[y_bin, x_bin] += 1
+                
+                heatmap = gaussian_filter(heatmap, sigma=1)
+                heatmap_log = np.log1p(heatmap)
+                
+                plt.figure(figsize=(12, 6))
+                plt.imshow(
+                    heatmap_log,
+                    cmap='hot',
+                    interpolation='nearest',
+                    origin='upper',
+                    extent=[0, width, height, 0],
+                    vmin=np.percentile(heatmap_log, 4),
+                    vmax=np.percentile(heatmap_log, 98)
+                )
+                print("min/max heatmap:", heatmap.min(), heatmap.max())
+                plt.colorbar(label='Log(Time Spent)')
+                plt.title(f'Mouse Location Heatmap - {stage_name}{suffix}')
+                plt.xlabel('X Position (pixels)')
+                plt.ylabel('Y Position (pixels)')
+                if self.save:
+                    plt.savefig(f'{self.prefix}Heatmap_{stage_name.replace(" ", "_")}_{suffix}.png', bbox_inches='tight')
+                plt.show()
+                plt.close()
+        
+        
         
         # Function to create visualizations
         def create_visualizations(df, suffix=''):
@@ -4345,7 +4525,7 @@ class multiFileGraphs:
                     }
                     df = pd.concat([df, pd.DataFrame([placeholder])], ignore_index=True)
             
-            # Aggregate mean and collect individual session data
+            # Aggregate again across experiments for bar plot
             agg_data = df.groupby('Stage_Name').agg({
                 'Duration': ['mean', list],
                 'Avg_Distance': ['mean', list],
@@ -4356,16 +4536,17 @@ class multiFileGraphs:
                 'Idle_Other_Percent': 'mean'
             }).reset_index()
             
-            # Flatten multi-level column names
+            # Flatten multi-index columns
             agg_data.columns = ['Stage_Name', 'Duration_mean', 'Duration_list', 
-                               'Avg_Distance_mean', 'Avg_Distance_list',
-                               'Avg_Gaze_Percent_mean', 'Avg_Gaze_Percent_list',
-                               'Avg_Idle_Percent_mean', 'Avg_Idle_Percent_list',
-                               'Idle_Lever_Percent_mean', 'Idle_Mag_Percent_mean', 'Idle_Other_Percent_mean']
+                                'Avg_Distance_mean', 'Avg_Distance_list',
+                                'Avg_Gaze_Percent_mean', 'Avg_Gaze_Percent_list',
+                                'Avg_Idle_Percent_mean', 'Avg_Idle_Percent_list',
+                                'Idle_Lever_Percent_mean', 'Idle_Mag_Percent_mean', 
+                                'Idle_Other_Percent_mean']
             
             # Order stages correctly
             agg_data['Stage_Name'] = pd.Categorical(agg_data['Stage_Name'], categories=stages, ordered=True)
-            agg_data = agg_data.sort_values('Stage_Name')
+            agg_data = agg_data.sort_values('Stage_Name').reset_index(drop=True)
             
             # Plot individual bar plots for each metric
             metrics = [
@@ -4402,9 +4583,34 @@ class multiFileGraphs:
             plt.figure(figsize=(10, 6))
             x = np.arange(len(stages))
             idle_means = agg_data['Avg_Idle_Percent_mean']
+            
+            print("agg_data index:", agg_data.index)
+            print("agg_data Stage_Name:\n", agg_data['Stage_Name'].values)
+            
+            print("\n\nAvg_Idle_Percent_mean: \n",  agg_data['Avg_Idle_Percent_mean'])
+            print("Idle_Lever_Percent_means: \n", agg_data['Idle_Lever_Percent_mean'])
+            print("Idle_Mag_Percent_mean: \n", agg_data['Idle_Mag_Percent_mean'])
+            print("Idle_Other_Percent_mean: \n", agg_data['Idle_Other_Percent_mean'])
+            
             lever_proportions = agg_data['Idle_Lever_Percent_mean'] * idle_means / 100
             mag_proportions = agg_data['Idle_Mag_Percent_mean'] * idle_means / 100
             other_proportions = agg_data['Idle_Other_Percent_mean'] * idle_means / 100
+            
+            # Sanity check: stacked components should match idle mean
+            total_stack = lever_proportions + mag_proportions + other_proportions
+            if not np.allclose(total_stack, idle_means, atol=1e-2):
+                for i, stage in enumerate(stages):
+                    print(f"Mismatch at stage {i} ({stage}):")
+                    print(f"  Idle mean = {idle_means[i]}")
+                    print(f"  Stack sum = {total_stack[i]} "
+                          f"(lever {lever_proportions[i]}, mag {mag_proportions[i]}, other {other_proportions[i]})")
+            
+            for i, stage in enumerate(agg_data['Stage_Name']):
+                print(f"Stage {i} ({stage}):")
+                print(f"  Avg_Idle_Percent_mean = {idle_means.iloc[i]}")
+                print(f"  Idle_Lever_Percent_mean = {agg_data['Idle_Lever_Percent_mean'].iloc[i]}")
+                print(f"  Computed lever proportion = {lever_proportions.iloc[i]}")
+                print(f"  Idle_Other_Percent = {other_proportions.iloc[i]}")
             
             # Plot stacked bars with total height as Avg_Idle_Percent
             plt.bar(x, lever_proportions, label='Idle at Lever', color='blue')
@@ -4418,6 +4624,7 @@ class multiFileGraphs:
                 x_positions = [stage_idx + np.random.uniform(-0.2, 0.2) for _ in values]
                 plt.scatter(x_positions, values, color='black', alpha=0.5, label='Individual Sessions' if idx == 0 else None)
             
+            plt.ylim(0, 100)  # Set y-axis range from 0 to 100
             plt.xlabel('Stage')
             plt.ylabel('Idle Percentage (%)')
             plt.title(f'Idle Time Breakdown Across Stages{suffix}')
@@ -4428,6 +4635,19 @@ class multiFileGraphs:
                 plt.savefig(f'{self.prefix}IdleBreakdown{suffix}.png')
             plt.show()
             plt.close()
+        
+        # Create visualizations for all trials
+        create_visualizations(all_trials_df, '_AllTrials')
+        generate_heatmaps(all_trials_df, '_AllTrials')
+        
+        # Create visualizations for successful trials
+        if successful_trials_df.empty:
+            print("Warning: No successful trials found. Check lev.returnSuccessTrials() for valid success flags.")
+        else:
+            create_visualizations(successful_trials_df, '_SuccessfulTrials')
+            generate_heatmaps(successful_trials_df, '_SuccessfulTrials')
+        
+        
         
         # Create visualizations for all trials
         create_visualizations(all_trials_df, '_AllTrials')
@@ -4719,6 +4939,7 @@ class multiFileGraphs:
         Calculate the percent success rate for each trial number across all experiments
         and create a smoothed line graph with annotations showing the number of experiments
         contributing to each trial's data.
+        Create another similar graph, except with distance moved (pixels/frame)
     
         Steps:
         - Loop through experiments to collect success status for each trial number.
@@ -4729,11 +4950,61 @@ class multiFileGraphs:
         '''
         # Collect success rates and experiment counts per trial number
         trial_successes = {}
+        trial_distances = {}
+        trial_counts_distance = {}
         trial_counts = {}
         
         for exp_idx, exp in enumerate(self.experiments):
+            lev = exp.lev
+            pos = exp.pos
+            fps = exp.fps
             success_status = exp.lev.returnSuccessTrials()  # List of success statuses (1, 0, -1)
+            
+            start_times = lev.returnTimeStartTrials()  # Array of trial start times (in seconds) for all trials
+            end_times = lev.returnTimeEndTrials()  # Array of trial end times (in seconds) for all trials
+            
             for trial_idx, status in enumerate(success_status):
+                start_time = start_times[trial_idx]
+                end_time = end_times[trial_idx]
+
+                # Validate trial data
+                if any(np.isnan([start_time, end_time])) or start_time is None or end_time is None:
+                    continue
+
+                # Convert times to frames
+                start_frame = int(start_time * fps)
+                end_frame = int(end_time * fps)
+                
+                
+                if trial_idx not in trial_distances:
+                    trial_distances[trial_idx] = []
+                    trial_counts_distance[trial_idx] = 0
+    
+                # Get headbase positions for all frames in the trial
+                distances = []
+                
+                # Process both rat IDs (0 and 1)
+                for ratID in [0, 1]:
+                    # Get frame range for the trial (assuming trialFrames[trial_idx] provides (start_frame, end_frame))
+                    try:
+                        start_frame, end_frame = exp.lev.trialFrames[trial_idx]
+                    except (TypeError, IndexError):
+                        continue  # Skip if frame range is invalid
+    
+                    # Calculate distances for this rat in this trial
+                    distances = []
+                    for t in range(start_frame, end_frame):
+                        if t > start_frame:  # Need at least 2 frames to calculate distance
+                            x1, y1 = pos.returnRatHBPosition(ratID, t-1)
+                            x2, y2 = pos.returnRatHBPosition(ratID, t)
+                            # Calculate Euclidean distance
+                            distance = np.sqrt((x2 - x1)**2 + (y2 - y1)**2)
+                            distances.append(distance)
+                    
+                    # Average distance per frame for this rat in this trial
+                    if distances:  # Only append if distances were calculated
+                        trial_distances[trial_idx].append(np.mean(distances))
+                
                 if status == -1:  # Skip missing trials
                     continue
                 if trial_idx not in trial_successes:
@@ -4741,6 +5012,22 @@ class multiFileGraphs:
                     trial_counts[trial_idx] = 0
                 trial_successes[trial_idx].append(status == 1)
                 trial_counts[trial_idx] += 1
+        
+        
+        # Calculate average distance moved for each trial number
+        trial_numbers = sorted(trial_distances.keys())
+        avg_distances = [
+            np.mean(trial_distances[trial_idx]) if trial_distances[trial_idx] else 0
+            for trial_idx in trial_numbers
+        ]
+        experiment_counts = [trial_counts_distance[trial_idx] for trial_idx in trial_numbers]
+        
+        # Apply smoothing (moving average with window size 3)
+        if len(avg_distances) > 2:  # Need at least 3 points for smoothing
+            smoothed_distances = uniform_filter1d(avg_distances, size=3, mode='nearest')
+        else:
+            smoothed_distances = avg_distances  # No smoothing if too few points
+        
         
         # Calculate percent success rate for each trial number
         trial_numbers = sorted(trial_successes.keys())
@@ -4783,6 +5070,33 @@ class multiFileGraphs:
         plt.show()
         plt.close()
         
+        # Create the plot
+        plt.figure(figsize=(10, 6))
+        plt.plot(trial_numbers, smoothed_distances, color='blue', label='Smoothed Distance Moved')
+        
+        # Plot scatter points every 3 trials
+        scatter_indices = [i for i in range(len(trial_numbers)) if trial_numbers[i] % 3 == 0]
+        scatter_trials = [trial_numbers[i] for i in scatter_indices]
+        scatter_distances = [avg_distances[i] for i in scatter_indices]
+        plt.scatter(scatter_trials, scatter_distances, color='black', alpha=0.5, label='Actual Distance Moved')
+        
+        # Annotate points with number of experiments
+        for trial_idx, distance, count in zip(trial_numbers, avg_distances, experiment_counts):
+            if trial_idx % 15 == 0:
+                plt.text(trial_idx, distance + 0.5, f'n={count}', ha='center', va='bottom', fontsize=11, fontweight='bold')
+        
+        plt.xlabel('Trial Number', fontsize=13)
+        plt.ylabel('Distance Moved (pixels/frame)', fontsize=13)
+        plt.title('Average Distance Moved by Trial Number Across Experiments', fontsize=15)
+        plt.legend()
+        plt.grid(True, linestyle='--', alpha=0.7)
+        plt.tight_layout()
+        
+        if self.save:
+            plt.savefig(f'{self.prefix}DistanceMovedByTrialNumber.png')
+        plt.show()
+        plt.close()
+        
 
 #Testing Multi File Graphs
 #
@@ -4810,15 +5124,15 @@ def getFiberPhoto():
 
 
 
-lev_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/ExampleLevFile.csv"]
+lev_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv"]
 
-mag_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_mag.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_mag.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_mag.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_mag.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_mag.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_mag.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/ExampleMagFile.csv"] 
+mag_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_mag.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_mag.csv"] 
 
-pos_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/ExampleTrackingCoop.h5"]
+pos_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.predictions.h5"]
 
-fpsList = [30, 30, 30, 30, 30, 30, 30]
-totFramesList = [15000, 26000, 15000, 26000, 15000, 26000, 15000]
-initialNanList = [0.15, 0.12, 0.14, 0.16, 0.3, 0.04, 0.2]
+fpsList = [30, 30]
+totFramesList = [15000, 15000]
+initialNanList = [0.15, 0.12]
 
 
 
@@ -4840,21 +5154,24 @@ lev_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/B
 mag_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/4_nanerror_mag.csv"]
 pos_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/4_nanerror_test.h5"]
 fiberPhoto = [["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/090324_Cam1_TrNum14_Coop_KL002B-KL002Y_x405_TTLs.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/090324_Cam1_TrNum14_Coop_KL002B-KL002Y_x465_TTLs.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/090324_Cam1_TrNum14_Coop_KL002B-KL002Y_x560_TTLs.csv"]]
+'''
 
 #Missing Trial Nums
 #lev_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/040124_KL005B-KL005Y_lever.csv"]
 #mag_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/040124_KL005B-KL005Y_mag.csv"]
 #pos_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/040124_COOPTRAIN_LARGEARENA_KL005B-KL005Y_Camera1.predictions.h5"]
 
-fpsList = [29]
-totFramesList = [12000]
-initialNanList = [0.3]
-'''
+#fpsList = [29]
+#totFramesList = [12000]
+#initialNanList = [0.3]
+
 
 
 print("Start MultiFileGraphs Regular")
 experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "", save=True)
-experiment.waitingStrategy()
+experiment.trialStateModel()
+#experiment.testMotivation()
+#experiment.waitingStrategy()
 #experiment.trialStateModel()
 #experiment.testMotivation()
 #experiment.waitingStrategy()
