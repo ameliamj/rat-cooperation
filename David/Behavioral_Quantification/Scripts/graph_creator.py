@@ -948,7 +948,7 @@ posFiles = [["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/B
 #categoryExperiments.gazeAlignmentAngle()
 
 #Paired Testing vs. Training Cooperation
-'''
+
 print("Running Paired Testing vs Training Cooperation")
 dataPT = getOnlyPairedTesting()
 dataTC = getOnlyTrainingCoop()
@@ -958,7 +958,7 @@ magFiles = [dataPT[1], dataTC[1]]
 posFiles = [dataPT[2], dataTC[2]]
 categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["Paired_Testing", "Training_Cooperation"])
 #categoryExperiments.compareSuccesfulTrials()
-'''
+
 
 '''
 #Unfamiliar vs. Training Partners
@@ -988,7 +988,7 @@ categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["
 #categoryExperiments.compareSuccesfulTrials()
 '''
 
-'''
+
 print("0")
 categoryExperiments.compareGazeEventsCategories()
 print("1")
@@ -1002,7 +1002,7 @@ print("4")
 print("5")
 categoryExperiments.printSummaryStats()
 print("Done")
-'''
+
 
 # ---------------------------------------------------------------------------------------------------------
 
@@ -5177,7 +5177,7 @@ totFramesList = [15000, 15000]
 initialNanList = [0.15, 0.12]
 
 
-
+'''
 arr = getFiltered()
 #arr = getAllTrainingCoop()
 #arr = getFiberPhoto()
@@ -5188,7 +5188,7 @@ fpsList = arr[3]
 totFramesList = arr[4]
 initialNanList = arr[5]
 #fiberPhoto = arr[6]
-
+'''
 
 
 '''
@@ -5211,9 +5211,9 @@ pos_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/B
 
 
 print("Start MultiFileGraphs Regular")
-experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "", save=True)
+#experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "", save=True)
 #experiment.trialStateModel()
-experiment.testMotivation()
+#experiment.testMotivation()
 #experiment.waitingStrategy()
 
 
