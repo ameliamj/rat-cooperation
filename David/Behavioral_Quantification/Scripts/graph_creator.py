@@ -5176,7 +5176,7 @@ totFramesList = [15000, 15000]
 initialNanList = [0.15, 0.12]
 
 
-'''
+
 arr = getFiltered()
 #arr = getAllTrainingCoop()
 #arr = getFiberPhoto()
@@ -5188,7 +5188,7 @@ totFramesList = arr[4]
 initialNanList = arr[5]
 #fiberPhoto = arr[6]
 
-'''
+
 
 '''
 lev_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/4_nanerror_lev.csv"]
@@ -5208,14 +5208,14 @@ pos_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/B
 #initialNanList = [0.3]
 
 
-'''
+
 print("Start MultiFileGraphs Regular")
 experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "", save=True)
 #experiment.trialStateModel()
 experiment.testMotivation()
 #experiment.waitingStrategy()
 
-'''
+
 
 
 # ---------------------------------------------------------------------------------------------------------
