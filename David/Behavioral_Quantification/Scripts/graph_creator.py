@@ -2824,12 +2824,12 @@ class multiFileGraphs:
             pos = exp.pos
             lev = exp.lev
             fps = exp.fps
-            total_trials = lev.returnNumTotalTrials()
+            #total_trials = lev.returnNumTotalTrials()
             start_times = lev.returnTimeStartTrials()  # In seconds
             end_times = lev.returnLastPressTime()  # In seconds
             success_trials = lev.returnSuccessTrials()  # Boolean array
     
-            for trial_idx in range(total_trials):
+            for trial_idx in range(len(start_times)):
                 start_time = start_times[trial_idx]
                 end_time = end_times[trial_idx]
                 if np.isnan(start_time) or np.isnan(end_time) or start_time is None or end_time is None:
