@@ -948,7 +948,7 @@ posFiles = [["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/B
 #categoryExperiments.gazeAlignmentAngle()
 
 #Paired Testing vs. Training Cooperation
-
+'''
 print("Running Paired Testing vs Training Cooperation")
 dataPT = getOnlyPairedTesting()
 dataTC = getOnlyTrainingCoop()
@@ -958,7 +958,7 @@ magFiles = [dataPT[1], dataTC[1]]
 posFiles = [dataPT[2], dataTC[2]]
 categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["Paired_Testing", "Training_Cooperation"])
 #categoryExperiments.compareSuccesfulTrials()
-
+'''
 
 '''
 #Unfamiliar vs. Training Partners
@@ -988,7 +988,7 @@ categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["
 #categoryExperiments.compareSuccesfulTrials()
 '''
 
-
+'''
 print("0")
 categoryExperiments.compareGazeEventsCategories()
 print("1")
@@ -1002,7 +1002,7 @@ print("4")
 print("5")
 categoryExperiments.printSummaryStats()
 print("Done")
-
+'''
 
 # ---------------------------------------------------------------------------------------------------------
 
@@ -2687,6 +2687,9 @@ class multiFileGraphs:
         - Absolute difference in distances moved between mice
         - Minimum Distance Moved by a Rat
         Then, plot both metrics against cooperative success rate, with trendlines.
+        
+        Additionally, create bucketed smoothed line graphs for standardized total distance moved
+        and standardized absolute distance moved vs. cooperative success rate, with 20 buckets.
         '''
         
         distancesSum = []
@@ -2808,6 +2811,149 @@ class multiFileGraphs:
             plt.savefig(f"{self.prefix}MinDistMoved_vs_CoopSuccessRate_linear.png")  
         plt.show()
         plt.close()
+        
+        #–––––––––-––––––––––––––––––––––––––––––––––––––––––––––––––––––
+        
+        # New Graphs: Bucketed Smoothed Line Graphs
+        trial_distances_sum = []
+        trial_distances_diff = []
+        trial_successes = []
+    
+        # Collect trial-level data
+        for exp in self.experiments:
+            pos = exp.pos
+            lev = exp.lev
+            fps = exp.fps
+            total_trials = lev.returnNumTotalTrials()
+            start_times = lev.returnTimeStartTrials()  # In seconds
+            end_times = lev.returnLastPressTime()  # In seconds
+            success_trials = lev.returnSuccessTrials()  # Boolean array
+    
+            for trial_idx in range(total_trials):
+                start_time = start_times[trial_idx]
+                end_time = end_times[trial_idx]
+                if np.isnan(start_time) or np.isnan(end_time) or start_time is None or end_time is None:
+                    continue
+                start_frame = int(start_time * fps)
+                end_frame = int(end_time * fps)
+                if end_frame <= start_frame or end_frame >= pos.data.shape[-1]:
+                    continue
+    
+                # Calculate distances for each rat
+                distances = [0.0, 0.0]
+                for rat in range(2):
+                    prev_pos = None
+                    for t in range(start_frame, end_frame):
+                        curr_pos = pos.returnRatHBPosition(rat, t)
+                        if curr_pos is None or np.any(np.isnan(curr_pos)):
+                            continue
+                        if prev_pos is not None:
+                            # Euclidean distance between consecutive frames
+                            dist = np.sqrt((curr_pos[0] - prev_pos[0])**2 + (curr_pos[1] - prev_pos[1])**2)
+                            distances[rat] += dist
+                        prev_pos = curr_pos
+                
+                n = end_frame - start_frame
+                trial_sum = (distances[0] + distances[1]) /  n
+                trial_diff = (abs(distances[0] - distances[1])) / n
+                success = 1 if success_trials[trial_idx] else 0
+    
+                trial_distances_sum.append(trial_sum)
+                trial_distances_diff.append(trial_diff)
+                trial_successes.append(success)
+        
+        # Define buckets
+        num_buckets = 20
+        sum_bins = np.linspace(0, 75, num_buckets)  # 0 to 75
+        diff_bins = np.linspace(0, 40, num_buckets)  # 0 to 40
+    
+        # Initialize bucket data
+        sum_bucket_success = [[] for _ in range(num_buckets)]
+        diff_bucket_success = [[] for _ in range(num_buckets)]
+    
+        # Assign trials to buckets
+        for i in range(len(trial_distances_sum)):
+            sum_val = trial_distances_sum[i]
+            diff_val = trial_distances_diff[i]
+            success = trial_successes[i]
+            
+            # Assign to sum bucket
+            sum_bucket_idx = min(np.searchsorted(sum_bins, sum_val, side='right'), num_buckets - 1)
+            sum_bucket_success[sum_bucket_idx].append(success)
+            
+            # Assign to diff bucket
+            diff_bucket_idx = min(np.searchsorted(diff_bins, diff_val, side='right'), num_buckets - 1)
+            diff_bucket_success[diff_bucket_idx].append(success)
+    
+        # Compute average success rate and trial counts per bucket
+        sum_bucket_avgs = []
+        sum_bucket_counts = []
+        sum_bucket_centers = []
+        for i in range(num_buckets):
+            if sum_bucket_success[i]:
+                avg = np.mean(sum_bucket_success[i])
+                count = len(sum_bucket_success[i])
+                sum_bucket_avgs.append(avg * 100)  # Convert to percentage
+                sum_bucket_counts.append(count)
+                center = sum_bins[i] + 5 if i == num_buckets - 1 else (sum_bins[i] + sum_bins[i+1]) / 2 if i < num_buckets - 1 else sum_bins[i]
+                sum_bucket_centers.append(center)
+            else:
+                sum_bucket_avgs.append(0)
+                sum_bucket_counts.append(0)
+                sum_bucket_centers.append(sum_bins[i] + (sum_bins[1] - sum_bins[0]) / 2 if i < num_buckets - 1 else sum_bins[i] + 5)
+    
+        diff_bucket_avgs = []
+        diff_bucket_counts = []
+        diff_bucket_centers = []
+        for i in range(num_buckets):
+            if diff_bucket_success[i]:
+                avg = np.mean(diff_bucket_success[i])
+                count = len(diff_bucket_success[i])
+                diff_bucket_avgs.append(avg * 100)  # Convert to percentage
+                diff_bucket_counts.append(count)
+                center = diff_bins[i] + 5 if i == num_buckets - 1 else (diff_bins[i] + diff_bins[i+1]) / 2 if i < num_buckets - 1 else diff_bins[i]
+                diff_bucket_centers.append(center)
+            else:
+                diff_bucket_avgs.append(0)
+                diff_bucket_counts.append(0)
+                diff_bucket_centers.append(diff_bins[i] + (diff_bins[1] - diff_bins[0]) / 2 if i < num_buckets - 1 else diff_bins[i] + 5)
+    
+        # Graph 4: Total Distance Moved (Bucketed)
+        plt.figure(figsize=(10, 6))
+        plt.plot(sum_bucket_centers, sum_bucket_avgs, color='blue', label='Smoothed Line')
+        plt.scatter(sum_bucket_centers, sum_bucket_avgs, color='blue', label='Bucket Averages')
+        for i, (x, y, count) in enumerate(zip(sum_bucket_centers, sum_bucket_avgs, sum_bucket_counts)):
+            if count > 0:
+                plt.text(x, y + 2, f'n={count}', fontsize=8, ha='center', va='bottom')
+        plt.title('Bucketed Total Distance Moved vs. Cooperative Success Rate')
+        plt.xlabel('Total Distance Moved (pixels)')
+        plt.ylabel('Cooperative Success Rate (%)')
+        plt.legend()
+        plt.grid(True)
+        if self.save:
+            plt.savefig(f"{self.prefix}Bucketed_TotalDistMoved_vs_CoopSuccessRate.png")
+        plt.show()
+        plt.close()
+    
+        # Graph 5: Absolute Difference in Distance Moved (Bucketed)
+        plt.figure(figsize=(10, 6))
+        plt.plot(diff_bucket_centers, diff_bucket_avgs, color='green', label='Smoothed Line')
+        plt.scatter(diff_bucket_centers, diff_bucket_avgs, color='green', label='Bucket Averages')
+        for i, (x, y, count) in enumerate(zip(diff_bucket_centers, diff_bucket_avgs, diff_bucket_counts)):
+            if count > 0:
+                plt.text(x, y + 2, f'n={count}', fontsize=8, ha='center', va='bottom')
+        plt.title('Bucketed Abs Diff Distance Moved vs. Cooperative Success Rate')
+        plt.xlabel('Abs Diff Distance Moved (pixels)')
+        plt.ylabel('Cooperative Success Rate (%)')
+        plt.legend()
+        plt.grid(True)
+        if self.save:
+            plt.savefig(f"{self.prefix}Bucketed_AbsDiffDistMoved_vs_CoopSuccessRate.png")
+        plt.show()
+        plt.close()
+        
+        
+        
         
     def intersectings_vs_percentNaN(self):
         '''
@@ -5177,7 +5323,7 @@ totFramesList = [15000, 15000]
 initialNanList = [0.15, 0.12]
 
 
-'''
+
 arr = getFiltered()
 #arr = getAllTrainingCoop()
 #arr = getFiberPhoto()
@@ -5188,7 +5334,7 @@ fpsList = arr[3]
 totFramesList = arr[4]
 initialNanList = arr[5]
 #fiberPhoto = arr[6]
-'''
+
 
 
 '''
@@ -5211,7 +5357,8 @@ pos_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/B
 
 
 print("Start MultiFileGraphs Regular")
-#experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "", save=True)
+experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "", save=True)
+experiment.findTotalDistanceMoved()
 #experiment.trialStateModel()
 #experiment.testMotivation()
 #experiment.waitingStrategy()

@@ -713,9 +713,29 @@ class levLoader:
         frames = (press_data['AbsTime'] * self.fps).astype(int)
         return set(frames)
     
+    def returnLastPressTime(self):
+        '''
+        Returns the last press in each trial:
+        '''
+        if self.data is None or self.data.empty:
+            return []
+    
+        times = []
+        grouped = self.data.groupby('TrialNum')
+    
+        for trial_num, group in grouped:
+            last_row = group.iloc[-1]
+            if pd.notna(last_row['AbsTime']):
+                rel_time = last_row['AbsTime']
+                times.append(rel_time)
+            else:
+                times.append(None)
+        
+        return times
+    
     def returnCoopTimeorLastPressTime(self):
         """
-        Returns a list of AbsTime - TrialTime values per trial:
+        Returns a list of AbsTime values per trial:
         - For successful trials (coopSucc == 1), returns the second lever press where Hit == 1.
         - For unsuccessful trials (coopSucc == 0), returns the last lever press in the trial.
         - If the second Hit == 1 does not exist, appends None.
