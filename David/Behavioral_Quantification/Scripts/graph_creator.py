@@ -2952,9 +2952,6 @@ class multiFileGraphs:
         plt.show()
         plt.close()
         
-        
-        
-        
     def intersectings_vs_percentNaN(self):
         '''
         For each experiment:
@@ -5285,6 +5282,125 @@ class multiFileGraphs:
         plt.show()
         plt.close()
         
+    def gazeHeatmap(self):
+        bin_size = 5  # Controls resolution of heatmap (larger = coarser)
+        height, width = 640, 1392
+        heatmap_height = height // bin_size
+        heatmap_width = width // bin_size
+        heatmap_gazing = np.zeros((heatmap_height, heatmap_width))
+        heatmap_nongazing = np.zeros((heatmap_height, heatmap_width))
+        gaze_count = 0
+        nongaze_count = 0
+        
+        for exp in self.experiments:
+            pos = exp.pos
+            
+            isGazing0 = pos.returnIsGazing(0)
+            isGazing1 = pos.returnIsGazing(1)
+            
+            for t in range(exp.endFrame):
+                boolGaze0 = isGazing0[t]
+                
+                if (np.isnan(boolGaze0) or boolGaze0 == None):
+                    continue
+                
+                x, y = pos.returnRatHBPosition(0, t)
+                if not np.isnan(x) and not np.isnan(y):
+                    x_bin = int(min(max(x // bin_size, 0), heatmap_width - 1))
+                    y_bin = int(min(max(y // bin_size, 0), heatmap_height - 1))
+                    
+                    if (boolGaze0 == True):
+                        heatmap_gazing[y_bin, x_bin] += 1
+                    else:
+                        heatmap_nongazing[y_bin, x_bin] += 1
+                
+                boolGaze1 = isGazing1[t]
+                
+                if (np.isnan(boolGaze1) or boolGaze1 == None):
+                    continue
+                
+                x, y = pos.returnRatHBPosition(1, t)
+                if not np.isnan(x) and not np.isnan(y):
+                    x_bin = int(min(max(x // bin_size, 0), heatmap_width - 1))
+                    y_bin = int(min(max(y // bin_size, 0), heatmap_height - 1))
+                    
+                    if (boolGaze0 == True):
+                        heatmap_gazing[y_bin, x_bin] += 1
+                        gaze_count += 1
+                    else:
+                        heatmap_nongazing[y_bin, x_bin] += 1
+                        nongaze_count += 1
+        # Apply Gaussian filter
+        heatmap_gazing_smooth = gaussian_filter(heatmap_gazing, sigma=1)
+        heatmap_nongazing_smooth = gaussian_filter(heatmap_nongazing, sigma=1)
+        
+        if gaze_count > 0:
+            heatmap_gazing /= gaze_count
+        if nongaze_count > 0:
+            heatmap_nongazing /= nongaze_count
+        
+        # Apply Gaussian Filter
+        heatmap_gazing_smooth_standard = gaussian_filter(heatmap_gazing, sigma=1)
+        heatmap_nongazing_smooth_standard = gaussian_filter(heatmap_nongazing, sigma=1)
+    
+        # Plot gazing heatmap
+        self._plot_single_heatmap(
+            heatmap_gazing_smooth,
+            width, height, bin_size,
+            title='Gazing Heatmap',
+            filename='gazingHeatmap.png'
+        )
+    
+        # Plot non-gazing heatmap
+        self._plot_single_heatmap(
+            heatmap_nongazing_smooth,
+            width, height, bin_size,
+            title='Non-Gazing Heatmap',
+            filename='nongazingHeatmap.png'
+        )
+    
+        # Difference heatmap (gazing - non-gazing)
+        heatmap_diff = heatmap_gazing_smooth_standard - heatmap_nongazing_smooth_standard
+    
+        plt.figure(figsize=(12, 6))
+        vmax = np.percentile(np.abs(heatmap_diff), 99)
+        plt.imshow(
+            heatmap_diff,
+            cmap='seismic',
+            interpolation='nearest',
+            origin='upper',
+            extent=[0, width, height, 0],
+            vmin=-vmax,
+            vmax=vmax
+        )
+        plt.colorbar(label='Difference (Gazing - Non-Gazing)')
+        plt.title('Difference Heatmap: Gazing vs Non-Gazing')
+        plt.xlabel('X Position (pixels)')
+        plt.ylabel('Y Position (pixels)')
+        plt.savefig(f"{self.prefix}gazeDifferenceHeatmap.png", bbox_inches='tight')
+        plt.show()
+
+    def _plot_single_heatmap(self, heatmap, width, height, bin_size, title, filename):
+        heatmap_log = np.log1p(heatmap)
+    
+        plt.figure(figsize=(12, 6))
+        plt.imshow(
+            heatmap_log,
+            cmap='hot',
+            interpolation='nearest',
+            origin='upper',
+            extent=[0, width, height, 0],
+            vmin=np.percentile(heatmap_log, 5),
+            vmax=np.percentile(heatmap_log, 99)
+        )
+        plt.colorbar(label='Log(Time Spent)')
+        plt.title(title)
+        plt.xlabel('X Position (pixels)')
+        plt.ylabel('Y Position (pixels)')
+        plt.savefig(f"{self.prefix}{filename}", bbox_inches='tight')
+        plt.show()
+                
+
 
 #Testing Multi File Graphs
 #
@@ -5311,7 +5427,7 @@ def getFiberPhoto():
     return [fe.getLevsDatapath(), fe.getMagsDatapath(), fe.getPosDatapath(), fpsList, totFramesList, initial_nan_list, fiberFiles]
 
 
-
+'''
 lev_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv"]
 
 mag_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_mag.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_mag.csv"] 
@@ -5321,6 +5437,7 @@ pos_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/B
 fpsList = [30, 30]
 totFramesList = [15000, 15000]
 initialNanList = [0.15, 0.12]
+'''
 
 
 
@@ -5358,7 +5475,7 @@ pos_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/B
 
 print("Start MultiFileGraphs Regular")
 experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "", save=True)
-experiment.findTotalDistanceMoved()
+experiment.gazeHeatmap()
 #experiment.trialStateModel()
 #experiment.testMotivation()
 #experiment.waitingStrategy()
