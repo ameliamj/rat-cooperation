@@ -4935,6 +4935,36 @@ class multiFileGraphs:
         plt.show()
     
     def testMotivation(self):
+        def filterToLeverPressTrials(original_list, lev):
+            """
+            Filters a list of length lev.returnNumTotalTrials() down to only those trials
+            that have lever press data (i.e., appear in lev.data['TrialNum']).
+        
+            Assumes original_list is 0-indexed, while TrialNum starts at 1.
+        
+            Args:
+                original_list (list): Full list, one entry per trial (indexed from 0).
+                lev (levLoader): The lever data loader object.
+        
+            Returns:
+                list: Filtered list with entries only from trials that had lever presses.
+            """
+            if len(original_list) != lev.returnNumTotalTrials():
+                raise ValueError("Length of input list does not match total number of trials.")
+        
+            # Convert trial numbers to integers and subtract 1 to use as 0-based indices
+            lever_trials = sorted(lev.data['TrialNum'].dropna().unique().astype(int))
+            filtered_list = [original_list[trial_num - 1] for trial_num in lever_trials]
+            
+            # Compute all indices and those that are kept
+            all_indices = set(range(len(original_list)))
+            kept_indices = set(trial_num - 1 for trial_num in lever_trials)
+            filtered_out_indices = sorted(all_indices - kept_indices)
+            
+            print("Filtered out indices:", filtered_out_indices)
+        
+            return filtered_list
+        
         '''
         Calculate the percent success rate for each trial number across all experiments
         and create a smoothed line graph with annotations showing the number of experiments
@@ -4958,7 +4988,8 @@ class multiFileGraphs:
             lev = exp.lev
             pos = exp.pos
             fps = exp.fps
-            success_status = exp.lev.returnSuccessTrials()  # List of success statuses (1, 0, -1)
+            success_status = exp.lev.returnSuccessTrials()  # List of success statuses (1, 0, -1) 
+            success_status = filterToLeverPressTrials(success_status, lev)
             
             start_times = lev.returnTimeStartTrials()  # Array of trial start times (in seconds) for all trials
             end_times = lev.returnTimeEndTrials()  # Array of trial end times (in seconds) for all trials
@@ -4981,52 +5012,42 @@ class multiFileGraphs:
                     trial_counts_distance[trial_idx] = 0
     
                 # Get headbase positions for all frames in the trial
-                distances = []
+                distances_both = []
+                
+                if status == -1:  # Skip missing trials
+                    continue
                 
                 # Process both rat IDs (0 and 1)
                 for ratID in [0, 1]:
-                    # Get frame range for the trial (assuming trialFrames[trial_idx] provides (start_frame, end_frame))
-                    try:
-                        start_frame, end_frame = exp.lev.trialFrames[trial_idx]
-                    except (TypeError, IndexError):
-                        continue  # Skip if frame range is invalid
-    
                     # Calculate distances for this rat in this trial
                     distances = []
+                    #n = end_frame - start_frame
                     for t in range(start_frame, end_frame):
                         if t > start_frame:  # Need at least 2 frames to calculate distance
                             x1, y1 = pos.returnRatHBPosition(ratID, t-1)
                             x2, y2 = pos.returnRatHBPosition(ratID, t)
                             # Calculate Euclidean distance
                             distance = np.sqrt((x2 - x1)**2 + (y2 - y1)**2)
+                            #if (distance > 200):
+                                #print("Unrealistic t is: ", t)
                             distances.append(distance)
+                    #print("distances: ", distances)
+                    #print("mean: ", np.mean(distances))
+                    if (np.mean(distances) > 50):
+                        print("exp.lev_file: ", exp.lev_file)
+                        print("start_frame: ", start_frame)
+                        print("end_frame: ", end_frame)
+                    distances_both.append(np.mean(distances))
                     
-                    # Average distance per frame for this rat in this trial
-                    if distances:  # Only append if distances were calculated
-                        trial_distances[trial_idx].append(np.mean(distances))
+                # Average distance per frame for this rat in this trial
+                if distances:  # Only append if distances were calculated
+                    trial_distances[trial_idx].append(np.mean(distances_both))
                 
-                if status == -1:  # Skip missing trials
-                    continue
                 if trial_idx not in trial_successes:
                     trial_successes[trial_idx] = []
                     trial_counts[trial_idx] = 0
                 trial_successes[trial_idx].append(status == 1)
                 trial_counts[trial_idx] += 1
-        
-        
-        # Calculate average distance moved for each trial number
-        trial_numbers = sorted(trial_distances.keys())
-        avg_distances = [
-            np.mean(trial_distances[trial_idx]) if trial_distances[trial_idx] else 0
-            for trial_idx in trial_numbers
-        ]
-        experiment_counts = [trial_counts_distance[trial_idx] for trial_idx in trial_numbers]
-        
-        # Apply smoothing (moving average with window size 3)
-        if len(avg_distances) > 2:  # Need at least 3 points for smoothing
-            smoothed_distances = uniform_filter1d(avg_distances, size=3, mode='nearest')
-        else:
-            smoothed_distances = avg_distances  # No smoothing if too few points
         
         
         # Calculate percent success rate for each trial number
@@ -5043,6 +5064,8 @@ class multiFileGraphs:
         else:
             smoothed_rates = success_rates  # No smoothing if too few points
         
+        
+        #Success Rate Motivation Plot
         # Create the plot
         plt.figure(figsize=(10, 6))
         plt.plot(trial_numbers, smoothed_rates, color='blue', label='Smoothed Success Rate')
@@ -5069,6 +5092,24 @@ class multiFileGraphs:
             plt.savefig(f'{self.prefix}SuccessRateByTrialNumber.png')
         plt.show()
         plt.close()
+        
+        #––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––
+        
+        #Distance Motivation Plot
+        
+        # Calculate average distance moved for each trial number
+        trial_numbers = sorted(trial_distances.keys())
+        avg_distances = [
+            np.mean(trial_distances[trial_idx]) if trial_distances[trial_idx] else 0
+            for trial_idx in trial_numbers
+        ]
+        #experiment_counts = [trial_counts_distance[trial_idx] for trial_idx in trial_numbers]
+        
+        # Apply smoothing (moving average with window size 3)
+        if len(avg_distances) > 2:  # Need at least 3 points for smoothing
+            smoothed_distances = uniform_filter1d(avg_distances, size=3, mode='nearest')
+        else:
+            smoothed_distances = avg_distances  # No smoothing if too few points
         
         # Create the plot
         plt.figure(figsize=(10, 6))
@@ -5149,28 +5190,29 @@ initialNanList = arr[5]
 
 
 
-'''
+
 lev_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/4_nanerror_lev.csv"]
 mag_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/4_nanerror_mag.csv"]
 pos_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/4_nanerror_test.h5"]
 fiberPhoto = [["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/090324_Cam1_TrNum14_Coop_KL002B-KL002Y_x405_TTLs.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/090324_Cam1_TrNum14_Coop_KL002B-KL002Y_x465_TTLs.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/090324_Cam1_TrNum14_Coop_KL002B-KL002Y_x560_TTLs.csv"]]
+
+
+'''#Missing Trial Nums
+lev_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/040124_KL005B-KL005Y_lever.csv"]
+mag_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/040124_KL005B-KL005Y_mag.csv"]
+pos_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/040124_COOPTRAIN_LARGEARENA_KL005B-KL005Y_Camera1.predictions.h5"]
 '''
 
-#Missing Trial Nums
-#lev_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/040124_KL005B-KL005Y_lever.csv"]
-#mag_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/040124_KL005B-KL005Y_mag.csv"]
-#pos_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/040124_COOPTRAIN_LARGEARENA_KL005B-KL005Y_Camera1.predictions.h5"]
-
 #fpsList = [29]
-#totFramesList = [12000]
+#totFramesList = [10000]
 #initialNanList = [0.3]
 
 
 
 print("Start MultiFileGraphs Regular")
 experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "", save=True)
-experiment.trialStateModel()
-#experiment.testMotivation()
+#experiment.trialStateModel()
+experiment.testMotivation()
 #experiment.waitingStrategy()
 #experiment.trialStateModel()
 #experiment.testMotivation()
