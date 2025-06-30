@@ -5033,11 +5033,12 @@ class multiFileGraphs:
                             distances.append(distance)
                     #print("distances: ", distances)
                     #print("mean: ", np.mean(distances))
-                    if (np.mean(distances) > 50):
+                    if (np.mean(distances) > 75):
                         print("exp.lev_file: ", exp.lev_file)
                         print("start_frame: ", start_frame)
                         print("end_frame: ", end_frame)
-                    distances_both.append(np.mean(distances))
+                    else: 
+                        distances_both.append(np.mean(distances))
                     
                 # Average distance per frame for this rat in this trial
                 if distances:  # Only append if distances were calculated
