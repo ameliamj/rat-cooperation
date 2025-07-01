@@ -5497,8 +5497,7 @@ class multiFileGraphs:
                 rat2_xlocations = pos.data[1, 0, pos.HB_INDEX, f_begin:f_coop]
                 
                 difference = sum(abs(a - b) for a, b in zip(rat1_xlocations, rat2_xlocations))            
-                
-                trial_x.append(difference / numFrames)
+                x = difference/numFrames                
                 
                 #Waiting
                 #
@@ -5528,7 +5527,11 @@ class multiFileGraphs:
                     t -= 1
                 
                 frames_both_waited = min(rat0_waiting, rat1_waiting)
-                trial_y.append(frames_both_waited)
+                
+                
+                if (x < 1000 and frames_both_waited < 350):
+                    trial_x.append(difference / numFrames)
+                    trial_y.append(frames_both_waited)
             
             # Convert to DataFrame for seaborn
             df = pd.DataFrame({'x_dist': trial_x, 'waiting': trial_y})
@@ -5609,6 +5612,26 @@ class multiFileGraphs:
                 plt.savefig("kde_strategy_plot.png")
             plt.show()
 
+    def classifyInteractions(self):
+        '''
+        Classify dyadic configurations between two rats over time.
+        Possible categories:
+        - 'facing_each_other'
+        - 'side_by_side_same'
+        - 'side_by_side_opposite'
+        - 'back_to_back'
+        - 'other'
+        '''
+        
+        for exp in self.experiments:
+            def get_head_vector(rat_id):
+                return pos.data[rat_id, :, pos.NOSE_INDEX, :] - pos.data[rat_id, :, pos.HB_INDEX, :]
+            
+            pos = exp.pos
+            
+            head_vec0 = get_head_vector(0)
+            head_vec1 = get_head_vector(1)
+        
 
 
 #Testing Multi File Graphs
