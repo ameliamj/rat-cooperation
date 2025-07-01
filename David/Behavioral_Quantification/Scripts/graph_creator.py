@@ -5400,6 +5400,215 @@ class multiFileGraphs:
         plt.savefig(f"{self.prefix}{filename}", bbox_inches='tight')
         plt.show()
                 
+    def _filterToLeverPressTrials(self, original_list, lev):
+        """
+        Filters a list of length lev.returnNumTotalTrials() down to only those trials
+        that have lever press data (i.e., appear in lev.data['TrialNum']).
+    
+        Assumes original_list is 0-indexed, while TrialNum starts at 1.
+    
+        Args:
+            original_list (list): Full list, one entry per trial (indexed from 0).
+            lev (levLoader): The lever data loader object.
+    
+        Returns:
+            list: Filtered list with entries only from trials that had lever presses.
+        """
+        if len(original_list) != lev.returnNumTotalTrials():
+            raise ValueError("Length of input list does not match total number of trials.")
+    
+        # Convert trial numbers to integers and subtract 1 to use as 0-based indices
+        lever_trials = sorted(lev.data['TrialNum'].dropna().unique().astype(int))
+        filtered_list = [original_list[trial_num - 1] for trial_num in lever_trials]
+    
+        return filtered_list
+    
+    def classifyStrategies(self):
+        '''
+        Make a plot trying to classify whether the rats choose a 
+        strategy or if its more of a continuous spectrum. 
+        (Only for Successful Trials)
+        
+        x-axis (Synchronized Running): avg x-distance between the rats from trial start to trial success
+        y-axis (Waiting at Lever): frames both ratswere waiting at the lever
+        '''
+        
+        trial_x = []
+        trial_y = []
+        
+        for exp_idx, exp in enumerate(self.experiments):
+            lev = exp.lev
+            pos = exp.pos
+            fps = exp.fps
+            
+            # Get trial timings
+            trial_starts = lev.returnTimeStartTrials()  # List of trial start times
+            coop_or_last_press = lev.returnCoopTimeorLastPressTime()  # List of coop/last press times
+            
+            success_status = lev.returnSuccessTrials()  # List of trial success status (1, 0, -1)
+            success_status = self._filterToLeverPressTrials(success_status, lev)
+            
+            print("Got Trial timings")
+            
+            numTrialsPress = lev.returnNumTotalTrialswithLeverPress()
+            numTrialsTot = lev.returnNumTotalTrials()
+            print(f"lengths: {len(trial_starts)}, {len(coop_or_last_press)}, {len(success_status)}, {numTrialsPress}, {numTrialsTot}")
+            
+            # Ensure consistent trial lengths
+            n_trials = min(len(trial_starts), len(coop_or_last_press), len(success_status))
+            print("n_trials: ", n_trials)
+            
+            for trial_idx in range(n_trials):
+                #Preparation: 
+                #
+                #
+                
+                if success_status[trial_idx] != 1:  # Only consider successful trials
+                    continue
+                
+                # Define stage boundaries (in seconds)
+                t_begin = trial_starts[trial_idx]
+                t_coop = coop_or_last_press[trial_idx]
+                
+                if (t_begin == None or t_coop == None):
+                    continue
+                
+                # Check for NaN in timings
+                if any(np.isnan(t) for t in [t_begin, t_coop]):
+                    print(f"[Exp {exp_idx}, Trial {trial_idx}] Skipped: NaN in timings (begin={t_begin}, coop={t_coop})")
+                    continue
+                
+                # Convert times to frame indices
+                f_begin = int(t_begin * fps)
+                f_coop = int(t_coop * fps)
+                
+                #––––––––––––––––––––––––––––––––––––––––––––––––
+                
+                #Actual Data Collection
+                #
+                #
+                
+                #Synchronized Running
+                #
+                
+                numFrames = f_coop - f_begin
+                
+                rat1_xlocations = pos.data[0, 0, pos.HB_INDEX, f_begin:f_coop]
+                rat2_xlocations = pos.data[1, 0, pos.HB_INDEX, f_begin:f_coop]
+                
+                difference = sum(abs(a - b) for a, b in zip(rat1_xlocations, rat2_xlocations))            
+                
+                trial_x.append(difference / numFrames)
+                
+                #Waiting
+                #
+                
+                #Waiting Before Queue Analysis
+                t = f_begin - 1
+                rat0_waiting = 0
+                rat1_waiting = 0
+                rat0_active = True
+                rat1_active = True
+                rat0_locations = pos.returnMouseLocation(0)
+                rat1_locations = pos.returnMouseLocation(1)
+
+                while t >= 0 and t < len(rat0_locations) and t < len(rat1_locations) and rat0_locations[t] is not None:
+                    if rat0_locations[t] in ['lev_top', 'lev_bottom'] and rat0_active:
+                        rat0_waiting += 1
+                    else:
+                        rat0_active = False
+
+                    if rat1_locations[t] in ['lev_top', 'lev_bottom'] and rat1_active:
+                        rat1_waiting += 1
+                    else:
+                        rat1_active = False
+
+                    if not (rat0_active or rat1_active):
+                        break
+                    t -= 1
+                
+                frames_both_waited = min(rat0_waiting, rat1_waiting)
+                trial_y.append(frames_both_waited)
+            
+            # Convert to DataFrame for seaborn
+            df = pd.DataFrame({'x_dist': trial_x, 'waiting': trial_y})
+            
+            # Plot 1: Hexbin
+            plt.figure(figsize=(8, 6))
+            plt.hexbin(trial_x, trial_y, gridsize=50, cmap='viridis', mincnt=1)
+            plt.colorbar(label='Trial Density')
+            plt.xlabel('Avg X-Distance (Synchronized Running)')
+            plt.ylabel('Frames Both Rats Waited (at Lever)')
+            plt.title('Hexbin Plot of Trial Strategies')
+            if self.save:
+                plt.savefig("hexbin_strategy_plot.png")
+            plt.show()
+        
+            # Plot 2: 2D Histogram
+            plt.figure(figsize=(8, 6))
+            plt.hist2d(trial_x, trial_y, bins=50, cmap='inferno', vmin=0)
+            plt.colorbar(label='Trial Density')
+            plt.xlabel('Avg X-Distance (Synchronized Running)')
+            plt.ylabel('Frames Both Rats Waited')
+            plt.title('2D Histogram of Trial Strategies')
+            if self.save:
+                plt.savefig("hist2d_strategy_plot.png")
+            plt.show()
+        
+            # Plot 3: Transparent Scatter
+            plt.figure(figsize=(8, 6))
+            plt.scatter(trial_x, trial_y, alpha=0.35, s=11)
+            plt.xlabel('Avg X-Distance (Synchronized Running)')
+            plt.ylabel('Frames Both Rats Waited')
+            plt.title('Transparent Scatter of Trial Strategies')
+            if self.save:
+                plt.savefig("scatter_strategy_plot.png")
+            plt.show()
+        
+            # Plot 4: KDE Plot
+            plt.figure(figsize=(8, 6))
+
+            # KDE with contours
+            kde = sns.kdeplot(
+                data=df,
+                x='x_dist',
+                y='waiting',
+                fill=True,
+                cmap='coolwarm',
+                levels=100,
+                thresh=0.05,
+                alpha=0.9
+            )
+        
+            # Contour lines
+            sns.kdeplot(
+                data=df,
+                x='x_dist',
+                y='waiting',
+                color='black',
+                levels=6,
+                linewidths=1,
+            )
+        
+            # Add a scatter of all points with alpha
+            plt.scatter(trial_x, trial_y, s=5, alpha=0.3, color='black')
+        
+            # Optional: annotate the densest point
+            from scipy.stats import gaussian_kde
+        
+            values = np.vstack([trial_x, trial_y])
+            kernel = gaussian_kde(values)
+            densities = kernel(values)
+            max_density_idx = np.argmax(densities)
+            x_peak, y_peak = trial_x[max_density_idx], trial_y[max_density_idx]
+                
+            plt.xlabel('Avg X-Distance (Synchronized Running)')
+            plt.ylabel('Frames Both Rats Waited')
+            plt.title('KDE Density of Trial Strategies')
+            if self.save:
+                plt.savefig("kde_strategy_plot.png")
+            plt.show()
+
 
 
 #Testing Multi File Graphs
@@ -5440,7 +5649,7 @@ initialNanList = [0.15, 0.12]
 '''
 
 
-
+'''
 arr = getFiltered()
 #arr = getAllTrainingCoop()
 #arr = getFiberPhoto()
@@ -5451,15 +5660,15 @@ fpsList = arr[3]
 totFramesList = arr[4]
 initialNanList = arr[5]
 #fiberPhoto = arr[6]
-
-
-
 '''
+
+
+
 lev_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/4_nanerror_lev.csv"]
 mag_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/4_nanerror_mag.csv"]
 pos_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/4_nanerror_test.h5"]
 fiberPhoto = [["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/090324_Cam1_TrNum14_Coop_KL002B-KL002Y_x405_TTLs.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/090324_Cam1_TrNum14_Coop_KL002B-KL002Y_x465_TTLs.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/090324_Cam1_TrNum14_Coop_KL002B-KL002Y_x560_TTLs.csv"]]
-'''
+
 
 '''#Missing Trial Nums
 lev_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/040124_KL005B-KL005Y_lever.csv"]
@@ -5467,15 +5676,17 @@ mag_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/B
 pos_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/040124_COOPTRAIN_LARGEARENA_KL005B-KL005Y_Camera1.predictions.h5"]
 '''
 
-#fpsList = [29]
-#totFramesList = [10000]
-#initialNanList = [0.3]
+fpsList = [29]
+totFramesList = [10000]
+initialNanList = [0.3]
 
 
 
 print("Start MultiFileGraphs Regular")
 experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "", save=True)
-experiment.gazeHeatmap()
+experiment.classifyStrategies()
+
+#experiment.gazeHeatmap()
 #experiment.trialStateModel()
 #experiment.testMotivation()
 #experiment.waitingStrategy()
