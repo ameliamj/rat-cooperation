@@ -5632,7 +5632,69 @@ class multiFileGraphs:
             head_vec0 = get_head_vector(0)
             head_vec1 = get_head_vector(1)
         
+    def determineIllegalLeverPresses(self):
+        countIllegal = 0
+        countTrials = 0
+        
+        for exp in self.experiments:
+            lev = exp.lev
+            thresh = lev.returnSuccThreshold()
+            
+            numTrials = lev.returnNumTotalTrials()
+            first_press_times = lev.returnFirstPressAbsTimes()
+            valid_trial_idx = 0
+            
+            for trial_idx in range(1, numTrials + 1):
+                data = lev.data[lev.data["TrialNum"] == trial_idx]
+                countTrials += 1
+                
+                if (not data.empty):
+                    firstPressTime = -1
 
+                    for _, row in data.iterrows():
+                        trialTime = row["TrialTime"]
+                        
+                        if (firstPressTime == -1):
+                            firstPressTime = trialTime
+                            absTime = row["AbsTime"]
+                            expected_time = first_press_times[valid_trial_idx]
+                            
+                            if (absTime != expected_time):
+                                print("MISMATCH")
+                                print("absTime: ", firstPressTime)
+                                print("expectedTime: ", expected_time)
+                        else:
+                            if (trialTime - firstPressTime > thresh):
+                                countIllegal += 1
+                                print("\nTrialIdx: ", trial_idx)
+                                print("lev: ", exp.lev_file)
+                                break
+                    
+                    valid_trial_idx += 1
+                    
+        print("\n\ncountIllegal: ", countIllegal)
+        print("countTrials: ", countTrials)
+        
+        # After the final print statements
+        labels = ['Legal Presses', 'Illegal Presses']
+        sizes = [countTrials - countIllegal, countIllegal]
+        colors = ['#66b3ff', '#ff9999']
+        explode = (0, 0.1)  # only "explode" the illegal slice
+
+        plt.figure(figsize=(6, 6))
+        plt.pie(sizes, labels=labels, colors=colors, autopct='%1.1f%%',
+                shadow=True, startangle=140, explode=explode)
+        plt.title('Proportion of Illegal Lever Presses')
+        plt.axis('equal')  # Equal aspect ratio ensures pie is a circle.
+        plt.tight_layout()
+
+        if self.save:
+            plt.savefig("illegal_lever_presses_piechart.png")
+        else:
+            plt.show()
+                        
+            
+            
 
 #Testing Multi File Graphs
 #
@@ -5692,22 +5754,24 @@ mag_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/B
 pos_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/4_nanerror_test.h5"]
 fiberPhoto = [["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/090324_Cam1_TrNum14_Coop_KL002B-KL002Y_x405_TTLs.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/090324_Cam1_TrNum14_Coop_KL002B-KL002Y_x465_TTLs.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/090324_Cam1_TrNum14_Coop_KL002B-KL002Y_x560_TTLs.csv"]]
 '''
-
-'''#Missing Trial Nums
+'''
+#Missing Trial Nums
 lev_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/040124_KL005B-KL005Y_lever.csv"]
 mag_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/040124_KL005B-KL005Y_mag.csv"]
 pos_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/040124_COOPTRAIN_LARGEARENA_KL005B-KL005Y_Camera1.predictions.h5"]
+
+
+fpsList = [29]
+totFramesList = [10000]
+initialNanList = [0.3]
 '''
-
-#fpsList = [29]
-#totFramesList = [10000]
-#initialNanList = [0.3]
-
 
 
 print("Start MultiFileGraphs Regular")
 experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "", save=True)
-experiment.classifyStrategies()
+experiment.determineIllegalLeverPresses()
+
+#experiment.classifyStrategies()
 
 #experiment.gazeHeatmap()
 #experiment.trialStateModel()
