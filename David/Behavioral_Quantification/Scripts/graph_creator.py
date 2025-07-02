@@ -5717,6 +5717,8 @@ class multiFileGraphs:
         countIllegal = 0
         countTrials = 0
         
+        timeList = []
+        
         for exp in self.experiments:
             lev = exp.lev
             thresh = lev.returnSuccThreshold()
@@ -5745,13 +5747,39 @@ class multiFileGraphs:
                                 print("absTime: ", firstPressTime)
                                 print("expectedTime: ", expected_time)
                         else:
-                            if (trialTime - firstPressTime > thresh + 1.5):
+                            if (trialTime - firstPressTime > thresh + 1):
+                                timeList.append((trialTime - firstPressTime) - thresh)
                                 countIllegal += 1
                                 print("\nTrialIdx: ", trial_idx)
                                 print("lev: ", exp.lev_file)
                                 break
                     
                     valid_trial_idx += 1
+                    
+        if len(timeList) == 0:
+            print("timeList is empty. Nothing to plot.")
+            return
+    
+        # Convert to numpy array for easier math
+        time_arr = np.array(timeList)
+    
+        # Create 15 equal-width bins
+        counts, bin_edges = np.histogram(time_arr, bins=15)
+    
+        # Compute bin centers for plotting
+        bin_centers = 0.5 * (bin_edges[:-1] + bin_edges[1:])
+    
+        # Plot
+        plt.figure(figsize=(10, 6))
+        plt.bar(bin_centers, counts, width=(bin_edges[1] - bin_edges[0]), edgecolor='black')
+        plt.xlabel("Time Over Threshold (s)")
+        plt.ylabel("Frequency")
+        plt.title("Distribution of Time Over Threshold (Chunked into 15 Bins)")
+        plt.grid(True, linestyle='--', alpha=0.5)
+    
+        if self.save:
+            plt.savefig("IllegalPressesTimings_ChunkedBarchart")
+        plt.show()
                     
         print("\n\ncountIllegal: ", countIllegal)
         print("countTrials: ", countTrials)
@@ -5895,8 +5923,8 @@ initialNanList = [0.3]
 
 print("Start MultiFileGraphs Regular")
 experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "", save=True)
-#experiment.determineIllegalLeverPresses()
-experiment.interactionVSSuccess()
+experiment.determineIllegalLeverPresses()
+#experiment.interactionVSSuccess()
 
 #experiment.classifyStrategies()
 
