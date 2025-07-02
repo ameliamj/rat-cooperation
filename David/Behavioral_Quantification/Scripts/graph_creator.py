@@ -5584,7 +5584,7 @@ class multiFileGraphs:
         
             # Plot 3: Transparent Scatter
             plt.figure(figsize=(8, 6))
-            scatter = plt.scatter(trial_x, trial_y, c=trial_success_streak, cmap='plasma', alpha=0.4, s=11)
+            scatter = plt.scatter(trial_x, trial_y, c=trial_success_streak, cmap='plasma', alpha=0.35, s=11)
             plt.colorbar(scatter, label='Successes in a Row')
             plt.xlabel('Avg X-Distance (Synchronized Running)')
             plt.ylabel('Frames Both Rats Waited')
@@ -5595,7 +5595,7 @@ class multiFileGraphs:
             
             # Plot 3: Transparent Scatter
             plt.figure(figsize=(8, 6))
-            scatter = plt.scatter(trial_x, trial_y_single, c=trial_success_streak, cmap='plasma', alpha=0.6, s=11)
+            scatter = plt.scatter(trial_x, trial_y_single, c=trial_success_streak, cmap='plasma', alpha=0.35, s=11)
             plt.colorbar(scatter, label='Successes in a Row')
             plt.xlabel('Avg X-Distance (Synchronized Running)')
             plt.ylabel('Frames AT least 1 Rat Waited')
@@ -5667,7 +5667,7 @@ class multiFileGraphs:
             sns.kdeplot(
                 data=df2,
                 x='x_dist',
-                y='waiting',
+                y='waiting_single',
                 color='black',
                 levels=6,
                 linewidths=1,
