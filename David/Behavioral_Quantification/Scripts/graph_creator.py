@@ -3104,8 +3104,8 @@ class multiFileGraphs:
             print("\nAvg Distance is: ", avg_distance)
             print("File is: ", exp.lev_file)
             
-            if (avg_distance > 800):
-                continue
+            #if (avg_distance > 800):
+                #continue
             success_rates.append(success_rate)
             avg_distances.append(avg_distance)
     
@@ -5850,11 +5850,11 @@ class multiFileGraphs:
                 loc1 = pos.returnRatLocationTime(1, t)
                 dist = distances[t]
                 
-                if ((loc0 == 'mid' and loc1 == 'mid') or (loc0 == 'lev_top' and loc1 == 'lev_bottom') or (loc1 == 'lev_top' and loc0 == 'lev_bottom') or (loc0 == 'mag_top' and loc1 == 'mag_bottom') or (loc1 == 'mag_top' and loc0 == 'mag_bottom')):
+                if (loc0 != 'other' and loc1 != 'other' and ((loc0 != 'lev_top' or loc1 != 'lev_bottom') or (loc1 != 'lev_top' or loc0 != 'lev_bottom') or (loc0 != 'mag_top' or loc1 != 'mag_bottom') or (loc1 != 'mag_top' or loc0 != 'mag_bottom'))):
                     countValidFrames += 1
                 
                 #if (dist < 50):
-                if (dist < 90 and ((loc0 == 'mid' and loc1 == 'mid') or (loc0 == 'lev_top' and loc1 == 'lev_bottom') or (loc1 == 'lev_top' and loc0 == 'lev_bottom') or (loc0 == 'mag_top' and loc1 == 'mag_bottom') or (loc1 == 'mag_top' and loc0 == 'mag_bottom'))):
+                if (dist < 90 and (loc0 != 'other' and loc1 != 'other' and ((loc0 != 'lev_top' or loc1 != 'lev_bottom') or (loc1 != 'lev_top' or loc0 != 'lev_bottom') or (loc0 != 'mag_top' or loc1 != 'mag_bottom') or (loc1 != 'mag_top' or loc0 != 'mag_bottom')))):
                     count += 1
                     sequence.append((loc0, loc1))
                 else:
@@ -5985,7 +5985,7 @@ initialNanList = [0.3]
 print("Start MultiFileGraphs Regular")
 experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "", save=True)
 #experiment.determineIllegalLeverPresses()
-experiment.successVsAverageDistance()
+#experiment.successVsAverageDistance()
 experiment.interactionVSSuccess()
 
 #experiment.classifyStrategies()
