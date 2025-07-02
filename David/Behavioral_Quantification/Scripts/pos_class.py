@@ -72,7 +72,11 @@ class posLoader:
         
         self.magBotTR = (1382, 330)
         self.magBotBL = (1042, 630)
-    
+        
+        self.topWall = 80
+        self.bottomWall = 580
+        
+        
         # Define regions based on x-coordinate of headbase
         self.levRegion = (0, self.levBoundary)
         self.middleRegion = (self.levBoundary, self.magBoundary)
@@ -680,6 +684,11 @@ class posLoader:
     
         return distances
     
+    def distanceFromWall(self, ratID, t):
+        headbase_y = self.data[ratID, 1, self.HB_INDEX, t]
+        
+        return min(abs(headbase_y - self.topWall), abs(headbase_y - self.bottomWall))
+    
     #Format of self.data: Shape: (2, 2, 5, x) --> (mouse0/1, x/y, which_body_part, which_frame)
     #I want to modify this function to for each frame determine the minimum distance from  one of the rats noses to thec losest body part tracked in the other rat and return a list of that for each frame
     
@@ -693,7 +702,7 @@ def visualize_gaze_overlay(
     mouseID=0,
     save_path="output.mp4",
     start_frame=0,
-    max_frames=1000,
+    max_frames=300,
     gaze_length=250
 ):
     '''
@@ -814,6 +823,13 @@ def visualize_gaze_overlay(
         #cv2.putText(frame, "Lev", (loader.levBoundary//2 - 30, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255,255,0), 2)
         cv2.putText(frame, "Mid", (width//2 - 30, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (200,200,200), 2)
         #cv2.putText(frame, "Mag", (loader.magBoundary + (width - loader.magBoundary)//2 - 30, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255,0,255), 2)        
+        
+        # Draw wall boundaries
+        cv2.line(frame, (0, loader.topWall), (width, loader.topWall), (0, 255, 255), 2)     # Yellow line for topWall
+        cv2.line(frame, (0, loader.bottomWall), (width, loader.bottomWall), (0, 165, 255), 2) # Orange line for bottomWall
+
+        cv2.putText(frame, "Top Wall", (10, loader.topWall - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 255), 2)
+        cv2.putText(frame, "Bottom Wall", (10, loader.bottomWall + 20), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 165, 255), 2)
         
         #Mouse Region
         region_self = mouse_region[frame_idx]
@@ -1082,12 +1098,12 @@ video_file = "/Users/david/Downloads/4%_nan_test.mp4"
 #h5_file = "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G.predictions.h5"
 #video_file = "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G.mp4"    
 
-'''
+
 loader = posLoader(h5_file)
 lev = levLoader(lev_file)
 mag = magLoader(mag_file)
-visualize_gaze_overlay2(video_file, loader, lev, mag, mouseID=0, save_path = "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Graphs/Videos/sampleInteraction.mp4")
-'''
+visualize_gaze_overlay(video_file, loader, lev, mag, mouseID=0, save_path = "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Graphs/Videos/wallTesting.mp4")
+
   
     
     

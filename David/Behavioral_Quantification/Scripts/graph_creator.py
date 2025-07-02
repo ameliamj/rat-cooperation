@@ -5817,7 +5817,7 @@ class multiFileGraphs:
         '''
         
         MIN_FRAMES = 10
-        MAX_DIST = 50
+        MAX_DIST = 90
         
         lengthsListTot = []
         sessionCountsStandardized = []
@@ -5909,6 +5909,44 @@ class multiFileGraphs:
     def wallAnxietyMetrics(self):
         '''
         '''
+
+    def wallAnxietyMetrics(self):
+        '''
+        Wall Interaction Def – Within MAX_DIST pixels of the Wall
+        Return scatterplot of percent of frames near wall vs. success rate
+        '''
+        
+        MAX_DIST = 35
+        
+        percentFramesNearWall = []
+        successRates = []
+        
+        
+        for exp in self.experiments:
+            lev = exp.lev
+            pos = exp.pos
+            totalFrames = exp.endFrame
+            
+            countWallFrames = 0            
+            
+            successRates.append(lev.returnSuccessPercentage())
+            
+            count = -1
+            sequence = []
+            
+            for t in range(totalFrames):
+                wallDist0 = pos.distanceFromWall(0, t)
+                wallDist1 = pos.distanceFromWall(1, t)
+                
+                if (wallDist0 < MAX_DIST):
+                    countWallFrames += 1
+                if (wallDist1 < MAX_DIST):
+                    countWallFrames += 1
+            
+            percentFramesNearWall.append(countWallFrames / totalFrames * 50)
+        
+        self._plot_scatter(percentFramesNearWall, successRates, "WallAnxietyvsSuccessScatterplot", "Wall Anxiety vs. Success", "Near Wall Frequency")
+
 
 #Testing Multi File Graphs
 #
