@@ -5475,6 +5475,7 @@ class multiFileGraphs:
             print("n_trials: ", n_trials)
             
             for trial_idx in range(n_trials):
+                print("trial_idx: ", trial_idx)
                 #Preparation: 
                 #
                 #
@@ -5655,7 +5656,7 @@ class multiFileGraphs:
             kde = sns.kdeplot(
                 data=df2,
                 x='x_dist',
-                y='waiting',
+                y='waiting_single',
                 fill=True,
                 cmap='coolwarm',
                 levels=100,
