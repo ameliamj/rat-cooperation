@@ -5932,7 +5932,7 @@ class multiFileGraphs:
             successRates.append(lev.returnSuccessPercentage())
             
             count = -1
-            sequence = []
+            sequence = []   
             
             for t in range(totalFrames):
                 wallDist0 = pos.distanceFromWall(0, t)
@@ -6022,9 +6022,10 @@ initialNanList = [0.3]
 
 print("Start MultiFileGraphs Regular")
 experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "", save=True)
+experiment.wallAnxietyMetrics()
 #experiment.determineIllegalLeverPresses()
 #experiment.successVsAverageDistance()
-experiment.interactionVSSuccess()
+#experiment.interactionVSSuccess()
 
 #experiment.classifyStrategies()
 
