@@ -5693,7 +5693,48 @@ class multiFileGraphs:
         else:
             plt.show()
                         
+    def interactionVSSuccess(self):
+        '''
+        Interaction Definition – Distance < 50 for 10+ Frames
+        '''
+        
+        MIN_FRAMES = 10
+        lengthsListTot = []
+        sessionCountsStandardized = []
+        percentFramesInteracted = []
+        successRates = []
+        
+        for exp in self.experiments:
+            lev = exp.lev
+            pos = exp.pos
+            totalFrames = exp.endFrame
+            distances = pos.returnInteractionDistance()
+            lengthsList = []
+            countInteractionMoment = 0
+            countInteractionMomentFrames = 0
             
+            successRates.append(lev.returnSuccessPercentage())
+            
+            count = -1
+            for t in range(totalFrames):
+                dist = distances[t]
+                
+                if (dist < 50):
+                    count += 1
+                else:
+                    if (count >= MIN_FRAMES - 1):
+                        countInteractionMomentFrames += count + 1
+                        countInteractionMoment += 1
+                        lengthsList.append(count + 1)
+                    count = -1
+            
+            sessionCountsStandardized.append(countInteractionMoment / totalFrames * 100)
+            percentFramesInteracted.append(countInteractionMomentFrames / totalFrames * 100)
+        
+        self._plot_scatter(sessionCountsStandardized, successRates, "numberOfInteractionsvsSuccessScatterplot", "Frequency of Interactions vs. Success", "Interaction Frequency")
+        self._plot_scatter(percentFramesInteracted, successRates, "PercentInteractingvsSuccessScatterplot", "Percent of Frames Interacting vs. Success", "Interaction Percentage")
+                    
+
             
 
 #Testing Multi File Graphs
@@ -5769,7 +5810,7 @@ initialNanList = [0.3]
 
 print("Start MultiFileGraphs Regular")
 experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "", save=True)
-experiment.determineIllegalLeverPresses()
+experiment.interactionVSSuccess()
 
 #experiment.classifyStrategies()
 

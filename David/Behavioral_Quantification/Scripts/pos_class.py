@@ -648,6 +648,41 @@ class posLoader:
         # Return the minimum of the two
         return min(dist1, dist2)
     
+    def returnInteractionDistance(self):        
+        # Assumes self.data is shape: (2, 2, 5, num_frames)
+        num_frames = self.data.shape[3]
+        distances = []
+    
+        for frame in range(num_frames):
+            rat_id = 0
+            other_id = 1
+            
+            # Get (x, y) position of nose of rat 0 at this frame
+            nose0 = self.data[rat_id, :, self.NOSE_INDEX, frame]
+    
+            # Get all body parts of rat 1 at this frame
+            hb1 = self.data[other_id, :, self.HB_INDEX, frame]
+            nose1 = self.data[other_id, :, self.NOSE_INDEX, frame]
+            tb1 = self.data[other_id, :, self.TB_INDEX, frame]
+            earL1 = self.data[other_id, :, self.earL_INDEX, frame]
+            earR1 = self.data[other_id, :, self.earR_INDEX, frame]
+    
+            # Stack all body parts of rat 1
+            body_parts_other = np.stack([hb1, nose1, tb1, earL1, earR1], axis=0)
+    
+            # Compute Euclidean distances from nose0 to each of rat 1's body parts
+            dists = np.linalg.norm(body_parts_other - nose0, axis=1)
+    
+            # Get minimum distance
+            min_dist = np.min(dists)
+                
+            distances.append(min_dist)
+    
+        return distances
+    
+    #Format of self.data: Shape: (2, 2, 5, x) --> (mouse0/1, x/y, which_body_part, which_frame)
+    #I want to modify this function to for each frame determine the minimum distance from  one of the rats noses to thec losest body part tracked in the other rat and return a list of that for each frame
+    
 
 
 def visualize_gaze_overlay(
@@ -710,6 +745,7 @@ def visualize_gaze_overlay(
     press_frames = lev.getLeverPressFrames(mouseID)
     reward_frames = mag.getRewardReceivedFrames(mouseID)
     false_mag_entry = mag.getEnteredMagFrames(mouseID)
+    distances = loader.returnInteractionDistance()
     print("Reward_Frames: ", reward_frames)
     
     self_intersecting_rat1 = loader.checkSelfIntersection(1)
@@ -757,6 +793,9 @@ def visualize_gaze_overlay(
         cv2.putText(frame, f"Intersecting: {intersect}", (10, 60), cv2.FONT_HERSHEY_SIMPLEX, 0.7, color, 2)
         cv2.putText(frame, f"Gazing: {gazing}", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, color, 2)
         cv2.putText(frame, f"Still: {still}", (10, 90), cv2.FONT_HERSHEY_SIMPLEX, 0.7, color, 2)
+        
+        cv2.putText(frame, f"InterMouseDistance: {distances[frame_idx]}", (10, 180), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
+        
         
         # Draw self-intersecting status for Rat 1 in bottom right
         status_text = f"Rat1 Self-Intersecting: {self_intersecting_rat1[frame_idx]}"
@@ -885,8 +924,8 @@ video_file = "/Users/david/Downloads/4%_nan_test.mp4"
 #h5_file = "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G.predictions.h5"
 #video_file = "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G.mp4"    
 
-'''
-loader = posLoader(h5_file)
+
+'''loader = posLoader(h5_file)
 lev = levLoader(lev_file)
 mag = magLoader(mag_file)
 visualize_gaze_overlay(video_file, loader, lev, mag, mouseID=0, save_path = "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Graphs/Videos/4percentErrorTestVid_states.mp4")

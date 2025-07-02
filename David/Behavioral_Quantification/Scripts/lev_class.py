@@ -390,6 +390,11 @@ class levLoader:
         
         return succ
     
+    def returnSuccessPercentage(self):
+        countSucc = self.returnNumSuccessfulTrials()
+        countTot = self.returnNumTotalTrials()
+        
+        return countSucc / countTot
         
     def returnAvgIPI(self, test = False, returnList = False, returnLen = False):
         """
