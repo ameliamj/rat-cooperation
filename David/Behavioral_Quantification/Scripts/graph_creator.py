@@ -5745,7 +5745,7 @@ class multiFileGraphs:
                                 print("absTime: ", firstPressTime)
                                 print("expectedTime: ", expected_time)
                         else:
-                            if (trialTime - firstPressTime > thresh):
+                            if (trialTime - firstPressTime > thresh + 1.5):
                                 countIllegal += 1
                                 print("\nTrialIdx: ", trial_idx)
                                 print("lev: ", exp.lev_file)
@@ -5895,7 +5895,8 @@ initialNanList = [0.3]
 
 print("Start MultiFileGraphs Regular")
 experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "", save=True)
-experiment.interactionVSSuccess()
+experiment.determineIllegalLeverPresses()
+#experiment.interactionVSSuccess()
 
 #experiment.classifyStrategies()
 
