@@ -5433,8 +5433,23 @@ class multiFileGraphs:
         y-axis (Waiting at Lever): frames both ratswere waiting at the lever
         '''
         
+        def numSuccessinaRow(successTrials):
+            n = len(successTrials)
+            res = [0] * n
+            count = 0
+            for i, succ in enumerate(successTrials):
+                if (succ == 1):
+                    count += 1
+                else:
+                    count = 0
+                
+                res[i] = count
+            return res
+        
         trial_x = []
+        trial_y_single = []
         trial_y = []
+        trial_success_streak = []
         
         for exp_idx, exp in enumerate(self.experiments):
             lev = exp.lev
@@ -5447,6 +5462,7 @@ class multiFileGraphs:
             
             success_status = lev.returnSuccessTrials()  # List of trial success status (1, 0, -1)
             success_status = self._filterToLeverPressTrials(success_status, lev)
+            successInARow = numSuccessinaRow(success_status)
             
             print("Got Trial timings")
             
@@ -5527,18 +5543,26 @@ class multiFileGraphs:
                     t -= 1
                 
                 frames_both_waited = min(rat0_waiting, rat1_waiting)
+                frames_at_least_one_waited = max(rat0_waiting, rat1_waiting)
                 
-                
+                #and frames_at_least_one_waited < 450
                 if (x < 1000 and frames_both_waited < 350):
                     trial_x.append(difference / numFrames)
+                    trial_y_single.append(frames_at_least_one_waited)
                     trial_y.append(frames_both_waited)
+                    trial_success_streak.append(successInARow[trial_idx])
+                else:
+                    print("\nlev File: ", exp.lev_file)
+                    print("time begin: ", t_begin)
+                    print("avg Diff in X: ", x, "   framesBothWaited: ", frames_both_waited)
             
             # Convert to DataFrame for seaborn
             df = pd.DataFrame({'x_dist': trial_x, 'waiting': trial_y})
+            df2 = pd.DataFrame({'x_dist': trial_x, 'waiting_single': trial_y_single})
             
             # Plot 1: Hexbin
             plt.figure(figsize=(8, 6))
-            plt.hexbin(trial_x, trial_y, gridsize=50, cmap='viridis', mincnt=1)
+            plt.hexbin(trial_x, trial_y, gridsize=75, cmap='viridis', mincnt=1)
             plt.colorbar(label='Trial Density')
             plt.xlabel('Avg X-Distance (Synchronized Running)')
             plt.ylabel('Frames Both Rats Waited (at Lever)')
@@ -5549,7 +5573,7 @@ class multiFileGraphs:
         
             # Plot 2: 2D Histogram
             plt.figure(figsize=(8, 6))
-            plt.hist2d(trial_x, trial_y, bins=50, cmap='inferno', vmin=0)
+            plt.hist2d(trial_x, trial_y, bins=75, cmap='inferno', vmin=0)
             plt.colorbar(label='Trial Density')
             plt.xlabel('Avg X-Distance (Synchronized Running)')
             plt.ylabel('Frames Both Rats Waited')
@@ -5560,12 +5584,24 @@ class multiFileGraphs:
         
             # Plot 3: Transparent Scatter
             plt.figure(figsize=(8, 6))
-            plt.scatter(trial_x, trial_y, alpha=0.35, s=11)
+            scatter = plt.scatter(trial_x, trial_y, c=trial_success_streak, cmap='plasma', alpha=0.4, s=11)
+            plt.colorbar(scatter, label='Successes in a Row')
             plt.xlabel('Avg X-Distance (Synchronized Running)')
             plt.ylabel('Frames Both Rats Waited')
             plt.title('Transparent Scatter of Trial Strategies')
             if self.save:
                 plt.savefig("scatter_strategy_plot.png")
+            plt.show()
+            
+            # Plot 3: Transparent Scatter
+            plt.figure(figsize=(8, 6))
+            scatter = plt.scatter(trial_x, trial_y_single, c=trial_success_streak, cmap='plasma', alpha=0.6, s=11)
+            plt.colorbar(scatter, label='Successes in a Row')
+            plt.xlabel('Avg X-Distance (Synchronized Running)')
+            plt.ylabel('Frames AT least 1 Rat Waited')
+            plt.title('Transparent Scatter of Trial Strategies')
+            if self.save:
+                plt.savefig("scatter_strategy_plot_single_waiting.png")
             plt.show()
         
             # Plot 4: KDE Plot
@@ -5610,6 +5646,50 @@ class multiFileGraphs:
             plt.title('KDE Density of Trial Strategies')
             if self.save:
                 plt.savefig("kde_strategy_plot.png")
+            plt.show()
+            plt.close()
+            
+            plt.figure(figsize=(8, 6))
+
+            # KDE with contours
+            kde = sns.kdeplot(
+                data=df2,
+                x='x_dist',
+                y='waiting',
+                fill=True,
+                cmap='coolwarm',
+                levels=100,
+                thresh=0.05,
+                alpha=0.9
+            )
+        
+            # Contour lines
+            sns.kdeplot(
+                data=df2,
+                x='x_dist',
+                y='waiting',
+                color='black',
+                levels=6,
+                linewidths=1,
+            )
+        
+            # Add a scatter of all points with alpha
+            plt.scatter(trial_x, trial_y_single, s=5, alpha=0.3, color='black')
+        
+            # Optional: annotate the densest point
+            from scipy.stats import gaussian_kde
+        
+            values = np.vstack([trial_x, trial_y_single])
+            kernel = gaussian_kde(values)
+            densities = kernel(values)
+            max_density_idx = np.argmax(densities)
+            x_peak, y_peak = trial_x[max_density_idx], trial_y_single[max_density_idx]
+                
+            plt.xlabel('Avg X-Distance (Synchronized Running)')
+            plt.ylabel('Frames At least One Rat')
+            plt.title('KDE Density of Trial Strategies')
+            if self.save:
+                plt.savefig("kde_strategy_plot_single.png")
             plt.show()
 
     def classifyInteractions(self):
@@ -5795,6 +5875,7 @@ mag_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/B
 pos_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/4_nanerror_test.h5"]
 fiberPhoto = [["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/090324_Cam1_TrNum14_Coop_KL002B-KL002Y_x405_TTLs.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/090324_Cam1_TrNum14_Coop_KL002B-KL002Y_x465_TTLs.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/090324_Cam1_TrNum14_Coop_KL002B-KL002Y_x560_TTLs.csv"]]
 '''
+
 '''
 #Missing Trial Nums
 lev_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/040124_KL005B-KL005Y_lever.csv"]
@@ -5810,9 +5891,9 @@ initialNanList = [0.3]
 
 print("Start MultiFileGraphs Regular")
 experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "", save=True)
-experiment.interactionVSSuccess()
+#experiment.interactionVSSuccess()
 
-#experiment.classifyStrategies()
+experiment.classifyStrategies()
 
 #experiment.gazeHeatmap()
 #experiment.trialStateModel()
