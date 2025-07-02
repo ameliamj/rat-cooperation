@@ -5803,7 +5803,7 @@ class multiFileGraphs:
                 loc1 = pos.returnRatLocationTime(1, t)
                 dist = distances[t]
                 
-                if (dist < 50 and loc0 == 'mid' and loc1 == 'mid'):
+                if (dist < 50 and ((loc0 == 'mid' and loc1 == 'mid') or (loc0 == 'lev_top' and loc1 == 'lev_bottom') or (loc1 == 'lev_top' and loc0 == 'lev_bottom') or (loc0 == 'mag_top' and loc1 == 'mag_bottom') or (loc1 == 'mag_top' and loc0 == 'mag_bottom'))):
                     count += 1
                 else:
                     if (count >= MIN_FRAMES - 1):
@@ -5895,8 +5895,8 @@ initialNanList = [0.3]
 
 print("Start MultiFileGraphs Regular")
 experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "", save=True)
-experiment.determineIllegalLeverPresses()
-#experiment.interactionVSSuccess()
+#experiment.determineIllegalLeverPresses()
+experiment.interactionVSSuccess()
 
 #experiment.classifyStrategies()
 
