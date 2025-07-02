@@ -5813,6 +5813,8 @@ class multiFileGraphs:
         percentFramesInteracted = []
         successRates = []
         
+        countValidFrames = 0
+        
         for exp in self.experiments:
             lev = exp.lev
             pos = exp.pos
@@ -5831,6 +5833,10 @@ class multiFileGraphs:
                 loc1 = pos.returnRatLocationTime(1, t)
                 dist = distances[t]
                 
+                if ((loc0 == 'mid' and loc1 == 'mid') or (loc0 == 'lev_top' and loc1 == 'lev_bottom') or (loc1 == 'lev_top' and loc0 == 'lev_bottom') or (loc0 == 'mag_top' and loc1 == 'mag_bottom') or (loc1 == 'mag_top' and loc0 == 'mag_bottom')):
+                    countValidFrames += 1
+                
+                
                 if (dist < 50 and ((loc0 == 'mid' and loc1 == 'mid') or (loc0 == 'lev_top' and loc1 == 'lev_bottom') or (loc1 == 'lev_top' and loc0 == 'lev_bottom') or (loc0 == 'mag_top' and loc1 == 'mag_bottom') or (loc1 == 'mag_top' and loc0 == 'mag_bottom'))):
                     count += 1
                 else:
@@ -5840,8 +5846,8 @@ class multiFileGraphs:
                         lengthsList.append(count + 1)
                     count = -1
             
-            sessionCountsStandardized.append(countInteractionMoment / totalFrames * 100)
-            percentFramesInteracted.append(countInteractionMomentFrames / totalFrames * 100)
+            sessionCountsStandardized.append(countInteractionMoment / countValidFrames * 100)
+            percentFramesInteracted.append(countInteractionMomentFrames / countValidFrames * 100)
         
         self._plot_scatter(sessionCountsStandardized, successRates, "numberOfInteractionsvsSuccessScatterplot", "Frequency of Interactions vs. Success", "Interaction Frequency")
         self._plot_scatter(percentFramesInteracted, successRates, "PercentInteractingvsSuccessScatterplot", "Percent of Frames Interacting vs. Success", "Interaction Percentage")
