@@ -28,6 +28,8 @@ from scipy.ndimage import gaussian_filter1d
 from scipy.ndimage import uniform_filter1d
 from scipy.optimize import curve_fit
 import itertools
+import statistics
+
 
 from matplotlib.patches import Patch
 import seaborn as sns
@@ -5809,13 +5811,16 @@ class multiFileGraphs:
         '''
         
         MIN_FRAMES = 10
+        MAX_DIST = 90
+        
         lengthsListTot = []
         sessionCountsStandardized = []
         percentFramesInteracted = []
         successRates = []
         
         # Count of interaction type combinations
-        interaction_pairs_counter = Counter()
+        framewise_counter = Counter()  # Every frame
+        eventwise_counter = Counter()  # Once per interaction event
         
         for exp in self.experiments:
             lev = exp.lev
@@ -5832,6 +5837,8 @@ class multiFileGraphs:
             successRates.append(lev.returnSuccessPercentage())
             
             count = -1
+            sequence = []
+            
             for t in range(totalFrames):
                 loc0 = pos.returnRatLocationTime(0, t)
                 loc1 = pos.returnRatLocationTime(1, t)
@@ -5841,23 +5848,61 @@ class multiFileGraphs:
                     countValidFrames += 1
                 
                 
-                if (dist < 50 and ((loc0 == 'mid' and loc1 == 'mid') or (loc0 == 'lev_top' and loc1 == 'lev_bottom') or (loc1 == 'lev_top' and loc0 == 'lev_bottom') or (loc0 == 'mag_top' and loc1 == 'mag_bottom') or (loc1 == 'mag_top' and loc0 == 'mag_bottom'))):
+                if (dist < 90 and ((loc0 == 'mid' and loc1 == 'mid') or (loc0 == 'lev_top' and loc1 == 'lev_bottom') or (loc1 == 'lev_top' and loc0 == 'lev_bottom') or (loc0 == 'mag_top' and loc1 == 'mag_bottom') or (loc1 == 'mag_top' and loc0 == 'mag_bottom'))):
                     count += 1
+                    sequence.append((loc0, loc1))
                 else:
                     if (count >= MIN_FRAMES - 1):
                         countInteractionMomentFrames += count + 1
                         countInteractionMoment += 1
                         lengthsList.append(count + 1)
+                        
+                        # Framewise: add every (loc0, loc1)
+                        framewise_counter.update(sequence)
+    
+                        # Eventwise: add mode
+                        try:
+                            mode = statistics.mode(sequence)
+                        except statistics.StatisticsError:
+                            mode = sequence[0]  # fallback to first if tie
+                        eventwise_counter[mode] += 1
+                    
+                    #Reset
                     count = -1
+                    sequence = []
             
             sessionCountsStandardized.append(countInteractionMoment / countValidFrames * 100)
             percentFramesInteracted.append(countInteractionMomentFrames / countValidFrames * 100)
         
         self._plot_scatter(sessionCountsStandardized, successRates, "numberOfInteractionsvsSuccessScatterplot", "Frequency of Interactions vs. Success", "Interaction Frequency")
         self._plot_scatter(percentFramesInteracted, successRates, "PercentInteractingvsSuccessScatterplot", "Percent of Frames Interacting vs. Success", "Interaction Percentage")
-                    
+        # Plot interaction type heatmaps
+        self._plot_interaction_type_distribution(framewise_counter, "Frame-Based Interaction Distribution", "interactionLocationHeatmap_FRAMES.png")
+        self._plot_interaction_type_distribution(eventwise_counter, "Event-Based Interaction Distribution", "interactionLocationHeatmap_EVENTS.png")
 
-            
+    def _plot_interaction_type_distribution(self, counter, title, filename):
+        import pandas as pd
+        import seaborn as sns
+        import matplotlib.pyplot as plt
+    
+        total = sum(counter.values())
+        normalized = {k: v / total * 100 for k, v in counter.items()}
+    
+        regions = ['lev_top', 'lev_bottom', 'mag_top', 'mag_bottom', 'mid', 'other']
+        heatmap_data = pd.DataFrame(0, index=regions, columns=regions)
+    
+        for (r0, r1), percent in normalized.items():
+            heatmap_data.at[r0, r1] += percent
+    
+        plt.figure(figsize=(10, 8))
+        sns.heatmap(heatmap_data, annot=True, fmt=".2f", cmap="YlGnBu")
+        plt.title(title)
+        plt.xlabel("Rat 1 Location")
+        plt.ylabel("Rat 0 Location")
+    
+        if self.save:
+            plt.savefig(filename)
+        plt.show()        
 
 #Testing Multi File Graphs
 #
