@@ -5790,6 +5790,7 @@ class multiFileGraphs:
             pos = exp.pos
             totalFrames = exp.endFrame
             distances = pos.returnInteractionDistance()
+            
             lengthsList = []
             countInteractionMoment = 0
             countInteractionMomentFrames = 0
@@ -5798,9 +5799,11 @@ class multiFileGraphs:
             
             count = -1
             for t in range(totalFrames):
+                loc0 = pos.returnRatLocationTime(0, t)
+                loc1 = pos.returnRatLocationTime(1, t)
                 dist = distances[t]
                 
-                if (dist < 50):
+                if (dist < 50 and loc0 == 'mid' and loc1 == 'mid'):
                     count += 1
                 else:
                     if (count >= MIN_FRAMES - 1):
@@ -5892,9 +5895,9 @@ initialNanList = [0.3]
 
 print("Start MultiFileGraphs Regular")
 experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "", save=True)
-#experiment.interactionVSSuccess()
+experiment.interactionVSSuccess()
 
-experiment.classifyStrategies()
+#experiment.classifyStrategies()
 
 #experiment.gazeHeatmap()
 #experiment.trialStateModel()
