@@ -15,6 +15,7 @@ import networkx as nx
 
 from experiment_class import singleExperiment
 from collections import defaultdict
+from collections import Counter
 from typing import List
 from file_extractor_class import fileExtractor
 #from mag_class import magLoader
@@ -5812,7 +5813,9 @@ class multiFileGraphs:
         sessionCountsStandardized = []
         percentFramesInteracted = []
         successRates = []
-    
+        
+        # Count of interaction type combinations
+        interaction_pairs_counter = Counter()
         
         for exp in self.experiments:
             lev = exp.lev
@@ -5930,8 +5933,8 @@ initialNanList = [0.3]
 
 print("Start MultiFileGraphs Regular")
 experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "", save=True)
-experiment.determineIllegalLeverPresses()
-#experiment.interactionVSSuccess()
+#experiment.determineIllegalLeverPresses()
+experiment.interactionVSSuccess()
 
 #experiment.classifyStrategies()
 
