@@ -3093,7 +3093,6 @@ class multiFileGraphs:
                 print(f"Skipping experiment {exp.lev.filename} due to zero total trials.")
                 continue
             success_rate = exp.lev.returnNumSuccessfulTrials() / total_trials
-            success_rates.append(success_rate)
     
             # Calculate average inter-mouse distance
             inter_mouse_dist = exp.pos.returnInterMouseDistance()
@@ -3101,6 +3100,13 @@ class multiFileGraphs:
                 print(f"Skipping experiment {exp.pos.filename} due to invalid distance data.")
                 continue
             avg_distance = np.nanmean(inter_mouse_dist)  # Ignore NaN values
+            
+            print("\nAvg Distance is: ", avg_distance)
+            print("File is: ", exp.lev_file)
+            
+            if (avg_distance > 800):
+                continue
+            success_rates.append(success_rate)
             avg_distances.append(avg_distance)
     
         # Check for sufficient data
@@ -5844,12 +5850,11 @@ class multiFileGraphs:
                 loc1 = pos.returnRatLocationTime(1, t)
                 dist = distances[t]
                 
-                #if ((loc0 == 'mid' and loc1 == 'mid') or (loc0 == 'lev_top' and loc1 == 'lev_bottom') or (loc1 == 'lev_top' and loc0 == 'lev_bottom') or (loc0 == 'mag_top' and loc1 == 'mag_bottom') or (loc1 == 'mag_top' and loc0 == 'mag_bottom')):
-                    #countValidFrames += 1
+                if ((loc0 == 'mid' and loc1 == 'mid') or (loc0 == 'lev_top' and loc1 == 'lev_bottom') or (loc1 == 'lev_top' and loc0 == 'lev_bottom') or (loc0 == 'mag_top' and loc1 == 'mag_bottom') or (loc1 == 'mag_top' and loc0 == 'mag_bottom')):
+                    countValidFrames += 1
                 
-                
-                #if (dist < 90 and ((loc0 == 'mid' and loc1 == 'mid') or (loc0 == 'lev_top' and loc1 == 'lev_bottom') or (loc1 == 'lev_top' and loc0 == 'lev_bottom') or (loc0 == 'mag_top' and loc1 == 'mag_bottom') or (loc1 == 'mag_top' and loc0 == 'mag_bottom'))):
-                if (dist < 50):
+                #if (dist < 50):
+                if (dist < 90 and ((loc0 == 'mid' and loc1 == 'mid') or (loc0 == 'lev_top' and loc1 == 'lev_bottom') or (loc1 == 'lev_top' and loc0 == 'lev_bottom') or (loc0 == 'mag_top' and loc1 == 'mag_bottom') or (loc1 == 'mag_top' and loc0 == 'mag_bottom'))):
                     count += 1
                     sequence.append((loc0, loc1))
                 else:
@@ -5872,8 +5877,8 @@ class multiFileGraphs:
                     count = -1
                     sequence = []
             
-            sessionCountsStandardized.append(countInteractionMoment / totalFrames * 100)
-            percentFramesInteracted.append(countInteractionMomentFrames / totalFrames * 100)
+            sessionCountsStandardized.append(countInteractionMoment / countValidFrames * 100)
+            percentFramesInteracted.append(countInteractionMomentFrames / countValidFrames * 100)
         
         self._plot_scatter(sessionCountsStandardized, successRates, "numberOfInteractionsvsSuccessScatterplot", "Frequency of Interactions vs. Success", "Interaction Frequency")
         self._plot_scatter(percentFramesInteracted, successRates, "PercentInteractingvsSuccessScatterplot", "Percent of Frames Interacting vs. Success", "Interaction Percentage")
@@ -5980,6 +5985,7 @@ initialNanList = [0.3]
 print("Start MultiFileGraphs Regular")
 experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "", save=True)
 #experiment.determineIllegalLeverPresses()
+experiment.successVsAverageDistance()
 experiment.interactionVSSuccess()
 
 #experiment.classifyStrategies()

@@ -693,7 +693,7 @@ def visualize_gaze_overlay(
     mouseID=0,
     save_path="output.mp4",
     start_frame=0,
-    max_frames=400,
+    max_frames=1000,
     gaze_length=250
 ):
     '''
@@ -913,6 +913,164 @@ def visualize_gaze_overlay(
     print(f"Video saved to {save_path}")
     
  
+    
+
+
+def visualize_gaze_overlay2(
+    video_path,
+    loader,
+    lev,
+    mag,
+    mouseID=0,
+    save_path="output.mp4",
+    start_frame=0,
+    max_frames=1000,
+    gaze_length=250
+):
+    '''
+    Visual Representation of Gaze Events
+        Definitions
+            A mouse is considering gazing if it is still and is looking at the other mouse
+            
+            Stillness is defined as whether all 5 points tracked over {minFramesStill} frames, the standard deviation in the x and y direction is under a threshold {stillnessRange} 
+            
+            Looking is defined as whether the vector originating from the headbase in the direction 
+            of the nose with a length of {vectorLength} intersects with the body made by all the tracked 
+            points of the other mouse
+    
+        Parameters
+            a. {stillnessRange}
+            b. {minFramesStill}
+            c. {vectorLength}
+    '''
+    
+    print("Start")
+    cap = cv2.VideoCapture(video_path)
+    if not cap.isOpened():
+        raise IOError("Could not open video file.")
+
+    num_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+    fps = cap.get(cv2.CAP_PROP_FPS)
+    width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+    print("width: ", width)
+    height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+    print("height: ", height)
+
+    # Temp directory to store images
+    temp_dir = Path("temp_gaze_frames")
+    temp_dir.mkdir(exist_ok=True)
+
+    gaze_vector = loader.returnGazeVector(mouseID)
+    HB = loader.data[mouseID, :, loader.HB_INDEX, :]
+    other_body = loader.data[1 - mouseID]  # shape (2, 5, num_frames)
+    is_still = loader.returnIsStill(mouseID)
+    mouse_region = loader.returnMouseLocation(mouseID)
+    other_region = loader.returnMouseLocation(1 - mouseID)
+    
+    # State-related data
+    state_names = ["idle", "approaching lever", "approaching reward", "waiting", "pressed", "reward taken", "exploring", "false mag"]
+    pos_data = loader.getHeadBodyTrajectory(mouseID).T  # Shape: (num_frames, 2)
+    velocities = loader.computeVelocity(mouseID)
+    lever_zone = loader.getLeverZone(mouseID)
+    reward_zone = loader.getRewardZone(mouseID)
+    press_frames = lev.getLeverPressFrames(mouseID)
+    reward_frames = mag.getRewardReceivedFrames(mouseID)
+    false_mag_entry = mag.getEnteredMagFrames(mouseID)
+    distances = loader.returnInteractionDistance()
+    print("Reward_Frames: ", reward_frames)
+    
+    self_intersecting_rat1 = loader.checkSelfIntersection(1)
+    #print("self_intersecting_rat1: ", self_intersecting_rat1)
+    
+    frame_idx = start_frame
+    frame_count = 0
+    
+    while cap.isOpened() and frame_idx < num_frames and frame_count < max_frames:
+        ret, frame = cap.read()
+        if not ret or frame_idx >= loader.data.shape[-1]:
+            break
+
+
+        cv2.putText(frame, f"InterMouseDistance: {distances[frame_idx]}", (10, 70), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
+        
+        # Draw zone boundaries
+        cv2.line(frame, (loader.levBoundary, 0), (loader.levBoundary, height), (255, 255, 0), 2)   # Cyan line for levBoundary
+        cv2.line(frame, (loader.magBoundary, 0), (loader.magBoundary, height), (255, 0, 255), 2)   # Magenta line for magBoundary
+
+        # Optional: label the zones
+        #cv2.putText(frame, "Lev", (loader.levBoundary//2 - 30, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255,255,0), 2)
+        cv2.putText(frame, "Mid", (width//2 - 30, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (200,200,200), 2)
+        #cv2.putText(frame, "Mag", (loader.magBoundary + (width - loader.magBoundary)//2 - 30, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255,0,255), 2)        
+        
+        #Mouse Region
+        region_self = mouse_region[frame_idx]
+        region_other = other_region[frame_idx]
+        
+        cv2.putText(frame, f"Rat{mouseID}: {region_self}", (10, 120), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
+        cv2.putText(frame, f"Rat{1 - mouseID}: {region_other}", (10, 150), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
+        
+        #Draw Sub-Zones: 
+        zone_color = (255, 255, 255)  # White color for rectangles
+        thickness = 2
+        
+        # Convert corner definitions to top-left and bottom-right for OpenCV
+        zones = [
+            ("levTop", loader.levTopTR, loader.levTopBL),
+            ("levBot", loader.levBotTR, loader.levBotBL),
+            ("magTop", loader.magTopTR, loader.magTopBL),
+            ("magBot", loader.magBotTR, loader.magBotBL)
+        ]
+        
+        for label, tr, bl in zones:
+            top_left = (bl[0], tr[1])     # x from BL, y from TR
+            bottom_right = (tr[0], bl[1]) # x from TR, y from BL
+            cv2.rectangle(frame, top_left, bottom_right, zone_color, thickness)
+            cv2.putText(frame, label, (top_left[0] + 5, top_left[1] + 25), cv2.FONT_HERSHEY_SIMPLEX, 0.6, zone_color, 2)
+        
+                    
+        # Compute and display state
+        if np.any(np.isnan(pos_data[frame_idx])):
+            state = 6  # exploring (NaN case)
+        else:
+            x, y = pos_data[frame_idx]
+            vel = velocities[frame_idx]
+            if (frame_idx>2):
+                vel_before = np.mean(velocities[frame_idx - 2:frame_idx])
+            else:
+                vel_before = 0
+            
+        
+            cv2.putText(frame, f"Vel: {vel}", (10, height - 60), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
+
+        frame_filename = temp_dir / f"frame_{frame_count:05d}.png"
+        cv2.imwrite(str(frame_filename), frame)
+        print (f"Frame {frame_count}")
+        
+        frame_idx += 1
+        frame_count += 1
+
+    cap.release()
+
+    # Build the video using ffmpeg
+    print(f"Saving video to {save_path} using ffmpeg...")
+    ffmpeg_cmd = [
+        "ffmpeg",
+        "-y",
+        "-framerate", str(int(fps)),
+        "-i", str(temp_dir / "frame_%05d.png"),
+        "-vcodec", "libx264",
+        "-pix_fmt", "yuv420p",
+        str(save_path)
+    ]
+    result = subprocess.run(ffmpeg_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    if result.returncode != 0:
+        print("FFmpeg error:", result.stderr.decode())
+        raise RuntimeError("FFmpeg failed to create video.")
+
+    shutil.rmtree(temp_dir)
+    print(f"Video saved to {save_path}")
+    
+ 
 h5_file = "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/4_nanerror_test.h5"
 lev_file = "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/4_nanerror_lev.csv"
 mag_file = "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/4_nanerror_mag.csv"
@@ -924,12 +1082,12 @@ video_file = "/Users/david/Downloads/4%_nan_test.mp4"
 #h5_file = "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G.predictions.h5"
 #video_file = "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G.mp4"    
 
-
-'''loader = posLoader(h5_file)
+'''
+loader = posLoader(h5_file)
 lev = levLoader(lev_file)
 mag = magLoader(mag_file)
-visualize_gaze_overlay(video_file, loader, lev, mag, mouseID=0, save_path = "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Graphs/Videos/4percentErrorTestVid_states.mp4")
+visualize_gaze_overlay2(video_file, loader, lev, mag, mouseID=0, save_path = "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Graphs/Videos/sampleInteraction.mp4")
 '''
-    
+  
     
     
