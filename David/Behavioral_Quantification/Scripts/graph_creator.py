@@ -5812,8 +5812,7 @@ class multiFileGraphs:
         sessionCountsStandardized = []
         percentFramesInteracted = []
         successRates = []
-        
-        countValidFrames = 0
+    
         
         for exp in self.experiments:
             lev = exp.lev
@@ -5824,6 +5823,8 @@ class multiFileGraphs:
             lengthsList = []
             countInteractionMoment = 0
             countInteractionMomentFrames = 0
+            countValidFrames = 0
+            
             
             successRates.append(lev.returnSuccessPercentage())
             
