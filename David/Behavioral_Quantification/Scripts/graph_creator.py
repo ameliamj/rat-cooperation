@@ -5854,7 +5854,7 @@ class multiFileGraphs:
                     countValidFrames += 1
                 
                 #if (dist < 50):
-                if (dist < 90 and (loc0 != 'other' and loc1 != 'other' and ((loc0 != 'lev_top' or loc1 != 'lev_bottom') and (loc1 != 'lev_top' or loc0 != 'lev_bottom') and (loc0 != 'mag_top' or loc1 != 'mag_bottom') and (loc1 != 'mag_top' or loc0 != 'mag_bottom')))):
+                if (dist < MAX_DIST and (loc0 != 'other' and loc1 != 'other' and ((loc0 != 'lev_top' or loc1 != 'lev_bottom') and (loc1 != 'lev_top' or loc0 != 'lev_bottom') and (loc0 != 'mag_top' or loc1 != 'mag_bottom') and (loc1 != 'mag_top' or loc0 != 'mag_bottom')))):
                     count += 1
                     sequence.append((loc0, loc1))
                 else:
@@ -5887,10 +5887,6 @@ class multiFileGraphs:
         self._plot_interaction_type_distribution(eventwise_counter, "Event-Based Interaction Distribution", "interactionLocationHeatmap_EVENTS.png")
 
     def _plot_interaction_type_distribution(self, counter, title, filename):
-        import pandas as pd
-        import seaborn as sns
-        import matplotlib.pyplot as plt
-    
         total = sum(counter.values())
         normalized = {k: v / total * 100 for k, v in counter.items()}
     
@@ -5909,6 +5905,10 @@ class multiFileGraphs:
         if self.save:
             plt.savefig(filename)
         plt.show()        
+
+    def wallAnxietyMetrics(self):
+        '''
+        '''
 
 #Testing Multi File Graphs
 #
