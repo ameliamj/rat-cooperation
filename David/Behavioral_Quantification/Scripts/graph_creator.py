@@ -5872,8 +5872,8 @@ class multiFileGraphs:
                     count = -1
                     sequence = []
             
-            sessionCountsStandardized.append(countInteractionMoment / countValidFrames * 100)
-            percentFramesInteracted.append(countInteractionMomentFrames / countValidFrames * 100)
+            sessionCountsStandardized.append(countInteractionMoment / totalFrames * 100)
+            percentFramesInteracted.append(countInteractionMomentFrames / totalFrames * 100)
         
         self._plot_scatter(sessionCountsStandardized, successRates, "numberOfInteractionsvsSuccessScatterplot", "Frequency of Interactions vs. Success", "Interaction Frequency")
         self._plot_scatter(percentFramesInteracted, successRates, "PercentInteractingvsSuccessScatterplot", "Percent of Frames Interacting vs. Success", "Interaction Percentage")
