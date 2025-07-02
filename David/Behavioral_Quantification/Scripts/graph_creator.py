@@ -5817,7 +5817,7 @@ class multiFileGraphs:
         '''
         
         MIN_FRAMES = 10
-        MAX_DIST = 90
+        MAX_DIST = 50
         
         lengthsListTot = []
         sessionCountsStandardized = []
