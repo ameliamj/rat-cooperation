@@ -5844,11 +5844,12 @@ class multiFileGraphs:
                 loc1 = pos.returnRatLocationTime(1, t)
                 dist = distances[t]
                 
-                if ((loc0 == 'mid' and loc1 == 'mid') or (loc0 == 'lev_top' and loc1 == 'lev_bottom') or (loc1 == 'lev_top' and loc0 == 'lev_bottom') or (loc0 == 'mag_top' and loc1 == 'mag_bottom') or (loc1 == 'mag_top' and loc0 == 'mag_bottom')):
-                    countValidFrames += 1
+                #if ((loc0 == 'mid' and loc1 == 'mid') or (loc0 == 'lev_top' and loc1 == 'lev_bottom') or (loc1 == 'lev_top' and loc0 == 'lev_bottom') or (loc0 == 'mag_top' and loc1 == 'mag_bottom') or (loc1 == 'mag_top' and loc0 == 'mag_bottom')):
+                    #countValidFrames += 1
                 
                 
-                if (dist < 90 and ((loc0 == 'mid' and loc1 == 'mid') or (loc0 == 'lev_top' and loc1 == 'lev_bottom') or (loc1 == 'lev_top' and loc0 == 'lev_bottom') or (loc0 == 'mag_top' and loc1 == 'mag_bottom') or (loc1 == 'mag_top' and loc0 == 'mag_bottom'))):
+                #if (dist < 90 and ((loc0 == 'mid' and loc1 == 'mid') or (loc0 == 'lev_top' and loc1 == 'lev_bottom') or (loc1 == 'lev_top' and loc0 == 'lev_bottom') or (loc0 == 'mag_top' and loc1 == 'mag_bottom') or (loc1 == 'mag_top' and loc0 == 'mag_bottom'))):
+                if (dist < 50):
                     count += 1
                     sequence.append((loc0, loc1))
                 else:
