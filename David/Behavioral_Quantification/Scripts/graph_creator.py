@@ -1032,7 +1032,7 @@ categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["
 
 
 #Transparent vs. Translucent vs. Opaque
-
+'''
 print("Running Transparency")
 dataTransparent = getOnlyTransparent() #Transparent
 dataTranslucent = getOnlyTranslucent() #Translucent
@@ -1043,9 +1043,9 @@ magFiles = [dataTransparent[1], dataTranslucent[1], dataOpaque[1]]
 posFiles = [dataTransparent[2], dataTranslucent[2], dataOpaque[2]]
 categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["Transparent", "Translucent", "Opaque"])
 #categoryExperiments.compareSuccesfulTrials()
+'''
 
-
-
+'''
 print("0")
 categoryExperiments.compareGazeEventsCategories()
 print("1")
@@ -1059,7 +1059,7 @@ print("4")
 print("5")
 categoryExperiments.printSummaryStats()
 print("Done")
-
+'''
 
 # ---------------------------------------------------------------------------------------------------------
 
@@ -3832,7 +3832,7 @@ class multiFileGraphs:
         plt.show()
         plt.close()
 
-    def _plot_scatter(self, x_data, y_data, filename, title, x_label, color_data=None):
+    def _plot_scatter(self, x_data, y_data, filename, title, x_label, y_label=None, color_data=None):
         """Plots a scatter plot with trendline and R² value, optionally with gradient coloring."""
         if len(x_data) < 2 or len(y_data) < 2:
             print(f"Insufficient data to create scatterplot for {filename}")
@@ -3883,7 +3883,10 @@ class multiFileGraphs:
                          ha='right', va='bottom', fontsize=12, bbox=dict(facecolor='white', edgecolor='gray'))
         
         plt.xlabel(x_label, fontsize=self.labelSize)
-        plt.ylabel('Cooperative Success Rate', fontsize=self.labelSize)
+        if (y_label == None):
+            plt.ylabel('Cooperative Success Rate', fontsize=self.labelSize)
+        else:
+            plt.xlabel(y_label, fontsize=self.labelSize)
         plt.title(title, fontsize=self.titleSize)
         plt.legend()
         plt.grid(True)
@@ -6001,6 +6004,232 @@ class multiFileGraphs:
         
         self._plot_scatter(percentFramesNearWall, successRates, "WallAnxietyvsSuccessScatterplot", "Wall Anxiety vs. Success", "Near Wall Frequency")
 
+    def whatCausesSuccessRegions(self):
+        '''
+        Graphs it Makes: 
+            1. Gazing during success regions vs. successful trials vs. non-successful trials
+            2. Interactions during success regions vs. successful trials vs. non-successful trials
+            3. Avg Gazing vs. Avg Gazing in trial before success regions
+            4. Avg Distance vs. Avg Distance in Trial before success regions
+            5. Avg Interactions vs. Avg Interactions in Trial before success regions
+            6. Across experiments, linegraph of probability for each trial of the rats being in a success region
+    
+        Functions it uses: 
+            1. lev.returnSuccessTrials --> list of length num trials, 1 == succ, 0 == fail, -1 == no lever press
+            2. lev.returnCooperativeSuccessRegionsBool -> Return a boolean list of all trials that are in a region of cooperative success
+            3. pos.returnInteractionDistance -> list of interaction distance, rats are interacting if interaction distance < 90 for 10+frames
+            4. returnIsGazing(ratID) -> returns boolean list of when rat with id RatID is gazing
+            5. returnInterMouseDistance -> returns list of distance between rats
+        '''
+    
+        trial_region_probs = []
+        exp_gaze_successful = []
+        exp_gaze_nonsuccessful = []
+        exp_gaze_success_region = []
+        exp_interaction_successful = []
+        exp_interaction_nonsuccessful = []
+        exp_interaction_success_region = []
+        exp_gaze_all_trials = []
+        exp_gaze_before_success_region = []
+        exp_distance_all_trials = []
+        exp_distance_before_success_region = []
+        exp_interaction_all_trials = []
+        exp_interaction_before_success_region = []
+    
+        for exp_idx, exp in enumerate(self.experiments):
+            lev = exp.lev
+            pos = exp.pos
+    
+            success_list = lev.returnSuccessTrials()
+            coop_region = lev.returnCooperativeSuccessRegionsBool()
+    
+            interaction_distances = pos.returnInteractionDistance()
+            inter_mouse_distances = pos.returnInterMouseDistance()
+            gazing_0 = pos.returnIsGazing(0)
+            gazing_1 = pos.returnIsGazing(1)
+    
+            gaze_successful_trial = []
+            gaze_nonsuccessful_trial = []
+            gaze_success_region = []
+            interaction_successful_trial = []
+            interaction_nonsuccessful_trial = []
+            interaction_success_region = []
+            distance_success_region = []
+            gaze_all_trials = []
+            gaze_before_success_region = []
+            distance_all_trials = []
+            distance_before_success_region = []
+            interaction_all_trials = []
+            interaction_before_success_region = []
+    
+            fps = exp.fps
+            start_times = lev.returnTimeStartTrials()
+            end_times = lev.returnTimeEndTrials()
+    
+            success_list = self._filterToLeverPressTrials(success_list, lev)
+            coop_region = self._filterToLeverPressTrials(coop_region, lev)
+    
+            for i, (succ, region_bool) in enumerate(zip(success_list, coop_region)):
+                if i >= len(start_times) or i >= len(end_times):
+                    continue
+    
+                start_frame = int(start_times[i] * fps)
+                end_frame = int(end_times[i] * fps)
+    
+                if end_frame <= start_frame:
+                    continue
+    
+                gaze_frames = np.sum(gazing_0[start_frame:end_frame]) + np.sum(gazing_1[start_frame:end_frame])
+                gaze_ratio = gaze_frames / ((end_frame - start_frame) * 2)
+                gaze_all_trials.append(gaze_ratio)
+    
+                interaction_val = interaction_distances[i] if i < len(interaction_distances) else None
+                if interaction_val is not None:
+                    interaction_all_trials.append(interaction_val)
+    
+                distance_val = inter_mouse_distances[i] if i < len(inter_mouse_distances) else None
+                if distance_val is not None:
+                    distance_all_trials.append(distance_val)
+    
+                if region_bool:
+                    gaze_success_region.append(gaze_ratio)
+                    if interaction_val is not None:
+                        interaction_success_region.append(interaction_val)
+                    if distance_val is not None:
+                        distance_success_region.append(distance_val)
+    
+                    if i > 0:
+                        prev_start = int(start_times[i - 1] * fps)
+                        prev_end = int(end_times[i - 1] * fps)
+                        if prev_end > prev_start:
+                            prev_gaze = (np.sum(gazing_0[prev_start:prev_end]) + np.sum(gazing_1[prev_start:prev_end])) / ((prev_end - prev_start) * 2)
+                            gaze_before_success_region.append(prev_gaze)
+                            if i - 1 < len(interaction_distances):
+                                interaction_before_success_region.append(interaction_distances[i - 1])
+                            if i - 1 < len(inter_mouse_distances):
+                                distance_before_success_region.append(inter_mouse_distances[i - 1])
+    
+                if succ == 1 and region_bool == False:
+                    gaze_successful_trial.append(gaze_ratio)
+                    if interaction_val is not None:
+                        interaction_successful_trial.append(interaction_val)
+                elif succ == 0:
+                    gaze_nonsuccessful_trial.append(gaze_ratio)
+                    if interaction_val is not None:
+                        interaction_nonsuccessful_trial.append(interaction_val)
+    
+            # Calculate averages for this experiment
+            exp_gaze_successful.append(np.mean(gaze_successful_trial) if gaze_successful_trial else np.nan)
+            exp_gaze_nonsuccessful.append(np.mean(gaze_nonsuccessful_trial) if gaze_nonsuccessful_trial else np.nan)
+            exp_gaze_success_region.append(np.mean(gaze_success_region) if gaze_success_region else np.nan)
+            exp_interaction_successful.append(np.mean(interaction_successful_trial) if interaction_successful_trial else np.nan)
+            exp_interaction_nonsuccessful.append(np.mean(interaction_nonsuccessful_trial) if interaction_nonsuccessful_trial else np.nan)
+            exp_interaction_success_region.append(np.mean(interaction_success_region) if interaction_success_region else np.nan)
+            exp_gaze_all_trials.append(np.mean(gaze_all_trials) if gaze_all_trials else np.nan)
+            exp_gaze_before_success_region.append(np.mean(gaze_before_success_region) if gaze_before_success_region else np.nan)
+            exp_distance_all_trials.append(np.mean(distance_all_trials) if distance_all_trials else np.nan)
+            exp_distance_before_success_region.append(np.mean(distance_before_success_region) if distance_before_success_region else np.nan)
+            exp_interaction_all_trials.append(np.mean(interaction_all_trials) if interaction_all_trials else np.nan)
+            exp_interaction_before_success_region.append(np.mean(interaction_before_success_region) if interaction_before_success_region else np.nan)
+    
+            # For graph 6
+            if len(coop_region) > 0:
+                trial_region_probs.append(coop_region)
+    
+        # Graph 6: Trial-by-trial average probability of being in a success region
+        max_len = max(len(l) for l in trial_region_probs)
+        coop_array = np.array([np.pad(np.array(run), (0, max_len - len(run)), constant_values=np.nan) for run in trial_region_probs])
+        mean_per_trial = np.nanmean(coop_array, axis=0)
+    
+        # Helper function for bar charts with scatter points
+        def _plot_bar(data, labels, scatter_data_lists, filename, title, y_label):
+            plt.figure(figsize=(8, 6))
+            valid_data = [d for d in data if not np.isnan(d)]
+            valid_labels = [l for d, l in zip(data, labels) if not np.isnan(d)]
+            if not valid_data:
+                print(f"Insufficient data to create bar chart for {filename}")
+                return
+            x = np.arange(len(valid_data))
+            # Plot bars
+            bars = plt.bar(x, valid_data, tick_label=valid_labels, color=['red', 'yellowgreen', 'green'][:len(valid_data)], alpha=0.5, label='Mean')
+            # Plot scatter points for each experiment
+            for i, scatter_data in enumerate(scatter_data_lists):
+                valid_scatter = [d for d in scatter_data if not np.isnan(d)]
+                x_scatter = [x[i] + np.random.uniform(-0.1, 0.1, size=len(valid_scatter)) for _ in valid_scatter]
+                plt.scatter(x_scatter, valid_scatter, color='black', marker='o', s=50, alpha=0.7, label='Experiments' if i == 0 else None)
+            plt.title(title, fontsize=self.titleSize)
+            plt.ylabel(y_label, fontsize=self.labelSize)
+            plt.legend()
+            plt.tight_layout()
+            if self.save:
+                plt.savefig(f"{self.prefix}{filename}")
+            plt.show()
+            plt.close()
+    
+        # === Graph 1: Gazing during success regions vs. successful trials vs. non-successful trials ====
+        _plot_bar(
+            [np.nanmean(exp_gaze_nonsuccessful), np.nanmean(exp_gaze_successful), np.nanmean(exp_gaze_success_region)],
+            ['Unsuccessful', 'Successful', 'Success Region'],
+            [exp_gaze_nonsuccessful, exp_gaze_successful, exp_gaze_success_region],
+            'Gaze_TrialType_Comparison.png',
+            'Gazing Behavior by Trial Type',
+            'Average Gaze Ratio per Experiment'
+        )
+    
+        # === Graph 2: Interactions during success regions vs. successful trials vs. non-successful trials ===
+        _plot_bar(
+            [np.nanmean(exp_interaction_nonsuccessful), np.nanmean(exp_interaction_successful), np.nanmean(exp_interaction_success_region)],
+            ['Unsuccessful', 'Successful', 'Success Region'],
+            [exp_interaction_nonsuccessful, exp_interaction_successful, exp_interaction_success_region],
+            'Interaction_TrialType_Comparison.png',
+            'Interaction Distance by Trial Type',
+            'Avg Interaction Distance (pixels)'
+        )
+    
+        # === Graph 3: Avg Gazing overall vs. in trial before success region ===
+        _plot_bar(
+            [np.nanmean(exp_gaze_all_trials), np.nanmean(exp_gaze_before_success_region)],
+            ['All Trials', 'Before Success Region'],
+            [exp_gaze_all_trials, exp_gaze_before_success_region],
+            'Gaze_AllVsBeforeSuccessRegion.png',
+            'Gazing: All Trials vs. Before Success Region',
+            'Average Gaze Ratio'
+        )
+    
+        # === Graph 4: Avg Distance overall vs. in trial before success region ===
+        _plot_bar(
+            [np.nanmean(exp_distance_all_trials), np.nanmean(exp_distance_before_success_region)],
+            ['All Trials', 'Before Success Region'],
+            [exp_distance_all_trials, exp_distance_before_success_region],
+            'Distance_AllVsBeforeSuccessRegion.png',
+            'Inter-Rat Distance: All Trials vs. Before Success Region',
+            'Avg Distance (pixels)'
+        )
+    
+        # === Graph 5: Avg Interactions overall vs. in trial before success region ===
+        _plot_bar(
+            [np.nanmean(exp_interaction_all_trials), np.nanmean(exp_interaction_before_success_region)],
+            ['All Trials', 'Before Success Region'],
+            [exp_interaction_all_trials, exp_interaction_before_success_region],
+            'Interaction_AllVsBeforeSuccessRegion.png',
+            'Interaction Distance: All Trials vs. Before Success Region',
+            'Avg Interaction Distance'
+        )
+    
+        # === Graph 6: Probability across trials of being in a success region ===
+        plt.figure(figsize=(10, 6))
+        plt.plot(mean_per_trial, label='Average Probability')
+        plt.title("Per-Trial Probability of Cooperative Success Region")
+        plt.xlabel("Trial Number")
+        plt.ylabel("Probability")
+        plt.legend()
+        plt.grid(True)
+        if self.save:
+            plt.savefig(f"{self.prefix}SuccessRegion_Probability_ByTrial.png")
+        plt.show()
+        plt.close()
+            
+            
 
 #Testing Multi File Graphs
 #
@@ -6040,7 +6269,7 @@ initialNanList = [0.15, 0.12]
 '''
 
 
-'''
+
 arr = getFiltered()
 #arr = getAllTrainingCoop()
 #arr = getFiberPhoto()
@@ -6051,7 +6280,7 @@ fpsList = arr[3]
 totFramesList = arr[4]
 initialNanList = arr[5]
 #fiberPhoto = arr[6]
-'''
+
 
 
 '''
@@ -6066,16 +6295,17 @@ fiberPhoto = [["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David
 lev_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/040124_KL005B-KL005Y_lever.csv"]
 mag_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/040124_KL005B-KL005Y_mag.csv"]
 pos_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/040124_COOPTRAIN_LARGEARENA_KL005B-KL005Y_Camera1.predictions.h5"]
-
-
-fpsList = [29]
-totFramesList = [10000]
-initialNanList = [0.3]
 '''
+
+#fpsList = [29]
+#totFramesList = [10000]
+#initialNanList = [0.3]
+
 
 
 print("Start MultiFileGraphs Regular")
-#experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "", save=True)
+experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "", save=True)
+experiment.whatCausesSuccessRegions()
 #experiment.wallAnxietyMetrics()
 #experiment.determineIllegalLeverPresses()
 #experiment.successVsAverageDistance()
