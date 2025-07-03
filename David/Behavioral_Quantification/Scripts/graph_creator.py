@@ -1021,7 +1021,7 @@ categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["
 #categoryExperiments.compareSuccesfulTrials()
 '''
 
-'''
+
 #Unfamiliar vs. Training Partners
 print("Running UF vs TP")
 dataUF = getOnlyUnfamiliar() #Unfamiliar
@@ -1032,7 +1032,7 @@ magFiles = [dataUF[1], dataTP[1]]
 posFiles = [dataUF[2], dataTP[2]]
 categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["Unfamiliar", "Training Partners"])
 #categoryExperiments.compareSuccesfulTrials()
-'''
+
 
 
 #Transparent vs. Translucent vs. Opaque
@@ -1049,7 +1049,7 @@ categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["
 #categoryExperiments.compareSuccesfulTrials()
 '''
 
-'''
+
 print("0")
 categoryExperiments.compareGazeEventsCategories()
 print("1")
@@ -1063,7 +1063,7 @@ print("4")
 print("5")
 categoryExperiments.printSummaryStats()
 print("Done")
-'''
+
 
 # ---------------------------------------------------------------------------------------------------------
 
