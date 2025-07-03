@@ -6183,7 +6183,9 @@ class multiFileGraphs:
         # Graph 6: Trial-by-trial average probability of being in a success region
         max_len = max(len(l) for l in trial_region_probs)
         coop_array = np.array([np.pad(np.array(run), (0, max_len - len(run)), constant_values=np.nan) for run in trial_region_probs])
+        print("coop_array: ", coop_array)
         mean_per_trial = np.nanmean(coop_array, axis=0)
+        print("mean_per_trial: ", mean_per_trial)
     
         # Helper function for bar charts with scatter points
         def _plot_bar(data, labels, scatter_data_lists, filename, title, y_label):
@@ -6263,11 +6265,23 @@ class multiFileGraphs:
         # === Graph 6: Probability across trials of being in a success region ===
         plt.figure(figsize=(10, 6))
         plt.plot(mean_per_trial, label='Average Probability')
-        plt.title("Per-Trial Probability of Cooperative Success Region")
-        plt.xlabel("Trial Number")
-        plt.ylabel("Probability")
+        
+        # Add annotation every 5 trials
+        for trial_idx in range(0, len(mean_per_trial), 5):
+            # Count how many sessions have valid (non-NaN) data at this trial
+            count = np.sum(~np.isnan(coop_array[:, trial_idx]))
+            value = mean_per_trial[trial_idx]
+            
+            if not np.isnan(value):
+                plt.text(trial_idx, value + 0.02, f"n={count}", 
+                         ha='center', fontsize=10, color='black')
+        
+        plt.title("Per-Trial Probability of Cooperative Success Region", fontsize=self.titleSize)
+        plt.xlabel("Trial Number", fontsize=self.labelSize)
+        plt.ylabel("Probability", fontsize=self.labelSize)
         plt.legend()
         plt.grid(True)
+        plt.tight_layout()
         if self.save:
             plt.savefig(f"{self.prefix}SuccessRegion_Probability_ByTrial.png")
         plt.show()
