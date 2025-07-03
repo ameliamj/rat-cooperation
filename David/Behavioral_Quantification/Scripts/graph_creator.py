@@ -286,6 +286,7 @@ class multiFileGraphsCategories:
         
         avg_events = []  # Stores the average gaze events per minute for each category
         group_events = []  # List of lists: per-experiment values for each category
+        group_animal_ids = []  # List of lists: AnimalIDs for each experiment in each category
         FRAME_WINDOW = 1800  # Defines the number of frames corresponding to one minute
     
         # Iterate over each group of experiments (i.e., each category)
@@ -293,6 +294,7 @@ class multiFileGraphsCategories:
             sumEvents = 0     # Total number of gaze events for this category
             sumFrames = 0     # Total number of frames across all experiments in this category
             events_per_exp = []
+            cat_animal_ids = []  # Store AnimalIDs for this category
             
             # Process each experiment in the current category
             for exp in group:
@@ -308,21 +310,43 @@ class multiFileGraphsCategories:
                     sumEvents += countEvents0 + countEvents1
                     sumFrames += numFrames
                     events_per_exp.append((countEvents0 + countEvents1) / numFrames * FRAME_WINDOW)
+                    
+                    lev = exp.lev.data
+                    
+                    # Store AnimalID for this experiment
+                    animal_id = lev['AnimalID'].iloc[0][:2] if 'AnimalID' in lev.columns and not lev.empty else 'Other'
+                    cat_animal_ids.append(animal_id)  # Add to a new list for this category
+                    
     
             # Compute average gaze events per 1800 frames if data is available
             if sumFrames > 0 and events_per_exp:
                 group_events.append(events_per_exp)
                 avg_events.append(sumEvents / sumFrames * FRAME_WINDOW)
+                group_animal_ids.append(cat_animal_ids)  # Store AnimalIDs for plotting
     
         # --- Plot: Bar chart of average gaze events per minute (1800 frames) ---
         plt.figure(figsize=(8, 6))
         plt.bar(range(len(avg_events)), avg_events, color='skyblue')
         
-        if group_events is not None:
-            for i, cat_data in enumerate(group_events):
+        if group_events is not None and group_animal_ids is not None:
+            red_dots = []  # Store values for red dots to calculate average
+            for i, (cat_data, cat_animal_ids) in enumerate(zip(group_events, group_animal_ids)):
                 # Generate slight jitter for x-coordinates to avoid overlap
                 x_jitter = np.random.normal(i, 0.1, size=len(cat_data))
-                plt.scatter(x_jitter, cat_data, color='darkblue', alpha=0.5, s=50, label='Individual Data' if i == 0 else None)
+                for j, (y, animal_id) in enumerate(zip(cat_data, cat_animal_ids)):
+                    color = 'black' if animal_id == 'KL' else 'red' if animal_id == 'EB' else 'blue'
+                    plt.scatter(x_jitter[j], y, color=color, alpha=0.5, s=50, 
+                               label='KL' if animal_id == 'KL' and j == 0 and i == 0 else 
+                                     'EB' if animal_id == 'EB' and j == 0 and i == 0 else 
+                                     'Other' if animal_id not in ['KL', 'EB'] and j == 0 and i == 0 else None)
+                    if animal_id == 'EB':
+                        red_dots.append(y)
+            
+            # Draw red line for average of red dots (EB)
+            if red_dots:
+                red_avg = np.mean(red_dots)
+                plt.axhline(y=red_avg, color='red', linestyle='--', linewidth=1.5, 
+                           label=f'EB Mean ({red_avg:.2f})')
         
         #plt.xlabel('Category')
         plt.ylabel('Avg. Gaze Events per 1800 Frames', fontsize=13)
@@ -555,7 +579,7 @@ class multiFileGraphsCategories:
             plt.show()
             plt.close()
             
-    def make_bar_plot(self, data, ylabel, title, saveFileName, individual_data = None):
+    def make_bar_plot(self, data, ylabel, title, saveFileName, individual_data = None, animal_ids = None):
         plt.figure(figsize=(8, 5))
         x = range(len(data))
         
@@ -563,11 +587,25 @@ class multiFileGraphsCategories:
         plt.bar(x, data, color='skyblue', alpha=0.6, label='Mean')
         
         # Overlay scatter points for individual data if provided
-        if individual_data is not None:
-            for i, cat_data in enumerate(individual_data):
+        if individual_data is not None and animal_ids is not None:
+            red_dots = []  # Store values for red dots to calculate average
+            for i, (cat_data, cat_animal_ids) in enumerate(zip(individual_data, animal_ids)):
                 # Generate slight jitter for x-coordinates to avoid overlap
                 x_jitter = np.random.normal(i, 0.1, size=len(cat_data))
-                plt.scatter(x_jitter, cat_data, color='darkblue', alpha=0.5, s=50, label='Individual Data' if i == 0 else None)
+                for j, (y, animal_id) in enumerate(zip(cat_data, cat_animal_ids)):
+                    color = 'black' if animal_id == 'KL' else 'red' if animal_id == 'EB' else 'blue'
+                    plt.scatter(x_jitter[j], y, color=color, alpha=0.5, s=50, 
+                               label='KL' if animal_id == 'KL' and j == 0 and i == 0 else 
+                                     'EB' if animal_id == 'EB' and j == 0 and i == 0 else 
+                                     'Other' if animal_id not in ['KL', 'EB'] and j == 0 and i == 0 else None)
+                    if animal_id == 'EB':
+                        red_dots.append(y)
+            
+            # Draw red line for average of red dots (EB)
+            if red_dots:
+                red_avg = np.mean(red_dots)
+                plt.axhline(y=red_avg, color='red', linestyle='--', linewidth=1.5, 
+                           label=f'EB Mean ({red_avg:.2f})')
         
         plt.xticks(x, self.categoryNames, fontsize = 13)
         plt.ylabel(ylabel, fontsize = 13)
@@ -615,6 +653,7 @@ class multiFileGraphsCategories:
         individual_lever_per_trial = [] # Stores individual lever presses per trial
         individual_mag_per_trial = []   # Stores individual magazine entries per trial
         individual_percentGazing_per_trial = []
+        individual_animal_ids = []
     
         # Loop through each experimental group (i.e., category)
         for idx, group in enumerate(self.allFileGroupExperiments):
@@ -633,6 +672,7 @@ class multiFileGraphsCategories:
             cat_lever_per_trial = []  # Individual lever presses per trial
             cat_mag_per_trial = []    # Individual magazine entries per trial
             cat_percentGazing_per_trial = []
+            cat_animal_ids = []
                         
             # Process each experiment within the category
             for exp in group:
@@ -678,6 +718,10 @@ class multiFileGraphsCategories:
                 
                 # Access lever press data and compute trial/success counts
                 lev = exp.lev.data
+                
+                #print("lev: \n",lev)
+                #print("\nlev['AnimalID']: \n", lev['AnimalID'])
+                
                 trials = lev['TrialNum'].nunique()
                 succ = lev.groupby('TrialNum').first().query('coopSucc == 1').shape[0]
                 total_trials += trials
@@ -685,7 +729,11 @@ class multiFileGraphsCategories:
                 total_lever_presses += lev.shape[0]
                 if trials > 0:
                     cat_lever_per_trial.append(lev.shape[0] / trials)
-    
+                
+                # Store AnimalID for this experiment
+                animal_id = lev['AnimalID'].iloc[0][:2] if 'AnimalID' in lev.columns and not lev.empty else 'Other'
+                cat_animal_ids.append(animal_id)  # Add to a new list for this category
+                
                 # Count magazine events
                 mag = exp.mag.data
                 total_mag_events += mag.shape[0]
@@ -712,6 +760,7 @@ class multiFileGraphsCategories:
             individual_lever_per_trial.append(cat_lever_per_trial)
             individual_mag_per_trial.append(cat_mag_per_trial)
             individual_percentGazing_per_trial.append(cat_percentGazing_per_trial)
+            individual_animal_ids.append(cat_animal_ids)  # Store AnimalIDs for plotting
     
             # Print summary statistics for the current category
             print(f"\nCategory: {self.categoryNames[idx]}")
@@ -737,7 +786,8 @@ class multiFileGraphsCategories:
             'Avg Gaze Length (frames)',
             'Average Gaze Length per Category',
             "Avg_Gaze_Length",
-            individual_data=individual_gaze_lengths
+            individual_data=individual_gaze_lengths,
+            animal_ids=individual_animal_ids
         )
         
         self.make_bar_plot(
@@ -745,7 +795,8 @@ class multiFileGraphsCategories:
             'Avg Gaze Length (frames)',
             'Average Gaze Length per Category (Alternate Def)',
             "Avg_Gaze_Length_Alternate",
-            individual_data=individual_gaze_lengths_alternate
+            individual_data=individual_gaze_lengths_alternate,
+            animal_ids=individual_animal_ids
         )
     
         self.make_bar_plot(
@@ -753,7 +804,8 @@ class multiFileGraphsCategories:
             'Avg Lever Presses per Trial',
             'Lever Presses per Trial per Category',
             "Avg_Lev_Presses_perTrial",
-            individual_data=individual_lever_per_trial
+            individual_data=individual_lever_per_trial,
+            animal_ids=individual_animal_ids
         )
     
         self.make_bar_plot(
@@ -761,7 +813,8 @@ class multiFileGraphsCategories:
             'Avg Mag Events per Trial',
             'Mag Events per Trial per Category',
             "Avg_Mag_Events_perTrial",
-            individual_data=individual_mag_per_trial
+            individual_data=individual_mag_per_trial,
+            animal_ids=individual_animal_ids
         )
         
         self.make_bar_plot(
@@ -769,7 +822,8 @@ class multiFileGraphsCategories:
             'Percent Gazing per Trial',
             'Percent Gazing (Alternate) per Category',
             "Avg_PercentGazing_Alternate_perTrial",
-            individual_data=individual_percentGazing_per_trial
+            individual_data=individual_percentGazing_per_trial,
+            animal_ids=individual_animal_ids
         )
         
     def rePressingBehavior(self):
@@ -951,7 +1005,7 @@ posFiles = [["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/B
 #categoryExperiments.gazeAlignmentAngle()
 
 #Paired Testing vs. Training Cooperation
-'''
+
 print("Running Paired Testing vs Training Cooperation")
 dataPT = getOnlyPairedTesting()
 dataTC = getOnlyTrainingCoop()
@@ -961,7 +1015,7 @@ magFiles = [dataPT[1], dataTC[1]]
 posFiles = [dataPT[2], dataTC[2]]
 categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["Paired_Testing", "Training_Cooperation"])
 #categoryExperiments.compareSuccesfulTrials()
-'''
+
 
 '''
 #Unfamiliar vs. Training Partners
@@ -991,7 +1045,7 @@ categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["
 #categoryExperiments.compareSuccesfulTrials()
 '''
 
-'''
+
 print("0")
 categoryExperiments.compareGazeEventsCategories()
 print("1")
@@ -1005,7 +1059,7 @@ print("4")
 print("5")
 categoryExperiments.printSummaryStats()
 print("Done")
-'''
+
 
 # ---------------------------------------------------------------------------------------------------------
 
@@ -5986,7 +6040,7 @@ initialNanList = [0.15, 0.12]
 '''
 
 
-
+'''
 arr = getFiltered()
 #arr = getAllTrainingCoop()
 #arr = getFiberPhoto()
@@ -5997,7 +6051,7 @@ fpsList = arr[3]
 totFramesList = arr[4]
 initialNanList = arr[5]
 #fiberPhoto = arr[6]
-
+'''
 
 
 '''
@@ -6021,8 +6075,8 @@ initialNanList = [0.3]
 
 
 print("Start MultiFileGraphs Regular")
-experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "", save=True)
-experiment.wallAnxietyMetrics()
+#experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "", save=True)
+#experiment.wallAnxietyMetrics()
 #experiment.determineIllegalLeverPresses()
 #experiment.successVsAverageDistance()
 #experiment.interactionVSSuccess()

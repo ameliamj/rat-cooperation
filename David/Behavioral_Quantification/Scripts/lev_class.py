@@ -29,6 +29,9 @@ class levLoader:
             self.data = pd.read_csv(self.filename, sep=',', na_values=[''])
             # Ensure numeric columns are properly typed
             for col in self.data.columns:
+                if col in ["AnimalID"]:
+                    continue
+                
                 if self.data[col].dtype == 'object':
                     # Try converting to numeric, but preserve strings if not possible
                     try:
