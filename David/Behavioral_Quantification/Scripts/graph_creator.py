@@ -329,16 +329,26 @@ class multiFileGraphsCategories:
         plt.bar(range(len(avg_events)), avg_events, color='skyblue')
         
         if group_events is not None and group_animal_ids is not None:
+            # Track which labels have been added to avoid duplicates
+            legend_added = {'KL': False, 'EB': False, 'Other': False}
             for i, (cat_data, cat_animal_ids) in enumerate(zip(group_events, group_animal_ids)):
                 # Generate slight jitter for x-coordinates to avoid overlap
                 x_jitter = np.random.normal(i, 0.1, size=len(cat_data))
                 red_dots = []  # Store values for red dots in this category
                 for j, (y, animal_id) in enumerate(zip(cat_data, cat_animal_ids)):
                     color = 'black' if animal_id == 'KL' else 'red' if animal_id == 'EB' else 'blue'
-                    plt.scatter(x_jitter[j], y, color=color, alpha=0.5, s=50, 
-                               label='KL' if animal_id == 'KL' and j == 0 and i == 0 else 
-                                     'EB' if animal_id == 'EB' and j == 0 and i == 0 else 
-                                     'Other' if animal_id not in ['KL', 'EB'] and j == 0 and i == 0 else None)
+                    # Add label only if not yet added for this category
+                    label = None
+                    if animal_id == 'KL' and not legend_added['KL']:
+                        label = 'KL (black)'
+                        legend_added['KL'] = True
+                    elif animal_id == 'EB' and not legend_added['EB']:
+                        label = 'EB (red)'
+                        legend_added['EB'] = True
+                    elif animal_id not in ['KL', 'EB'] and not legend_added['Other']:
+                        label = 'Other (blue)'
+                        legend_added['Other'] = True
+                    plt.scatter(x_jitter[j], y, color=color, alpha=0.5, s=50, label=label)
                     if animal_id == 'EB':
                         red_dots.append(y)
                 
@@ -348,6 +358,8 @@ class multiFileGraphsCategories:
                     # Draw a short horizontal line centered on the category bar
                     plt.hlines(y=red_avg, xmin=i-0.2, xmax=i+0.2, color='red', linestyle='--', linewidth=1.5, 
                                label=f'EB Mean {self.categoryNames[i]} ({red_avg:.2f})' if i == 0 else None)
+            # Customize legend
+            plt.legend(title='Animal ID', loc='best', fontsize=10)
         
         #plt.xlabel('Category')
         plt.ylabel('Avg. Gaze Events per 1800 Frames', fontsize=13)
@@ -591,16 +603,28 @@ class multiFileGraphsCategories:
         
         # Overlay scatter points for individual data if provided
         if individual_data is not None and animal_ids is not None:
-            red_dots = []  # Store values for red dots to calculate average
+            # Track which labels have been added to avoid duplicates
+            legend_added = {'KL': False, 'EB': False, 'Other': False}
+            
             for i, (cat_data, cat_animal_ids) in enumerate(zip(individual_data, animal_ids)):
                 # Generate slight jitter for x-coordinates to avoid overlap
+                red_dots = []  # Store values for red dots to calculate average
                 x_jitter = np.random.normal(i, 0.1, size=len(cat_data))
                 for j, (y, animal_id) in enumerate(zip(cat_data, cat_animal_ids)):
                     color = 'black' if animal_id == 'KL' else 'red' if animal_id == 'EB' else 'blue'
-                    plt.scatter(x_jitter[j], y, color=color, alpha=0.5, s=50, 
-                               label='KL' if animal_id == 'KL' and j == 0 and i == 0 else 
-                                     'EB' if animal_id == 'EB' and j == 0 and i == 0 else 
-                                     'Other' if animal_id not in ['KL', 'EB'] and j == 0 and i == 0 else None)
+                    
+                    # Add label only if not yet added for this category
+                    label = None
+                    if animal_id == 'KL' and not legend_added['KL']:
+                        label = 'KL (black)'
+                        legend_added['KL'] = True
+                    elif animal_id == 'EB' and not legend_added['EB']:
+                        label = 'EB (red)'
+                        legend_added['EB'] = True
+                    elif animal_id not in ['KL', 'EB'] and not legend_added['Other']:
+                        label = 'Other (blue)'
+                        legend_added['Other'] = True
+                    plt.scatter(x_jitter[j], y, color=color, alpha=0.5, s=50, label=label)
                     if animal_id == 'EB':
                         red_dots.append(y)
             
@@ -610,11 +634,13 @@ class multiFileGraphsCategories:
                     # Draw a short horizontal line centered on the category bar
                     plt.hlines(y=red_avg, xmin=i-0.2, xmax=i+0.2, color='red', linestyle='--', linewidth=1.5, 
                                label=f'EB Mean {self.categoryNames[i]} ({red_avg:.2f})' if i == 0 else None)
+            
+            # Customize legend
+            plt.legend(title='Animal ID', loc='best', fontsize=10)
         
         plt.xticks(x, self.categoryNames, fontsize = 13)
         plt.ylabel(ylabel, fontsize = 13)
         plt.title(title, fontsize = 15)
-        plt.legend(title='Animal ID', loc='best', fontsize=10)
         
         # --- Statistical Significance Tests ---
         if (individual_data is not None):
