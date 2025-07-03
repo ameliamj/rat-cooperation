@@ -6182,7 +6182,12 @@ class multiFileGraphs:
     
         # Graph 6: Trial-by-trial average probability of being in a success region
         max_len = max(len(l) for l in trial_region_probs)
-        coop_array = np.array([np.pad(np.array(run), (0, max_len - len(run)), constant_values=np.nan) for run in trial_region_probs])
+        print("coop_array_before: ", trial_region_probs)
+        
+        coop_array = np.array([
+            np.pad(np.array(run, dtype=float), (0, max_len - len(run)), constant_values=np.nan)
+            for run in trial_region_probs
+        ])
         print("coop_array: ", coop_array)
         mean_per_trial = np.nanmean(coop_array, axis=0)
         print("mean_per_trial: ", mean_per_trial)
@@ -6267,8 +6272,9 @@ class multiFileGraphs:
         plt.plot(mean_per_trial, label='Average Probability')
         
         # Add annotation every 5 trials
-        for trial_idx in range(0, len(mean_per_trial), 5):
+        for trial_idx in range(0, len(mean_per_trial), 7):
             # Count how many sessions have valid (non-NaN) data at this trial
+            print("coop_arr: ", coop_array[:, trial_idx])
             count = np.sum(~np.isnan(coop_array[:, trial_idx]))
             value = mean_per_trial[trial_idx]
             
@@ -6325,6 +6331,7 @@ fpsList = [30, 30]
 totFramesList = [15000, 15000]
 initialNanList = [0.15, 0.12]
 '''
+
 
 
 arr = getFiltered()
