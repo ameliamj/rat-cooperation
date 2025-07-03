@@ -6199,7 +6199,7 @@ class multiFileGraphs:
             # Plot scatter points for each experiment
             for i, scatter_data in enumerate(scatter_data_lists):
                 valid_scatter = [d for d in scatter_data if not np.isnan(d)]
-                x_scatter = [x[i] + np.random.uniform(-0.1, 0.1, size=len(valid_scatter)) for _ in valid_scatter]
+                x_scatter = x[i] + np.random.uniform(-0.1, 0.1, size=len(valid_scatter))
                 plt.scatter(x_scatter, valid_scatter, color='black', marker='o', s=50, alpha=0.7, label='Experiments' if i == 0 else None)
             plt.title(title, fontsize=self.titleSize)
             plt.ylabel(y_label, fontsize=self.labelSize)
@@ -6311,7 +6311,6 @@ fpsList = [30, 30]
 totFramesList = [15000, 15000]
 initialNanList = [0.15, 0.12]
 '''
-
 
 
 arr = getFiltered()
