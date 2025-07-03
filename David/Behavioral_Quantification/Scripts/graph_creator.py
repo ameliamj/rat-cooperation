@@ -329,10 +329,10 @@ class multiFileGraphsCategories:
         plt.bar(range(len(avg_events)), avg_events, color='skyblue')
         
         if group_events is not None and group_animal_ids is not None:
-            red_dots = []  # Store values for red dots to calculate average
             for i, (cat_data, cat_animal_ids) in enumerate(zip(group_events, group_animal_ids)):
                 # Generate slight jitter for x-coordinates to avoid overlap
                 x_jitter = np.random.normal(i, 0.1, size=len(cat_data))
+                red_dots = []  # Store values for red dots in this category
                 for j, (y, animal_id) in enumerate(zip(cat_data, cat_animal_ids)):
                     color = 'black' if animal_id == 'KL' else 'red' if animal_id == 'EB' else 'blue'
                     plt.scatter(x_jitter[j], y, color=color, alpha=0.5, s=50, 
@@ -341,12 +341,13 @@ class multiFileGraphsCategories:
                                      'Other' if animal_id not in ['KL', 'EB'] and j == 0 and i == 0 else None)
                     if animal_id == 'EB':
                         red_dots.append(y)
-            
-            # Draw red line for average of red dots (EB)
-            if red_dots:
-                red_avg = np.mean(red_dots)
-                plt.axhline(y=red_avg, color='red', linestyle='--', linewidth=1.5, 
-                           label=f'EB Mean ({red_avg:.2f})')
+                
+                # Draw red line for average of red dots (EB) for this category
+                if red_dots:
+                    red_avg = np.mean(red_dots)
+                    # Draw a short horizontal line centered on the category bar
+                    plt.hlines(y=red_avg, xmin=i-0.2, xmax=i+0.2, color='red', linestyle='--', linewidth=1.5, 
+                               label=f'EB Mean {self.categoryNames[i]} ({red_avg:.2f})' if i == 0 else None)
         
         #plt.xlabel('Category')
         plt.ylabel('Avg. Gaze Events per 1800 Frames', fontsize=13)
@@ -375,6 +376,8 @@ class multiFileGraphsCategories:
             stat, p = kruskal(*group_events)
             plt.text(len(avg_events)/2 - 0.5, y_max * 1.05, f"Kruskal-Wallis: p = {p:.3g}", ha='center', fontsize=12)
 
+        # Customize legend
+        plt.legend(title='Animal ID', loc='best', fontsize=10)
         plt.tight_layout()
         
         # Save and display the plot
@@ -601,16 +604,17 @@ class multiFileGraphsCategories:
                     if animal_id == 'EB':
                         red_dots.append(y)
             
-            # Draw red line for average of red dots (EB)
-            if red_dots:
-                red_avg = np.mean(red_dots)
-                plt.axhline(y=red_avg, color='red', linestyle='--', linewidth=1.5, 
-                           label=f'EB Mean ({red_avg:.2f})')
+                # Draw red line for average of red dots (EB) for this category
+                if red_dots:
+                    red_avg = np.mean(red_dots)
+                    # Draw a short horizontal line centered on the category bar
+                    plt.hlines(y=red_avg, xmin=i-0.2, xmax=i+0.2, color='red', linestyle='--', linewidth=1.5, 
+                               label=f'EB Mean {self.categoryNames[i]} ({red_avg:.2f})' if i == 0 else None)
         
         plt.xticks(x, self.categoryNames, fontsize = 13)
         plt.ylabel(ylabel, fontsize = 13)
         plt.title(title, fontsize = 15)
-        plt.legend()
+        plt.legend(title='Animal ID', loc='best', fontsize=10)
         
         # --- Statistical Significance Tests ---
         if (individual_data is not None):
