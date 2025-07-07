@@ -1790,7 +1790,10 @@ class multiFileGraphs:
     def percentSuccesfulTrials(self):
         #Incorrect I think, REDO
         
-        all_lev = pd.concat([exp.lev.data for exp in self.experiments], ignore_index=True)
+        for exp in self.experiments:
+            lev = exp.lev
+        
+        '''all_lev = pd.concat([exp.lev.data for exp in self.experiments], ignore_index=True)
         
         grouped = all_lev.groupby("TrialNum")
         
@@ -1813,7 +1816,7 @@ class multiFileGraphs:
         plt.tight_layout()
         plt.show()
         plt.savefig(f'{self.prefix}PercentSuccessful.png')
-        plt.close()
+        plt.close()'''
 
     def mouseIDFirstPress(self):
         countRat0 = 0
@@ -6308,6 +6311,17 @@ def getFiltered():
     return [fe.getLevsDatapath(), fe.getMagsDatapath(), fe.getPosDatapath(), fpsList, totFramesList, initial_nan_list]
 
 
+def trainingCoopDataThresh1():
+    fe = fileExtractor(only_TrainingCoop_filtered)
+    fe.keepOnlyThresh1()
+    fe.data = fe.deleteBadNaN()
+    fe.getFirstSessionPerMicePair()
+    fpsList, totFramesList = fe.returnFPSandTotFrames()
+    initial_nan_list = fe.returnNaNPercentage()
+    return [fe.getLevsDatapath(), fe.getMagsDatapath(), fe.getPosDatapath(), fpsList, totFramesList, initial_nan_list]
+
+
+
 fiberPhoto = "/gpfs/radev/home/drb83/project/rat-cooperation/David/Behavioral_Quantification/Sorted_Data_Files/fiber_photo.csv"
 def getFiberPhoto():
     fe = fileExtractor(fiberPhoto)
@@ -6332,7 +6346,7 @@ totFramesList = [15000, 15000]
 initialNanList = [0.15, 0.12]
 '''
 
-'''
+
 arr = getFiltered()
 #arr = getAllTrainingCoop()
 #arr = getFiberPhoto()
@@ -6343,7 +6357,7 @@ fpsList = arr[3]
 totFramesList = arr[4]
 initialNanList = arr[5]
 #fiberPhoto = arr[6]
-'''
+
 
 
 '''
@@ -6367,9 +6381,9 @@ pos_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/B
 
 
 print("Start MultiFileGraphs Regular")
-#experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "", save=True)
+experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "", save=True)
 
-#experiment.whatCausesSuccessRegions()
+experiment.whatCausesSuccessRegions()
 #experiment.wallAnxietyMetrics()
 #experiment.determineIllegalLeverPresses()
 #experiment.successVsAverageDistance()
@@ -6382,23 +6396,6 @@ print("Start MultiFileGraphs Regular")
 #experiment.testMotivation()
 #experiment.waitingStrategy()
 
-
-
-print("Running UF vs TP")
-dataTP = getOnlyTrainingPartners() #Training Partners
-
-arr = getFiltered()
-#arr = getAllTrainingCoop()
-#arr = getFiberPhoto()
-lev_files = arr[0]
-mag_files = arr[1]
-pos_files = arr[2]
-
-levFiles = [arr[0], dataTP[0]]
-magFiles = [arr[1], dataTP[1]]
-posFiles = [arr[2], dataTP[2]]
-categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["Unfamiliar", "Training Partners"])
-categoryExperiments.compareSuccesfulTrials()
 
 
 # ---------------------------------------------------------------------------------------------------------
