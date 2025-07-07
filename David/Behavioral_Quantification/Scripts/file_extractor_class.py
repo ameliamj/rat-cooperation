@@ -10,6 +10,7 @@ import pandas as pd
 import cv2
 import numpy as np
 import re
+from lev_class import levLoader
 
 class fileExtractor:
     def __init__(self, information_path):
@@ -69,7 +70,19 @@ class fileExtractor:
         df_copy.loc[coop_condition & ~session_col.str.endswith(('Opaque', 'Translucent')), 'dividers'] = 'transparent'
     
         # Save to file
-        df_copy.to_csv("dyed_preds_fixed_expanded.csv", index=False)
+            
+    
+    def createThreshCol(self):
+        levDataPaths = self.getLevsDatapath()
+        coopThreshes = []
+    
+        for path in levDataPaths:
+            lev = levLoader(filename=path)
+            thresh = lev.returnSuccThreshold()
+            coopThreshes.append(thresh)
+    
+        self.data['coopThresh'] = coopThreshes
+            
     
     def getCategories(self): # returns a List with the names of all the categories
         """
@@ -167,6 +180,11 @@ class fileExtractor:
             df_copy = self.data.copy()
             df_copy.to_csv("dyed_preds_all_valid.csv", index=False)
             
+    def keepOnlyThresh1(self):
+        self.createThreshCol()
+        print("data before: ", self.data)
+        self.data = self.data[self.data["coopThresh"] == 1]
+        print("data after: ", self.data)
     
     def deleteAllButFirstTransparency(self, saveFile = False):
         """

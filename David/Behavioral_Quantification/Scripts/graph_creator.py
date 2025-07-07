@@ -5226,11 +5226,19 @@ class multiFileGraphs:
         trial_counts_distance = {}
         trial_counts = {}
         
+        NUM_BINS = 30
+        
+        # Percentage-bin-based dictionaries
+        bin_successes = {i: [] for i in range(NUM_BINS)}
+        bin_distances = {i: [] for i in range(NUM_BINS)}
+        bin_counts = {i: 0 for i in range(NUM_BINS)}
+        
         for exp_idx, exp in enumerate(self.experiments):
             lev = exp.lev
             pos = exp.pos
             fps = exp.fps
             success_status = exp.lev.returnSuccessTrials()  # List of success statuses (1, 0, -1) 
+            num_trials = len(success_status)
             success_status = filterToLeverPressTrials(success_status, lev)
             
             start_times = lev.returnTimeStartTrials()  # Array of trial start times (in seconds) for all trials
@@ -5275,22 +5283,74 @@ class multiFileGraphs:
                             distances.append(distance)
                     #print("distances: ", distances)
                     #print("mean: ", np.mean(distances))
-                    if (np.mean(distances) > 75):
+                    if (np.mean(distances) > 80):
                         print("exp.lev_file: ", exp.lev_file)
                         print("start_frame: ", start_frame)
                         print("end_frame: ", end_frame)
                     else: 
                         distances_both.append(np.mean(distances))
                     
+                # === Trial Number Graphs ===
                 # Average distance per frame for this rat in this trial
-                if distances:  # Only append if distances were calculated
+                if distances_both:  # Only append if distances were calculated
                     trial_distances[trial_idx].append(np.mean(distances_both))
                 
                 if trial_idx not in trial_successes:
+                    print("Trial Idx not in trial_successes")
                     trial_successes[trial_idx] = []
+                    trial_distances[trial_idx] = []
                     trial_counts[trial_idx] = 0
+                    
                 trial_successes[trial_idx].append(status == 1)
                 trial_counts[trial_idx] += 1
+                
+                # === Percentile Binned Graphs ===
+                bin_idx = int(trial_idx / num_trials * NUM_BINS)
+                bin_idx = min(bin_idx, NUM_BINS-1)  # Edge case
+                bin_successes[bin_idx].append(status == 1)
+                if distances_both:
+                    bin_distances[bin_idx].append(np.mean(distances_both))
+                bin_counts[bin_idx] += 1
+        
+        
+        # === NEW: Plot Success Rate by Percent of Session ===
+        bin_centers = np.linspace(2.5, 97.5, NUM_BINS)
+        success_by_bin = [np.mean(bin_successes[i]) * 100 if bin_successes[i] else 0 for i in range(NUM_BINS)]
+        smoothed_success_by_bin = uniform_filter1d(success_by_bin, size=3, mode='nearest')
+
+        plt.figure(figsize=(10, 6))
+        plt.plot(bin_centers, smoothed_success_by_bin, color='green', marker='o', label='Success Rate')
+        for i in range(NUM_BINS):
+            if bin_counts[i] > 0 and i % 3 == 0:
+                plt.text(bin_centers[i], success_by_bin[i] + 2, f'n={bin_counts[i]}', ha='center', fontsize=10)
+        plt.xlabel('Percent of Session (%)', fontsize=13)
+        plt.ylabel('Success Rate (%)', fontsize=13)
+        plt.title(f'Success Rate by Session Progress ({NUM_BINS} bins)', fontsize=15)
+        plt.grid(True, linestyle='--', alpha=0.7)
+        plt.tight_layout()
+        if self.save:
+            plt.savefig(f'{self.prefix}SuccessRateByPercentSession.png')
+        plt.show()
+        plt.close()
+    
+        # === NEW: Plot Distance by Percent of Session ===
+        avg_distance_by_bin = [np.mean(bin_distances[i]) if bin_distances[i] else 0 for i in range(20)]
+        smoothed_distance_by_bin = uniform_filter1d(avg_distance_by_bin, size=3, mode='nearest')
+    
+        plt.figure(figsize=(10, 6))
+        plt.plot(bin_centers, smoothed_distance_by_bin, color='purple', marker='o', label='Avg Distance Moved')
+        for i in range(NUM_BINS):
+            if bin_counts[i] > 0 and i % 3 == 0:
+                plt.text(bin_centers[i], avg_distance_by_bin[i] + 0.5, f'n={bin_counts[i]}', ha='center', fontsize=10)
+        plt.xlabel('Percent of Session (%)', fontsize=13)
+        plt.ylabel('Distance Moved (pixels/frame)', fontsize=13)
+        plt.title(f'Distance Moved by Session Progress ({NUM_BINS} bins)', fontsize=15)
+        plt.grid(True, linestyle='--', alpha=0.7)
+        plt.tight_layout()
+        if self.save:
+            plt.savefig(f'{self.prefix}DistanceByPercentSession.png')
+        plt.show()
+        plt.close()
         
         
         # Calculate percent success rate for each trial number
@@ -6320,6 +6380,14 @@ def trainingCoopDataThresh1():
     initial_nan_list = fe.returnNaNPercentage()
     return [fe.getLevsDatapath(), fe.getMagsDatapath(), fe.getPosDatapath(), fpsList, totFramesList, initial_nan_list]
 
+def getUnfamiliar():
+    fe = fileExtractor(only_unfamiliar_filtered)
+    #fe.keepOnlyThresh1()
+    fe.data = fe.deleteBadNaN()
+    #fe.getFirstSessionPerMicePair()
+    fpsList, totFramesList = fe.returnFPSandTotFrames()
+    initial_nan_list = fe.returnNaNPercentage()
+    return [fe.getLevsDatapath(), fe.getMagsDatapath(), fe.getPosDatapath(), fpsList, totFramesList, initial_nan_list]
 
 
 fiberPhoto = "/gpfs/radev/home/drb83/project/rat-cooperation/David/Behavioral_Quantification/Sorted_Data_Files/fiber_photo.csv"
@@ -6367,23 +6435,23 @@ pos_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/B
 fiberPhoto = [["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/090324_Cam1_TrNum14_Coop_KL002B-KL002Y_x405_TTLs.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/090324_Cam1_TrNum14_Coop_KL002B-KL002Y_x465_TTLs.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/090324_Cam1_TrNum14_Coop_KL002B-KL002Y_x560_TTLs.csv"]]
 '''
 
-'''
+
 #Missing Trial Nums
-lev_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/040124_KL005B-KL005Y_lever.csv"]
+'''lev_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/040124_KL005B-KL005Y_lever.csv"]
 mag_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/040124_KL005B-KL005Y_mag.csv"]
 pos_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/040124_COOPTRAIN_LARGEARENA_KL005B-KL005Y_Camera1.predictions.h5"]
-'''
 
-#fpsList = [29]
-#totFramesList = [10000]
-#initialNanList = [0.3]
+fpsList = [29]
+totFramesList = [10000]
+initialNanList = [0.3]'''
 
 
 
 print("Start MultiFileGraphs Regular")
 experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "", save=True)
+experiment.testMotivation()
 
-experiment.whatCausesSuccessRegions()
+#experiment.whatCausesSuccessRegions()
 #experiment.wallAnxietyMetrics()
 #experiment.determineIllegalLeverPresses()
 #experiment.successVsAverageDistance()
