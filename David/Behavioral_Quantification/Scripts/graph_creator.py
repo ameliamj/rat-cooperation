@@ -5292,14 +5292,16 @@ class multiFileGraphs:
                     
                 # === Trial Number Graphs ===
                 # Average distance per frame for this rat in this trial
-                if distances_both:  # Only append if distances were calculated
-                    trial_distances[trial_idx].append(np.mean(distances_both))
-                
                 if trial_idx not in trial_successes:
-                    print("Trial Idx not in trial_successes")
+                    #print("Trial Idx not in trial_successes")
+                    #print("Trial Idx: ", trial_idx)
+                    #print("exp.lev_file: ", exp.lev_file)
                     trial_successes[trial_idx] = []
                     trial_distances[trial_idx] = []
                     trial_counts[trial_idx] = 0
+                    
+                if distances_both:  # Only append if distances were calculated
+                    trial_distances[trial_idx].append(np.mean(distances_both))
                     
                 trial_successes[trial_idx].append(status == 1)
                 trial_counts[trial_idx] += 1
@@ -5315,8 +5317,11 @@ class multiFileGraphs:
         
         # === NEW: Plot Success Rate by Percent of Session ===
         bin_centers = np.linspace(2.5, 97.5, NUM_BINS)
+        #print("len(bin_centers): ", len(bin_centers))
         success_by_bin = [np.mean(bin_successes[i]) * 100 if bin_successes[i] else 0 for i in range(NUM_BINS)]
         smoothed_success_by_bin = uniform_filter1d(success_by_bin, size=3, mode='nearest')
+        
+        #print("len(smoothed_success_by_bin): ", len(smoothed_success_by_bin))
 
         plt.figure(figsize=(10, 6))
         plt.plot(bin_centers, smoothed_success_by_bin, color='green', marker='o', label='Success Rate')
@@ -5334,7 +5339,7 @@ class multiFileGraphs:
         plt.close()
     
         # === NEW: Plot Distance by Percent of Session ===
-        avg_distance_by_bin = [np.mean(bin_distances[i]) if bin_distances[i] else 0 for i in range(20)]
+        avg_distance_by_bin = [np.mean(bin_distances[i]) if bin_distances[i] else 0 for i in range(NUM_BINS)]
         smoothed_distance_by_bin = uniform_filter1d(avg_distance_by_bin, size=3, mode='nearest')
     
         plt.figure(figsize=(10, 6))
@@ -5374,7 +5379,7 @@ class multiFileGraphs:
         plt.plot(trial_numbers, smoothed_rates, color='blue', label='Smoothed Success Rate')
         
         # Plot scatter points every 5 trials
-        scatter_indices = [i for i in range(len(trial_numbers)) if trial_numbers[i] % 3 == 0]
+        scatter_indices = [i for i in range(len(trial_numbers)) if trial_numbers[i] % 4 == 0]
         scatter_trials = [trial_numbers[i] for i in scatter_indices]
         scatter_rates = [success_rates[i] for i in scatter_indices]
         plt.scatter(scatter_trials, scatter_rates, color='black', alpha=0.5, label='Actual Success Rate')
@@ -5419,7 +5424,7 @@ class multiFileGraphs:
         plt.plot(trial_numbers, smoothed_distances, color='blue', label='Smoothed Distance Moved')
         
         # Plot scatter points every 3 trials
-        scatter_indices = [i for i in range(len(trial_numbers)) if trial_numbers[i] % 3 == 0]
+        scatter_indices = [i for i in range(len(trial_numbers)) if trial_numbers[i] % 4 == 0]
         scatter_trials = [trial_numbers[i] for i in scatter_indices]
         scatter_distances = [avg_distances[i] for i in scatter_indices]
         plt.scatter(scatter_trials, scatter_distances, color='black', alpha=0.5, label='Actual Distance Moved')
@@ -6415,8 +6420,8 @@ initialNanList = [0.15, 0.12]
 '''
 
 
-#arr = getFiltered()
-arr = getUnfamiliar()
+arr = getFiltered()
+#arr = getUnfamiliar()
 #arr = getAllTrainingCoop()
 #arr = getFiberPhoto()
 lev_files = arr[0]
@@ -6436,16 +6441,16 @@ pos_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/B
 fiberPhoto = [["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/090324_Cam1_TrNum14_Coop_KL002B-KL002Y_x405_TTLs.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/090324_Cam1_TrNum14_Coop_KL002B-KL002Y_x465_TTLs.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/090324_Cam1_TrNum14_Coop_KL002B-KL002Y_x560_TTLs.csv"]]
 '''
 
-
+'''
 #Missing Trial Nums
-'''lev_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/040124_KL005B-KL005Y_lever.csv"]
+lev_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/040124_KL005B-KL005Y_lever.csv"]
 mag_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/040124_KL005B-KL005Y_mag.csv"]
 pos_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/040124_COOPTRAIN_LARGEARENA_KL005B-KL005Y_Camera1.predictions.h5"]
 
 fpsList = [29]
 totFramesList = [10000]
-initialNanList = [0.3]'''
-
+initialNanList = [0.3]
+'''
 
 
 print("Start MultiFileGraphs Regular")
