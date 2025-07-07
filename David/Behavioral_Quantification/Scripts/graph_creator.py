@@ -6332,8 +6332,7 @@ totFramesList = [15000, 15000]
 initialNanList = [0.15, 0.12]
 '''
 
-
-
+'''
 arr = getFiltered()
 #arr = getAllTrainingCoop()
 #arr = getFiberPhoto()
@@ -6344,7 +6343,7 @@ fpsList = arr[3]
 totFramesList = arr[4]
 initialNanList = arr[5]
 #fiberPhoto = arr[6]
-
+'''
 
 
 '''
@@ -6368,8 +6367,9 @@ pos_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/B
 
 
 print("Start MultiFileGraphs Regular")
-experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "", save=True)
-experiment.whatCausesSuccessRegions()
+#experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "", save=True)
+
+#experiment.whatCausesSuccessRegions()
 #experiment.wallAnxietyMetrics()
 #experiment.determineIllegalLeverPresses()
 #experiment.successVsAverageDistance()
@@ -6383,6 +6383,22 @@ experiment.whatCausesSuccessRegions()
 #experiment.waitingStrategy()
 
 
+
+print("Running UF vs TP")
+dataTP = getOnlyTrainingPartners() #Training Partners
+
+arr = getFiltered()
+#arr = getAllTrainingCoop()
+#arr = getFiberPhoto()
+lev_files = arr[0]
+mag_files = arr[1]
+pos_files = arr[2]
+
+levFiles = [arr[0], dataTP[0]]
+magFiles = [arr[1], dataTP[1]]
+posFiles = [arr[2], dataTP[2]]
+categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["Unfamiliar", "Training Partners"])
+categoryExperiments.compareSuccesfulTrials()
 
 
 # ---------------------------------------------------------------------------------------------------------
