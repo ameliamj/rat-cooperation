@@ -6671,7 +6671,7 @@ class multiFileGraphs:
                 t_prev_end = end_times[i - 1]
                 t_first_press = first_press_times[i]
     
-                if np.isnan(t_start) or np.isnan(t_end) or np.isnan(t_first_press) or t_start >= t_end:
+                if np.isnan(t_start) or np.isnan(t_end) or np.isnan(t_prev_start) or np.isnan(t_prev_end) or np.isnan(t_first_press) or t_start >= t_end:
                     continue
     
                 if coop_succ[i] == -1:
@@ -6951,6 +6951,11 @@ class multiFileGraphs:
         print(f"Model Deviance: {glm_result.deviance:.2f}")
         print(f"Null Deviance: {glm_result.null_deviance:.2f}")    
     
+    def windowGraphs(self):
+        WINDOW_SIZE = 5
+        for exp in self.experiments:
+            lev = exp.lev
+
 
 #Testing Multi File Graphs
 #
