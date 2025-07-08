@@ -167,10 +167,10 @@ class levLoader:
         
     def returnSuccessTrials(self):
         """
-        For each possible trial number from 1 to N:
-        - If a trial with that TrialNum exists and coopSucc == 1 → 1
-        - If it exists and coopSucc != 1 → 0
-        - If no such trial exists → -1
+            For each possible trial number from 1 to N:
+            - If a trial with that TrialNum exists and coopSucc == 1 → 1
+            - If it exists and coopSucc != 1 → 0
+            - If no such trial exists → -1
     
         Returns:
             List[int]: array of 1s (success), 0s (failure), or -1s (missing trial)

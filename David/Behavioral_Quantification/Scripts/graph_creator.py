@@ -29,8 +29,14 @@ from scipy.ndimage import uniform_filter1d
 from scipy.optimize import curve_fit
 from scipy.stats import spearmanr
 
+from sklearn.decomposition import PCA
+from sklearn.preprocessing import StandardScaler
+
 import itertools
 import statistics
+
+import statsmodels.api as sm
+from itertools import combinations
 
 
 from matplotlib.patches import Patch
@@ -6064,9 +6070,6 @@ class multiFileGraphs:
             plt.savefig(filename)
         plt.show()        
 
-    def wallAnxietyMetrics(self):
-        '''
-        '''
 
     def wallAnxietyMetrics(self):
         '''
@@ -6627,6 +6630,327 @@ class multiFileGraphs:
         plt.show()
         plt.close()
                 
+    def pcaAndGLMCoopSuccessPredictors(self):
+        all_features = []
+        coop_success_labels = []
+    
+        for exp in self.experiments:
+            lev = exp.lev
+            pos = exp.pos
+            fps = exp.fps
+            
+            start_times = lev.returnTimeStartTrials()
+            end_times = lev.returnTimeEndTrials()
+            coop_succ = lev.returnSuccessTrials()
+            coop_succ = self._filterToLeverPressTrials(coop_succ, lev)
+            first_press_times = lev.returnFirstPressAbsTimes()
+    
+            isGazing0 = pos.returnIsGazing(0)
+            isGazing1 = pos.returnIsGazing(1)
+            distances = pos.returnInterMouseDistance()
+            isInteracting = pos.returnIsInteracting()
+            
+            rat0_locations = pos.returnMouseLocation(0)
+            rat1_locations = pos.returnMouseLocation(1)
+                
+            def avg_x_dist(start, end):
+                data = pos.data  # shape: (2, 2, 5, num_frames)
+                x_mouse0 = data[0, 0, pos.HB_INDEX, int(start):int(end)]
+                x_mouse1 = data[1, 0, pos.HB_INDEX, int(start):int(end)]
+                return np.nanmean(np.abs(x_mouse0 - x_mouse1))
+    
+            def avg_dist(start, end):
+                return np.nanmean(distances[int(start):int(end)])
+    
+            running_success_streak = 0
+    
+            for i in range(1, len(start_times)):  # start at 1 to allow prev trial indexing
+                t_start = start_times[i]
+                t_end = end_times[i]
+                t_prev_start = start_times[i - 1]
+                t_prev_end = end_times[i - 1]
+                t_first_press = first_press_times[i]
+    
+                if np.isnan(t_start) or np.isnan(t_end) or np.isnan(t_first_press) or t_start >= t_end:
+                    continue
+    
+                if coop_succ[i] == -1:
+                    continue  # No lever press
+                
+                start_frame = int(t_start * fps)
+                end_frame = int(t_end * fps)
+                first_press_frame = int(t_first_press * fps)
+                n_frames = end_frame - start_frame
+                
+                prev_start_frame = int(t_prev_start * fps)
+                prev_end_frame = int(t_prev_end * fps)
+                n_frames_last = prev_end_frame - prev_start_frame
+                
+                
+                percent_gazing = (np.sum(isGazing0[int(t_start*fps):int(t_end*fps)]) +
+                                  np.sum(isGazing1[int(t_start*fps):int(t_end*fps)])) / \
+                                 (2 * (t_end - t_start) * fps) * 100
+    
+                percent_gazing_last = (np.sum(isGazing0[int(t_prev_start*fps):int(t_prev_end*fps)]) +
+                                       np.sum(isGazing1[int(t_prev_start*fps):int(t_prev_end*fps)])) / \
+                                      (2 * (t_prev_end - t_prev_start) * fps) * 100
+    
+                
+                percent_interacting = np.sum(isInteracting[start_frame:end_frame]) / n_frames * 100
+                percent_interacting_last = np.sum(isInteracting[prev_start_frame:prev_end_frame]) / n_frames_last * 100
+    
+                x_dist = avg_x_dist(start_frame, end_frame)
+    
+                dist = avg_dist(start_frame, end_frame)
+                dist_last = avg_dist(prev_start_frame, prev_end_frame)
+                
+                #Wait Before Queue Analysis
+                t = start_frame - 1
+                rat0_waiting = 0
+                rat1_waiting = 0
+                rat0_active = True
+                rat1_active = True
+
+                while t >= 0 and t < len(rat0_locations) and t < len(rat1_locations) and rat0_locations[t] is not None:
+                    if rat0_locations[t] in ['lev_top', 'lev_bottom'] and rat0_active:
+                        rat0_waiting += 1
+                    else:
+                        rat0_active = False
+
+                    if rat1_locations[t] in ['lev_top', 'lev_bottom'] and rat1_active:
+                        rat1_waiting += 1
+                    else:
+                        rat1_active = False
+
+                    if not (rat0_active or rat1_active):
+                        break
+                    t -= 1
+
+                waiting_before_queue = max(rat0_waiting, rat1_waiting)
+                
+                #Wait Before Queue Analysis
+                t = first_press_frame - 1
+                rat0_waiting = 0
+                rat1_waiting = 0
+                rat0_active = True
+                rat1_active = True
+
+                while t >= 0 and t < len(rat0_locations) and t < len(rat1_locations) and rat0_locations[t] is not None:
+                    if rat0_locations[t] in ['lev_top', 'lev_bottom'] and rat0_active:
+                        rat0_waiting += 1
+                    else:
+                        rat0_active = False
+
+                    if rat1_locations[t] in ['lev_top', 'lev_bottom'] and rat1_active:
+                        rat1_waiting += 1
+                    else:
+                        rat1_active = False
+
+                    if not (rat0_active or rat1_active):
+                        break
+                    t -= 1
+
+                waiting_before_first_press = max(rat0_waiting, rat1_waiting)
+    
+                features = [
+                    percent_gazing,
+                    percent_gazing_last,
+                    running_success_streak,
+                    percent_interacting,
+                    percent_interacting_last,
+                    x_dist,
+                    dist_last,
+                    dist, 
+                    waiting_before_queue,
+                    waiting_before_first_press
+                ]
+                all_features.append(features)
+                coop_success_labels.append(coop_succ[i])
+    
+                # Update streak
+                running_success_streak = running_success_streak + 1 if coop_succ[i] == 1 else 0
+    
+        # --- PCA Analysis ---
+        feature_names = [
+            "Gaze (%)",
+            "Gaze Last (%)",
+            "Prev Success Streak",
+            "Interaction (%)",
+            "Interaction Last (%)",
+            "X-Dist",
+            "Dist Last",
+            "Dist",
+            "Waiting (Before Queue)",
+            "Waiting (Before Press)"
+        ]
+        
+        X = np.array(all_features)
+        y = np.array(coop_success_labels)
+        
+        X_scaled = StandardScaler().fit_transform(X)
+        pca = PCA(n_components=2)
+        X_pca = pca.fit_transform(X_scaled)
+       
+        # --- PCA Loadings (Feature Contributions) ---
+        loadings = pca.components_.T  # shape: (num_features, num_components)
+        loading_df = pd.DataFrame(loadings, index=feature_names, columns=["PC1", "PC2"])
+        
+        plt.figure(figsize=(8, 6))
+        sns.heatmap(loading_df, annot=True, cmap="coolwarm", center=0)
+        plt.title("Feature Contributions to Principal Components")
+        plt.tight_layout()
+        if self.save:
+            plt.savefig(f'{self.prefix}PCA_FeatureContributions.png')
+        plt.show()
+        plt.close()
+    
+        # --- Plotting ---
+        plt.figure(figsize=(10, 7))
+        sns.scatterplot(x=X_pca[:, 0], y=X_pca[:, 1], hue=y, palette={0: "gray", 1: "blue"}, alpha=0.7)
+        plt.title("PCA of Trial Features Colored by Cooperative Success")
+        plt.xlabel(f"PC1 ({pca.explained_variance_ratio_[0]*100:.1f}%)")
+        plt.ylabel(f"PC2 ({pca.explained_variance_ratio_[1]*100:.1f}%)")
+        plt.legend(title="Coop Success", loc='upper right')
+        plt.grid(True)
+        plt.tight_layout()
+        if self.save:
+            plt.savefig(f'{self.prefix}PCA_CoopSuccess.png')
+        plt.show()
+        plt.close()
+        print("Explained variance by components:", pca.explained_variance_ratio_)
+        
+        # Create a DataFrame for easy manipulation
+        pca_df = pd.DataFrame(X_pca, columns=["PC1", "PC2"])
+        pca_df["CoopSuccess"] = y
+        
+        # Define bin edges
+        bins = 50
+        x_bins = np.linspace(pca_df["PC1"].min(), pca_df["PC1"].max(), bins)
+        y_bins = np.linspace(pca_df["PC2"].min(), pca_df["PC2"].max(), bins)
+        
+        # 2D histogram for success and failure separately
+        heatmap_success, _, _ = np.histogram2d(
+            pca_df[pca_df["CoopSuccess"] == 1]["PC1"],
+            pca_df[pca_df["CoopSuccess"] == 1]["PC2"],
+            bins=[x_bins, y_bins]
+        )
+        
+        heatmap_failure, _, _ = np.histogram2d(
+            pca_df[pca_df["CoopSuccess"] == 0]["PC1"],
+            pca_df[pca_df["CoopSuccess"] == 0]["PC2"],
+            bins=[x_bins, y_bins]
+        )
+        
+        # Normalize both
+        success_norm = heatmap_success / np.sum(heatmap_success)
+        failure_norm = heatmap_failure / np.sum(heatmap_failure)
+        
+        # Difference heatmap (success - failure)
+        diff_heatmap = success_norm - failure_norm
+        
+        # Plot heatmap
+        plt.figure(figsize=(10, 8))
+        ax = sns.heatmap(
+            diff_heatmap.T[::-1], 
+            cmap="bwr", 
+            center=0, 
+            xticklabels=10,  # Show every 10th x-tick label
+            yticklabels=10,  # Show every 10th y-tick label
+            cbar_kws={"label": "Normalized Density Difference"}
+        )
+        
+        # Create tick labels based on bin centers
+        x_tick_indices = np.linspace(0, len(x_bins) - 2, 10, dtype=int)
+        y_tick_indices = np.linspace(0, len(y_bins) - 2, 10, dtype=int)
+        ax.set_xticks(x_tick_indices)
+        ax.set_yticks(y_tick_indices)
+        
+        # Set labels from bin centers
+        ax.set_xticklabels([f"{(x_bins[i] + x_bins[i+1])/2:.2f}" for i in x_tick_indices], rotation=45)
+        ax.set_yticklabels([f"{(y_bins[::-1][i] + y_bins[::-1][i+1])/2:.2f}" for i in y_tick_indices], rotation=0)
+        
+        plt.title("Normalized Difference in Trial Density (Success - Failure)")
+        plt.xlabel("PC1")
+        plt.ylabel("PC2")
+        plt.grid(visible=True, linestyle='--', linewidth=0.5, alpha=0.7)
+        plt.tight_layout()
+        
+        if self.save:
+            plt.savefig(f'{self.prefix}PCA_CoopSuccess_Differences_Heatmap.png')
+        plt.show()
+        plt.close()
+        
+        ### === GLM === 
+        #
+        #
+        
+        X = np.array(all_features)
+        y = np.array(coop_success_labels)
+        
+        scaler = StandardScaler()
+        X_scaled = scaler.fit_transform(X)
+        
+        X_df = pd.DataFrame(X_scaled, columns=feature_names)
+        X_df = sm.add_constant(X_df)
+    
+        # Fit GLM (binomial with logit link function)
+        glm_binom = sm.GLM(y, X_df, family=sm.families.Binomial())
+        glm_result = glm_binom.fit()
+    
+        # --- Summary Output ---
+        print(glm_result.summary())
+    
+        # --- Coefficient Plot ---
+        coefs = glm_result.params
+        pvals = glm_result.pvalues
+        conf_ints = glm_result.conf_int()
+    
+        coef_df = pd.DataFrame({
+            "Feature": coefs.index,
+            "Coefficient": coefs.values,
+            "p-value": pvals.values,
+            "CI_low": conf_ints[0].values,
+            "CI_high": conf_ints[1].values
+        }).set_index("Feature")
+        
+        # Sort by magnitude (top main and interaction terms)
+        coef_df = coef_df.loc[coef_df.index != 'const']
+        top_coef_df = coef_df.reindex(coef_df["Coefficient"].abs().sort_values(ascending=False).index)
+    
+        # Optional: restrict to significant ones (p < 0.05)
+        significant_df = top_coef_df[top_coef_df["p-value"] < 0.05]
+        
+        plt.figure(figsize=(12, 10))
+        
+        sns.barplot(
+            x="Coefficient", 
+            y=coef_df.index, 
+            data=coef_df.reset_index(), 
+            palette="coolwarm", 
+            orient="h"
+        )
+        
+        '''sns.barplot(
+            x="Coefficient", 
+            y=significant_df.index, 
+            data=significant_df.reset_index(), 
+            palette="coolwarm", 
+            orient="h"
+        )'''
+        plt.axvline(0, color='black', linestyle='--')
+        plt.title("GLM Coefficients for Cooperative Success Prediction")
+        plt.xlabel("Coefficient (Log Odds Impact)")
+        plt.tight_layout()
+        if self.save:
+            plt.savefig(f'{self.prefix}GLM_CoopSuccess_Coefficients.png')
+        plt.show()
+        plt.close()
+    
+        # Print pseudo-R² or deviance
+        print(f"Model AIC: {glm_result.aic:.2f}")
+        print(f"Model Deviance: {glm_result.deviance:.2f}")
+        print(f"Null Deviance: {glm_result.null_deviance:.2f}")    
+    
 
 #Testing Multi File Graphs
 #
@@ -6713,13 +7037,14 @@ pos_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/B
 '''
 
 #fpsList = [29]
-#totFramesList = [10000]
+#totFramesList = [15000]
 #initialNanList = [0.3]
 
 
 print("Start MultiFileGraphs Regular")
 experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "", save=True)
-experiment.gazingOverTrial()
+experiment.pcaAndGLMCoopSuccessPredictors()
+#experiment.gazingOverTrial()
 
 #experiment.testMotivation()
 

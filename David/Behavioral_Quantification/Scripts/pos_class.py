@@ -76,7 +76,6 @@ class posLoader:
         self.topWall = 80
         self.bottomWall = 580
         
-        
         # Define regions based on x-coordinate of headbase
         self.levRegion = (0, self.levBoundary)
         self.middleRegion = (self.levBoundary, self.magBoundary)
@@ -688,6 +687,30 @@ class posLoader:
         headbase_y = self.data[ratID, 1, self.HB_INDEX, t]
         
         return min(abs(headbase_y - self.topWall), abs(headbase_y - self.bottomWall))
+    
+    def returnIsInteracting(self):
+        MIN_FRAMES = 10
+        MAX_DIST = 90
+        isInteracting = []
+        distances = self.returnInteractionDistance()
+        count = 0
+        
+        for t in range(self.totalFrames):
+            loc0 = self.returnRatLocationTime(0, t)
+            loc1 = self.returnRatLocationTime(1, t)
+            dist = distances[t]
+                        
+            if (dist < MAX_DIST and (loc0 != 'other' and loc1 != 'other' and ((loc0 != 'lev_top' or loc1 != 'lev_bottom') and (loc1 != 'lev_top' or loc0 != 'lev_bottom') and (loc0 != 'mag_top' or loc1 != 'mag_bottom') and (loc1 != 'mag_top' or loc0 != 'mag_bottom')))):
+                count += 1
+                if (count >= MIN_FRAMES):
+                    isInteracting.append(1)
+                else:
+                    isInteracting.append(0)
+            else:
+                count = 0
+                isInteracting.append(0)
+                
+        return isInteracting
     
     #Format of self.data: Shape: (2, 2, 5, x) --> (mouse0/1, x/y, which_body_part, which_frame)
     #I want to modify this function to for each frame determine the minimum distance from  one of the rats noses to thec losest body part tracked in the other rat and return a list of that for each frame
