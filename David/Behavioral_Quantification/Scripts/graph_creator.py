@@ -27,6 +27,8 @@ from scipy.ndimage import gaussian_filter
 from scipy.ndimage import gaussian_filter1d
 from scipy.ndimage import uniform_filter1d
 from scipy.optimize import curve_fit
+from scipy.stats import spearmanr
+
 import itertools
 import statistics
 
@@ -6363,10 +6365,268 @@ class multiFileGraphs:
         plt.close()
             
     def gazingOverTrial(self):
+        """
+        Analyze and visualize gaze behavior over trials and across sessions.
         
+        For each trial in every experiment:
+        - Compute the number of gaze events (discrete gaze occurrences)
+        - Compute the number of frames in which gaze occurred
+        - Record these per trial index and by normalized trial progress (percentage-based bins)
+    
+        Then plot:
+        1. Gaze Events by Trial Number
+        2. Percent of Time Gazing by Trial Number
+        3. Gaze Events by Percent of Session Completed
+        4. Percent of Time Gazing by Percent of Session Completed
         
+        Each graph annotates how many datapoints (frames or trials) are used for each plotted value.
+        """
+        
+        def significance_stars(p):
+            if p < 0.001:
+                return '***'
+            elif p < 0.01:
+                return '**'
+            elif p < 0.05:
+                return '*'
+            else:
+                return ''
+        
+        trial_gazeEvents = {}
+        trial_gazeFrames = {}
+        trial_frameCounts = {}
+        numTrials = {}
+        
+        NUM_BINS = 30
+        bin_events = {i: [] for i in range(NUM_BINS)}
+        bin_frames = {i: [] for i in range(NUM_BINS)}
+        bin_counts = {i: 0 for i in range(NUM_BINS)}
+        numInBin = {i: 0 for i in range(NUM_BINS)}
+    
         for exp in self.experiments:
             lev = exp.lev
+            pos = exp.pos
+            fps = exp.fps
+            
+            start_times = lev.returnTimeStartTrials()
+            end_times = lev.returnTimeEndTrials()
+            
+            isGazing0 = pos.returnIsGazing(0)
+            isGazing1 = pos.returnIsGazing(1)
+            num_trials = len(start_times)
+            
+            for trial_idx in range(len(start_times)):
+                t_start = start_times[trial_idx]
+                t_end = end_times[trial_idx]
+    
+                if any(np.isnan([t_start, t_end])) or t_start is None or t_end is None:
+                    continue
+    
+                start_frame = int(t_start * fps)
+                end_frame = int(t_end * fps)
+                if start_frame >= end_frame:
+                    continue
+    
+                isGazingTemp0 = isGazing0[start_frame:end_frame]
+                isGazingTemp1 = isGazing1[start_frame:end_frame]
+                numGazing = (isGazingTemp0.sum() + isGazingTemp1.sum()) / 2
+    
+                numGazeEvents = 0
+                lastGaze = -5
+                for i, frame in enumerate(isGazingTemp0):
+                    if frame:
+                        if (i - lastGaze >= 5):
+                            numGazeEvents += 1
+                        lastGaze = i
+                
+                lastGaze = -5
+                for i, frame in enumerate(isGazingTemp1):
+                    if frame:
+                        if (i - lastGaze >= 5):
+                            numGazeEvents += 1
+                        lastGaze = i
+    
+                # === Trial-based aggregation ===
+                if trial_idx not in trial_gazeEvents:
+                    trial_gazeEvents[trial_idx] = 0
+                    trial_gazeFrames[trial_idx] = 0
+                    trial_frameCounts[trial_idx] = 0
+                    numTrials[trial_idx] = 0
+    
+                trial_frameCounts[trial_idx] += end_frame - start_frame
+                trial_gazeFrames[trial_idx] += numGazing
+                trial_gazeEvents[trial_idx] += numGazeEvents
+                numTrials[trial_idx] += 1
+    
+                # === Percentage-based binning ===
+                bin_idx = int(trial_idx / num_trials * NUM_BINS)
+                bin_idx = min(bin_idx, NUM_BINS-1)
+    
+                bin_events[bin_idx].append(numGazeEvents)
+                bin_frames[bin_idx].append(numGazing)
+                bin_counts[bin_idx] += end_frame - start_frame
+                numInBin[bin_idx] += 1
+    
+        # === PLOTTING ===
+        #
+        #
+    
+        # === Trial-based Graphs ===
+        
+        print("numTrials: ", numTrials)
+        
+        trial_numbers = sorted(trial_gazeEvents.keys())
+        gaze_events = [
+            (trial_gazeEvents[t] / trial_frameCounts[t] * 100) if trial_frameCounts[t] else 0
+            for t in trial_numbers
+        ]
+        
+        percent_gazing = [
+            (trial_gazeFrames[t] / trial_frameCounts[t] * 100) if trial_frameCounts[t] else 0
+            for t in trial_numbers
+        ]
+        
+        # Plot 1: Gaze Events by Trial
+        rho_events, pval_events = spearmanr(trial_numbers, gaze_events)
+        smoothed_events = uniform_filter1d(gaze_events, size=3, mode='nearest')
+        stars_events = significance_stars(pval_events)
+        
+        plt.figure(figsize=(10, 6))
+        plt.plot(trial_numbers, gaze_events, color='orange', alpha=0.4, label='Raw')
+        plt.plot(trial_numbers, smoothed_events, color='orange', label='Smoothed')
+        ymax = max(gaze_events + smoothed_events) * 1.1
+        for t, val, count in zip(trial_numbers, gaze_events, numTrials.values()):
+            if t % 5 == 0:
+                y = min(val + 0.05, ymax - 1)
+                plt.text(t, y, f'n={count}', ha='center', fontsize=self.labelSize)
+        
+        plt.ylim(0, ymax)
+        plt.xlabel('Trial Number', fontsize=self.labelSize)
+        plt.ylabel('Gaze Events', fontsize=self.labelSize)
+        plt.title('Gaze Events per Trial', fontsize=self.titleSize)
+        plt.text(0.99, 0.87, f"Rho percent = {rho_events:.2f}\n p-value = {pval_events:.3f} {stars_events}",
+                 transform=plt.gca().transAxes,
+                 fontsize=self.labelSize, ha='right', va='top',
+                 bbox=dict(boxstyle='round,pad=0.3', facecolor='white', edgecolor='gray'))
+        plt.legend()
+        plt.grid(True, linestyle='--', alpha=0.7)
+        plt.tight_layout()
+        if self.save:
+            plt.savefig(f'{self.prefix}GazeEventsByTrial.png')
+        plt.show()
+        plt.close()
+        
+        # Plot 2: Percent Gazing by Trial
+        rho_percent, pval_percent = spearmanr(trial_numbers, percent_gazing)
+        smoothed_percent = uniform_filter1d(percent_gazing, size=3, mode='nearest')
+        stars_percent = significance_stars(pval_percent)
+        
+        plt.figure(figsize=(10, 6))
+        plt.plot(trial_numbers, percent_gazing, color='green', alpha=0.4, label='Raw')
+        plt.plot(trial_numbers, smoothed_percent, color='green', label='Smoothed')
+        ymax = max(percent_gazing + smoothed_percent) * 1.1
+        for t, val, count in zip(trial_numbers, percent_gazing, numTrials.values()):
+            if t % 5 == 0:
+                y = min(val + 0.15, ymax - 1)
+                plt.text(t, y, f'n={count}', ha='center', fontsize=self.labelSize)
+        
+        plt.ylim(0, ymax)
+        plt.xlabel('Trial Number', fontsize=self.labelSize)
+        plt.ylabel('% Time Gazing', fontsize=self.labelSize)
+        plt.title('Percent Gazing per Trial', fontsize=self.titleSize)
+        plt.text(0.99, 0.87, f"Rho percent = {rho_percent:.2f}\n p-value = {pval_percent:.3f} {stars_percent}",
+                 transform=plt.gca().transAxes,
+                 fontsize=self.labelSize, ha='right', va='top',
+                 bbox=dict(boxstyle='round,pad=0.3', facecolor='white', edgecolor='gray'))
+        plt.legend()
+        plt.grid(True, linestyle='--', alpha=0.7)
+        plt.tight_layout()
+        if self.save:
+            plt.savefig(f'{self.prefix}PercentGazingByTrial.png')
+        plt.show()
+        plt.close()
+        
+        
+        # === Bin-based Graphs ===
+        
+        bin_centers = np.linspace(100 / NUM_BINS / 2, 100 - 100 / NUM_BINS / 2, NUM_BINS)
+        
+        print("bin_events: ", bin_events)
+        print("bin_counts: ", bin_counts)
+        
+        avg_events_by_bin = [
+            (np.mean(bin_events[i]) / bin_counts[i] * 100) if bin_counts[i] > 0 else 0
+            for i in range(NUM_BINS)
+        ]
+        
+        print("avg_events_by_bin: ", avg_events_by_bin)
+        
+        avg_percent_by_bin = [
+            (np.mean(bin_frames[i]) / bin_counts[i] * 100) if bin_counts[i] > 0 else 0
+            for i in range(NUM_BINS)
+        ]
+        
+        # Plot 3: Gaze Events by % of Session
+        rho_events_bin, pval_events_bin = spearmanr(bin_centers, avg_events_by_bin)
+        smoothed_bin_events = uniform_filter1d(avg_events_by_bin, size=3, mode='nearest')
+        stars_events_bin = significance_stars(pval_events_bin)
+        
+        plt.figure(figsize=(10, 6))
+        plt.plot(bin_centers, avg_events_by_bin, color='purple', alpha=0.4, marker='o', label='Raw')
+        plt.plot(bin_centers, smoothed_bin_events, color='purple', marker='o', label='Smoothed')
+        ymax = max(avg_events_by_bin + smoothed_bin_events) * 1.1
+        for i in range(NUM_BINS):
+            if bin_counts[i] > 0 and i % 3 == 0:
+                y = min(avg_events_by_bin[i] + 0.02, ymax - 0.02)
+                print("y: ", y)
+                plt.text(bin_centers[i], y, f'n={numInBin[i]}', ha='center', fontsize=self.labelSize)
+        
+        plt.ylim(0, ymax)
+        plt.xlabel('Percent of Session (%)', fontsize=self.labelSize)
+        plt.ylabel('Gaze Events', fontsize=self.labelSize)
+        plt.title('Gaze Events by Session Progress', fontsize=self.titleSize)
+        plt.text(0.99, 0.87, f"Rho percent = {rho_events_bin:.2f}\n p-value = {pval_events_bin:.3f} {stars_events_bin}",
+                 transform=plt.gca().transAxes,
+                 fontsize=self.labelSize, ha='right', va='top',
+                 bbox=dict(boxstyle='round,pad=0.3', facecolor='white', edgecolor='gray'))
+        plt.legend()
+        plt.grid(True, linestyle='--', alpha=0.7)
+        plt.tight_layout()
+        if self.save:
+            plt.savefig(f'{self.prefix}GazeEventsByPercentSession.png')
+        plt.show()
+        plt.close()
+        
+        # Plot 4: Percent Gazing by % of Session
+        rho_percent_bin, pval_percent_bin = spearmanr(bin_centers, avg_percent_by_bin)
+        smoothed_bin_percent = uniform_filter1d(avg_percent_by_bin, size=3, mode='nearest')
+        stars_percent_bin = significance_stars(pval_percent_bin)
+        
+        plt.figure(figsize=(10, 6))
+        plt.plot(bin_centers, avg_percent_by_bin, color='teal', alpha=0.4, marker='o', label='Raw')
+        plt.plot(bin_centers, smoothed_bin_percent, color='teal', marker='o', label='Smoothed')
+        ymax = max(avg_percent_by_bin + smoothed_bin_percent) * 1.1
+        for i in range(NUM_BINS):
+            if bin_counts[i] > 0 and i % 3 == 0:
+                y = min(avg_percent_by_bin[i] + 0.15, ymax - 1)
+                plt.text(bin_centers[i], y, f'n={numInBin[i]}', ha='center', fontsize=self.labelSize)
+        
+        plt.ylim(0, ymax)
+        plt.xlabel('Percent of Session (%)', fontsize=self.labelSize)
+        plt.ylabel('% Time Gazing', fontsize=self.labelSize)
+        plt.title('Percent Gazing by Session Progress', fontsize=self.titleSize)
+        plt.text(0.99, 0.87, f"Rho percent = {rho_percent_bin:.2f}\n p-value = {pval_percent_bin:.3f} {stars_percent_bin}",
+                 transform=plt.gca().transAxes,
+                 fontsize=self.labelSize, ha='right', va='top',
+                 bbox=dict(boxstyle='round,pad=0.3', facecolor='white', edgecolor='gray'))
+        plt.legend()
+        plt.grid(True, linestyle='--', alpha=0.7)
+        plt.tight_layout()
+        if self.save:
+            plt.savefig(f'{self.prefix}PercentGazingByPercentSession.png')
+        plt.show()
+        plt.close()
+                
 
 #Testing Multi File Graphs
 #
@@ -6438,7 +6698,6 @@ initialNanList = arr[5]
 #fiberPhoto = arr[6]
 
 
-
 '''
 lev_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/4_nanerror_lev.csv"]
 mag_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/4_nanerror_mag.csv"]
@@ -6446,23 +6705,25 @@ pos_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/B
 fiberPhoto = [["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/090324_Cam1_TrNum14_Coop_KL002B-KL002Y_x405_TTLs.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/090324_Cam1_TrNum14_Coop_KL002B-KL002Y_x465_TTLs.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/090324_Cam1_TrNum14_Coop_KL002B-KL002Y_x560_TTLs.csv"]]
 '''
 
-'''
 #Missing Trial Nums
+'''
 lev_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/040124_KL005B-KL005Y_lever.csv"]
 mag_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/040124_KL005B-KL005Y_mag.csv"]
 pos_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/040124_COOPTRAIN_LARGEARENA_KL005B-KL005Y_Camera1.predictions.h5"]
-
-fpsList = [29]
-totFramesList = [10000]
-initialNanList = [0.3]
 '''
+
+#fpsList = [29]
+#totFramesList = [10000]
+#initialNanList = [0.3]
 
 
 print("Start MultiFileGraphs Regular")
-experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "Unfamiliar_", save=True)
+experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "", save=True)
+experiment.gazingOverTrial()
+
 #experiment.testMotivation()
 
-experiment.whatCausesSuccessRegions()
+#experiment.whatCausesSuccessRegions()
 #experiment.wallAnxietyMetrics()
 #experiment.determineIllegalLeverPresses()
 #experiment.successVsAverageDistance()

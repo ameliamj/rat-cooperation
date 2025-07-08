@@ -1157,7 +1157,7 @@ video_file = "/Users/david/Downloads/4%_nan_test.mp4"
 #loader = posLoader(h5_file)
 #lev = levLoader(lev_file)
 #mag = magLoader(mag_file)
-#visualize_gaze_overlay2(video_file, loader, lev, mag, mouseID=0, save_path = "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Graphs/Videos/exampleCageVideo.mp4")
+#visualize_gaze_overlay(video_file, loader, lev, mag, mouseID=0, save_path = "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Graphs/Videos/exampleCageVideo.mp4")
 
   
     
