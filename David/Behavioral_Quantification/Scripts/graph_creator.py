@@ -6489,6 +6489,9 @@ class multiFileGraphs:
             for t in trial_numbers
         ]
         
+        print("trial_frameCounts: ", trial_frameCounts)
+        
+        
         # Plot 1: Gaze Events by Trial
         rho_events, pval_events = spearmanr(trial_numbers, gaze_events)
         smoothed_events = uniform_filter1d(gaze_events, size=3, mode='nearest')
@@ -6499,8 +6502,8 @@ class multiFileGraphs:
         plt.plot(trial_numbers, smoothed_events, color='orange', label='Smoothed')
         ymax = max(gaze_events + smoothed_events) * 1.1
         for t, val, count in zip(trial_numbers, gaze_events, numTrials.values()):
-            if t % 5 == 0:
-                y = min(val + 0.05, ymax - 1)
+            if t % 10 == 0:
+                y = min(val + 0.15, ymax - 0.1)
                 plt.text(t, y, f'n={count}', ha='center', fontsize=self.labelSize)
         
         plt.ylim(0, ymax)
@@ -6529,8 +6532,8 @@ class multiFileGraphs:
         plt.plot(trial_numbers, smoothed_percent, color='green', label='Smoothed')
         ymax = max(percent_gazing + smoothed_percent) * 1.1
         for t, val, count in zip(trial_numbers, percent_gazing, numTrials.values()):
-            if t % 5 == 0:
-                y = min(val + 0.15, ymax - 1)
+            if t % 10 == 0:
+                y = min(val + 0.2, ymax - 1)
                 plt.text(t, y, f'n={count}', ha='center', fontsize=self.labelSize)
         
         plt.ylim(0, ymax)
@@ -6569,6 +6572,9 @@ class multiFileGraphs:
             for i in range(NUM_BINS)
         ]
         
+        #print("bin_counts: ", bin_counts)
+        
+        
         # Plot 3: Gaze Events by % of Session
         rho_events_bin, pval_events_bin = spearmanr(bin_centers, avg_events_by_bin)
         smoothed_bin_events = uniform_filter1d(avg_events_by_bin, size=3, mode='nearest')
@@ -6580,8 +6586,8 @@ class multiFileGraphs:
         ymax = max(avg_events_by_bin + smoothed_bin_events) * 1.1
         for i in range(NUM_BINS):
             if bin_counts[i] > 0 and i % 3 == 0:
-                y = min(avg_events_by_bin[i] + 0.02, ymax - 0.02)
-                print("y: ", y)
+                y = min(avg_events_by_bin[i] + 0.0006, ymax - 0.02)
+                #print("y: ", y)
                 plt.text(bin_centers[i], y, f'n={numInBin[i]}', ha='center', fontsize=self.labelSize)
         
         plt.ylim(0, ymax)
@@ -6611,7 +6617,7 @@ class multiFileGraphs:
         ymax = max(avg_percent_by_bin + smoothed_bin_percent) * 1.1
         for i in range(NUM_BINS):
             if bin_counts[i] > 0 and i % 3 == 0:
-                y = min(avg_percent_by_bin[i] + 0.15, ymax - 1)
+                y = min(avg_percent_by_bin[i] + 0.0035, ymax - 1)
                 plt.text(bin_centers[i], y, f'n={numInBin[i]}', ha='center', fontsize=self.labelSize)
         
         plt.ylim(0, ymax)
@@ -7027,11 +7033,15 @@ initialNanList = arr[5]
 #fiberPhoto = arr[6]
 
 
+
 '''
 lev_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/4_nanerror_lev.csv"]
 mag_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/4_nanerror_mag.csv"]
 pos_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/4_nanerror_test.h5"]
 fiberPhoto = [["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/090324_Cam1_TrNum14_Coop_KL002B-KL002Y_x405_TTLs.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/090324_Cam1_TrNum14_Coop_KL002B-KL002Y_x465_TTLs.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/090324_Cam1_TrNum14_Coop_KL002B-KL002Y_x560_TTLs.csv"]]
+fpsList = [29]
+totFramesList = [15000]
+initialNanList = [0.3]
 '''
 
 #Missing Trial Nums
@@ -7065,7 +7075,21 @@ experiment.pcaAndGLMCoopSuccessPredictors()
 #experiment.trialStateModel()
 #experiment.testMotivation()
 #experiment.waitingStrategy()
+'''
+arr = getFiltered()
+#arr = getAllTrainingCoop()
+#arr = getFiberPhoto()
+lev_files = arr[0]
+mag_files = arr[1]
+pos_files = arr[2]
+fpsList = arr[3]
+totFramesList = arr[4]
+initialNanList = arr[5]
+experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "", save=True)
+#experiment.pcaAndGLMCoopSuccessPredictors()
+experiment.gazingOverTrial()
 
+'''
 
 
 # ---------------------------------------------------------------------------------------------------------
