@@ -6503,7 +6503,7 @@ class multiFileGraphs:
         ymax = max(gaze_events + smoothed_events) * 1.1
         for t, val, count in zip(trial_numbers, gaze_events, numTrials.values()):
             if t % 10 == 0:
-                y = min(val + 0.15, ymax - 0.1)
+                y = min(val + ymax/12, ymax * 0.95)
                 plt.text(t, y, f'n={count}', ha='center', fontsize=self.labelSize)
         
         plt.ylim(0, ymax)
@@ -6533,7 +6533,7 @@ class multiFileGraphs:
         ymax = max(percent_gazing + smoothed_percent) * 1.1
         for t, val, count in zip(trial_numbers, percent_gazing, numTrials.values()):
             if t % 10 == 0:
-                y = min(val + 0.2, ymax - 1)
+                y = min(val + ymax/12, ymax * 0.95)
                 plt.text(t, y, f'n={count}', ha='center', fontsize=self.labelSize)
         
         plt.ylim(0, ymax)
@@ -6585,8 +6585,8 @@ class multiFileGraphs:
         plt.plot(bin_centers, smoothed_bin_events, color='purple', marker='o', label='Smoothed')
         ymax = max(avg_events_by_bin + smoothed_bin_events) * 1.1
         for i in range(NUM_BINS):
-            if bin_counts[i] > 0 and i % 3 == 0:
-                y = min(avg_events_by_bin[i] + 0.0006, ymax - 0.02)
+            if bin_counts[i] > 0 and i % 4 == 0:
+                y = min(avg_events_by_bin[i] + ymax/12, ymax * 0.95)
                 #print("y: ", y)
                 plt.text(bin_centers[i], y, f'n={numInBin[i]}', ha='center', fontsize=self.labelSize)
         
@@ -6616,8 +6616,8 @@ class multiFileGraphs:
         plt.plot(bin_centers, smoothed_bin_percent, color='teal', marker='o', label='Smoothed')
         ymax = max(avg_percent_by_bin + smoothed_bin_percent) * 1.1
         for i in range(NUM_BINS):
-            if bin_counts[i] > 0 and i % 3 == 0:
-                y = min(avg_percent_by_bin[i] + 0.0035, ymax - 1)
+            if bin_counts[i] > 0 and i % 4 == 0:
+                y = min(avg_percent_by_bin[i] + ymax/12, ymax * 0.95)
                 plt.text(bin_centers[i], y, f'n={numInBin[i]}', ha='center', fontsize=self.labelSize)
         
         plt.ylim(0, ymax)
@@ -7058,8 +7058,8 @@ pos_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/B
 
 print("Start MultiFileGraphs Regular")
 experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "", save=True)
-experiment.pcaAndGLMCoopSuccessPredictors()
-#experiment.gazingOverTrial()
+#experiment.pcaAndGLMCoopSuccessPredictors()
+experiment.gazingOverTrial()
 
 #experiment.testMotivation()
 
@@ -7075,21 +7075,18 @@ experiment.pcaAndGLMCoopSuccessPredictors()
 #experiment.trialStateModel()
 #experiment.testMotivation()
 #experiment.waitingStrategy()
-'''
-arr = getFiltered()
-#arr = getAllTrainingCoop()
-#arr = getFiberPhoto()
+
+arr = getUnfamiliar()
 lev_files = arr[0]
 mag_files = arr[1]
 pos_files = arr[2]
 fpsList = arr[3]
 totFramesList = arr[4]
 initialNanList = arr[5]
-experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "", save=True)
-#experiment.pcaAndGLMCoopSuccessPredictors()
+experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "Unfamiliar_", save=True)
 experiment.gazingOverTrial()
 
-'''
+
 
 
 # ---------------------------------------------------------------------------------------------------------
