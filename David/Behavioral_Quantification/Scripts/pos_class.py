@@ -1006,8 +1006,31 @@ def visualize_gaze_overlay2(
         if not ret or frame_idx >= loader.data.shape[-1]:
             break
 
+        gaze_vec = gaze_vector[:, frame_idx]
+        gaze_origin = HB[:, frame_idx]
+        target = other_body[:, :, frame_idx]
+        #cv2.putText(frame, f"InterMouseDistance: {distances[frame_idx]}", (10, 70), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
+        
+        gaze_dir = gaze_vec / (np.linalg.norm(gaze_vec) + 1e-8)
+        gaze_tip = gaze_origin + gaze_length * gaze_dir
 
-        cv2.putText(frame, f"InterMouseDistance: {distances[frame_idx]}", (10, 70), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
+        p1 = tuple(np.round(gaze_origin).astype(int))
+        p2 = tuple(np.round(gaze_tip).astype(int))
+
+        intersect = loader._gaze_intersects_body(gaze_origin, gaze_vec, target)
+        still = is_still[frame_idx]
+        gazing = intersect and still
+
+        # Set line color based on state
+        if gazing:
+            color = (0, 0, 255)  # Red
+        elif still:
+            color = (255, 0, 0)  # Blue
+        else:
+            color = (0, 255, 0)  # Green
+
+        # Draw the gaze vector
+        cv2.line(frame, p1, p2, color, 2)
         
         # Draw zone boundaries
         cv2.line(frame, (loader.levBoundary, 0), (loader.levBoundary, height), (255, 255, 0), 2)   # Cyan line for levBoundary
@@ -1022,8 +1045,8 @@ def visualize_gaze_overlay2(
         region_self = mouse_region[frame_idx]
         region_other = other_region[frame_idx]
         
-        cv2.putText(frame, f"Rat{mouseID}: {region_self}", (10, 120), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
-        cv2.putText(frame, f"Rat{1 - mouseID}: {region_other}", (10, 150), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
+        #cv2.putText(frame, f"Rat{mouseID}: {region_self}", (10, 120), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
+        #cv2.putText(frame, f"Rat{1 - mouseID}: {region_other}", (10, 150), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
         
         #Draw Sub-Zones: 
         zone_color = (255, 255, 255)  # White color for rectangles
@@ -1031,19 +1054,51 @@ def visualize_gaze_overlay2(
         
         # Convert corner definitions to top-left and bottom-right for OpenCV
         zones = [
-            ("levTop", loader.levTopTR, loader.levTopBL),
-            ("levBot", loader.levBotTR, loader.levBotBL),
-            ("magTop", loader.magTopTR, loader.magTopBL),
-            ("magBot", loader.magBotTR, loader.magBotBL)
+            ("Top Lever", loader.levTopTR, loader.levTopBL),
+            ("Bottom Lever", loader.levBotTR, loader.levBotBL),
+            ("Top Mag", loader.magTopTR, loader.magTopBL),
+            ("Bottom Mag", loader.magBotTR, loader.magBotBL)
         ]
         
         for label, tr, bl in zones:
             top_left = (bl[0], tr[1])     # x from BL, y from TR
             bottom_right = (tr[0], bl[1]) # x from TR, y from BL
-            cv2.rectangle(frame, top_left, bottom_right, zone_color, thickness)
-            cv2.putText(frame, label, (top_left[0] + 5, top_left[1] + 25), cv2.FONT_HERSHEY_SIMPLEX, 0.6, zone_color, 2)
         
-                    
+            # Draw zone rectangle
+            cv2.rectangle(frame, top_left, bottom_right, zone_color, thickness)
+        
+            # === Add text with background ===
+            text_x = top_left[0] + 5
+            text_y = top_left[1] + 25
+        
+            # Get text size
+            (text_width, text_height), _ = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.6, 2)
+        
+            # Define rectangle for background (with some padding)
+            rect_top_left = (text_x - 2, text_y - text_height - 4)
+            rect_bottom_right = (text_x + text_width + 2, text_y + 4)
+        
+            # Draw light gray rectangle background
+            cv2.rectangle(frame, rect_top_left, rect_bottom_right, (200, 200, 200), thickness=-1)
+        
+            # Draw the text over the background
+            cv2.putText(frame, label, (text_x, text_y), cv2.FONT_HERSHEY_SIMPLEX, 0.6, zone_color, 2)
+        
+        
+        # Draw body polygon
+        polygon_indices = [
+            loader.earL_INDEX,
+            loader.NOSE_INDEX,
+            loader.earR_INDEX,
+            loader.TB_INDEX
+        ]
+        polygon_points = [tuple(np.round(target[:, idx]).astype(int)) for idx in polygon_indices]
+        polygon_points.append(polygon_points[0])  # close the loop
+
+        for j in range(len(polygon_points) - 1):
+            cv2.line(frame, polygon_points[j], polygon_points[j+1], (128, 128, 128), 1)
+            
+        
         # Compute and display state
         if np.any(np.isnan(pos_data[frame_idx])):
             state = 6  # exploring (NaN case)
@@ -1056,7 +1111,7 @@ def visualize_gaze_overlay2(
                 vel_before = 0
             
         
-            cv2.putText(frame, f"Vel: {vel}", (10, height - 60), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
+            #cv2.putText(frame, f"Vel: {vel}", (10, height - 60), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
 
         frame_filename = temp_dir / f"frame_{frame_count:05d}.png"
         cv2.imwrite(str(frame_filename), frame)
@@ -1098,12 +1153,12 @@ video_file = "/Users/david/Downloads/4%_nan_test.mp4"
 #h5_file = "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G.predictions.h5"
 #video_file = "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G.mp4"    
 
-'''
-loader = posLoader(h5_file)
-lev = levLoader(lev_file)
-mag = magLoader(mag_file)
-visualize_gaze_overlay(video_file, loader, lev, mag, mouseID=0, save_path = "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Graphs/Videos/wallTesting.mp4")
-'''
+
+#loader = posLoader(h5_file)
+#lev = levLoader(lev_file)
+#mag = magLoader(mag_file)
+#visualize_gaze_overlay2(video_file, loader, lev, mag, mouseID=0, save_path = "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Graphs/Videos/exampleCageVideo.mp4")
+
   
     
     

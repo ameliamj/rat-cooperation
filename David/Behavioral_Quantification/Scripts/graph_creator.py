@@ -5316,7 +5316,8 @@ class multiFileGraphs:
         
         
         # === NEW: Plot Success Rate by Percent of Session ===
-        bin_centers = np.linspace(2.5, 97.5, NUM_BINS)
+        bin_width = 100 / NUM_BINS
+        bin_centers = np.linspace(bin_width / 2, 100 - bin_width / 2, NUM_BINS)
         #print("len(bin_centers): ", len(bin_centers))
         success_by_bin = [np.mean(bin_successes[i]) * 100 if bin_successes[i] else 0 for i in range(NUM_BINS)]
         smoothed_success_by_bin = uniform_filter1d(success_by_bin, size=3, mode='nearest')
@@ -5327,7 +5328,7 @@ class multiFileGraphs:
         plt.plot(bin_centers, smoothed_success_by_bin, color='green', marker='o', label='Success Rate')
         for i in range(NUM_BINS):
             if bin_counts[i] > 0 and i % 3 == 0:
-                plt.text(bin_centers[i], success_by_bin[i] + 2, f'n={bin_counts[i]}', ha='center', fontsize=10)
+                plt.text(bin_centers[i], success_by_bin[i] + 0.5, f'n={bin_counts[i]}', ha='center', fontsize=10)
         plt.xlabel('Percent of Session (%)', fontsize=13)
         plt.ylabel('Success Rate (%)', fontsize=13)
         plt.title(f'Success Rate by Session Progress ({NUM_BINS} bins)', fontsize=15)
@@ -5387,7 +5388,7 @@ class multiFileGraphs:
         # Annotate points with number of experiments
         for trial_idx, rate, count in zip(trial_numbers, success_rates, experiment_counts):
             if (trial_idx % 15 == 0):
-                plt.text(trial_idx, rate + 2, f'n={count}', ha='center', va='bottom', fontsize=11, fontweight='bold')
+                plt.text(trial_idx, rate + 0.5, f'n={count}', ha='center', va='bottom', fontsize=11, fontweight='bold')
         
         plt.xlabel('Trial Number', fontsize = 13)
         plt.ylabel('Success Rate (%)', fontsize = 13)
@@ -6361,7 +6362,11 @@ class multiFileGraphs:
         plt.show()
         plt.close()
             
-            
+    def gazingOverTrial(self):
+        
+        
+        for exp in self.experiments:
+            lev = exp.lev
 
 #Testing Multi File Graphs
 #
@@ -6420,8 +6425,8 @@ initialNanList = [0.15, 0.12]
 '''
 
 
-#arr = getFiltered()
-arr = getUnfamiliar()
+arr = getFiltered()
+#arr = getUnfamiliar()
 #arr = getAllTrainingCoop()
 #arr = getFiberPhoto()
 lev_files = arr[0]
@@ -6455,9 +6460,9 @@ initialNanList = [0.3]
 
 print("Start MultiFileGraphs Regular")
 experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "Unfamiliar_", save=True)
-experiment.testMotivation()
+#experiment.testMotivation()
 
-#experiment.whatCausesSuccessRegions()
+experiment.whatCausesSuccessRegions()
 #experiment.wallAnxietyMetrics()
 #experiment.determineIllegalLeverPresses()
 #experiment.successVsAverageDistance()
