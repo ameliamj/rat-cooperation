@@ -5330,6 +5330,19 @@ class multiFileGraphs:
         success_by_bin = [np.mean(bin_successes[i]) * 100 if bin_successes[i] else 0 for i in range(NUM_BINS)]
         smoothed_success_by_bin = uniform_filter1d(success_by_bin, size=3, mode='nearest')
         
+        print("bin_successes: ", bin_successes)
+        print("bin_counts: ", bin_counts)
+        total_true_bin_success = sum(val is True for sublist in bin_successes.values() for val in sublist)
+        print("sum(success_by_bin): ", total_true_bin_success)
+        print("sum(bin_counts): ", np.sum(list(bin_counts.values())))
+        
+        print("trial_successes: ", trial_successes)
+        print("trial_counts: ", trial_counts)
+        
+        total_true = sum(val is True for sublist in trial_successes.values() for val in sublist)
+        print("sum(trial_counts): ", np.sum(list(trial_counts.values())))
+        print("sum(trial_successes): ", total_true)
+        
         #print("len(smoothed_success_by_bin): ", len(smoothed_success_by_bin))
 
         plt.figure(figsize=(10, 6))
@@ -5368,10 +5381,9 @@ class multiFileGraphs:
         
         
         # Calculate percent success rate for each trial number
-        trial_numbers = sorted(trial_successes.keys())
+        trial_numbers = sorted([idx for idx in trial_successes if trial_counts[idx] >= 10])
         success_rates = [
-            np.mean(trial_successes[trial_idx]) * 100 if trial_successes[trial_idx] else 0
-            for trial_idx in trial_numbers
+            np.mean(trial_successes[trial_idx]) * 100 for trial_idx in trial_numbers
         ]
         experiment_counts = [trial_counts[trial_idx] for trial_idx in trial_numbers]
         
@@ -5415,10 +5427,9 @@ class multiFileGraphs:
         #Distance Motivation Plot
         
         # Calculate average distance moved for each trial number
-        trial_numbers = sorted(trial_distances.keys())
+        trial_numbers = sorted([idx for idx in trial_distances if trial_counts[idx] >= 10])
         avg_distances = [
-            np.mean(trial_distances[trial_idx]) if trial_distances[trial_idx] else 0
-            for trial_idx in trial_numbers
+            np.mean(trial_distances[trial_idx]) for trial_idx in trial_numbers
         ]
         #experiment_counts = [trial_counts_distance[trial_idx] for trial_idx in trial_numbers]
         
@@ -7086,19 +7097,19 @@ initialNanList = [0.3]
 lev_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/040124_KL005B-KL005Y_lever.csv"]
 mag_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/040124_KL005B-KL005Y_mag.csv"]
 pos_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/040124_COOPTRAIN_LARGEARENA_KL005B-KL005Y_Camera1.predictions.h5"]
+
+
+fpsList = [29]
+totFramesList = [15000]
+initialNanList = [0.3]
 '''
-
-#fpsList = [29]
-#totFramesList = [15000]
-#initialNanList = [0.3]
-
 
 print("Start MultiFileGraphs Regular")
 experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "", save=True)
-experiment.pcaAndGLMCoopSuccessPredictors()
+#experiment.pcaAndGLMCoopSuccessPredictors()
 #experiment.gazingOverTrial()
 
-#experiment.testMotivation()
+experiment.testMotivation()
 
 #experiment.whatCausesSuccessRegions()
 #experiment.wallAnxietyMetrics()
@@ -7110,7 +7121,6 @@ experiment.pcaAndGLMCoopSuccessPredictors()
 
 #experiment.gazeHeatmap()
 #experiment.trialStateModel()
-#experiment.testMotivation()
 #experiment.waitingStrategy()
 
 
@@ -7122,8 +7132,7 @@ fpsList = arr[3]
 totFramesList = arr[4]
 initialNanList = arr[5]
 experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "Unfamiliar_", save=True)
-experiment.pcaAndGLMCoopSuccessPredictors()
-
+experiment.testMotivation()
 
 
 # ---------------------------------------------------------------------------------------------------------
