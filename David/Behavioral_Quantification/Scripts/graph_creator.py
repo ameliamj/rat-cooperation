@@ -5323,13 +5323,14 @@ class multiFileGraphs:
                 bin_counts[bin_idx] += 1
         
         
-        # === NEW: Plot Success Rate by Percent of Session ===
+        # === Plot Success Rate by Percent of Session ===
         bin_width = 100 / NUM_BINS
         bin_centers = np.linspace(bin_width / 2, 100 - bin_width / 2, NUM_BINS)
         #print("len(bin_centers): ", len(bin_centers))
         success_by_bin = [np.mean(bin_successes[i]) * 100 if bin_successes[i] else 0 for i in range(NUM_BINS)]
         smoothed_success_by_bin = uniform_filter1d(success_by_bin, size=3, mode='nearest')
-        
+        rho_success, pval_success = spearmanr(bin_centers, success_by_bin)
+
         print("bin_successes: ", bin_successes)
         print("bin_counts: ", bin_counts)
         total_true_bin_success = sum(val is True for sublist in bin_successes.values() for val in sublist)
@@ -5344,7 +5345,7 @@ class multiFileGraphs:
         print("sum(trial_successes): ", total_true)
         
         #print("len(smoothed_success_by_bin): ", len(smoothed_success_by_bin))
-
+        
         plt.figure(figsize=(10, 6))
         plt.plot(bin_centers, smoothed_success_by_bin, color='green', marker='o', label='Success Rate')
         for i in range(NUM_BINS):
@@ -5353,6 +5354,7 @@ class multiFileGraphs:
         plt.xlabel('Percent of Session (%)', fontsize=13)
         plt.ylabel('Success Rate (%)', fontsize=13)
         plt.title(f'Success Rate by Session Progress ({NUM_BINS} bins)', fontsize=15)
+        plt.text(5, max(success_by_bin) + 2, f"ρ = {rho_success:.2f}, p = {pval_success:.3f}", fontsize=12, color='darkgreen')
         plt.grid(True, linestyle='--', alpha=0.7)
         plt.tight_layout()
         if self.save:
@@ -5360,10 +5362,11 @@ class multiFileGraphs:
         plt.show()
         plt.close()
     
-        # === NEW: Plot Distance by Percent of Session ===
+        # ===  Plot Distance by Percent of Session ===
         avg_distance_by_bin = [np.mean(bin_distances[i]) if bin_distances[i] else 0 for i in range(NUM_BINS)]
         smoothed_distance_by_bin = uniform_filter1d(avg_distance_by_bin, size=3, mode='nearest')
-    
+        rho_dist, pval_dist = spearmanr(bin_centers, avg_distance_by_bin)
+        
         plt.figure(figsize=(10, 6))
         plt.plot(bin_centers, smoothed_distance_by_bin, color='purple', marker='o', label='Avg Distance Moved')
         for i in range(NUM_BINS):
@@ -5372,6 +5375,7 @@ class multiFileGraphs:
         plt.xlabel('Percent of Session (%)', fontsize=13)
         plt.ylabel('Distance Moved (pixels/frame)', fontsize=13)
         plt.title(f'Distance Moved by Session Progress ({NUM_BINS} bins)', fontsize=15)
+        plt.text(5, max(avg_distance_by_bin) + 1, f"ρ = {rho_dist:.2f}, p = {pval_dist:.3f}", fontsize=12, color='indigo')
         plt.grid(True, linestyle='--', alpha=0.7)
         plt.tight_layout()
         if self.save:
@@ -5393,7 +5397,8 @@ class multiFileGraphs:
         else:
             smoothed_rates = success_rates  # No smoothing if too few points
         
-        
+        rho_trial_success, pval_trial_success = spearmanr(trial_numbers, success_rates)
+
         #Success Rate Motivation Plot
         # Create the plot
         plt.figure(figsize=(10, 6))
@@ -5413,6 +5418,7 @@ class multiFileGraphs:
         plt.xlabel('Trial Number', fontsize = 13)
         plt.ylabel('Success Rate (%)', fontsize = 13)
         plt.title('Success Rate by Trial Number Across Experiments', fontsize = 15)
+        plt.text(trial_numbers[0], max(success_rates) + 2, f"ρ = {rho_trial_success:.2f}, p = {pval_trial_success:.3f}", fontsize=12, color='blue')
         plt.legend()
         plt.grid(True, linestyle='--', alpha=0.7)
         plt.tight_layout()
@@ -5438,7 +5444,7 @@ class multiFileGraphs:
             smoothed_distances = uniform_filter1d(avg_distances, size=5, mode='nearest')
         else:
             smoothed_distances = avg_distances  # No smoothing if too few points
-        
+        rho_trial_dist, pval_trial_dist = spearmanr(trial_numbers, avg_distances)
         # Create the plot
         plt.figure(figsize=(10, 6))
         plt.plot(trial_numbers, smoothed_distances, color='blue', label='Smoothed Distance Moved')
@@ -5457,6 +5463,7 @@ class multiFileGraphs:
         plt.xlabel('Trial Number', fontsize=13)
         plt.ylabel('Distance Moved (pixels/frame)', fontsize=13)
         plt.title('Average Distance Moved by Trial Number Across Experiments', fontsize=15)
+        plt.text(trial_numbers[0], max(avg_distances) + 1, f"ρ = {rho_trial_dist:.2f}, p = {pval_trial_dist:.3f}", fontsize=12, color='purple')
         plt.legend()
         plt.grid(True, linestyle='--', alpha=0.7)
         plt.tight_layout()
