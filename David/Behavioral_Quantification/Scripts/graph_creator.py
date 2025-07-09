@@ -6640,6 +6640,8 @@ class multiFileGraphs:
         all_features = []
         coop_success_labels = []
     
+        print("Starting PCA and GLM")
+    
         for exp in self.experiments:
             lev = exp.lev
             pos = exp.pos
@@ -7058,8 +7060,8 @@ pos_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/B
 
 print("Start MultiFileGraphs Regular")
 experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "", save=True)
-#experiment.pcaAndGLMCoopSuccessPredictors()
-experiment.gazingOverTrial()
+experiment.pcaAndGLMCoopSuccessPredictors()
+#experiment.gazingOverTrial()
 
 #experiment.testMotivation()
 
@@ -7076,15 +7078,7 @@ experiment.gazingOverTrial()
 #experiment.testMotivation()
 #experiment.waitingStrategy()
 
-arr = getUnfamiliar()
-lev_files = arr[0]
-mag_files = arr[1]
-pos_files = arr[2]
-fpsList = arr[3]
-totFramesList = arr[4]
-initialNanList = arr[5]
-experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "Unfamiliar_", save=True)
-experiment.gazingOverTrial()
+
 
 
 
