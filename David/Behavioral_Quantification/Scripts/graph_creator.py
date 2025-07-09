@@ -6795,9 +6795,18 @@ class multiFileGraphs:
         X = np.array(all_features)
         y = np.array(coop_success_labels)
         
+        # Step 1: Standardize features
         X_scaled = StandardScaler().fit_transform(X)
+        
+        # Step 2: Remove rows with any feature > 2 std deviations
+        z_scores = np.abs(X_scaled)
+        mask = (z_scores < 2).all(axis=1)
+        
+        X_scaled_filtered = X_scaled[mask]
+        y_filtered = np.array(y)[mask]  # keep labels in sync
+        
         pca = PCA(n_components=2)
-        X_pca = pca.fit_transform(X_scaled)
+        X_pca = pca.fit_transform(X_scaled_filtered)
        
         # --- PCA Loadings (Feature Contributions) ---
         loadings = pca.components_.T  # shape: (num_features, num_components)
@@ -6814,7 +6823,7 @@ class multiFileGraphs:
     
         # --- Plotting ---
         plt.figure(figsize=(10, 7))
-        sns.scatterplot(x=X_pca[:, 0], y=X_pca[:, 1], hue=y, palette={0: "gray", 1: "blue"}, alpha=0.7)
+        sns.scatterplot(x=X_pca[:, 0], y=X_pca[:, 1], hue=y_filtered, palette={0: "gray", 1: "blue"}, alpha=0.7)
         plt.title("PCA of Trial Features Colored by Cooperative Success")
         plt.xlabel(f"PC1 ({pca.explained_variance_ratio_[0]*100:.1f}%)")
         plt.ylabel(f"PC2 ({pca.explained_variance_ratio_[1]*100:.1f}%)")
@@ -6829,7 +6838,7 @@ class multiFileGraphs:
         
         # Create a DataFrame for easy manipulation
         pca_df = pd.DataFrame(X_pca, columns=["PC1", "PC2"])
-        pca_df["CoopSuccess"] = y
+        pca_df["CoopSuccess"] = y_filtered
         
         # Define bin edges
         bins = 50
@@ -6898,6 +6907,13 @@ class multiFileGraphs:
         scaler = StandardScaler()
         X_scaled = scaler.fit_transform(X)
         
+        # Step 2: Remove rows with any feature > 2 std deviations
+        z_scores = np.abs(X_scaled)
+        mask = (z_scores < 2).all(axis=1)
+        
+        X_scaled = X_scaled[mask]
+        y = np.array(y)[mask]  # keep labels in sync
+        
         X_df = pd.DataFrame(X_scaled, columns=feature_names)
         X_df = sm.add_constant(X_df)
     
@@ -6907,7 +6923,9 @@ class multiFileGraphs:
     
         # --- Summary Output ---
         print(glm_result.summary())
-    
+        pvals = glm_result.pvalues
+        print(pvals)
+        
         # --- Coefficient Plot ---
         coefs = glm_result.params
         pvals = glm_result.pvalues
@@ -6937,6 +6955,24 @@ class multiFileGraphs:
             palette="coolwarm", 
             orient="h"
         )
+        
+        for i, (coef, pval) in enumerate(zip(coef_df["Coefficient"], coef_df["p-value"])):
+            star = ''
+            if pval < 0.001:
+                star = '***'
+            elif pval < 0.01:
+                star = '**'
+            elif pval < 0.05:
+                star = '*'
+            
+            plt.text(
+                x=coef + 0.05 if coef > 0 else coef - 0.05, 
+                y=i, 
+                s=f"{pval:.3f} {star}",
+                va='center',
+                ha='left' if coef > 0 else 'right',
+                fontsize=9
+            )
         
         '''sns.barplot(
             x="Coefficient", 
@@ -7035,7 +7071,6 @@ initialNanList = arr[5]
 #fiberPhoto = arr[6]
 
 
-
 '''
 lev_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/4_nanerror_lev.csv"]
 mag_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/4_nanerror_mag.csv"]
@@ -7079,7 +7114,15 @@ experiment.pcaAndGLMCoopSuccessPredictors()
 #experiment.waitingStrategy()
 
 
-
+arr = getUnfamiliar()
+lev_files = arr[0]
+mag_files = arr[1]
+pos_files = arr[2]
+fpsList = arr[3]
+totFramesList = arr[4]
+initialNanList = arr[5]
+experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "Unfamiliar_", save=True)
+experiment.pcaAndGLMCoopSuccessPredictors()
 
 
 
