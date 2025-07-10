@@ -6579,6 +6579,7 @@ class multiFileGraphs:
                     trial_gazeFrames[trial_idx] = 0
                     trial_gazeFramesEB[trial_idx] = 0
                     trial_frameCounts[trial_idx] = 0
+                    trial_frameCountsEB[trial_idx] = 0
                     numTrials[trial_idx] = 0
     
                 trial_frameCounts[trial_idx] += end_frame - start_frame
