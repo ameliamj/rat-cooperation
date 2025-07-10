@@ -2500,23 +2500,17 @@ class multiFileGraphs:
                 temp_successInARowvsDistance[successInARow[i]].append(difference / numFrames)
                 
                 if (trialBool):
-                    totFrames_SuccessZone += numFrames
-                    totDifference_SuccessZone += difference
                     cat_totFrames_SuccessZone += numFrames
                     cat_totDifference_SuccessZone += difference
                     #if (numFrames > 0):
                         #datapoints_SuccessZone.append(difference / numFrames)
                         
                 elif(successTrial[i] == 1):
-                    totFrames_Success_NoZone += numFrames
-                    totDifference_Success_NoZone += difference
                     cat_totFrames_Success_NoZone += numFrames
                     cat_totDifference_Success_NoZone += difference
                     #if (numFrames > 0):
                         #datapoints_Success_NoZone.append(difference / numFrames)
                 else:
-                    totFrames_NoSuccess += numFrames
-                    totDifference_NoSuccess += difference
                     cat_totFrames_NoSuccess += numFrames
                     cat_totDifference_NoSuccess += difference
                     #if (numFrames > 0):
@@ -2524,6 +2518,14 @@ class multiFileGraphs:
                         
             if (cat_totFrames_NoSuccess > 0 and cat_totDifference_NoSuccess / cat_totFrames_NoSuccess > 2000):
                 continue
+            
+            totDifference_NoSuccess += cat_totFrames_NoSuccess
+            totDifference_Success_NoZone += cat_totFrames_Success_NoZone
+            totDifference_SuccessZone += cat_totFrames_SuccessZone
+            
+            totFrames_NoSuccess += cat_totFrames_NoSuccess
+            totFrames_Success_NoZone += cat_totFrames_Success_NoZone
+            totFrames_SuccessZone += cat_totFrames_SuccessZone
             
             if (cat_totFrames_SuccessZone > 0):
                 datapoints_SuccessZone.append(cat_totDifference_SuccessZone / cat_totFrames_SuccessZone)
@@ -2555,6 +2557,7 @@ class multiFileGraphs:
         # Labels and values for the bar plot
         labels = ['No Success', 'Success No Zone', 'Success Zone']
         averages = [averageDistance_NoSuccess, averageDistance_Success_NoZone, averageDistance_SuccessZone]
+        print("Averages: ", averages)
         datapoints = [datapoints_NoSuccess, datapoints_Success_NoZone, datapoints_SuccessZone]
         
         # X locations for the bars and jittered scatter points
