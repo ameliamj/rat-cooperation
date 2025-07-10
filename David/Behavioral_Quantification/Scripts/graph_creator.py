@@ -6564,7 +6564,7 @@ class multiFileGraphs:
                 trial_gazeFrames[trial_idx] += numGazing
                 trial_gazeEvents[trial_idx] += numGazeEvents
                 if (lev.returnAnimalID() == "EB"):
-                    trial_gazeFramesEB += numGazing
+                    trial_gazeFramesEB[trial_idx] += numGazing
                 numTrials[trial_idx] += 1
     
                 # === Percentage-based binning ===
