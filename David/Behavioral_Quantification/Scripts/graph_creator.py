@@ -5354,7 +5354,10 @@ class multiFileGraphs:
         plt.xlabel('Percent of Session (%)', fontsize=13)
         plt.ylabel('Success Rate (%)', fontsize=13)
         plt.title(f'Success Rate by Session Progress ({NUM_BINS} bins)', fontsize=15)
-        plt.text(5, max(success_by_bin) + 2, f"ρ = {rho_success:.2f}, p = {pval_success:.3f}", fontsize=12, color='darkgreen')
+        plt.text(0.99, 0.87, f"Rho percent = {rho_success:.2f}\n p-value = {pval_success:5f}",
+                 transform=plt.gca().transAxes,
+                 fontsize=self.labelSize, ha='right', va='top',
+                 bbox=dict(boxstyle='round,pad=0.3', facecolor='white', edgecolor='gray'))
         plt.grid(True, linestyle='--', alpha=0.7)
         plt.tight_layout()
         if self.save:
@@ -5375,7 +5378,10 @@ class multiFileGraphs:
         plt.xlabel('Percent of Session (%)', fontsize=13)
         plt.ylabel('Distance Moved (pixels/frame)', fontsize=13)
         plt.title(f'Distance Moved by Session Progress ({NUM_BINS} bins)', fontsize=15)
-        plt.text(5, max(avg_distance_by_bin) + 1, f"ρ = {rho_dist:.2f}, p = {pval_dist:.3f}", fontsize=12, color='indigo')
+        plt.text(0.99, 0.87, f"Rho percent = {rho_dist:.2f}\n p-value = {pval_dist:5f}",
+                 transform=plt.gca().transAxes,
+                 fontsize=self.labelSize, ha='right', va='top',
+                 bbox=dict(boxstyle='round,pad=0.3', facecolor='white', edgecolor='gray'))
         plt.grid(True, linestyle='--', alpha=0.7)
         plt.tight_layout()
         if self.save:
@@ -5418,7 +5424,10 @@ class multiFileGraphs:
         plt.xlabel('Trial Number', fontsize = 13)
         plt.ylabel('Success Rate (%)', fontsize = 13)
         plt.title('Success Rate by Trial Number Across Experiments', fontsize = 15)
-        plt.text(trial_numbers[0], max(success_rates) + 2, f"ρ = {rho_trial_success:.2f}, p = {pval_trial_success:.3f}", fontsize=12, color='blue')
+        plt.text(0.99, 0.87, f"Rho percent = {rho_trial_success:.2f}\n p-value = {pval_trial_success:5f}",
+                 transform=plt.gca().transAxes,
+                 fontsize=self.labelSize, ha='right', va='top',
+                 bbox=dict(boxstyle='round,pad=0.3', facecolor='white', edgecolor='gray'))
         plt.legend()
         plt.grid(True, linestyle='--', alpha=0.7)
         plt.tight_layout()
@@ -5463,7 +5472,10 @@ class multiFileGraphs:
         plt.xlabel('Trial Number', fontsize=13)
         plt.ylabel('Distance Moved (pixels/frame)', fontsize=13)
         plt.title('Average Distance Moved by Trial Number Across Experiments', fontsize=15)
-        plt.text(trial_numbers[0], max(avg_distances) + 1, f"ρ = {rho_trial_dist:.2f}, p = {pval_trial_dist:.3f}", fontsize=12, color='purple')
+        plt.text(0.99, 0.87, f"Rho percent = {rho_trial_dist:.2f}\n p-value = {pval_trial_dist:5f}",
+                 transform=plt.gca().transAxes,
+                 fontsize=self.labelSize, ha='right', va='top',
+                 bbox=dict(boxstyle='round,pad=0.3', facecolor='white', edgecolor='gray'))
         plt.legend()
         plt.grid(True, linestyle='--', alpha=0.7)
         plt.tight_layout()
@@ -6497,38 +6509,50 @@ class multiFileGraphs:
         print("numTrials: ", numTrials)
         
         trial_numbers = sorted(trial_gazeEvents.keys())
+        filtered_trial_numbers = [
+            t for t in trial_numbers if numTrials[t] >= 10
+        ]
+        
         gaze_events = [
             (trial_gazeEvents[t] / trial_frameCounts[t] * 100) if trial_frameCounts[t] else 0
-            for t in trial_numbers
+            for t in filtered_trial_numbers
         ]
         
         percent_gazing = [
             (trial_gazeFrames[t] / trial_frameCounts[t] * 100) if trial_frameCounts[t] else 0
-            for t in trial_numbers
+            for t in filtered_trial_numbers
         ]
         
         print("trial_frameCounts: ", trial_frameCounts)
+
         
-        
-        # Plot 1: Gaze Events by Trial
-        rho_events, pval_events = spearmanr(trial_numbers, gaze_events)
-        smoothed_events = uniform_filter1d(gaze_events, size=3, mode='nearest')
+        # === Plot 1: Gaze Events by Trial ===
+        rho_events, pval_events = spearmanr(filtered_trial_numbers, gaze_events)
         stars_events = significance_stars(pval_events)
+        smoothed_events = uniform_filter1d(gaze_events, size=3, mode='nearest')
+        
+        # Linear regression for gaze events
+        slope_events, intercept_events, r_events, _, _ = linregress(filtered_trial_numbers, gaze_events)
+        line_x = np.array(filtered_trial_numbers)
+        line_y = slope_events * line_x + intercept_events
         
         plt.figure(figsize=(10, 6))
-        plt.plot(trial_numbers, gaze_events, color='orange', alpha=0.4, label='Raw')
-        plt.plot(trial_numbers, smoothed_events, color='orange', label='Smoothed')
-        ymax = max(gaze_events + smoothed_events) * 1.1
-        for t, val, count in zip(trial_numbers, gaze_events, numTrials.values()):
+        plt.plot(filtered_trial_numbers, gaze_events, color='orange', alpha=0.4, label='Raw')
+        plt.plot(filtered_trial_numbers, smoothed_events, color='orange', label='Smoothed')
+        plt.plot(line_x, line_y, '--', color='black', label=f'Linear Fit\n$R^2$={r_events**2:.2f}, Slope={slope_events:.2f}')
+        
+        ymax = max(gaze_events + smoothed_events + list(line_y)) * 1.1
+        for t, val in zip(filtered_trial_numbers, gaze_events):
+            count = numTrials[t]
             if t % 10 == 0:
-                y = min(val + ymax/12, ymax * 0.95)
+                y = min(val + ymax / 12, ymax * 0.95)
                 plt.text(t, y, f'n={count}', ha='center', fontsize=self.labelSize)
         
         plt.ylim(0, ymax)
         plt.xlabel('Trial Number', fontsize=self.labelSize)
         plt.ylabel('Gaze Events', fontsize=self.labelSize)
         plt.title('Gaze Events per Trial', fontsize=self.titleSize)
-        plt.text(0.99, 0.87, f"Rho percent = {rho_events:.2f}\n p-value = {pval_events:.3f} {stars_events}",
+        plt.text(0.99, 0.87, f"Rho = {rho_events:.2f}, p = {pval_events:.3f} {stars_events}",
                  transform=plt.gca().transAxes,
                  fontsize=self.labelSize, ha='right', va='top',
                  bbox=dict(boxstyle='round,pad=0.3', facecolor='white', edgecolor='gray'))
@@ -6540,25 +6564,32 @@ class multiFileGraphs:
         plt.show()
         plt.close()
         
-        # Plot 2: Percent Gazing by Trial
-        rho_percent, pval_percent = spearmanr(trial_numbers, percent_gazing)
-        smoothed_percent = uniform_filter1d(percent_gazing, size=3, mode='nearest')
+        # === Plot 2: Percent Gazing by Trial ===
+        rho_percent, pval_percent = spearmanr(filtered_trial_numbers, percent_gazing)
         stars_percent = significance_stars(pval_percent)
+        smoothed_percent = uniform_filter1d(percent_gazing, size=3, mode='nearest')
+        
+        # Linear regression for percent gazing
+        slope_percent, intercept_percent, r_percent, _, _ = linregress(filtered_trial_numbers, percent_gazing)
+        line_y2 = slope_percent * line_x + intercept_percent
         
         plt.figure(figsize=(10, 6))
-        plt.plot(trial_numbers, percent_gazing, color='green', alpha=0.4, label='Raw')
-        plt.plot(trial_numbers, smoothed_percent, color='green', label='Smoothed')
-        ymax = max(percent_gazing + smoothed_percent) * 1.1
-        for t, val, count in zip(trial_numbers, percent_gazing, numTrials.values()):
+        plt.plot(filtered_trial_numbers, percent_gazing, color='green', alpha=0.4, label='Raw')
+        plt.plot(filtered_trial_numbers, smoothed_percent, color='green', label='Smoothed')
+        plt.plot(line_x, line_y2, '--', color='black', label=f'Linear Fit\n$R^2$={r_percent**2:.2f}, Slope={slope_percent:.2f}')
+        
+        ymax = max(percent_gazing + smoothed_percent + list(line_y2)) * 1.1
+        for t, val in zip(filtered_trial_numbers, percent_gazing):
+            count = numTrials[t]
             if t % 10 == 0:
-                y = min(val + ymax/12, ymax * 0.95)
+                y = min(val + ymax / 12, ymax * 0.95)
                 plt.text(t, y, f'n={count}', ha='center', fontsize=self.labelSize)
         
         plt.ylim(0, ymax)
         plt.xlabel('Trial Number', fontsize=self.labelSize)
         plt.ylabel('% Time Gazing', fontsize=self.labelSize)
         plt.title('Percent Gazing per Trial', fontsize=self.titleSize)
-        plt.text(0.99, 0.87, f"Rho percent = {rho_percent:.2f}\n p-value = {pval_percent:.3f} {stars_percent}",
+        plt.text(0.99, 0.87, f"Rho = {rho_percent:.2f}, p = {pval_percent:.3f} {stars_percent}",
                  transform=plt.gca().transAxes,
                  fontsize=self.labelSize, ha='right', va='top',
                  bbox=dict(boxstyle='round,pad=0.3', facecolor='white', edgecolor='gray'))
@@ -6572,47 +6603,50 @@ class multiFileGraphs:
         
         
         # === Bin-based Graphs ===
-        
+
         bin_centers = np.linspace(100 / NUM_BINS / 2, 100 - 100 / NUM_BINS / 2, NUM_BINS)
         
-        print("bin_events: ", bin_events)
-        print("bin_counts: ", bin_counts)
+        # Filter out bins with fewer than 10 samples
+        valid_bins = [i for i in range(NUM_BINS) if numInBin[i] >= 10]
+        
+        filtered_bin_centers = [bin_centers[i] for i in valid_bins]
         
         avg_events_by_bin = [
             (np.mean(bin_events[i]) / bin_counts[i] * 100) if bin_counts[i] > 0 else 0
-            for i in range(NUM_BINS)
+            for i in valid_bins
         ]
-        
-        print("avg_events_by_bin: ", avg_events_by_bin)
         
         avg_percent_by_bin = [
             (np.mean(bin_frames[i]) / bin_counts[i] * 100) if bin_counts[i] > 0 else 0
-            for i in range(NUM_BINS)
+            for i in valid_bins
         ]
         
-        #print("bin_counts: ", bin_counts)
-        
-        
-        # Plot 3: Gaze Events by % of Session
-        rho_events_bin, pval_events_bin = spearmanr(bin_centers, avg_events_by_bin)
-        smoothed_bin_events = uniform_filter1d(avg_events_by_bin, size=3, mode='nearest')
+        # === Plot 3: Gaze Events by % of Session ===
+        rho_events_bin, pval_events_bin = spearmanr(filtered_bin_centers, avg_events_by_bin)
         stars_events_bin = significance_stars(pval_events_bin)
+        smoothed_bin_events = uniform_filter1d(avg_events_by_bin, size=3, mode='nearest')
+        
+        # Linear regression
+        slope_events_bin, intercept_events_bin, r_events_bin, _, _ = linregress(filtered_bin_centers, avg_events_by_bin)
+        line_x_bin = np.array(filtered_bin_centers)
+        line_y_bin = slope_events_bin * line_x_bin + intercept_events_bin
         
         plt.figure(figsize=(10, 6))
-        plt.plot(bin_centers, avg_events_by_bin, color='purple', alpha=0.4, marker='o', label='Raw')
-        plt.plot(bin_centers, smoothed_bin_events, color='purple', marker='o', label='Smoothed')
-        ymax = max(avg_events_by_bin + smoothed_bin_events) * 1.1
-        for i in range(NUM_BINS):
-            if bin_counts[i] > 0 and i % 4 == 0:
-                y = min(avg_events_by_bin[i] + ymax/12, ymax * 0.95)
-                #print("y: ", y)
-                plt.text(bin_centers[i], y, f'n={numInBin[i]}', ha='center', fontsize=self.labelSize)
+        plt.plot(filtered_bin_centers, avg_events_by_bin, color='purple', alpha=0.4, marker='o', label='Raw')
+        plt.plot(filtered_bin_centers, smoothed_bin_events, color='purple', marker='o', label='Smoothed')
+        plt.plot(line_x_bin, line_y_bin, '--', color='black', label=f'Linear Fit\n$R^2$={r_events_bin**2:.2f}, Slope={slope_events_bin:.2f}')
+        
+        ymax = max(avg_events_by_bin + smoothed_bin_events + list(line_y_bin)) * 1.1
+        for i, bin_idx in enumerate(valid_bins):
+            if bin_idx % 4 == 0:
+                y = min(avg_events_by_bin[i] + ymax / 12, ymax * 0.95)
+                plt.text(filtered_bin_centers[i], y, f'n={numInBin[bin_idx]}', ha='center', fontsize=self.labelSize)
         
         plt.ylim(0, ymax)
         plt.xlabel('Percent of Session (%)', fontsize=self.labelSize)
         plt.ylabel('Gaze Events', fontsize=self.labelSize)
         plt.title('Gaze Events by Session Progress', fontsize=self.titleSize)
-        plt.text(0.99, 0.87, f"Rho percent = {rho_events_bin:.2f}\n p-value = {pval_events_bin:.3f} {stars_events_bin}",
+        plt.text(0.99, 0.87, f"Rho = {rho_events_bin:.2f}, p = {pval_events_bin:.3f} {stars_events_bin}",
                  transform=plt.gca().transAxes,
                  fontsize=self.labelSize, ha='right', va='top',
                  bbox=dict(boxstyle='round,pad=0.3', facecolor='white', edgecolor='gray'))
@@ -6624,25 +6658,31 @@ class multiFileGraphs:
         plt.show()
         plt.close()
         
-        # Plot 4: Percent Gazing by % of Session
-        rho_percent_bin, pval_percent_bin = spearmanr(bin_centers, avg_percent_by_bin)
-        smoothed_bin_percent = uniform_filter1d(avg_percent_by_bin, size=3, mode='nearest')
+        # === Plot 4: Percent Gazing by % of Session ===
+        rho_percent_bin, pval_percent_bin = spearmanr(filtered_bin_centers, avg_percent_by_bin)
         stars_percent_bin = significance_stars(pval_percent_bin)
+        smoothed_bin_percent = uniform_filter1d(avg_percent_by_bin, size=3, mode='nearest')
+        
+        # Linear regression
+        slope_percent_bin, intercept_percent_bin, r_percent_bin, _, _ = linregress(filtered_bin_centers, avg_percent_by_bin)
+        line_y2_bin = slope_percent_bin * line_x_bin + intercept_percent_bin
         
         plt.figure(figsize=(10, 6))
-        plt.plot(bin_centers, avg_percent_by_bin, color='teal', alpha=0.4, marker='o', label='Raw')
-        plt.plot(bin_centers, smoothed_bin_percent, color='teal', marker='o', label='Smoothed')
-        ymax = max(avg_percent_by_bin + smoothed_bin_percent) * 1.1
-        for i in range(NUM_BINS):
-            if bin_counts[i] > 0 and i % 4 == 0:
-                y = min(avg_percent_by_bin[i] + ymax/12, ymax * 0.95)
-                plt.text(bin_centers[i], y, f'n={numInBin[i]}', ha='center', fontsize=self.labelSize)
+        plt.plot(filtered_bin_centers, avg_percent_by_bin, color='teal', alpha=0.4, marker='o', label='Raw')
+        plt.plot(filtered_bin_centers, smoothed_bin_percent, color='teal', marker='o', label='Smoothed')
+        plt.plot(line_x_bin, line_y2_bin, '--', color='black', label=f'Linear Fit\n$R^2$={r_percent_bin**2:.2f}, Slope={slope_percent_bin:.2f}')
+        
+        ymax = max(avg_percent_by_bin + smoothed_bin_percent + list(line_y2_bin)) * 1.1
+        for i, bin_idx in enumerate(valid_bins):
+            if bin_idx % 4 == 0:
+                y = min(avg_percent_by_bin[i] + ymax / 12, ymax * 0.95)
+                plt.text(filtered_bin_centers[i], y, f'n={numInBin[bin_idx]}', ha='center', fontsize=self.labelSize)
         
         plt.ylim(0, ymax)
         plt.xlabel('Percent of Session (%)', fontsize=self.labelSize)
         plt.ylabel('% Time Gazing', fontsize=self.labelSize)
         plt.title('Percent Gazing by Session Progress', fontsize=self.titleSize)
-        plt.text(0.99, 0.87, f"Rho percent = {rho_percent_bin:.2f}\n p-value = {pval_percent_bin:.3f} {stars_percent_bin}",
+        plt.text(0.99, 0.87, f"Rho = {rho_percent_bin:.2f}, p = {pval_percent_bin:.3f} {stars_percent_bin}",
                  transform=plt.gca().transAxes,
                  fontsize=self.labelSize, ha='right', va='top',
                  bbox=dict(boxstyle='round,pad=0.3', facecolor='white', edgecolor='gray'))
@@ -7114,9 +7154,9 @@ initialNanList = [0.3]
 print("Start MultiFileGraphs Regular")
 experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "", save=True)
 #experiment.pcaAndGLMCoopSuccessPredictors()
-#experiment.gazingOverTrial()
+experiment.gazingOverTrial()
 
-experiment.testMotivation()
+#experiment.testMotivation()
 
 #experiment.whatCausesSuccessRegions()
 #experiment.wallAnxietyMetrics()
@@ -7139,7 +7179,7 @@ fpsList = arr[3]
 totFramesList = arr[4]
 initialNanList = arr[5]
 experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "Unfamiliar_", save=True)
-experiment.testMotivation()
+experiment.gazingOverTrial()
 
 
 # ---------------------------------------------------------------------------------------------------------
