@@ -5493,14 +5493,22 @@ class multiFileGraphs:
         plt.figure(figsize=(10, 6))
         
         # Plot A
-        plt.errorbar(trial_numbers, success_rates, yerr=stderr_success, fmt='o-', color='blue',
-                     ecolor='lightblue', capsize=3, label='Success Rate')
+        plt.plot(trial_numbers, success_rates, color='blue', marker='o', label='Success Rate')
+        plt.fill_between(trial_numbers,
+                 success_rates - stderr_success,
+                 success_rates + stderr_success,
+                 color='blue', alpha=0.2)
+
         plt.plot(trial_numbers, regline_A, linestyle='--', color='blue',
                  label=f'Fit A: slope={slope_A:.2f}, $R^2$={r_A**2:.2f}, p={p_A:.3f}')
         
         # Plot EB
-        plt.errorbar(trial_numbersEB, success_ratesEB, yerr=stderr_successEB, fmt='s-', color='green',
-                     ecolor='lightgreen', capsize=3, label='Success Rate (EB)')
+        plt.plot(trial_numbersEB, success_ratesEB, color='green', marker='s', label='Success Rate (EB)')
+        plt.fill_between(trial_numbersEB,
+                         success_ratesEB - stderr_successEB,
+                         success_ratesEB + stderr_successEB,
+                         color='green', alpha=0.2)
+
         plt.plot(trial_numbersEB, regline_B, linestyle='--', color='green',
                  label=f'Fit EB: slope={slope_B:.2f}, $R^2$={r_B**2:.2f}, p={p_B:.3f}')
         
@@ -7210,6 +7218,9 @@ class multiFileGraphs:
         for exp in self.experiments:
             lev = exp.lev
 
+    def whereDoesGazingHappen(self):
+        f
+    
 
 #Testing Multi File Graphs
 #
