@@ -2571,6 +2571,8 @@ class multiFileGraphs:
         datapoints = [datapoints_NoSuccess, datapoints_Success_NoZone, datapoints_SuccessZone]
         print("Datapoints: ", datapoints)
         
+        print("Averages2: ", np.average(datapoints[0]), ",   ", np.average(datapoints[1]), ",   ", np.average(datapoints[2]))
+        
         # X locations for the bars and jittered scatter points
         x = np.arange(len(labels))
         width = 0.6
@@ -2594,9 +2596,11 @@ class multiFileGraphs:
         
         for i, (a, b) in enumerate(comparisons):
             stat, pval = ttest_ind(datapoints[a], datapoints[b], equal_var=False)
+            stat2, pval2 = mannwhitneyu(datapoints[a], datapoints[b], alternative='two-sided')
             
             print("(a,b): ", (a, b))
             print("pval: ", pval)
+            print("pval2: ", pval2)
             
             # Significance text
             if pval < 0.001:
@@ -2609,7 +2613,7 @@ class multiFileGraphs:
                 stars = 'n.s.'
         
             # Vertical position of the line
-            text = f"p = {pval:.3f}  " + stars
+            text = stars
             y = y_max + i * y_step
             ax.plot([x[a], x[a], x[b], x[b]], [y, y + 0.01, y + 0.01, y], color='black', linewidth=1.2)
             ax.text((x[a] + x[b]) / 2, y + 0.015, text, ha='center', va='bottom', fontsize=12)
