@@ -2502,26 +2502,36 @@ class multiFileGraphs:
                 if (trialBool):
                     cat_totFrames_SuccessZone += numFrames
                     cat_totDifference_SuccessZone += difference
+                    
+                    #totFrames_SuccessZone += numFrames
+                    #totDifference_SuccessZone += difference
                     #if (numFrames > 0):
                         #datapoints_SuccessZone.append(difference / numFrames)
                         
                 elif(successTrial[i] == 1):
                     cat_totFrames_Success_NoZone += numFrames
                     cat_totDifference_Success_NoZone += difference
+                    
+                    #totFrames_Success_NoZone += numFrames
+                    #totDifference_Success_NoZone += difference
                     #if (numFrames > 0):
                         #datapoints_Success_NoZone.append(difference / numFrames)
                 else:
                     cat_totFrames_NoSuccess += numFrames
                     cat_totDifference_NoSuccess += difference
+                    
+                    #totFrames_NoSuccess += numFrames
+                    #totDifference_NoSuccess += difference
                     #if (numFrames > 0):
                         #datapoints_NoSuccess.append(difference / numFrames)
                         
             if (cat_totFrames_NoSuccess > 0 and cat_totDifference_NoSuccess / cat_totFrames_NoSuccess > 2000):
+                print("Skipped: ", exp.lev_file)
                 continue
             
-            totDifference_NoSuccess += cat_totFrames_NoSuccess
-            totDifference_Success_NoZone += cat_totFrames_Success_NoZone
-            totDifference_SuccessZone += cat_totFrames_SuccessZone
+            totDifference_NoSuccess += cat_totDifference_NoSuccess
+            totDifference_Success_NoZone += cat_totDifference_Success_NoZone
+            totDifference_SuccessZone += cat_totDifference_SuccessZone
             
             totFrames_NoSuccess += cat_totFrames_NoSuccess
             totFrames_Success_NoZone += cat_totFrames_Success_NoZone
@@ -2559,6 +2569,7 @@ class multiFileGraphs:
         averages = [averageDistance_NoSuccess, averageDistance_Success_NoZone, averageDistance_SuccessZone]
         print("Averages: ", averages)
         datapoints = [datapoints_NoSuccess, datapoints_Success_NoZone, datapoints_SuccessZone]
+        print("Datapoints: ", datapoints)
         
         # X locations for the bars and jittered scatter points
         x = np.arange(len(labels))
