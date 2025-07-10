@@ -4983,9 +4983,9 @@ class multiFileGraphs:
                  ha='right', va='bottom', fontsize=12,
                  bbox=dict(facecolor='white', edgecolor='gray'))
     
-            plt.xlabel('Average Distance from Lever')
-            plt.ylabel('Average Time Until First Press (s)')
-            plt.title('Lever Distance vs. Time Until First Press')
+            plt.xlabel('Average Distance from Lever', fontsize = self.labelSize)
+            plt.ylabel('Average Time Until First Press (s)', fontsize = self.labelSize)
+            plt.title('Lever Distance vs. Time Until First Press', fontsize=self.titleSize)
             plt.legend()
             plt.grid(True)
             plt.tight_layout()
