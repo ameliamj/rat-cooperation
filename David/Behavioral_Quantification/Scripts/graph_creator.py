@@ -2471,9 +2471,12 @@ class multiFileGraphs:
             
             temp_successInARowvsDistance = defaultdict(list)
             
+            listTrials = self._filterToLeverPressTrials(listTrials, lev)
+            
             print("Lengths:", len(listTrials), len(startTimeTrials), len(endTimeTrials))
             if (len(listTrials) != len(startTimeTrials) or  len(startTimeTrials) != len(endTimeTrials)):
                 print("levFiles: ", exp.lev_file)
+                continue
             
             for i, trialBool in enumerate(listTrials):
                 if (startTimeTrials[i] == None or endTimeTrials[i] == None or successInARow[i] == None):
