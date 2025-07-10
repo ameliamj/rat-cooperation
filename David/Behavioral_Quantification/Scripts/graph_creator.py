@@ -5530,8 +5530,8 @@ class multiFileGraphs:
         plt.ylabel('Success Rate (%)', fontsize=13)
         plt.title('Success Rate by Trial Number (with EB overlay)', fontsize=15)
         plt.text(0.99, 0.87,
-                 f"Spearman Rho A = {rho_A:.2f}\n p = {pval_A:.3f}\n"
-                 f"Spearman Rho EB = {rho_B:.2f}\n p = {pval_B:.3f}",
+                 f"ρ = {rho_A:.2f}\n p = {pval_A:.3f}\n"
+                 f"ρ (EB) = {rho_B:.2f}\n p = {pval_B:.3f}",
                  transform=plt.gca().transAxes,
                  fontsize=11, ha='right', va='top',
                  bbox=dict(boxstyle='round,pad=0.3', facecolor='white', edgecolor='gray'))
