@@ -28,6 +28,8 @@ from scipy.ndimage import gaussian_filter1d
 from scipy.ndimage import uniform_filter1d
 from scipy.optimize import curve_fit
 from scipy.stats import spearmanr
+from scipy.stats import ttest_ind
+
 
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
@@ -2479,7 +2481,7 @@ class multiFileGraphs:
                 continue
             
             for i, trialBool in enumerate(listTrials):
-                if (startTimeTrials[i] == None or endTimeTrials[i] == None or successInARow[i] == None):
+                if (np.isnan(startTimeTrials[i]) or np.isnan(endTimeTrials[i]) or np.isnan(successInARow[i]) or startTimeTrials[i] == None or endTimeTrials[i] == None or successInARow[i] == None):
                     continue
                 
                 startFrame = int(startTimeTrials[i] * fps)
@@ -2568,6 +2570,29 @@ class multiFileGraphs:
             jittered_x = np.random.normal(loc=x[i], scale=0.05, size=len(points))
             ax.scatter(jittered_x, points, alpha=0.8, color='black', s=20)
         
+        # Add statistical significance annotations
+        comparisons = [(0, 1), (0, 2), (1, 2)]
+        y_max = max(max(d) for d in datapoints) * 1.1
+        y_step = (y_max - min(min(d) for d in datapoints)) * 0.1
+        
+        for i, (a, b) in enumerate(comparisons):
+            stat, pval = ttest_ind(datapoints[a], datapoints[b], equal_var=False)
+            
+            # Significance text
+            if pval < 0.001:
+                stars = '***'
+            elif pval < 0.01:
+                stars = '**'
+            elif pval < 0.05:
+                stars = '*'
+            else:
+                stars = 'n.s.'
+        
+            # Vertical position of the line
+            y = y_max + i * y_step
+            ax.plot([x[a], x[a], x[b], x[b]], [y, y + 0.01, y + 0.01, y], color='black', linewidth=1.2)
+            ax.text((x[a] + x[b]) / 2, y + 0.015, stars, ha='center', va='bottom', fontsize=12)
+        
         # Labels and formatting
         ax.set_ylabel('Average Distance', fontsize = 13)
         ax.set_title('Average Head-Body X-Distance per Trial', fontsize = 15)
@@ -2580,6 +2605,7 @@ class multiFileGraphs:
         if (self.save):
             plt.savefig(f"{self.prefix}X_Distance_SuccessZonevsNoSuccess.png")
         plt.show()
+        plt.close()
         
         # Prepare data: calculate averages for each key and collect individual points
         keys = sorted(successInARowvsDistance.keys())
@@ -2622,6 +2648,7 @@ class multiFileGraphs:
         if (self.save):
             plt.savefig(f"{self.prefix}Smoothed_X_Distance_vs_SuccessInARow.png")
         plt.show()
+        plt.close()
         
     def compareAverageVelocityGazevsNot(self):
         '''
@@ -6105,7 +6132,6 @@ class multiFileGraphs:
         if self.save:
             plt.savefig(filename)
         plt.show()        
-
 
     def wallAnxietyMetrics(self):
         '''
