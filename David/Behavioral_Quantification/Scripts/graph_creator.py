@@ -20,7 +20,7 @@ from typing import List
 from file_extractor_class import fileExtractor
 #from mag_class import magLoader
 #from lev_class import levLoader
-from scipy.stats import linregress
+from scipy.stats import linregress, sem
 from scipy.interpolate import make_interp_spline
 from scipy.stats import mannwhitneyu, kruskal
 from scipy.ndimage import gaussian_filter
@@ -2534,6 +2534,7 @@ class multiFileGraphs:
                 datapoints_SuccessZone.append(cat_totDifference_SuccessZone / cat_totFrames_SuccessZone)
                 datapoints_Success_NoZone.append(cat_totDifference_Success_NoZone / cat_totFrames_Success_NoZone)
                 datapoints_NoSuccess.append(cat_totDifference_NoSuccess / cat_totFrames_NoSuccess)
+                
                 totDifference_NoSuccess += cat_totDifference_NoSuccess
                 totDifference_Success_NoZone += cat_totDifference_Success_NoZone
                 totDifference_SuccessZone += cat_totDifference_SuccessZone
@@ -6497,6 +6498,7 @@ class multiFileGraphs:
         
         trial_gazeEvents = {}
         trial_gazeFrames = {}
+        trial_gazeFramesEB = {}
         trial_frameCounts = {}
         numTrials = {}
         
@@ -6553,12 +6555,15 @@ class multiFileGraphs:
                 if trial_idx not in trial_gazeEvents:
                     trial_gazeEvents[trial_idx] = 0
                     trial_gazeFrames[trial_idx] = 0
+                    trial_gazeFramesEB[trial_idx] = 0
                     trial_frameCounts[trial_idx] = 0
                     numTrials[trial_idx] = 0
     
                 trial_frameCounts[trial_idx] += end_frame - start_frame
                 trial_gazeFrames[trial_idx] += numGazing
                 trial_gazeEvents[trial_idx] += numGazeEvents
+                if (lev.returnAnimalID() == "EB"):
+                    trial_gazeFramesEB += numGazing
                 numTrials[trial_idx] += 1
     
                 # === Percentage-based binning ===
@@ -6590,6 +6595,11 @@ class multiFileGraphs:
         
         percent_gazing = [
             (trial_gazeFrames[t] / trial_frameCounts[t] * 100) if trial_frameCounts[t] else 0
+            for t in filtered_trial_numbers
+        ]
+        
+        percent_gazingEB = [
+            (trial_gazeFramesEB[t] / trial_frameCounts[t] * 100) if trial_frameCounts[t] else 0
             for t in filtered_trial_numbers
         ]
         
@@ -6635,39 +6645,79 @@ class multiFileGraphs:
         plt.close()
         
         # === Plot 2: Percent Gazing by Trial ===
-        rho_percent, pval_percent = spearmanr(filtered_trial_numbers, percent_gazing)
-        stars_percent = significance_stars(pval_percent)
-        smoothed_percent = uniform_filter1d(percent_gazing, size=3, mode='nearest')
         
-        # Linear regression for percent gazing
-        slope_percent, intercept_percent, r_percent, _, _ = linregress(filtered_trial_numbers, percent_gazing)
-        line_y2 = slope_percent * line_x + intercept_percent
+        # Linear regressions
+        slope_gaze, intercept_gaze, r_gaze, pval_gaze, _ = linregress(filtered_trial_numbers, percent_gazing)
+        slope_eb, intercept_eb, r_eb, pval_eb, _ = linregress(filtered_trial_numbers, percent_gazingEB)
+        line_x = np.array(filtered_trial_numbers)
+        line_y_gaze = slope_gaze * line_x + intercept_gaze
+        line_y_eb = slope_eb * line_x + intercept_eb
         
+        # Spearman for annotation
+        rho_gaze, pval_spear_gaze = spearmanr(filtered_trial_numbers, percent_gazing)
+        rho_eb, pval_spear_eb = spearmanr(filtered_trial_numbers, percent_gazingEB)
+        stars_gaze = significance_stars(pval_spear_gaze)
+        stars_eb = significance_stars(pval_spear_eb)
+        
+        # === Plotting ===
         plt.figure(figsize=(10, 6))
-        plt.plot(filtered_trial_numbers, percent_gazing, color='green', alpha=0.4, label='Raw')
-        plt.plot(filtered_trial_numbers, smoothed_percent, color='green', label='Smoothed')
-        plt.plot(line_x, line_y2, '--', color='black', label=f'Linear Fit\n$R^2$={r_percent**2:.2f}, Slope={slope_percent:.2f}')
         
-        ymax = max(percent_gazing + smoothed_percent + list(line_y2)) * 1.1
+        # Raw lines with error shading (bootstrap or sem)
+        percent_gazing_array = np.array(percent_gazing)
+        percent_gazingEB_array = np.array(percent_gazingEB)
+        
+        # Compute standard error manually (you could replace this with bootstrapping if needed)
+        se_gaze = sem(percent_gazing_array)
+        se_eb = sem(percent_gazingEB_array)
+        
+        plt.plot(filtered_trial_numbers, percent_gazing, color='green', alpha=0.6, label='% Gazing')
+        plt.fill_between(filtered_trial_numbers,
+                         percent_gazing_array - se_gaze,
+                         percent_gazing_array + se_gaze,
+                         color='green', alpha=0.2)
+        
+        plt.plot(filtered_trial_numbers, percent_gazingEB, color='orange', alpha=0.6, label='% Gazing EB')
+        plt.fill_between(filtered_trial_numbers,
+                         percent_gazingEB_array - se_eb,
+                         percent_gazingEB_array + se_eb,
+                         color='orange', alpha=0.2)
+        
+        # Linear fits
+        plt.plot(line_x, line_y_gaze, '--', color='green',
+                 label=f'Linear Fit Gazing\n$R^2$={r_gaze**2:.2f}, Slope={slope_gaze:.2f}')
+        plt.plot(line_x, line_y_eb, '--', color='orange',
+                 label=f'Linear Fit EB\n$R^2$={r_eb**2:.2f}, Slope={slope_eb:.2f}')
+        
+        # Trial annotations
+        ymax = max(np.max(percent_gazing_array), np.max(percent_gazingEB_array),
+                   np.max(line_y_gaze), np.max(line_y_eb)) * 1.1
         for t, val in zip(filtered_trial_numbers, percent_gazing):
             count = numTrials[t]
             if t % 10 == 0:
                 y = min(val + ymax / 12, ymax * 0.95)
                 plt.text(t, y, f'n={count}', ha='center', fontsize=self.labelSize)
         
+        # Axis labels and legend
         plt.ylim(0, ymax)
         plt.xlabel('Trial Number', fontsize=self.labelSize)
         plt.ylabel('% Time Gazing', fontsize=self.labelSize)
-        plt.title('Percent Gazing per Trial', fontsize=self.titleSize)
-        plt.text(0.99, 0.87, f"Rho = {rho_percent:.2f}, p = {pval_percent:.3f} {stars_percent}",
-                 transform=plt.gca().transAxes,
-                 fontsize=self.labelSize, ha='right', va='top',
+        plt.title('Percent Gazing per Trial (Including EB)', fontsize=self.titleSize)
+        
+        # Spearman annotations
+        plt.text(0.99, 0.91, f"Rho (Gazing) = {rho_gaze:.2f}, p = {pval_spear_gaze:.3f} {stars_gaze}",
+                 transform=plt.gca().transAxes, fontsize=self.labelSize, ha='right', va='top',
                  bbox=dict(boxstyle='round,pad=0.3', facecolor='white', edgecolor='gray'))
+        plt.text(0.99, 0.85, f"Rho (EB) = {rho_eb:.2f}, p = {pval_spear_eb:.3f} {stars_eb}",
+                 transform=plt.gca().transAxes, fontsize=self.labelSize, ha='right', va='top',
+                 bbox=dict(boxstyle='round,pad=0.3', facecolor='white', edgecolor='gray'))
+        
         plt.legend()
         plt.grid(True, linestyle='--', alpha=0.7)
         plt.tight_layout()
+        
+        # Save and show
         if self.save:
-            plt.savefig(f'{self.prefix}PercentGazingByTrial.png')
+            plt.savefig(f'{self.prefix}PercentGazingByTrial_WithEB.png')
         plt.show()
         plt.close()
         

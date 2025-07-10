@@ -130,6 +130,10 @@ class levLoader:
     
     
     #Graph Stuff: 
+    def returnAnimalID(self):
+        animal_id = self.data['AnimalID'].iloc[0][:2]
+        return animal_id
+        
     def returnSuccThreshold(self):
         if ('CoopTimeLimit' in self.data.columns.tolist()):
             return self.data['CoopTimeLimit'].iloc[0]
