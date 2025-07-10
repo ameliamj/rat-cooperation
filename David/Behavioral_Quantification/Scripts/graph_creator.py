@@ -7301,9 +7301,9 @@ experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFrames
 #experiment.cooperativeRegionStrategiesQuantification()
 #experiment.pcaAndGLMCoopSuccessPredictors()
 #experiment.trueCooperationTesting()
-experiment.gazingOverTrial()
+#experiment.gazingOverTrial()
 
-#experiment.testMotivation()
+experiment.testMotivation()
 
 #experiment.whatCausesSuccessRegions()
 #experiment.wallAnxietyMetrics()
@@ -7326,7 +7326,7 @@ fpsList = arr[3]
 totFramesList = arr[4]
 initialNanList = arr[5]
 experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "Unfamiliar_", save=True)
-experiment.gazingOverTrial()
+experiment.testMotivation()
 
 
 # ---------------------------------------------------------------------------------------------------------
