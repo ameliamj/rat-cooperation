@@ -5493,6 +5493,8 @@ class multiFileGraphs:
         plt.figure(figsize=(10, 6))
         
         # Plot A
+        success_rates = np.array(success_rates)
+        stderr_success = np.array(stderr_success)
         plt.plot(trial_numbers, success_rates, color='blue', marker='o', label='Success Rate')
         plt.fill_between(trial_numbers,
                  success_rates - stderr_success,
@@ -5503,6 +5505,8 @@ class multiFileGraphs:
                  label=f'Fit A: slope={slope_A:.2f}, $R^2$={r_A**2:.2f}, p={p_A:.3f}')
         
         # Plot EB
+        success_ratesEB = np.array(success_ratesEB)
+        stderr_successEB = np.array(stderr_successEB)
         plt.plot(trial_numbersEB, success_ratesEB, color='green', marker='s', label='Success Rate (EB)')
         plt.fill_between(trial_numbersEB,
                          success_ratesEB - stderr_successEB,
