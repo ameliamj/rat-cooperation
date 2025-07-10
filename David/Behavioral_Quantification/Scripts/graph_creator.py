@@ -2522,6 +2522,9 @@ class multiFileGraphs:
                     #if (numFrames > 0):
                         #datapoints_NoSuccess.append(difference / numFrames)
                         
+            if (cat_totFrames_NoSuccess > 0 and cat_totDifference_NoSuccess / cat_totFrames_NoSuccess > 2000):
+                continue
+            
             if (cat_totFrames_SuccessZone > 0):
                 datapoints_SuccessZone.append(cat_totDifference_SuccessZone / cat_totFrames_SuccessZone)
             
@@ -5437,12 +5440,15 @@ class multiFileGraphs:
             smoothed_rates = success_rates  # No smoothing if too few points
         
         rho_trial_success, pval_trial_success = spearmanr(trial_numbers, success_rates)
-
+        slope, intercept, r_value, p_value, std_err = linregress(trial_numbers, success_rates)
+        regression_line = intercept + slope * np.array(trial_numbers)
+        
         #Success Rate Motivation Plot
         # Create the plot
         plt.figure(figsize=(10, 6))
         plt.plot(trial_numbers, smoothed_rates, color='blue', label='Smoothed Success Rate')
-        
+        plt.plot(trial_numbers, regression_line, color='red', linestyle='--', label=f'Linear Fit\nslope={slope:.2f}, $R^2$={r_value**2:.2f}, p={p_value:.3f}')
+
         # Plot scatter points every 5 trials
         scatter_indices = [i for i in range(len(trial_numbers)) if trial_numbers[i] % 4 == 0]
         scatter_trials = [trial_numbers[i] for i in scatter_indices]
@@ -7087,6 +7093,10 @@ class multiFileGraphs:
     
     def windowGraphs(self):
         WINDOW_SIZE = 5
+        for exp in self.experiments:
+            lev = exp.lev
+
+    def overlayMotivationGazeKLvsEB(self):
         for exp in self.experiments:
             lev = exp.lev
 
