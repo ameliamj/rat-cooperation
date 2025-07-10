@@ -2529,23 +2529,33 @@ class multiFileGraphs:
                 print("Skipped: ", exp.lev_file)
                 continue
             
-            totDifference_NoSuccess += cat_totDifference_NoSuccess
-            totDifference_Success_NoZone += cat_totDifference_Success_NoZone
-            totDifference_SuccessZone += cat_totDifference_SuccessZone
             
-            totFrames_NoSuccess += cat_totFrames_NoSuccess
-            totFrames_Success_NoZone += cat_totFrames_Success_NoZone
-            totFrames_SuccessZone += cat_totFrames_SuccessZone
-            
-            if (cat_totFrames_SuccessZone > 0):
+            if (cat_totFrames_SuccessZone > 0 and cat_totFrames_Success_NoZone > 0 and cat_totFrames_NoSuccess > 0):
                 datapoints_SuccessZone.append(cat_totDifference_SuccessZone / cat_totFrames_SuccessZone)
+                datapoints_Success_NoZone.append(cat_totDifference_Success_NoZone / cat_totFrames_Success_NoZone)
+                datapoints_NoSuccess.append(cat_totDifference_NoSuccess / cat_totFrames_NoSuccess)
+                totDifference_NoSuccess += cat_totDifference_NoSuccess
+                totDifference_Success_NoZone += cat_totDifference_Success_NoZone
+                totDifference_SuccessZone += cat_totDifference_SuccessZone
+                
+                totFrames_NoSuccess += cat_totFrames_NoSuccess
+                totFrames_Success_NoZone += cat_totFrames_Success_NoZone
+                totFrames_SuccessZone += cat_totFrames_SuccessZone
+            else:
+                print(f"{cat_totFrames_NoSuccess}, {cat_totFrames_Success_NoZone}, {cat_totFrames_SuccessZone}")
             
+            '''if (cat_totFrames_SuccessZone > 0 and cat_totFrames_Success_NoZone > 0 and cat_totFrames_NoSuccess > 0):
+                datapoints_SuccessZone.append(cat_totDifference_SuccessZone / cat_totFrames_SuccessZone)
+            else:
+                datapoints_SuccessZone.append(0)
+                
             if (cat_totFrames_Success_NoZone > 0):
                 datapoints_Success_NoZone.append(cat_totDifference_Success_NoZone / cat_totFrames_Success_NoZone)
             
             if (cat_totFrames_NoSuccess > 0):
                 datapoints_NoSuccess.append(cat_totDifference_NoSuccess / cat_totFrames_NoSuccess)
-                
+            '''
+            
             for key, value in temp_successInARowvsDistance.items():
                 avg = np.mean(value)
                 successInARowvsDistance[key].append(avg)
