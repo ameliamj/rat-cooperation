@@ -5299,9 +5299,11 @@ class multiFileGraphs:
         '''
         # Collect success rates and experiment counts per trial number
         trial_successes = {}
+        trial_successesEB = {}
         trial_distances = {}
         trial_counts_distance = {}
         trial_counts = {}
+        trial_countsEB = {}
         
         NUM_BINS = 30
         
@@ -5382,6 +5384,10 @@ class multiFileGraphs:
                     trial_distances[trial_idx].append(np.mean(distances_both))
                     
                 trial_successes[trial_idx].append(status == 1)
+                if (animal_id == "EB"):
+                    trial_successesEB[trial_idx].append((status == 1))
+                    trial_countsEB[trial_idx] += 1
+                    
                 trial_counts[trial_idx] += 1
                 
                 # === Percentile Binned Graphs ===
@@ -5462,51 +5468,65 @@ class multiFileGraphs:
         
         # Calculate percent success rate for each trial number
         trial_numbers = sorted([idx for idx in trial_successes if trial_counts[idx] >= 10])
-        success_rates = [
-            np.mean(trial_successes[trial_idx]) * 100 for trial_idx in trial_numbers
-        ]
+        success_rates = [np.mean(trial_successes[trial_idx]) * 100 for trial_idx in trial_numbers]
         experiment_counts = [trial_counts[trial_idx] for trial_idx in trial_numbers]
+        stderr_success = [sem(trial_successes[trial_idx]) * 100 for trial_idx in trial_numbers]
         
-        # Apply smoothing (moving average with window size 3)
-        if len(success_rates) > 2:  # Need at least 3 points for smoothing
-            smoothed_rates = uniform_filter1d(success_rates, size=3, mode='nearest')
-        else:
-            smoothed_rates = success_rates  # No smoothing if too few points
+        trial_numbersEB = sorted([idx for idx in trial_successesEB if trial_countsEB[idx] >= 10])
+        success_ratesEB = [np.mean(trial_successesEB[trial_idx]) * 100 for trial_idx in trial_numbersEB]
+        experiment_countsEB = [trial_countsEB[trial_idx] for trial_idx in trial_numbersEB]
+        stderr_successEB = [sem(trial_successesEB[trial_idx]) * 100 for trial_idx in trial_numbersEB]
         
-        rho_trial_success, pval_trial_success = spearmanr(trial_numbers, success_rates)
-        slope, intercept, r_value, p_value, std_err = linregress(trial_numbers, success_rates)
-        regression_line = intercept + slope * np.array(trial_numbers)
+        # === Linear Regression ===
+        rho_A, pval_A = spearmanr(trial_numbers, success_rates)
+        slope_A, intercept_A, r_A, p_A, _ = linregress(trial_numbers, success_rates)
+        regline_A = intercept_A + slope_A * np.array(trial_numbers)
         
-        #Success Rate Motivation Plot
-        # Create the plot
+        rho_B, pval_B = spearmanr(trial_numbersEB, success_ratesEB)
+        slope_B, intercept_B, r_B, p_B, _ = linregress(trial_numbersEB, success_ratesEB)
+        regline_B = intercept_B + slope_B * np.array(trial_numbersEB)
+        
+        # === Plot ===
         plt.figure(figsize=(10, 6))
-        plt.plot(trial_numbers, smoothed_rates, color='blue', label='Smoothed Success Rate')
-        plt.plot(trial_numbers, regression_line, color='red', linestyle='--', label=f'Linear Fit\nslope={slope:.2f}, $R^2$={r_value**2:.2f}, p={p_value:.3f}')
-
-        # Plot scatter points every 5 trials
-        scatter_indices = [i for i in range(len(trial_numbers)) if trial_numbers[i] % 4 == 0]
-        scatter_trials = [trial_numbers[i] for i in scatter_indices]
-        scatter_rates = [success_rates[i] for i in scatter_indices]
-        plt.scatter(scatter_trials, scatter_rates, color='black', alpha=0.5, label='Actual Success Rate')
         
-        # Annotate points with number of experiments
-        for trial_idx, rate, count in zip(trial_numbers, success_rates, experiment_counts):
-            if (trial_idx % 15 == 0):
-                plt.text(trial_idx, rate + 0.5, f'n={count}', ha='center', va='bottom', fontsize=11, fontweight='bold')
+        # Plot A
+        plt.errorbar(trial_numbers, success_rates, yerr=stderr_success, fmt='o-', color='blue',
+                     ecolor='lightblue', capsize=3, label='Success Rate')
+        plt.plot(trial_numbers, regline_A, linestyle='--', color='blue',
+                 label=f'Fit A: slope={slope_A:.2f}, $R^2$={r_A**2:.2f}, p={p_A:.3f}')
         
-        plt.xlabel('Trial Number', fontsize = 13)
-        plt.ylabel('Success Rate (%)', fontsize = 13)
-        plt.title('Success Rate by Trial Number Across Experiments', fontsize = 15)
-        plt.text(0.99, 0.87, f"Rho percent = {rho_trial_success:.2f}\n p-value = {pval_trial_success:5f}",
+        # Plot EB
+        plt.errorbar(trial_numbersEB, success_ratesEB, yerr=stderr_successEB, fmt='s-', color='green',
+                     ecolor='lightgreen', capsize=3, label='Success Rate (EB)')
+        plt.plot(trial_numbersEB, regline_B, linestyle='--', color='green',
+                 label=f'Fit EB: slope={slope_B:.2f}, $R^2$={r_B**2:.2f}, p={p_B:.3f}')
+        
+        # Annotate n values
+        for x, y, n in zip(trial_numbers, success_rates, experiment_counts):
+            if x % 15 == 0:
+                plt.text(x, y + 0.5, f'n={n}', ha='center', va='bottom', fontsize=10)
+        
+        for x, y, n in zip(trial_numbersEB, success_ratesEB, experiment_countsEB):
+            if x % 15 == 0:
+                plt.text(x, y - 2, f'n={n}', ha='center', va='top', fontsize=10, color='green')
+        
+        # Labels and legend
+        plt.xlabel('Trial Number', fontsize=13)
+        plt.ylabel('Success Rate (%)', fontsize=13)
+        plt.title('Success Rate by Trial Number (with EB overlay)', fontsize=15)
+        plt.text(0.99, 0.87,
+                 f"Spearman Rho A = {rho_A:.2f}\n p = {pval_A:.3f}\n"
+                 f"Spearman Rho EB = {rho_B:.2f}\n p = {pval_B:.3f}",
                  transform=plt.gca().transAxes,
-                 fontsize=self.labelSize, ha='right', va='top',
+                 fontsize=11, ha='right', va='top',
                  bbox=dict(boxstyle='round,pad=0.3', facecolor='white', edgecolor='gray'))
-        plt.legend()
         plt.grid(True, linestyle='--', alpha=0.7)
+        plt.legend()
         plt.tight_layout()
         
+        # Save
         if self.save:
-            plt.savefig(f'{self.prefix}SuccessRateByTrialNumber.png')
+            plt.savefig(f'{self.prefix}SuccessRateByTrialNumber_WithEB.png')
         plt.show()
         plt.close()
         
