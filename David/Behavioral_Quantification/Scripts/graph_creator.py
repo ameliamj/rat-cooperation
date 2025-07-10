@@ -2581,6 +2581,9 @@ class multiFileGraphs:
         for i, (a, b) in enumerate(comparisons):
             stat, pval = ttest_ind(datapoints[a], datapoints[b], equal_var=False)
             
+            print("(a,b): ", (a, b))
+            print("pval: ", pval)
+            
             # Significance text
             if pval < 0.001:
                 stars = '***'
@@ -2592,9 +2595,10 @@ class multiFileGraphs:
                 stars = 'n.s.'
         
             # Vertical position of the line
+            text = f"p = {pval:.2f}" + stars
             y = y_max + i * y_step
             ax.plot([x[a], x[a], x[b], x[b]], [y, y + 0.01, y + 0.01, y], color='black', linewidth=1.2)
-            ax.text((x[a] + x[b]) / 2, y + 0.015, stars, ha='center', va='bottom', fontsize=12)
+            ax.text((x[a] + x[b]) / 2, y + 0.015, text, ha='center', va='bottom', fontsize=12)
         
         # Labels and formatting
         ax.set_ylabel('Average Distance', fontsize = 13)
