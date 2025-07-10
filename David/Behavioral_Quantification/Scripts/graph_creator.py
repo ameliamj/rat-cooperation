@@ -6520,6 +6520,7 @@ class multiFileGraphs:
         trial_gazeEvents = {}
         trial_gazeFrames = {}
         trial_gazeFramesEB = {}
+        trial_frameCountsEB = {}
         trial_frameCounts = {}
         numTrials = {}
         
@@ -6585,6 +6586,7 @@ class multiFileGraphs:
                 trial_gazeEvents[trial_idx] += numGazeEvents
                 if (lev.returnAnimalID() == "EB"):
                     trial_gazeFramesEB[trial_idx] += numGazing
+                    trial_frameCountsEB[trial_idx] += end_frame - start_frame
                 numTrials[trial_idx] += 1
     
                 # === Percentage-based binning ===
@@ -6620,11 +6622,12 @@ class multiFileGraphs:
         ]
         
         percent_gazingEB = [
-            (trial_gazeFramesEB[t] / trial_frameCounts[t] * 100) if trial_frameCounts[t] else 0
+            (trial_gazeFramesEB[t] / trial_frameCountsEB[t] * 100) if trial_frameCountsEB[t] else 0
             for t in filtered_trial_numbers
         ]
         
         print("trial_frameCounts: ", trial_frameCounts)
+        print("trial_frameCountsEB: ", trial_frameCountsEB)
 
         
         # === Plot 1: Gaze Events by Trial ===
@@ -7301,9 +7304,9 @@ experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFrames
 #experiment.cooperativeRegionStrategiesQuantification()
 #experiment.pcaAndGLMCoopSuccessPredictors()
 #experiment.trueCooperationTesting()
-#experiment.gazingOverTrial()
+experiment.gazingOverTrial()
 
-experiment.testMotivation()
+#experiment.testMotivation()
 
 #experiment.whatCausesSuccessRegions()
 #experiment.wallAnxietyMetrics()
@@ -7326,7 +7329,7 @@ fpsList = arr[3]
 totFramesList = arr[4]
 initialNanList = arr[5]
 experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "Unfamiliar_", save=True)
-experiment.testMotivation()
+experiment.gazingOverTrial()
 
 
 # ---------------------------------------------------------------------------------------------------------
