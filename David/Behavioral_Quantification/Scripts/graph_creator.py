@@ -6187,7 +6187,7 @@ class multiFileGraphs:
         # Plot interaction type heatmaps
         self._plot_interaction_type_distribution(framewise_counter, "Frame-Based Interaction Distribution", "interactionLocationHeatmap_FRAMES.png")
         self._plot_interaction_type_distribution(eventwise_counter, "Event-Based Interaction Distribution", "interactionLocationHeatmap_EVENTS.png")
-
+        
     def _plot_interaction_type_distribution(self, counter, title, filename):
         total = sum(counter.values())
         normalized = {k: v / total * 100 for k, v in counter.items()}
@@ -7223,7 +7223,31 @@ class multiFileGraphs:
             lev = exp.lev
 
     def whereDoesGazingHappen(self):
-        f
+        # Count of which rat is gazing at which rat, by location
+        gazing_counter = Counter()  # Key = (gazer_location, target_location)
+    
+        for exp in self.experiments:
+            lev = exp.lev
+            pos = exp.pos
+            totalFrames = exp.endFrame
+            
+            isGazing0 = pos.returnIsGazing(0)  # Boolean array per frame
+            isGazing1 = pos.returnIsGazing(1)
+            
+            for t in range(totalFrames):
+                loc0 = pos.returnRatLocationTime(0, t)  # location of rat 0 at time t
+                loc1 = pos.returnRatLocationTime(1, t)  # location of rat 1 at time t
+                
+                if isGazing0[t]:  # Rat 0 is gazing at rat 1
+                    gazing_counter[(loc0, loc1)] += 1
+                if isGazing1[t]:  # Rat 1 is gazing at rat 0
+                    gazing_counter[(loc1, loc0)] += 1
+    
+        self._plot_interaction_type_distribution(
+            gazing_counter,
+            title="Where Does Gazing Happen (Gazer vs. Target)",
+            filename=f"{self.prefix}GazingInteractionHeatmap.png"
+        )
     
 
 #Testing Multi File Graphs
@@ -7320,12 +7344,13 @@ initialNanList = [0.3]
 
 print("Start MultiFileGraphs Regular")
 experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "", save=True)
+experiment.whereDoesGazingHappen()
 #experiment.cooperativeRegionStrategiesQuantification()
 #experiment.pcaAndGLMCoopSuccessPredictors()
 #experiment.trueCooperationTesting()
 #experiment.gazingOverTrial()
 
-experiment.testMotivation()
+#experiment.testMotivation()
 
 #experiment.whatCausesSuccessRegions()
 #experiment.wallAnxietyMetrics()
@@ -7339,7 +7364,7 @@ experiment.testMotivation()
 #experiment.trialStateModel()
 #experiment.waitingStrategy()
 
-
+'''
 arr = getUnfamiliar()
 lev_files = arr[0]
 mag_files = arr[1]
@@ -7350,7 +7375,7 @@ initialNanList = arr[5]
 experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "Unfamiliar_", save=True)
 experiment.testMotivation()
 #experiment.gazingOverTrial()
-
+'''
 
 # ---------------------------------------------------------------------------------------------------------
 
