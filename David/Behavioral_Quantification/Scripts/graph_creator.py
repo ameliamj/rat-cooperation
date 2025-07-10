@@ -5377,8 +5377,11 @@ class multiFileGraphs:
                     #print("Trial Idx: ", trial_idx)
                     #print("exp.lev_file: ", exp.lev_file)
                     trial_successes[trial_idx] = []
+                    trial_successesEB[trial_idx] = []
                     trial_distances[trial_idx] = []
                     trial_counts[trial_idx] = 0
+                    trial_countsEB[trial_idx]= 0 
+                    
                     
                 if distances_both:  # Only append if distances were calculated
                     trial_distances[trial_idx].append(np.mean(distances_both))
@@ -7305,9 +7308,9 @@ experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFrames
 #experiment.cooperativeRegionStrategiesQuantification()
 #experiment.pcaAndGLMCoopSuccessPredictors()
 #experiment.trueCooperationTesting()
-experiment.gazingOverTrial()
+#experiment.gazingOverTrial()
 
-#experiment.testMotivation()
+experiment.testMotivation()
 
 #experiment.whatCausesSuccessRegions()
 #experiment.wallAnxietyMetrics()
@@ -7330,7 +7333,8 @@ fpsList = arr[3]
 totFramesList = arr[4]
 initialNanList = arr[5]
 experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "Unfamiliar_", save=True)
-experiment.gazingOverTrial()
+experiment.testMotivation()
+#experiment.gazingOverTrial()
 
 
 # ---------------------------------------------------------------------------------------------------------
