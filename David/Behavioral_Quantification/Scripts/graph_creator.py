@@ -5314,6 +5314,7 @@ class multiFileGraphs:
             lev = exp.lev
             pos = exp.pos
             fps = exp.fps
+            animal_id = lev.returnAnimalID()
             success_status = exp.lev.returnSuccessTrials()  # List of success statuses (1, 0, -1) 
             num_trials = len(success_status)
             success_status = filterToLeverPressTrials(success_status, lev)
@@ -7277,10 +7278,10 @@ initialNanList = [0.3]
 
 print("Start MultiFileGraphs Regular")
 experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "", save=True)
-experiment.cooperativeRegionStrategiesQuantification()
+#experiment.cooperativeRegionStrategiesQuantification()
 #experiment.pcaAndGLMCoopSuccessPredictors()
 #experiment.trueCooperationTesting()
-#experiment.gazingOverTrial()
+experiment.gazingOverTrial()
 
 #experiment.testMotivation()
 
@@ -7296,7 +7297,7 @@ experiment.cooperativeRegionStrategiesQuantification()
 #experiment.trialStateModel()
 #experiment.waitingStrategy()
 
-'''
+
 arr = getUnfamiliar()
 lev_files = arr[0]
 mag_files = arr[1]
@@ -7306,7 +7307,7 @@ totFramesList = arr[4]
 initialNanList = arr[5]
 experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "Unfamiliar_", save=True)
 experiment.gazingOverTrial()
-'''
+
 
 # ---------------------------------------------------------------------------------------------------------
 
