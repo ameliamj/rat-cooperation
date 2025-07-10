@@ -2595,7 +2595,7 @@ class multiFileGraphs:
                 stars = 'n.s.'
         
             # Vertical position of the line
-            text = f"p = {pval:.2f}" + stars
+            text = f"p = {pval:.3f}  " + stars
             y = y_max + i * y_step
             ax.plot([x[a], x[a], x[b], x[b]], [y, y + 0.01, y + 0.01, y], color='black', linewidth=1.2)
             ax.text((x[a] + x[b]) / 2, y + 0.015, text, ha='center', va='bottom', fontsize=12)
