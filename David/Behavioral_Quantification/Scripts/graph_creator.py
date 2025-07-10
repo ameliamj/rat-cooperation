@@ -4972,13 +4972,16 @@ class multiFileGraphs:
                         alpha=0.7, color='blue', label='Experiments')
     
             if len(set(individual_datapoints_avgDistance)) >= 2:
-                slope, intercept, r_value, _, _ = linregress(individual_datapoints_avgDistance, individual_datapoints_timeUntilPress)
+                slope, intercept, r_value, p_value, std_err = linregress(individual_datapoints_avgDistance, individual_datapoints_timeUntilPress)
                 r_squared = r_value ** 2
     
                 x_vals = np.linspace(min(individual_datapoints_avgDistance), max(individual_datapoints_avgDistance), 100)
                 plt.plot(x_vals, slope * x_vals + intercept, color='red', linestyle='--', label='Trendline')
-                plt.text(0.95, 0.05, f"$R^2$ = {r_squared:.3f}", transform=plt.gca().transAxes,
-                         ha='right', va='bottom', fontsize=12, bbox=dict(facecolor='white', edgecolor='gray'))
+                plt.text(0.95, 0.84,
+                 f"Slope = {slope:.3f}\n$R^2$ = {r_squared:.3f}\n p-value = {p_value:.3g}",
+                 transform=plt.gca().transAxes,
+                 ha='right', va='bottom', fontsize=12,
+                 bbox=dict(facecolor='white', edgecolor='gray'))
     
             plt.xlabel('Average Distance from Lever')
             plt.ylabel('Average Time Until First Press (s)')
@@ -6682,7 +6685,7 @@ class multiFileGraphs:
         plt.xlabel('Percent of Session (%)', fontsize=self.labelSize)
         plt.ylabel('% Time Gazing', fontsize=self.labelSize)
         plt.title('Percent Gazing by Session Progress', fontsize=self.titleSize)
-        plt.text(0.99, 0.87, f"Rho = {rho_percent_bin:.2f}, p = {pval_percent_bin:.3f} {stars_percent_bin}",
+        plt.text(1, 0.95, f"Rho = {rho_percent_bin:.2f}, p = {pval_percent_bin:.3f} {stars_percent_bin}",
                  transform=plt.gca().transAxes,
                  fontsize=self.labelSize, ha='right', va='top',
                  bbox=dict(boxstyle='round,pad=0.3', facecolor='white', edgecolor='gray'))
@@ -7154,7 +7157,8 @@ initialNanList = [0.3]
 print("Start MultiFileGraphs Regular")
 experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "", save=True)
 #experiment.pcaAndGLMCoopSuccessPredictors()
-experiment.gazingOverTrial()
+experiment.trueCooperationTesting()
+#experiment.gazingOverTrial()
 
 #experiment.testMotivation()
 
@@ -7170,7 +7174,7 @@ experiment.gazingOverTrial()
 #experiment.trialStateModel()
 #experiment.waitingStrategy()
 
-
+'''
 arr = getUnfamiliar()
 lev_files = arr[0]
 mag_files = arr[1]
@@ -7180,7 +7184,7 @@ totFramesList = arr[4]
 initialNanList = arr[5]
 experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "Unfamiliar_", save=True)
 experiment.gazingOverTrial()
-
+'''
 
 # ---------------------------------------------------------------------------------------------------------
 
