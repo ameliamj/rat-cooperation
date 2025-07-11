@@ -479,7 +479,7 @@ class multiFileGraphsCategories:
                         color = 'red'
                         individual_datapointsEB[i].append(num_succ / num_total)
                     else:
-                        individual_datapoints_nonEB.append(num_succ / num_total)
+                        individual_datapoints_nonEB[i].append(num_succ / num_total)
                         color = 'gray'
                         '''if thresh > 3:
                             color = 'red'
@@ -5809,6 +5809,8 @@ class multiFileGraphs:
             return res
         
         trial_x = []
+        trial_x_before_press = []
+        trial_y_beforepress = []
         trial_y_single = []
         trial_y = []
         trial_success_streak = []
