@@ -1712,7 +1712,7 @@ class multiFileGraphs:
     
                 # Plot curve
                 plt.plot(x_vals, y_fit, color='red', linestyle='--', label='Exponential Fit')
-                plt.text(0.68, 0.93, f"Pseudo-R² = {r_squared:.3f}", transform=plt.gca().transAxes,
+                plt.text(0.68, 0.93, f"R² = {r_squared:.3f}", transform=plt.gca().transAxes,
                          ha='right', va='bottom', fontsize=12, bbox=dict(facecolor='white', edgecolor='gray'))
     
             except RuntimeError:
