@@ -4289,7 +4289,7 @@ class multiFileGraphs:
             6 - exploring
         """
         
-        state_names = ["idle", "approaching lever", "approaching reward", "waiting", "pressed", "reward taken", "exploring", "false mag"]
+        state_names = ["idle", "approaching lever", "approaching reward", "waiting", "pressed", "reward taken", "exploring", "false mag", "gazing", "interacting"]
         num_states = len(state_names)
         transition_counts = np.zeros((num_states, num_states))
     
@@ -4310,6 +4310,8 @@ class multiFileGraphs:
                 press_frames = lev.getLeverPressFrames(rat_id)
                 reward_frames = mag.getRewardReceivedFrames(rat_id)
                 false_mag_entry = mag.getEnteredMagFrames(rat_id)
+                isGazing = pos.returnIsGazing(rat_id)
+                isInteracting = pos.returnIsInteracting()
     
                 state_sequence = []
                 for t in range(total_frames):
@@ -4326,6 +4328,10 @@ class multiFileGraphs:
                         state = 4  # pressed
                     elif t in reward_frames:
                         state = 5  # reward taken
+                    elif isGazing[t] == True:
+                        state = 8
+                    elif isInteracting[t] == True:
+                        state = 9
                     elif t in false_mag_entry:
                         state = 7 #mag entered but no reward
                     elif lever_zone[t]:
@@ -7344,7 +7350,7 @@ initialNanList = [0.3]
 
 print("Start MultiFileGraphs Regular")
 experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "", save=True)
-experiment.whereDoesGazingHappen()
+experiment.stateTransitionModel()
 #experiment.cooperativeRegionStrategiesQuantification()
 #experiment.pcaAndGLMCoopSuccessPredictors()
 #experiment.trueCooperationTesting()
