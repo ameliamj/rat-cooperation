@@ -5166,8 +5166,16 @@ class multiFileGraphs:
                     sumNumConsidered += 1
                     sumTimeUntilPress += t_first_press - t_begin
                     
-                    individual_trials_distance.append(dist)
-                    individual_trials_timeUntilPress.append(t_first_press - t_begin)
+                    if (dist < 1500 and t_first_press - t_begin < 10):
+                        individual_trials_distance.append(dist)
+                        individual_trials_timeUntilPress.append(t_first_press - t_begin)
+                    else: 
+                        print("Trial Idx: ", trial_idx)
+                        print("t_begin: ", t_begin)
+                        print("Dist: ", dist)
+                        print("Time Until Press: ", t_first_press - t_begin)
+                        print("Lev File: ", exp.lev_file)
+                        
             
             if sumNumConsidered > 0 and sumTimeUntilPress / sumNumConsidered < 40:
                 print("\nlev file: ", exp.lev_file)
