@@ -507,7 +507,7 @@ class multiFileGraphsCategories:
             prob2EB = np.mean(individual_datapointsEB[i])
             probs.append(prob2)
             probsEB.append(prob2EB)
-            probsNonEb.append(np.mean(individual_datapoints_nonEB))
+            probsNonEB.append(np.mean(individual_datapoints_nonEB))
     
         # --- Plotting ---
         plt.figure(figsize=(8, 6))
