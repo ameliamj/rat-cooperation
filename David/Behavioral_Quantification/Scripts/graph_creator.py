@@ -434,7 +434,9 @@ class multiFileGraphsCategories:
         # Initialize lists to store average success probabilities and individual datapoints per category
         probs = []
         probsEB = []
+        probsNonEB = []
         individual_datapoints = []
+        individual_datapoints_nonEB = []
         individual_datapointsEB = []
         datapoint_colors = []
     
@@ -445,6 +447,7 @@ class multiFileGraphsCategories:
             
             individual_datapoints.append([])  # Holds datapoints for this category
             individual_datapointsEB.append([])  # Holds datapoints for this category for EB rats
+            individual_datapoints_nonEB.append([])
             datapoint_colors.append([])  # Holds datapoints for this category
             totalSucc = 0
             totalTrials = 0
@@ -458,8 +461,11 @@ class multiFileGraphsCategories:
                 num_succ = loader.returnNumSuccessfulTrials()
                 num_total = loader.returnNumTotalTrials()
                 animal_id = loader.returnAnimalID()
+                thresh = loader.returnSuccThreshold()
                 totalSucc += num_succ
                 totalTrials += num_total
+                if (thresh != 1):
+                    continue
     
                 # Store individual success probability for this experiment
                 if num_total > 0:
@@ -469,12 +475,13 @@ class multiFileGraphsCategories:
                     individual_datapoints[i].append(num_succ / num_total)
                     
                     # Assign color based on threshold
-                    thresh = loader.returnSuccThreshold()
                     if (animal_id == "EB"):
                         color = 'red'
                         individual_datapointsEB[i].append(num_succ / num_total)
                     else:
-                        if thresh > 3:
+                        individual_datapoints_nonEB.append(num_succ / num_total)
+                        color = 'gray'
+                        '''if thresh > 3:
                             color = 'red'
                         elif thresh > 2:
                             color = 'orange'
@@ -483,7 +490,7 @@ class multiFileGraphsCategories:
                         elif thresh > 0:
                             color = 'black'
                         else:
-                            color = 'gray'
+                            color = 'gray'''
                     datapoint_colors[i].append(color)
                     print(f"\nSuccess Rate is: {num_succ/num_total}")
                     print(f"Lev is: {exp.lev_file}")
@@ -500,6 +507,7 @@ class multiFileGraphsCategories:
             prob2EB = np.mean(individual_datapointsEB[i])
             probs.append(prob2)
             probsEB.append(prob2EB)
+            probsNonEb.append(np.mean(individual_datapoints_nonEB))
     
         # --- Plotting ---
         plt.figure(figsize=(8, 6))
@@ -526,6 +534,12 @@ class multiFileGraphsCategories:
                 plt.hlines(y=eb_avg, xmin=i - 0.25, xmax=i + 0.25,
                            color='red', linestyle='--', linewidth=2,
                            label='EB Mean' if i == 0 else None)
+                
+        for i, non_eb_avg in enumerate(probsNonEB):
+            if not np.isnan(non_eb_avg):
+                plt.hlines(y=non_eb_avg, xmin=i - 0.25, xmax=i + 0.25,
+                           color='green', linestyle='--', linewidth=2,
+                           label='Non EB Mean' if i == 0 else None)
     
         # Formatting
         #plt.xlabel('Category')
@@ -543,8 +557,8 @@ class multiFileGraphsCategories:
             Patch(color='blue', label='Threshold > 1'),
             Patch(color='black', label='Threshold > 0'),
             Patch(color='gray', label='Threshold ≤ 0')
-        ]
-        plt.legend(handles=legend_patches)'''
+        ]'''
+        plt.legend(handles=legend_patches)
         plt.legend()
         plt.tight_layout()
     
