@@ -143,7 +143,7 @@ def getOnlyUnfamiliar(filtered = True, onlyFirst = False):
         fe = fileExtractor(only_unfamiliar_filtered_onlyFirst)
     elif (filtered):
         fe = fileExtractor(only_unfamiliar_filtered)
-        fe.filterOutVEH()
+        #fe.filterOutVEH()
     else:
         fe = fileExtractor(only_unfamiliar)
     fpsList, totFramesList = fe.returnFPSandTotFrames()
@@ -156,7 +156,7 @@ def getOnlyTrainingPartners(filtered = True, onlyFirst = False):
         fe = fileExtractor(only_trainingpartners_filtered_onlyFirst)
     elif (filtered):
         fe = fileExtractor(only_trainingpartners_filtered)
-        fe.filterOutVEH()
+        #fe.filterOutVEH()
     else:
         fe = fileExtractor(only_trainingpartners)
     fpsList, totFramesList = fe.returnFPSandTotFrames()
@@ -169,7 +169,7 @@ def getOnlyPairedTesting(filtered = True, onlyFirst = False):
         fe = fileExtractor(only_PairedTesting_filtered_onlyFirst)
     elif (filtered):
         fe = fileExtractor(only_PairedTesting_filtered)
-        fe.filterOutVEH()
+        #fe.filterOutVEH()
     else:
         fe = fileExtractor(only_PairedTesting)
     fpsList, totFramesList = fe.returnFPSandTotFrames()
@@ -183,7 +183,7 @@ def getOnlyTrainingCoop(filtered = True, onlyFirst = False):
         fe = fileExtractor(only_TrainingCoop_filtered_onlyFirst)
     elif (filtered):
         fe = fileExtractor(only_TrainingCoop_filtered)
-        fe.filterOutVEH()
+        #fe.filterOutVEH()
     else:
         fe = fileExtractor(only_TrainingCoop)
     fpsList, totFramesList = fe.returnFPSandTotFrames()
@@ -433,7 +433,9 @@ class multiFileGraphsCategories:
         '''
         # Initialize lists to store average success probabilities and individual datapoints per category
         probs = []
+        probsEB = []
         individual_datapoints = []
+        individual_datapointsEB = []
         datapoint_colors = []
     
         # Iterate through each experimental group (category)
@@ -442,9 +444,11 @@ class multiFileGraphsCategories:
             print("Quantity: ", len(self.allFileGroupExperiments[i]))
             
             individual_datapoints.append([])  # Holds datapoints for this category
+            individual_datapointsEB.append([])  # Holds datapoints for this category for EB rats
             datapoint_colors.append([])  # Holds datapoints for this category
             totalSucc = 0
             totalTrials = 0
+            totalEBSucc = 0
     
             # Iterate through each experiment in the group
             for j, exp in enumerate(group):
@@ -453,7 +457,7 @@ class multiFileGraphsCategories:
                 # Add to totals for computing the average success rate across the category
                 num_succ = loader.returnNumSuccessfulTrials()
                 num_total = loader.returnNumTotalTrials()
-    
+                animal_id = loader.returnAnimalID()
                 totalSucc += num_succ
                 totalTrials += num_total
     
@@ -466,16 +470,20 @@ class multiFileGraphsCategories:
                     
                     # Assign color based on threshold
                     thresh = loader.returnSuccThreshold()
-                    if thresh > 3:
+                    if (animal_id == "EB"):
                         color = 'red'
-                    elif thresh > 2:
-                        color = 'orange'
-                    elif thresh > 1:
-                        color = 'blue'
-                    elif thresh > 0:
-                        color = 'black'
+                        individual_datapointsEB[i].append(num_succ / num_total)
                     else:
-                        color = 'gray'
+                        if thresh > 3:
+                            color = 'red'
+                        elif thresh > 2:
+                            color = 'orange'
+                        elif thresh > 1:
+                            color = 'blue'
+                        elif thresh > 0:
+                            color = 'black'
+                        else:
+                            color = 'gray'
                     datapoint_colors[i].append(color)
                     print(f"\nSuccess Rate is: {num_succ/num_total}")
                     print(f"Lev is: {exp.lev_file}")
@@ -489,7 +497,9 @@ class multiFileGraphsCategories:
             # Compute overall success probability for the category
             prob = totalSucc / totalTrials if totalTrials > 0 else 0
             prob2 = np.mean(individual_datapoints[i])
+            prob2EB = np.mean(individual_datapointsEB[i])
             probs.append(prob2)
+            probsEB.append(prob2EB)
     
         # --- Plotting ---
         plt.figure(figsize=(8, 6))
@@ -510,12 +520,23 @@ class multiFileGraphsCategories:
             else:
                 plt.scatter(jittered_x, datapoints, color='black', alpha=0.7, s=40)'''
     
+        # Draw red dashed lines for average EB rats per category
+        for i, eb_avg in enumerate(probsEB):
+            if not np.isnan(eb_avg):
+                plt.hlines(y=eb_avg, xmin=i - 0.25, xmax=i + 0.25,
+                           color='red', linestyle='--', linewidth=2,
+                           label='EB Mean' if i == 0 else None)
+    
         # Formatting
         #plt.xlabel('Category')
         plt.ylabel('Probability of Successful Trials')
         plt.title('Success Probability per Category')
         plt.xticks(bar_positions, self.categoryNames)
         plt.ylim(0, 1)
+        legend_patches = [
+            Patch(color='red', label = 'EB'),
+            Patch(color='gray', label='KL')
+            ]
         '''legend_patches = [
             Patch(color='red', label='Threshold > 3'),
             Patch(color='orange', label='Threshold > 2'),
@@ -1058,8 +1079,8 @@ levFiles = [dataPT[0], dataTC[0]]
 magFiles = [dataPT[1], dataTC[1]]
 posFiles = [dataPT[2], dataTC[2]]
 categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["Paired_Testing", "Training_Cooperation"])
-categoryExperiments.printSummaryStats()
-#categoryExperiments.compareSuccesfulTrials()
+#categoryExperiments.printSummaryStats()
+categoryExperiments.compareSuccesfulTrials()
 
 
 
@@ -1072,8 +1093,8 @@ levFiles = [dataUF[0], dataTP[0]]
 magFiles = [dataUF[1], dataTP[1]]
 posFiles = [dataUF[2], dataTP[2]]
 categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["Unfamiliar", "Training Partners"])
-categoryExperiments.printSummaryStats()
-#categoryExperiments.compareSuccesfulTrials()
+#categoryExperiments.printSummaryStats()
+categoryExperiments.compareSuccesfulTrials()
 
 
 
