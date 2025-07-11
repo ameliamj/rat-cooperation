@@ -535,11 +535,14 @@ class multiFileGraphsCategories:
                 plt.hlines(y=eb_avg, xmin=i - 0.25, xmax=i + 0.25,
                            color='red', linestyle='--', linewidth=2,
                            label='EB Mean' if i == 0 else None)
-                
+        
+        print("probsEB: ", probsEB)
+        print("probsNonEB: ", probsNonEB)
+        
         for i, non_eb_avg in enumerate(probsNonEB):
             if not np.isnan(non_eb_avg):
                 plt.hlines(y=non_eb_avg, xmin=i - 0.25, xmax=i + 0.25,
-                           color='green', linestyle='--', linewidth=2,
+                           color='orange', linestyle='--', linewidth=2,
                            label='Non EB Mean' if i == 0 else None)
     
         # Formatting
@@ -560,7 +563,7 @@ class multiFileGraphsCategories:
             Patch(color='gray', label='Threshold ≤ 0')
         ]'''
         plt.legend(handles=legend_patches)
-        plt.legend()
+        #plt.legend()
         plt.tight_layout()
     
         # Save and display the plot
