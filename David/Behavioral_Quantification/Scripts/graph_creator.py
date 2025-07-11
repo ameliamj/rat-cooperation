@@ -1108,7 +1108,7 @@ categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["
 categoryExperiments.compareSuccesfulTrials()
 '''
 
-
+'''
 #Unfamiliar vs. Training Partners
 print("Running UF vs TP")
 dataUF = getOnlyUnfamiliar() #Unfamiliar
@@ -1120,7 +1120,7 @@ posFiles = [dataUF[2], dataTP[2]]
 categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["Unfamiliar", "Training Partners"])
 categoryExperiments.printSummaryStats()
 #categoryExperiments.compareSuccesfulTrials()
-
+'''
 
 
 #Transparent vs. Translucent vs. Opaque
@@ -2629,7 +2629,8 @@ class multiFileGraphs:
         #Make Graphs: 
         # Labels and values for the bar plot
         labels = ['No Success', 'Success No Zone', 'Success Zone']
-        averages = [averageDistance_NoSuccess, averageDistance_Success_NoZone, averageDistance_SuccessZone]
+        #averages = [averageDistance_NoSuccess, averageDistance_Success_NoZone, averageDistance_SuccessZone] ###Normal One
+        averages = [np.mean(datapoints_NoSuccess), np.mean(datapoints_Success_NoZone), np.mean(datapoints_SuccessZone)]
         print("Averages: ", averages)
         datapoints = [datapoints_NoSuccess, datapoints_Success_NoZone, datapoints_SuccessZone]
         print("Datapoints: ", datapoints)
@@ -7470,7 +7471,7 @@ totFramesList = [15000, 15000]
 initialNanList = [0.15, 0.12]
 '''
 
-'''
+
 arr = getFiltered()
 #arr = getUnfamiliar()
 #arr = getAllTrainingCoop()
@@ -7482,7 +7483,7 @@ fpsList = arr[3]
 totFramesList = arr[4]
 initialNanList = arr[5]
 #fiberPhoto = arr[6]
-'''
+
 
 '''
 lev_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/4_nanerror_lev.csv"]
@@ -7507,11 +7508,11 @@ initialNanList = [0.3]
 '''
 
 print("Start MultiFileGraphs Regular")
-#experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "", save=True)
+experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "", save=True)
 #experiment.stateTransitionModel()
 #experiment.classifyStrategies()
 #experiment.stateTransitionModel()
-#experiment.cooperativeRegionStrategiesQuantification()
+experiment.cooperativeRegionStrategiesQuantification()
 #experiment.pcaAndGLMCoopSuccessPredictors()
 #experiment.trueCooperationTesting()
 #experiment.gazingOverTrial()
