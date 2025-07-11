@@ -29,7 +29,7 @@ from scipy.ndimage import uniform_filter1d
 from scipy.optimize import curve_fit
 from scipy.stats import spearmanr
 from scipy.stats import ttest_ind
-
+from mpl_toolkits.mplot3d import Axes3D
 
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
@@ -7124,8 +7124,22 @@ class multiFileGraphs:
         X_scaled_filtered = X_scaled[mask]
         y_filtered = np.array(y)[mask]  # keep labels in sync
         
+        # Also filter the success streaks for coloring
+        streaks = X[:, 2]  # index 2 is the "Prev Success Streak"
+        streaks_filtered = streaks[mask]
+        
+        # Bin the success streaks into categories: 0, 1, 2, 3, 4, 5+
+        def bin_streak(x):
+            return min(int(x), 5)
+        
+        binned_streaks = np.array([bin_streak(s) for s in streaks_filtered])
+        palette = sns.color_palette("viridis", 6)
+        streak_labels = ["0", "1", "2", "3", "4", "5+"]
+        
         pca = PCA(n_components=2)
         X_pca = pca.fit_transform(X_scaled_filtered)
+        pca_3d = PCA(n_components=3)
+        X_pca_3d = pca_3d.fit_transform(X_scaled_filtered)
        
         # --- PCA Loadings (Feature Contributions) ---
         loadings = pca.components_.T  # shape: (num_features, num_components)
@@ -7139,25 +7153,62 @@ class multiFileGraphs:
             plt.savefig(f'{self.prefix}PCA_FeatureContributions.png')
         plt.show()
         plt.close()
+        
+        # --- PCA Loadings: 3D PCA ---
+        loadings_3d = pca_3d.components_.T  # shape: (features, 3)
+        loading_df_3d = pd.DataFrame(loadings_3d, index=feature_names, columns=["PC1", "PC2", "PC3"])
+        
+        plt.figure(figsize=(10, 6))
+        sns.heatmap(loading_df_3d, annot=True, cmap="coolwarm", center=0)
+        plt.title("Feature Contributions to 3D PCA")
+        plt.tight_layout()
+        if self.save:
+            plt.savefig(f'{self.prefix}PCA_FeatureContributions_3D.png')
+        plt.show()
+        plt.close()
+        
     
         # --- Plotting ---
+        # --- PCA Plot: Colored by Success Streak ---
         plt.figure(figsize=(10, 7))
-        sns.scatterplot(x=X_pca[:, 0], y=X_pca[:, 1], hue=y_filtered, palette={0: "gray", 1: "blue"}, alpha=0.7)
-        plt.title("PCA of Trial Features Colored by Cooperative Success")
+        for i in range(6):
+            idx = (binned_streaks == i)
+            plt.scatter(X_pca[idx, 0], X_pca[idx, 1], color=palette[i], alpha=0.6, s=40, label=streak_labels[i])
+        plt.title("PCA Colored by Success Streak (0–5+)")
         plt.xlabel(f"PC1 ({pca.explained_variance_ratio_[0]*100:.1f}%)")
         plt.ylabel(f"PC2 ({pca.explained_variance_ratio_[1]*100:.1f}%)")
-        plt.legend(title="Coop Success", loc='upper right')
+        plt.legend(title="Streak")
         plt.grid(True)
         plt.tight_layout()
         if self.save:
-            plt.savefig(f'{self.prefix}PCA_CoopSuccess.png')
+            plt.savefig(f'{self.prefix}PCA_StreakColored.png')
         plt.show()
         plt.close()
         print("Explained variance by components:", pca.explained_variance_ratio_)
         
+        
+        # --- 3D PCA Plot: Colored by Success Streak ---
+        fig = plt.figure(figsize=(10, 8))
+        ax = fig.add_subplot(111, projection='3d')
+        for i in range(6):
+            idx = (binned_streaks == i)
+            ax.scatter(X_pca_3d[idx, 0], X_pca_3d[idx, 1], X_pca_3d[idx, 2],
+                       color=palette[i], label=streak_labels[i], alpha=0.6, s=40)
+        ax.set_xlabel(f"PC1 ({pca_3d.explained_variance_ratio_[0]*100:.1f}%)")
+        ax.set_ylabel(f"PC2 ({pca_3d.explained_variance_ratio_[1]*100:.1f}%)")
+        ax.set_zlabel(f"PC3 ({pca_3d.explained_variance_ratio_[2]*100:.1f}%)")
+        ax.set_title("3D PCA Colored by Success Streak")
+        ax.legend(title="Streak")
+        if self.save:
+            plt.savefig(f'{self.prefix}PCA_3D_StreakColored.png')
+        plt.show()
+        plt.close()
+        
+        
         # Create a DataFrame for easy manipulation
         pca_df = pd.DataFrame(X_pca, columns=["PC1", "PC2"])
         pca_df["CoopSuccess"] = y_filtered
+        
         
         # Define bin edges
         bins = 50
@@ -7407,7 +7458,7 @@ totFramesList = [15000, 15000]
 initialNanList = [0.15, 0.12]
 '''
 
-'''
+
 arr = getFiltered()
 #arr = getUnfamiliar()
 #arr = getAllTrainingCoop()
@@ -7419,7 +7470,7 @@ fpsList = arr[3]
 totFramesList = arr[4]
 initialNanList = arr[5]
 #fiberPhoto = arr[6]
-'''
+
 
 '''
 lev_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/4_nanerror_lev.csv"]
@@ -7444,11 +7495,11 @@ initialNanList = [0.3]
 '''
 
 print("Start MultiFileGraphs Regular")
-#experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "", save=True)
+experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "", save=True)
 #experiment.classifyStrategies()
 #experiment.stateTransitionModel()
 #experiment.cooperativeRegionStrategiesQuantification()
-#experiment.pcaAndGLMCoopSuccessPredictors()
+experiment.pcaAndGLMCoopSuccessPredictors()
 #experiment.trueCooperationTesting()
 #experiment.gazingOverTrial()
 
