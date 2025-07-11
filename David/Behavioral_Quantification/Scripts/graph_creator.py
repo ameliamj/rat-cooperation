@@ -143,6 +143,7 @@ def getOnlyUnfamiliar(filtered = True, onlyFirst = False):
         fe = fileExtractor(only_unfamiliar_filtered_onlyFirst)
     elif (filtered):
         fe = fileExtractor(only_unfamiliar_filtered)
+        fe.filterOutVEH()
     else:
         fe = fileExtractor(only_unfamiliar)
     fpsList, totFramesList = fe.returnFPSandTotFrames()
@@ -155,6 +156,7 @@ def getOnlyTrainingPartners(filtered = True, onlyFirst = False):
         fe = fileExtractor(only_trainingpartners_filtered_onlyFirst)
     elif (filtered):
         fe = fileExtractor(only_trainingpartners_filtered)
+        fe.filterOutVEH()
     else:
         fe = fileExtractor(only_trainingpartners)
     fpsList, totFramesList = fe.returnFPSandTotFrames()
@@ -167,6 +169,7 @@ def getOnlyPairedTesting(filtered = True, onlyFirst = False):
         fe = fileExtractor(only_PairedTesting_filtered_onlyFirst)
     elif (filtered):
         fe = fileExtractor(only_PairedTesting_filtered)
+        fe.filterOutVEH()
     else:
         fe = fileExtractor(only_PairedTesting)
     fpsList, totFramesList = fe.returnFPSandTotFrames()
@@ -180,6 +183,7 @@ def getOnlyTrainingCoop(filtered = True, onlyFirst = False):
         fe = fileExtractor(only_TrainingCoop_filtered_onlyFirst)
     elif (filtered):
         fe = fileExtractor(only_TrainingCoop_filtered)
+        fe.filterOutVEH()
     else:
         fe = fileExtractor(only_TrainingCoop)
     fpsList, totFramesList = fe.returnFPSandTotFrames()
@@ -1054,10 +1058,11 @@ levFiles = [dataPT[0], dataTC[0]]
 magFiles = [dataPT[1], dataTC[1]]
 posFiles = [dataPT[2], dataTC[2]]
 categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["Paired_Testing", "Training_Cooperation"])
-categoryExperiments.compareSuccesfulTrials()
+categoryExperiments.printSummaryStats()
+#categoryExperiments.compareSuccesfulTrials()
 
 
-'''
+
 #Unfamiliar vs. Training Partners
 print("Running UF vs TP")
 dataUF = getOnlyUnfamiliar() #Unfamiliar
@@ -1067,8 +1072,9 @@ levFiles = [dataUF[0], dataTP[0]]
 magFiles = [dataUF[1], dataTP[1]]
 posFiles = [dataUF[2], dataTP[2]]
 categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["Unfamiliar", "Training Partners"])
+categoryExperiments.printSummaryStats()
 #categoryExperiments.compareSuccesfulTrials()
-'''
+
 
 
 #Transparent vs. Translucent vs. Opaque
