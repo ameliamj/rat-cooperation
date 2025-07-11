@@ -4406,6 +4406,14 @@ class multiFileGraphs:
         # --- Heatmap ---
         plt.figure(figsize=(8, 6))
         plt.imshow(transition_matrix, cmap='Blues')
+        
+        # Add text annotations for probabilities
+        for i in range(num_states):
+            for j in range(num_states):
+                prob = transition_matrix[i, j]
+                if prob > 0:
+                    plt.text(j, i, f"{prob:.3f}", ha='center', va='center', color='black', fontsize=8)
+        
         plt.colorbar(label='Transition Probability')
         plt.xticks(range(num_states), state_names, rotation=45)
         plt.yticks(range(num_states), state_names)
@@ -7496,10 +7504,11 @@ initialNanList = [0.3]
 
 print("Start MultiFileGraphs Regular")
 experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "", save=True)
+experiment.stateTransitionModel()
 #experiment.classifyStrategies()
 #experiment.stateTransitionModel()
 #experiment.cooperativeRegionStrategiesQuantification()
-experiment.pcaAndGLMCoopSuccessPredictors()
+#experiment.pcaAndGLMCoopSuccessPredictors()
 #experiment.trueCooperationTesting()
 #experiment.gazingOverTrial()
 
