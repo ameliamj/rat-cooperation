@@ -5811,6 +5811,7 @@ class multiFileGraphs:
         trial_x = []
         trial_x_before_press = []
         trial_y_beforepress = []
+        distances = []
         trial_y_single = []
         trial_y = []
         trial_success_streak = []
@@ -5823,6 +5824,9 @@ class multiFileGraphs:
             # Get trial timings
             trial_starts = lev.returnTimeStartTrials()  # List of trial start times
             coop_or_last_press = lev.returnCoopTimeorLastPressTime()  # List of coop/last press times
+            
+            first_presses = lev.returnFirstPressAbsTimes()  # List of first press times
+            ids_first_press = lev.returnRatIDFirstPressTrial()
             
             success_status = lev.returnSuccessTrials()  # List of trial success status (1, 0, -1)
             success_status = self._filterToLeverPressTrials(success_status, lev)
@@ -5847,6 +5851,9 @@ class multiFileGraphs:
                 if success_status[trial_idx] != 1:  # Only consider successful trials
                     continue
                 
+                t_first_press = first_presses[trial_idx]
+                rat_first_press = ids_first_press[trial_idx]
+                
                 # Define stage boundaries (in seconds)
                 t_begin = trial_starts[trial_idx]
                 t_coop = coop_or_last_press[trial_idx]
@@ -5855,19 +5862,21 @@ class multiFileGraphs:
                     continue
                 
                 # Check for NaN in timings
-                if any(np.isnan(t) for t in [t_begin, t_coop]):
+                if any(np.isnan(t) for t in [t_begin, t_coop, t_first_press, rat_first_press]):
                     print(f"[Exp {exp_idx}, Trial {trial_idx}] Skipped: NaN in timings (begin={t_begin}, coop={t_coop})")
                     continue
                 
                 # Convert times to frame indices
                 f_begin = int(t_begin * fps)
                 f_coop = int(t_coop * fps)
+                f_first_press= int(t_first_press * fps)
                 
                 #––––––––––––––––––––––––––––––––––––––––––––––––
                 
                 #Actual Data Collection
                 #
                 #
+                
                 
                 #Synchronized Running
                 #
@@ -5880,8 +5889,25 @@ class multiFileGraphs:
                 difference = sum(abs(a - b) for a, b in zip(rat1_xlocations, rat2_xlocations))            
                 x = difference/numFrames                
                 
+                
                 #Waiting
                 #
+                
+                #Waiting Before Press
+                levAreas = ['lev_top', 'lev_bottom']
+                dist = 0
+                if (pos.returnRatLocationTime(0, f_begin) in levAreas or pos.returnRatLocationTime(1, f_begin) in levAreas):
+                    dist = max(pos.distanceFromLever(0, f_begin), pos.distanceFromLever(1, f_begin))
+                    if (dist == pos.distanceFromLever(0, f_begin) and rat_first_press != 0):
+                        continue
+                    elif (pos.distanceFromLever(1, f_begin) and rat_first_press != 1):
+                        continue
+                    
+                    time_waited = t_first_press - t_begin
+                    trial_y_beforepress.append(time_waited)
+                    distances.append(dist)
+                    trial_x_before_press.append(x)
+                
                 
                 #Waiting Before Queue Analysis
                 t = f_begin - 1
@@ -5925,6 +5951,20 @@ class multiFileGraphs:
             df = pd.DataFrame({'x_dist': trial_x, 'waiting': trial_y})
             df2 = pd.DataFrame({'x_dist': trial_x, 'waiting_single': trial_y_single})
             
+            # === Plot: Transparent Scatter Colored by Distance from Lever ===
+            plt.figure(figsize=(8, 6))
+            scatter = plt.scatter(trial_x_before_press, trial_y_beforepress,
+                                  c=distances, cmap='viridis', alpha=0.5, s=15)
+            plt.colorbar(scatter, label='Distance from Lever at Trial Start')
+            plt.xlabel('Avg X-Distance (Synchronized Running)', fontsize=12)
+            plt.ylabel('Time Waited Before Press (s)', fontsize=12)
+            plt.title('Pre-Press Strategy Scatter (Colored by Distance)', fontsize=14)
+            plt.grid(True, linestyle='--', alpha=0.4)
+            if self.save:
+                plt.savefig("scatter_strategy_prepress_distance.png")
+            plt.show()
+            plt.close()
+            
             # Plot 1: Hexbin
             plt.figure(figsize=(8, 6))
             plt.hexbin(trial_x, trial_y, gridsize=75, cmap='viridis', mincnt=1)
@@ -5935,6 +5975,7 @@ class multiFileGraphs:
             if self.save:
                 plt.savefig("hexbin_strategy_plot.png")
             plt.show()
+            plt.close()
         
             # Plot 2: 2D Histogram
             plt.figure(figsize=(8, 6))
@@ -5946,6 +5987,7 @@ class multiFileGraphs:
             if self.save:
                 plt.savefig("hist2d_strategy_plot.png")
             plt.show()
+            plt.close()
         
             # Plot 3: Transparent Scatter
             plt.figure(figsize=(8, 6))
@@ -5957,6 +5999,7 @@ class multiFileGraphs:
             if self.save:
                 plt.savefig("scatter_strategy_plot.png")
             plt.show()
+            plt.close()
             
             # Plot 3: Transparent Scatter
             plt.figure(figsize=(8, 6))
@@ -5968,6 +6011,7 @@ class multiFileGraphs:
             if self.save:
                 plt.savefig("scatter_strategy_plot_single_waiting.png")
             plt.show()
+            plt.close()
         
             # Plot 4: KDE Plot
             plt.figure(figsize=(8, 6))
@@ -6056,6 +6100,7 @@ class multiFileGraphs:
             if self.save:
                 plt.savefig("kde_strategy_plot_single.png")
             plt.show()
+            plt.close()
 
     def classifyInteractions(self):
         '''
