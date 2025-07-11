@@ -502,6 +502,9 @@ class multiFileGraphsCategories:
                     print("Lev File: ", self.allFileGroupExperiments[i][j][1])
     
             # Compute overall success probability for the category
+            print("individual_datapoints[i]: ", individual_datapoints[i])
+            print("individual_datapointsEB[i]: ", individual_datapointsEB[i])
+            print("individual_datapoints_nonEB[i]: ", individual_datapoints_nonEB[i])
             prob = totalSucc / totalTrials if totalTrials > 0 else 0
             prob2 = np.mean(individual_datapoints[i])
             prob2EB = np.mean(individual_datapointsEB[i])
@@ -1088,7 +1091,7 @@ posFiles = [["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/B
 #categoryExperiments.gazeAlignmentAngle()
 
 #Paired Testing vs. Training Cooperation
-'''
+
 print("Running Paired Testing vs Training Cooperation")
 dataPT = getOnlyPairedTesting()
 dataTC = getOnlyTrainingCoop()
@@ -1099,9 +1102,9 @@ posFiles = [dataPT[2], dataTC[2]]
 categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["Paired_Testing", "Training_Cooperation"])
 #categoryExperiments.printSummaryStats()
 categoryExperiments.compareSuccesfulTrials()
-'''
 
-'''
+
+
 #Unfamiliar vs. Training Partners
 print("Running UF vs TP")
 dataUF = getOnlyUnfamiliar() #Unfamiliar
@@ -1113,7 +1116,7 @@ posFiles = [dataUF[2], dataTP[2]]
 categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["Unfamiliar", "Training Partners"])
 #categoryExperiments.printSummaryStats()
 categoryExperiments.compareSuccesfulTrials()
-'''
+
 
 
 #Transparent vs. Translucent vs. Opaque
@@ -7404,7 +7407,7 @@ totFramesList = [15000, 15000]
 initialNanList = [0.15, 0.12]
 '''
 
-
+'''
 arr = getFiltered()
 #arr = getUnfamiliar()
 #arr = getAllTrainingCoop()
@@ -7416,7 +7419,7 @@ fpsList = arr[3]
 totFramesList = arr[4]
 initialNanList = arr[5]
 #fiberPhoto = arr[6]
-
+'''
 
 '''
 lev_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/4_nanerror_lev.csv"]
@@ -7441,8 +7444,8 @@ initialNanList = [0.3]
 '''
 
 print("Start MultiFileGraphs Regular")
-experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "", save=True)
-experiment.classifyStrategies()
+#experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "", save=True)
+#experiment.classifyStrategies()
 #experiment.stateTransitionModel()
 #experiment.cooperativeRegionStrategiesQuantification()
 #experiment.pcaAndGLMCoopSuccessPredictors()
