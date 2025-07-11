@@ -5117,6 +5117,9 @@ class multiFileGraphs:
         individual_datapoints_avgDistance = []
         individual_datapoints_timeUntilPress = []
         
+        individual_trials_distance = []
+        individual_trials_timeUntilPress = []
+        
         for exp_idx, exp in enumerate(self.experiments): 
             lev = exp.lev
             pos = exp.pos
@@ -5162,6 +5165,9 @@ class multiFileGraphs:
                     sumDistances += dist
                     sumNumConsidered += 1
                     sumTimeUntilPress += t_first_press - t_begin
+                    
+                    individual_trials_distance.append(dist)
+                    individual_trials_timeUntilPress.append(t_first_press - t_begin)
             
             if sumNumConsidered > 0 and sumTimeUntilPress / sumNumConsidered < 40:
                 print("\nlev file: ", exp.lev_file)
@@ -5200,197 +5206,39 @@ class multiFileGraphs:
             plt.close()
         else:
             print("Insufficient data to create scatterplot.")
-
-    def fiberPhoto(self):
-        # Lists to store sums and counts for each wavelength and event type
-        sum405List_lev = []
-        count405List_lev = []
-        sum465List_lev = []
-        count465List_lev = []
-        sum560List_lev = []
-        count560List_lev = []
+            
+            
+        if len(individual_trials_distance) >= 2 and len(individual_trials_timeUntilPress) >= 2:
+            plt.figure(figsize=(8, 6))
+            plt.scatter(individual_trials_distance, individual_trials_timeUntilPress,
+                        alpha=0.5, color='blue', label='Experiments')
+    
+            if len(set(individual_trials_distance)) >= 2:
+                slope, intercept, r_value, p_value, std_err = linregress(individual_trials_distance, individual_trials_timeUntilPress)
+                r_squared = r_value ** 2
+    
+                x_vals = np.linspace(min(individual_datapoints_avgDistance), max(individual_datapoints_avgDistance), 100)
+                plt.plot(x_vals, slope * x_vals + intercept, color='red', linestyle='--', label='Trendline')
+                plt.text(0.95, 0.84,
+                 f"Slope = {slope:.3f}\n$R^2$ = {r_squared:.3f}\n p-value = {p_value:.3g}",
+                 transform=plt.gca().transAxes,
+                 ha='right', va='bottom', fontsize=12,
+                 bbox=dict(facecolor='white', edgecolor='gray'))
+    
+            plt.xlabel('Average Distance from Lever', fontsize = self.labelSize)
+            plt.ylabel('Average Time Until First Press (s)', fontsize = self.labelSize)
+            plt.title('Lever Distance vs. Time Until First Press', fontsize=self.titleSize)
+            plt.legend()
+            plt.grid(True)
+            plt.tight_layout()
+            if self.save:
+                plt.savefig(f"{self.prefix}distance_vs_time_until_press_byTrial.png")
+            plt.show()
+            plt.close()
+        else:
+            print("Insufficient data to create scatterplot.")
         
-        sum405List_mag = []
-        count405List_mag = []
-        sum465List_mag = []
-        count465List_mag = []
-        sum560List_mag = []
-        count560List_mag = []
-        
-        # Lists to store individual data points for scatter overlay
-        mean405_lev = []
-        mean405_mag = []
-        mean465_lev = []
-        mean465_mag = []
-        mean560_lev = []
-        mean560_mag = []
-        
-        # Lists to store time series data for line plots
-        time_series_405_lev = []
-        time_series_465_lev = []
-        time_series_560_lev = []
-        time_series_405_mag = []
-        time_series_465_mag = []
-        time_series_560_mag = []
-        
-        for exp in self.experiments:
-            if hasattr(exp, 'fp') and exp.fp is not None:
-                # Get lever press data
-                lev405 = exp.fp.getLev405()
-                lev465 = exp.fp.getLev465()
-                lev560 = exp.fp.getLev560()
-                
-                # Get magazine entry data
-                mag405 = exp.fp.getMag405()
-                mag465 = exp.fp.getMag465()
-                mag560 = exp.fp.getMag560()
-                
-                # Process lever press data
-                sum_count_405_lev = exp.fp.getSumandEles(lev405)
-                sum405List_lev.append(sum_count_405_lev[0])
-                count405List_lev.append(sum_count_405_lev[1])
-                
-                sum_count_465_lev = exp.fp.getSumandEles(lev465)
-                sum465List_lev.append(sum_count_465_lev[0])
-                count465List_lev.append(sum_count_465_lev[1])
-                
-                sum_count_560_lev = exp.fp.getSumandEles(lev560)
-                sum560List_lev.append(sum_count_560_lev[0])
-                count560List_lev.append(sum_count_560_lev[1])
-                
-                # Process magazine entry data
-                sum_count_405_mag = exp.fp.getSumandEles(mag405)
-                sum405List_mag.append(sum_count_405_mag[0])
-                count405List_mag.append(sum_count_405_mag[1])
-                
-                sum_count_465_mag = exp.fp.getSumandEles(mag465)
-                sum465List_mag.append(sum_count_465_mag[0])
-                count465List_mag.append(sum_count_465_mag[1])
-                
-                sum_count_560_mag = exp.fp.getSumandEles(mag560)
-                sum560List_mag.append(sum_count_560_mag[0])
-                count560List_mag.append(sum_count_560_mag[1])
-                
-                # Compute mean for each event in this experiment for scatter points
-                if sum_count_405_lev[1] > 0:
-                    mean405_lev.append(sum_count_405_lev[0] / sum_count_405_lev[1])
-                if sum_count_465_lev[1] > 0:
-                    mean465_lev.append(sum_count_465_lev[0] / sum_count_465_lev[1])
-                if sum_count_560_lev[1] > 0:
-                    mean560_lev.append(sum_count_560_lev[0] / sum_count_560_lev[1])
-                    
-                if sum_count_405_mag[1] > 0:
-                    mean405_mag.append(sum_count_405_mag[0] / sum_count_405_mag[1])
-                if sum_count_465_mag[1] > 0:
-                    mean465_mag.append(sum_count_465_mag[0] / sum_count_465_mag[1])
-                if sum_count_560_mag[1] > 0:
-                    mean560_mag.append(sum_count_560_mag[0] / sum_count_560_mag[1])
-                
-                # Collect time series data (values from columns 1 to 1526)
-                for event in lev405:
-                    if len(event) == 1527:  # Ensure correct length
-                        time_series_405_lev.append(event[1:])  # Skip 'ts'
-                for event in lev465:
-                    if len(event) == 1527:
-                        time_series_465_lev.append(event[1:])
-                for event in lev560:
-                    if len(event) == 1527:
-                        time_series_560_lev.append(event[1:])
-                        
-                for event in mag405:
-                    if len(event) == 1527:
-                        time_series_405_mag.append(event[1:])
-                for event in mag465:
-                    if len(event) == 1527:
-                        time_series_465_mag.append(event[1:])
-                for event in mag560:
-                    if len(event) == 1527:
-                        time_series_560_mag.append(event[1:])
-        
-        # Calculate overall means for bar plots
-        overall_mean_405_lev = sum(sum405List_lev) / sum(count405List_lev) if sum(count405List_lev) > 0 else 0
-        overall_mean_465_lev = sum(sum465List_lev) / sum(count465List_lev) if sum(count465List_lev) > 0 else 0
-        overall_mean_560_lev = sum(sum560List_lev) / sum(count560List_lev) if sum(count560List_lev) > 0 else 0
-        
-        overall_mean_405_mag = sum(sum405List_mag) / sum(count405List_mag) if sum(count405List_mag) > 0 else 0
-        overall_mean_465_mag = sum(sum465List_mag) / sum(count465List_mag) if sum(count465List_mag) > 0 else 0
-        overall_mean_560_mag = sum(sum560List_mag) / sum(count560List_mag) if sum(count560List_mag) > 0 else 0
-        
-        # Create separate bar plots with scatter overlay
-        # 405 nm Bar Plot
-        fig1, ax1 = plt.subplots(figsize=(6, 5))
-        ax1.bar(['Lever Press', 'Magazine Entry'], [overall_mean_405_lev, overall_mean_405_mag], color=['blue', 'orange'])
-        ax1.scatter(['Lever Press'] * len(mean405_lev), mean405_lev, color='black', alpha=0.5, s=20)
-        ax1.scatter(['Magazine Entry'] * len(mean405_mag), mean405_mag, color='black', alpha=0.5, s=20)
-        ax1.set_title('405 nm Signal')
-        ax1.set_ylabel('Average Signal Value')
-        plt.tight_layout()
-        if hasattr(self, 'save') and self.save:
-            plt.savefig('405_nm_bar_plot.png')
-        plt.show()
-        
-        # 465 nm Bar Plot
-        fig2, ax2 = plt.subplots(figsize=(6, 5))
-        ax2.bar(['Lever Press', 'Magazine Entry'], [overall_mean_465_lev, overall_mean_465_mag], color=['blue', 'orange'])
-        ax2.scatter(['Lever Press'] * len(mean465_lev), mean465_lev, color='black', alpha=0.5, s=20)
-        ax2.scatter(['Magazine Entry'] * len(mean465_mag), mean465_mag, color='black', alpha=0.5, s=20)
-        ax2.set_title('465 nm Signal')
-        ax2.set_ylabel('Average Signal Value')
-        plt.tight_layout()
-        if hasattr(self, 'save') and self.save:
-            plt.savefig('465_nm_bar_plot.png')
-        plt.show()
-        
-        # 560 nm Bar Plot
-        fig3, ax3 = plt.subplots(figsize=(6, 5))
-        ax3.bar(['Lever Press', 'Magazine Entry'], [overall_mean_560_lev, overall_mean_560_mag], color=['blue', 'orange'])
-        ax3.scatter(['Lever Press'] * len(mean560_lev), mean560_lev, color='black', alpha=0.5, s=20)
-        ax3.scatter(['Magazine Entry'] * len(mean560_mag), mean560_mag, color='black', alpha=0.5, s=20)
-        ax3.set_title('560 nm Signal')
-        ax3.set_ylabel('Average Signal Value')
-        plt.tight_layout()
-        if hasattr(self, 'save') and self.save:
-            plt.savefig('560_nm_bar_plot.png')
-        plt.show()
-        
-        # Calculate average time series for line plots
-        mean_ts_405_lev = np.nanmean(time_series_405_lev, axis=0) if time_series_405_lev else np.zeros(1526)
-        mean_ts_465_lev = np.nanmean(time_series_465_lev, axis=0) if time_series_465_lev else np.zeros(1526)
-        mean_ts_560_lev = np.nanmean(time_series_560_lev, axis=0) if time_series_560_lev else np.zeros(1526)
-        
-        mean_ts_405_mag = np.nanmean(time_series_405_mag, axis=0) if time_series_405_mag else np.zeros(1526)
-        mean_ts_465_mag = np.nanmean(time_series_465_mag, axis=0) if time_series_465_mag else np.zeros(1526)
-        mean_ts_560_mag = np.nanmean(time_series_560_mag, axis=0) if time_series_560_mag else np.zeros(1526)
-        
-        # Create separate line plots
-        # Lever Press Line Plot
-        fig4, ax4 = plt.subplots(figsize=(8, 5))
-        x = range(1, 1527)
-        ax4.plot(x, mean_ts_405_lev, label='405 nm', color='purple')
-        ax4.plot(x, mean_ts_465_lev, label='465 nm', color='green')
-        ax4.plot(x, mean_ts_560_lev, label='560 nm', color='red')
-        ax4.set_title('Average Fiber Photometry Signal (Lever Press)')
-        ax4.set_xlabel('Time Point')
-        ax4.set_ylabel('Signal Value')
-        ax4.legend()
-        plt.tight_layout()
-        if hasattr(self, 'save') and self.save:
-            plt.savefig('lever_press_line_plot.png')
-        plt.show()
-        
-        # Magazine Entry Line Plot
-        fig5, ax5 = plt.subplots(figsize=(8, 5))
-        ax5.plot(x, mean_ts_405_mag, label='405 nm', color='purple')
-        ax5.plot(x, mean_ts_465_mag, label='465 nm', color='green')
-        ax5.plot(x, mean_ts_560_mag, label='560 nm', color='red')
-        ax5.set_title('Average Fiber Photometry Signal (Magazine Entry)')
-        ax5.set_xlabel('Time Point')
-        ax5.set_ylabel('Signal Value')
-        ax5.legend()
-        plt.tight_layout()
-        if hasattr(self, 'save') and self.save:
-            plt.savefig('magazine_entry_line_plot.png')
-        plt.show()
+            
     
     def testMotivation(self):
         def filterToLeverPressTrials(original_list, lev):
@@ -7581,13 +7429,13 @@ initialNanList = [0.3]
 
 print("Start MultiFileGraphs Regular")
 experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "", save=True)
-experiment.successVsAverageDistance()
+#experiment.successVsAverageDistance()
 #experiment.stateTransitionModel()
 #experiment.classifyStrategies()
 #experiment.stateTransitionModel()
 #experiment.cooperativeRegionStrategiesQuantification()
 #experiment.pcaAndGLMCoopSuccessPredictors()
-#experiment.trueCooperationTesting()
+experiment.trueCooperationTesting()
 #experiment.gazingOverTrial()
 
 #experiment.testMotivation()
