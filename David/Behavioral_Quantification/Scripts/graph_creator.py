@@ -505,9 +505,10 @@ class multiFileGraphsCategories:
             prob = totalSucc / totalTrials if totalTrials > 0 else 0
             prob2 = np.mean(individual_datapoints[i])
             prob2EB = np.mean(individual_datapointsEB[i])
+            prob2NonEB = np.mean(individual_datapoints_nonEB[i])
             probs.append(prob2)
             probsEB.append(prob2EB)
-            probsNonEB.append(np.mean(individual_datapoints_nonEB))
+            probsNonEB.append(prob2NonEB)
     
         # --- Plotting ---
         plt.figure(figsize=(8, 6))
