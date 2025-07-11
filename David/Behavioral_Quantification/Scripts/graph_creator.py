@@ -1675,6 +1675,70 @@ class multiFileGraphs:
             self.experiments.append(exp)
         
         print(f"Deleted {deleted_count} experiment(s) due to missing categories.")
+      
+    def _plot_scatter_curved(self, x_data, y_data, filename, title, x_label, y_label=None, color_data=None):
+        """Plots a scatter plot with curved (exponential) or linear fit and R² value, optionally with color data."""
+        if len(x_data) < 2 or len(y_data) < 2:
+            print(f"Insufficient data to create scatterplot for {filename}")
+            return
+    
+        plt.figure(figsize=(8, 6))
+    
+        # === Plot points ===
+        if color_data is not None:
+            norm = plt.Normalize(min(color_data), max(color_data))
+            cmap = plt.cm.viridis
+            scatter = plt.scatter(x_data, y_data, c=color_data, cmap=cmap, norm=norm, alpha=0.7, 
+                                  edgecolors='black', linewidths=1, label='Experiments', s=70)
+            plt.colorbar(scatter, label='Average Waiting Time Before Press (frames)')
+        else:
+            plt.scatter(x_data, y_data, alpha=0.7, color='blue', label='Experiments')
+    
+        # === Fit curved (exponential) model ===
+        if len(set(x_data)) >= 2:
+            def exp_decay(x, a, b, c):
+                return a * np.exp(-b * x) + c
+    
+            try:
+                popt, _ = curve_fit(exp_decay, x_data, y_data, p0=[max(y_data), 0.001, min(y_data)])
+                x_vals = np.linspace(min(x_data), max(x_data), 100)
+                y_fit = exp_decay(x_vals, *popt)
+    
+                # Compute pseudo-R²
+                y_mean = np.mean(y_data)
+                ss_tot = sum((y - y_mean) ** 2 for y in y_data)
+                ss_res = sum((y - exp_decay(x, *popt)) ** 2 for x, y in zip(x_data, y_data))
+                r_squared = 1 - ss_res / ss_tot if ss_tot > 0 else 0
+    
+                # Plot curve
+                plt.plot(x_vals, y_fit, color='red', linestyle='--', label='Exponential Fit')
+                plt.text(0.68, 0.93, f"Pseudo-R² = {r_squared:.3f}", transform=plt.gca().transAxes,
+                         ha='right', va='bottom', fontsize=12, bbox=dict(facecolor='white', edgecolor='gray'))
+    
+            except RuntimeError:
+                print(f"Exponential fit failed for {filename}, falling back to linear fit.")
+                slope, intercept, r_value, _, _ = linregress(x_data, y_data)
+                x_vals = np.linspace(min(x_data), max(x_data), 100)
+                plt.plot(x_vals, slope * x_vals + intercept, color='red', linestyle='--', label='Linear Fit')
+                plt.text(0.95, 0.05, f"$R^2$ = {r_value**2:.3f}", transform=plt.gca().transAxes,
+                         ha='right', va='bottom', fontsize=12, bbox=dict(facecolor='white', edgecolor='gray'))
+    
+        # === Labels, legend, formatting ===
+        plt.xlabel(x_label, fontsize=self.labelSize)
+        if y_label is None:
+            plt.ylabel('Cooperative Success Rate', fontsize=self.labelSize)
+        else:
+            plt.ylabel(y_label, fontsize=self.labelSize)
+        plt.title(title, fontsize=self.titleSize)
+        plt.legend()
+        plt.grid(True)
+        plt.tight_layout()
+    
+        # === Save ===
+        if self.save:
+            plt.savefig(f"{self.prefix}{filename}")
+        plt.show()
+        plt.close()
     
     def magFileDataAvailabilityGraph(self):
         # Expected column structure
@@ -3356,6 +3420,14 @@ class multiFileGraphs:
             plt.savefig(f"{self.prefix}Success_vs_AvgDistance.png")
         plt.show()
         plt.close()
+        
+        self._plot_scatter_curved(
+            x_data=avg_distances,
+            y_data=success_rates,
+            filename="Success_vs_AvgDistance_CurvedFit.png",
+            title="Success Probability vs. Average Inter-Mouse Distance",
+            x_label="Average Inter-Mouse Distance (pixels)"
+        )
 
     def _calculate_trial_metrics(self, experiment):
         """
@@ -4088,7 +4160,7 @@ class multiFileGraphs:
             plt.savefig(f"{self.prefix}{filename}")
         plt.show()
         plt.close()
-            
+        
     def successRateVsThresholdPlot(self):
         """
         Plots the average cooperative success rate for each threshold value.
@@ -7509,10 +7581,11 @@ initialNanList = [0.3]
 
 print("Start MultiFileGraphs Regular")
 experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "", save=True)
+experiment.successVsAverageDistance()
 #experiment.stateTransitionModel()
 #experiment.classifyStrategies()
 #experiment.stateTransitionModel()
-experiment.cooperativeRegionStrategiesQuantification()
+#experiment.cooperativeRegionStrategiesQuantification()
 #experiment.pcaAndGLMCoopSuccessPredictors()
 #experiment.trueCooperationTesting()
 #experiment.gazingOverTrial()
