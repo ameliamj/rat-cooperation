@@ -421,7 +421,6 @@ class fileExtractor:
         Groups rows by mice pair using format-dependent parsing of 'vid',
         and sorts primarily by date (first 6 characters of 'vid'), then TrNum (if present).
         """
-        import re
     
         df = self.data.copy()
     
@@ -450,25 +449,27 @@ class fileExtractor:
                 return mouse2 + "-" + mouse1
     
         def extract_date(vid):
-            return int(vid[:6]) if vid[:6].isdigit() else float('inf')
+            date = int(vid[:6]) if vid[:6].isdigit() else float('inf')
+            print("date: ", date)
+            return 
     
         def extract_trnum(vid):
             match = re.search(r'TrNum(\d+)', vid)
             return int(match.group(1)) if match else float('inf')
     
         # Add helper columns
-        df['mice_pair'] = df.apply(extract_mice_pair, axis=1)
+        df['rat_pair'] = df.apply(extract_mice_pair, axis=1)
         df['date'] = df['vid'].apply(extract_date)
         df['trnum'] = df['vid'].apply(extract_trnum)
     
         grouped = []
-        for _, group_df in df.groupby('mice_pair'):
+        for _, group_df in df.groupby('rat_pair'):
             sorted_group = group_df.sort_values(by=['date', 'trnum'], ascending=True)
             grouped.append(sorted_group.drop(columns=['date', 'trnum']))
     
         # Optional CSV save
         if saveFile:
-            pd.concat(grouped).to_csv("group_rat_pairs_Unfamiliar.csv", index=False)
+            pd.concat(grouped).to_csv("group_rat_pairs.csv", index=False)
     
         return grouped
     
@@ -688,7 +689,11 @@ only_transparent = "/Users/david/Documents/Research/Saxena Lab/rat-cooperation/D
 only_unfamiliar = "/Users/david/Documents/Research/Saxena Lab/rat-cooperation/David/Behavioral_Quantification/Sorted Data Files/only_unfamiliar_partners.csv"
 only_trainingpartners = "/Users/david/Documents/Research/Saxena Lab/rat-cooperation/David/Behavioral_Quantification/Sorted Data Files/only_training_partners.csv"
 
-#fe = fileExtractor(fixedExpanded)
+fe = fileExtractor(fixedExpanded)
+fe.deleteInvalid()
+fe.deleteBadNaN()
+fe.sortByMicePairs(saveFile=True)
+
 #fe.deleteOnlyFullyInvalid()
 #fe.onlyFiberPhoto()
 

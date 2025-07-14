@@ -424,6 +424,12 @@ class posLoader:
         totalFramesGazing = np.sum(g0)
         return totalFramesGazing
         
+    def returnTotalFramesInteracting(self):
+        interacting = self.returnIsInteracting()
+        totalFramesInteracting = np.sum(interacting)
+        print(interacting[:10])
+        print("sum: ", np.sum(interacting[:10]))
+        return totalFramesInteracting
     
     def returnAverageGazeLength(self, mouseID):
         return (self.returnTotalFramesGazing(mouseID) / self.returnNumGazeEvents(mouseID))
@@ -689,6 +695,10 @@ class posLoader:
         return min(abs(headbase_y - self.topWall), abs(headbase_y - self.bottomWall))
     
     def returnIsInteracting(self):
+        '''
+        List of size totFrames that returns 1 if 
+        '''
+        
         MIN_FRAMES = 10
         MAX_DIST = 90
         isInteracting = []

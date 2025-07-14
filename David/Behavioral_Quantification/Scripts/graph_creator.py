@@ -1161,20 +1161,23 @@ print("Done")
 #
 
 
-class MicePairGraphs:
-    def __init__(self, magGroups, levGroups, posGroups):
+class MicePairGraphs:       
+    def __init__(self, magGroups, levGroups, posGroups, fpsGroups, totFramesGroups):
         print("Initializing MicePairGraphs")
         assert len(magGroups) == len(levGroups) == len(posGroups), "Mismatched group lengths."
         self.experimentGroups = []
         self.prefix = "filtered_"
         deleted_count = 0
 
-        for group_idx, (mag_list, lev_list, pos_list) in enumerate(zip(magGroups, levGroups, posGroups)):
+        for group_idx, (mag_list, lev_list, pos_list, fps_list, tot_frames_list) in enumerate(zip(magGroups, levGroups, posGroups, fpsGroups, totFramesGroups)):
             print(f"Creating group {group_idx + 1} for {len(mag_list)} files")
             group_exps = []
+            
+            print("lev_list: ", lev_list)
+            print("tot_frames_list: ", tot_frames_list)
         
-            for mag_path, lev_path, pos_path in zip(mag_list, lev_list, pos_list):
-                exp = singleExperiment(lev_path, mag_path, pos_path)        
+            for mag_path, lev_path, pos_path, fps, totFrames in zip(mag_list, lev_list, pos_list, fps_list, tot_frames_list):
+                exp = singleExperiment(lev_path, mag_path, pos_path, fps=fps, endFrame=totFrames)        
                 mag_missing = [col for col in exp.mag.categories if col not in exp.mag.data.columns]
                 lev_missing = [col for col in exp.lev.categories if col not in exp.lev.data.columns]
         
@@ -1579,67 +1582,284 @@ class MicePairGraphs:
             plt.close()
     
     
+    def plot_by_exp_idx(self, success_counts, trial_counts, session_counts, label, color):
+        print("data_y_count: ", success_counts)
+        print("data_y_division: ", trial_counts)
+        print("session_counts: ", session_counts)
+        
+        MIN_SESSIONS = 5
+        
+        # Filter to include only exp_idx with > 10 sessions
+        filtered_indices = [i for i in success_counts if session_counts[i] > MIN_SESSIONS and trial_counts[i] > 0]
+    
+        if not filtered_indices:
+            print(f"No data for {label} with > 10 sessions.")
+            return
+    
+        success_rates = [success_counts[i] / trial_counts[i] * 100 for i in filtered_indices]
+        
+        print("data_y: ", success_rates)
+        
+        std_errors = [np.sqrt(p*(1-p)/trial_counts[i]) * 100 
+                      for i, p in zip(filtered_indices, np.array(success_rates)/100)]
+    
+        # Convert to arrays
+        x = np.array(filtered_indices)
+        y = np.array(success_rates)
+        yerr = np.array(std_errors)
+    
+        # Spearman correlation
+        rho, p_rho = spearmanr(x, y)
+    
+        # Linear regression
+        slope, intercept, r_val, p_lin, _ = linregress(x, y)
+        regline = intercept + slope * x
+    
+        # Plot
+        plt.plot(x, y, marker='o', color=color, label=f"{label}")
+        plt.fill_between(x, y - yerr, y + yerr, color=color, alpha=0.2)
+        plt.plot(x, regline, linestyle='--', color=color,
+                 label=f"{label} Fit: slope={slope:.2f}, $R^2$={r_val**2:.2f}, ρ={rho:.2f}, p={p_rho:.3f}")
+    
     def lineGraphSuccess(self):
        '''
-       Comments
-       '''
+        Plots average success rate by experiment index for all, KL, and EB groups,
+        using only sessions where session count > MIN_SESSIONS.
+        Only consider sessions with a threshold of 1.
+        
+        MIN_SESSIONS = 5
+        '''
        
        success_counts = {}
        trial_counts = {}
        session_counts = {}
        
+       success_counts_KL = {}
+       trial_counts_KL = {}
+       session_counts_KL = {}
+       
+       success_counts_EB = {}
+       trial_counts_EB = {}
+       session_counts_EB = {}
+       
        for group_idx, group in enumerate(self.experimentGroups):
+           if (len(group) < 5):
+               continue
+           counter = 0
            for exp_idx, exp in enumerate(group):
                lev = exp.lev
                pos = exp.pos
+               
+               if (lev.returnSuccThreshold() != 1):
+                   counter += 1
+                   continue
+               
+               idx = exp_idx - counter
                
                animal_id = lev.returnAnimalID()
                numSuccess = lev.returnNumSuccessfulTrials()
                totTrials = lev.returnNumTotalTrials()
                
                if (exp_idx not in success_counts):
-                   success_counts[exp_idx] = 0
-                   trial_counts[exp_idx] = 0
-                   session_counts[exp_idx] = 0
+                   #All Data
+                   success_counts[idx] = 0
+                   trial_counts[idx] = 0
+                   session_counts[idx] = 0
+                   
+                   #KL Data
+                   success_counts_KL[idx] = 0
+                   trial_counts_KL[idx] = 0
+                   session_counts_KL[idx] = 0
+                   
+                   #EB Data
+                   success_counts_EB[idx] = 0
+                   trial_counts_EB[idx] = 0
+                   session_counts_EB[idx] = 0
                
-               success_counts[exp_idx] += (numSuccess)
-               trial_counts[exp_idx] += (totTrials)
-               session_counts[exp_idx] += 1
+               success_counts[idx] += (numSuccess)
+               trial_counts[idx] += (totTrials)
+               session_counts[idx] += 1
                
-               
+               if (animal_id == "EB"):
+                   success_counts_EB[idx] += (numSuccess)
+                   trial_counts_EB[idx] += (totTrials)
+                   session_counts_EB[idx] += 1
+            
+               else:
+                   success_counts_KL[idx] += (numSuccess)
+                   trial_counts_KL[idx] += (totTrials)
+                   session_counts_KL[idx] += 1
+        
+       # === Plot call ===
+       plt.figure(figsize=(10, 6))
+       self.plot_by_exp_idx(success_counts, trial_counts, session_counts, label="All", color="blue")
+       self.plot_by_exp_idx(success_counts_KL, trial_counts_KL, session_counts_KL, label="KL", color="purple")
+       self.plot_by_exp_idx(success_counts_EB, trial_counts_EB, session_counts_EB, label="EB", color="green")
+       
+       plt.xlabel('Experiment Index', fontsize=13)
+       plt.ylabel('Avg Success Rate (%)', fontsize=13)
+       plt.title('Average Success Rate throguhout Training', fontsize=15)
+       plt.grid(True, linestyle='--', alpha=0.6)
+       plt.legend(fontsize=10)
+       plt.tight_layout()
+       if self.save:
+           plt.savefig(f'{self.prefix}SuccessRateByExperimentIndex.png')
+       plt.show()
+       plt.close()
+                
 
     def lineGraphGazing(self):
         '''
-        Comments
+        Plots average percent gazing throughout training
         '''
-         
+        
+        gaze_counts = {}
+        frame_counts = {}
+        session_counts = {}
+    
+        gaze_counts_KL = {}
+        frame_counts_KL = {}
+        session_counts_KL = {}
+    
+        gaze_counts_EB = {}
+        frame_counts_EB = {}
+        session_counts_EB = {}
+    
         for group_idx, group in enumerate(self.experimentGroups):
+            if (len(group) < 5):
+                continue
             for exp_idx, exp in enumerate(group):
                 lev = exp.lev
                 pos = exp.pos
-                
+    
+                animal_id = lev.returnAnimalID()
+                numGazeFrames = (pos.returnTotalFramesGazing(0) + pos.returnTotalFramesGazing(1)) / 2
+                totFrames = pos.returnNumFramesSelfIntersection()
+    
+                # Initialize all dicts
+                for d in [(gaze_counts, frame_counts, session_counts),
+                          (gaze_counts_KL, frame_counts_KL, session_counts_KL),
+                          (gaze_counts_EB, frame_counts_EB, session_counts_EB)]:
+                    if exp_idx not in d[0]:
+                        d[0][exp_idx] = 0
+                        d[1][exp_idx] = 0
+                        d[2][exp_idx] = 0
+    
+                # Aggregate counts
+                gaze_counts[exp_idx] += numGazeFrames
+                frame_counts[exp_idx] += totFrames
+                session_counts[exp_idx] += 1
+    
+                if animal_id == "EB":
+                    gaze_counts_EB[exp_idx] += numGazeFrames
+                    frame_counts_EB[exp_idx] += totFrames
+                    session_counts_EB[exp_idx] += 1
+                else:
+                    gaze_counts_KL[exp_idx] += numGazeFrames
+                    frame_counts_KL[exp_idx] += totFrames
+                    session_counts_KL[exp_idx] += 1
+    
+        # === Plot call ===
+        plt.figure(figsize=(10, 6))
+        self.plot_by_exp_idx(gaze_counts, frame_counts, session_counts, label="All", color="blue")
+        self.plot_by_exp_idx(gaze_counts_KL, frame_counts_KL, session_counts_KL, label="KL", color="purple")
+        self.plot_by_exp_idx(gaze_counts_EB, frame_counts_EB, session_counts_EB, label="EB", color="green")
+    
+        plt.xlabel('Experiment Index', fontsize=13)
+        plt.ylabel('Percent Gazing', fontsize=13)
+        plt.title('Average Gazing Throughout Training', fontsize=15)
+        plt.grid(True, linestyle='--', alpha=0.6)
+        plt.legend(fontsize=10)
+        plt.tight_layout()
+        if self.save:
+            plt.savefig(f'{self.prefix}GazingByExperimentIndex.png')
+        plt.show()
+        plt.close()
         
+            
     def lineGraphInteractions(self):
         '''
-        Comments
+        Plots average percent interactions throughout training
         '''
-         
+        
+        interaction_counts = {}
+        frame_counts = {}
+        session_counts = {}
+    
+        interaction_counts_KL = {}
+        frame_counts_KL = {}
+        session_counts_KL = {}
+    
+        interaction_counts_EB = {}
+        frame_counts_EB = {}
+        session_counts_EB = {}
+    
         for group_idx, group in enumerate(self.experimentGroups):
+            if (len(group) < 5):
+                continue
             for exp_idx, exp in enumerate(group):
                 lev = exp.lev
                 pos = exp.pos
+    
+                animal_id = lev.returnAnimalID()
+                numInteractionFrames = pos.returnTotalFramesInteracting()
+                totFrames = pos.returnNumFramesSelfIntersection()
+                
+                # Initialize all dicts
+                for d in [(interaction_counts, frame_counts, session_counts),
+                          (interaction_counts_KL, frame_counts_KL, session_counts_KL),
+                          (interaction_counts_EB, frame_counts_EB, session_counts_EB)]:
+                    if exp_idx not in d[0]:
+                        d[0][exp_idx] = 0
+                        d[1][exp_idx] = 0
+                        d[2][exp_idx] = 0
+    
+                # Add counts
+                interaction_counts[exp_idx] += numInteractionFrames
+                frame_counts[exp_idx] += totFrames
+                session_counts[exp_idx] += 1
+    
+                if animal_id == "EB":
+                    interaction_counts_EB[exp_idx] += numInteractionFrames
+                    frame_counts_EB[exp_idx] += totFrames
+                    session_counts_EB[exp_idx] += 1
+                else:
+                    interaction_counts_KL[exp_idx] += numInteractionFrames
+                    frame_counts_KL[exp_idx] += totFrames
+                    session_counts_KL[exp_idx] += 1
+    
+        # === Plot call ===
+        plt.figure(figsize=(10, 6))
+        self.plot_by_exp_idx(interaction_counts, frame_counts, session_counts, label="All", color="blue")
+        self.plot_by_exp_idx(interaction_counts_KL, frame_counts_KL, session_counts_KL, label="KL", color="purple")
+        self.plot_by_exp_idx(interaction_counts_EB, frame_counts_EB, session_counts_EB, label="EB", color="green")
+    
+        plt.xlabel('Experiment Index', fontsize=13)
+        plt.ylabel('Percent Interacting', fontsize=13)
+        plt.title('Average Interaction Throughout Training', fontsize=15)
+        plt.grid(True, linestyle='--', alpha=0.6)
+        plt.legend(fontsize=10)
+        plt.tight_layout()
+        if self.save:
+            plt.savefig(f'{self.prefix}InteractionByExperimentIndex.png')
+        plt.show()
+        plt.close()
+    
                 
                 
+groupRatPairs = "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Sorted_Data_Files/group_rat_pairs_corrected.csv"
 
-groupMicePairs = "/gpfs/radev/project/saxena/drb83/rat-cooperation/David/Behavioral_Quantification/Sorted_Data_Files/group_mice_pairs.csv"
+def getGroupRatPairs():
+    fe = fileExtractor(groupRatPairs)
+    #fe.data = fe.deleteBadNaN()
+    fpsList, totFramesList = fe.returnFPSandTotFrames(grouped = True)
+    
+    print("fpsList: ", fpsList)
+    return [fe.getLevsDatapath(grouped = True), fe.getMagsDatapath(grouped = True), fe.getPosDatapath(grouped = True), fpsList, totFramesList]
 
-def getGroupMicePairs():
-    fe = fileExtractor(groupMicePairs)
-    return [fe.getLevsDatapath(grouped = True), fe.getMagsDatapath(grouped = True), fe.getPosDatapath(grouped = True)]
 
-
-#data = getGroupMicePairs()
-#pairGraphs = MicePairGraphs(data[0], data[1], data[2])
+data = getGroupRatPairs()
+pairGraphs = MicePairGraphs(data[0], data[1], data[2], data[3], data[4])
 
 
 '''magFiles = [["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv"],
@@ -1651,6 +1871,10 @@ posFiles = [["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/B
 
 pairGraphs = MicePairGraphs(magFiles, levFiles, posFiles)'''
 
+
+pairGraphs.lineGraphSuccess()
+pairGraphs.lineGraphGazing()
+pairGraphs.lineGraphInteractions()
 
 '''pairGraphs.boxplot_avg_gaze_length()
 pairGraphs.boxplot_lever_presses_per_trial()
@@ -7524,7 +7748,7 @@ totFramesList = [15000, 15000]
 initialNanList = [0.15, 0.12]
 '''
 
-
+'''
 arr = getFiltered()
 #arr = getUnfamiliar()
 #arr = getAllTrainingCoop()
@@ -7536,7 +7760,7 @@ fpsList = arr[3]
 totFramesList = arr[4]
 initialNanList = arr[5]
 #fiberPhoto = arr[6]
-
+'''
 
 '''
 lev_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/4_nanerror_lev.csv"]
@@ -7561,12 +7785,12 @@ initialNanList = [0.3]
 '''
 
 print("Start MultiFileGraphs Regular")
-experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "", save=True)
+#experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "", save=True)
 #experiment.successVsAverageDistance()
 #experiment.stateTransitionModel()
 #experiment.classifyStrategies()
 #experiment.stateTransitionModel()
-experiment.cooperativeRegionStrategiesQuantification()
+#experiment.cooperativeRegionStrategiesQuantification()
 #experiment.pcaAndGLMCoopSuccessPredictors()
 #experiment.trueCooperationTesting()
 #experiment.gazingOverTrial()
