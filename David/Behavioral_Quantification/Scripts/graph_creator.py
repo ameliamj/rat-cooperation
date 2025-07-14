@@ -5662,7 +5662,8 @@ class multiFileGraphs:
     
             sm = cm.ScalarMappable(cmap=cm.viridis, norm=norm)
             sm.set_array([])
-            cbar = plt.colorbar(sm)
+            ax = plt.gca()
+            cbar = plt.colorbar(sm, ax=ax)
             cbar.set_label('Avg Distance from Lever (px)', fontsize=12)
     
             plt.ylabel('Avg Time Until Press (s)', fontsize=13)
