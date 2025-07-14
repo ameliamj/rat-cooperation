@@ -2821,7 +2821,8 @@ class multiFileGraphs:
         datapoints = [datapoints_NoSuccess, datapoints_SuccessZone]        
         
         # X locations for the bars and jittered scatter points
-        x = np.arange(len(labels))
+        #x = np.arange(len(labels))
+        x = [0, 0.5]
         print("x: ", x)
         width = 0.3
         
