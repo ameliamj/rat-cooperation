@@ -1738,7 +1738,7 @@ class MicePairGraphs:
     
                 animal_id = lev.returnAnimalID()
                 numGazeFrames = (pos.returnTotalFramesGazing(0) + pos.returnTotalFramesGazing(1)) / 2
-                totFrames = pos.returnNumFramesSelfIntersection()
+                totFrames = pos.returnNumFrames()
     
                 # Initialize all dicts
                 for d in [(gaze_counts, frame_counts, session_counts),
@@ -1809,7 +1809,7 @@ class MicePairGraphs:
     
                 animal_id = lev.returnAnimalID()
                 numInteractionFrames = pos.returnTotalFramesInteracting()
-                totFrames = pos.returnNumFramesSelfIntersection()
+                totFrames = pos.returnNumFrames()
                 
                 # Initialize all dicts
                 for d in [(interaction_counts, frame_counts, session_counts),
@@ -7697,6 +7697,23 @@ class multiFileGraphs:
             filename=f"{self.prefix}GazingInteractionHeatmap.png"
         )
     
+    def moreGazeComparisons(self):
+        '''
+        Graphs: 
+            1) 5 seconds before press vs. 5 seconds after press vs. 5 seconds before mag vs . 5 seconds after mag vs. rest
+            2) Gazing as a percentage of trial w/ std error
+            3) Does Gazing in Prior Trials Affect Success in Future Trials 
+            4) Gaze vs. Success Find it
+            5) Percent of Gazing Frames that are also Interactions
+        '''
+        
+        
+        for exp in self.experiments:
+            lev = exp.lev
+            pos = exp.pos
+            
+            
+
 
 #Testing Multi File Graphs
 #
