@@ -42,6 +42,8 @@ from itertools import combinations
 
 
 from matplotlib.patches import Patch
+import matplotlib.cm as cm
+
 import seaborn as sns
 
 import sys
@@ -5638,10 +5640,7 @@ class multiFileGraphs:
             
         
         # === PLOT: Success vs. Failure Bar Chart ===
-        if len(individual_trials_success) > 0:
-            import matplotlib.pyplot as plt
-            import matplotlib.cm as cm
-    
+        if len(individual_trials_success) > 0:    
             success_times = [t for t, s in zip(individual_trials_timeUntilPress, individual_trials_success) if s == 1]
             success_dists = [d for d, s in zip(individual_trials_distance, individual_trials_success) if s == 1]
     
