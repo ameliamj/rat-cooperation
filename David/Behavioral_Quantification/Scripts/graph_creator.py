@@ -5635,6 +5635,47 @@ class multiFileGraphs:
             plt.close()
         else:
             print("Insufficient data to create scatterplot.")
+            
+        
+        # === PLOT: Success vs. Failure Bar Chart ===
+        if len(individual_trials_success) > 0:
+            import matplotlib.pyplot as plt
+            import matplotlib.cm as cm
+    
+            success_times = [t for t, s in zip(individual_trials_timeUntilPress, individual_trials_success) if s == 1]
+            success_dists = [d for d, s in zip(individual_trials_distance, individual_trials_success) if s == 1]
+    
+            failure_times = [t for t, s in zip(individual_trials_timeUntilPress, individual_trials_success) if s == 0]
+            failure_dists = [d for d, s in zip(individual_trials_distance, individual_trials_success) if s == 0]
+    
+            means = [np.mean(success_times), np.mean(failure_times)]
+            dists = [np.mean(success_dists), np.mean(failure_dists)]
+    
+            # Normalize distances for coloring (lighter = closer, darker = farther)
+            norm = plt.Normalize(min(dists), max(dists))
+            colors = [cm.viridis(norm(d)) for d in dists]
+    
+            plt.figure(figsize=(6, 6))
+            bars = plt.bar(['Success', 'Failure'], means, color=colors, edgecolor='black')
+            for bar, time in zip(bars, means):
+                plt.text(bar.get_x() + bar.get_width()/2, bar.get_height() + 0.1,
+                         f"{time:.2f}s", ha='center', fontsize=12)
+    
+            sm = cm.ScalarMappable(cmap=cm.viridis, norm=norm)
+            sm.set_array([])
+            cbar = plt.colorbar(sm)
+            cbar.set_label('Avg Distance from Lever (px)', fontsize=12)
+    
+            plt.ylabel('Avg Time Until Press (s)', fontsize=13)
+            plt.title('Waiting Time by Trial Outcome', fontsize=15)
+            plt.grid(axis='y', linestyle='--', alpha=0.5)
+            plt.tight_layout()
+            if self.save:
+                plt.savefig(f"{self.prefix}SuccessVsFailure_TimeColoredByDistance.png")
+            plt.show()
+            plt.close()
+        else:
+            print("No valid trials to generate bar chart.")
         
             
     
@@ -7753,6 +7794,7 @@ class multiFileGraphs:
             ids_first_press = lev.returnRatIDFirstPressTrial()
             succ_trials = lev.returnSuccessTrials()
             succ_trials = self._filterToLeverPressTrials(succ_trials, lev)
+            totalFrames 
             
             for trial_idx in len(trial_starts):
                 t_begin = trial_starts[trial_idx]
