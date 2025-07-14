@@ -1700,7 +1700,7 @@ class MicePairGraphs:
        
        plt.xlabel('Experiment Index', fontsize=13)
        plt.ylabel('Avg Success Rate (%)', fontsize=13)
-       plt.title('Average Success Rate throguhout Training', fontsize=15)
+       plt.title('Average Success Rate Throughout Training', fontsize=15)
        plt.grid(True, linestyle='--', alpha=0.6)
        plt.legend(fontsize=10)
        plt.tight_layout()
@@ -5533,7 +5533,7 @@ class multiFileGraphs:
                     if (dist < 1500 and t_first_press - t_begin < 10):
                         individual_trials_distance.append(dist)
                         individual_trials_timeUntilPress.append(t_first_press - t_begin)
-                        individual_datapoints_avgDistance.append(succ)
+                        individual_trials_success.append(succ)
                     else: 
                         print("Trial Idx: ", trial_idx)
                         print("t_begin: ", t_begin)
@@ -5550,7 +5550,11 @@ class multiFileGraphs:
                 individual_datapoints_timeUntilPress.append(sumTimeUntilPress / sumNumConsidered)
 
         # Plotting
-        if len(individual_datapoints_avgDistance) >= 2 and len(individual_datapoints_timeUntilPress) >= 2:
+        
+        print("Length of individual_datapoints_avgDistance:", len(individual_datapoints_avgDistance))
+        print("Length of individual_datapoints_timeUntilPress:", len(individual_datapoints_timeUntilPress))
+        
+        '''if len(individual_datapoints_avgDistance) >= 2 and len(individual_datapoints_timeUntilPress) >= 2:
             plt.figure(figsize=(8, 6))
             plt.scatter(individual_datapoints_avgDistance, individual_datapoints_timeUntilPress,
                         alpha=0.7, color='blue', label='Experiments')
@@ -5578,7 +5582,7 @@ class multiFileGraphs:
             plt.show()
             plt.close()
         else:
-            print("Insufficient data to create scatterplot.")
+            print("Insufficient data to create scatterplot.")'''
             
         # === by trial === 
             
