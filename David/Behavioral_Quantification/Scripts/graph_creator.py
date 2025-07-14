@@ -1588,13 +1588,13 @@ class MicePairGraphs:
         print("data_y_division: ", trial_counts)
         print("session_counts: ", session_counts)
         
-        MIN_SESSIONS = 5
+        MIN_SESSIONS = 3
         
         # Filter to include only exp_idx with > 10 sessions
         filtered_indices = [i for i in success_counts if session_counts[i] > MIN_SESSIONS and trial_counts[i] > 0]
     
         if not filtered_indices:
-            print(f"No data for {label} with > 10 sessions.")
+            print(f"No data for {label} with > 3 sessions.")
             return
     
         success_rates = [success_counts[i] / trial_counts[i] * 100 for i in filtered_indices]
