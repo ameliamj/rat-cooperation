@@ -5503,7 +5503,7 @@ class multiFileGraphs:
                 t_first_press = first_presses[trial_idx]
                 rat_first_press = ids_first_press[trial_idx]
                 succ = succ_trials[trial_idx]
-                print("succ: ", succ)
+                #print("succ: ", succ)
                 
                 if (t_begin == None or t_first_press == None or rat_first_press == None):
                     continue
@@ -5535,7 +5535,7 @@ class multiFileGraphs:
                         individual_trials_timeUntilPress.append(t_first_press - t_begin)
                         individual_trials_success.append(succ)
                     else: 
-                        print("Trial Idx: ", trial_idx)
+                        print("\nTrial Idx: ", trial_idx)
                         print("t_begin: ", t_begin)
                         print("Dist: ", dist)
                         print("Time Until Press: ", t_first_press - t_begin)
@@ -5585,7 +5585,10 @@ class multiFileGraphs:
             print("Insufficient data to create scatterplot.")'''
             
         # === by trial === 
-            
+        
+        print("len(individual_trials_distance): ", len(individual_trials_distance))
+        print("len(individual_trials_success): ", len(individual_trials_success))
+        
         if len(individual_trials_distance) >= 2 and len(individual_trials_timeUntilPress) >= 2:
             plt.figure(figsize=(8, 6))
             
@@ -5595,11 +5598,11 @@ class multiFileGraphs:
             
             for dist, time, success in zip(individual_trials_distance, individual_trials_timeUntilPress, individual_trials_success):
                 if success == 1:
-                    plt.scatter(dist, time, color='red', alpha=0.6,
+                    plt.scatter(dist, time, color='green', alpha=0.6,
                                 label='Success' if not success_label_added else "")
                     success_label_added = True
                 elif success == 0:
-                    plt.scatter(dist, time, color='blue', alpha=0.6,
+                    plt.scatter(dist, time, color='red', alpha=0.6,
                                 label='Failure' if not failure_label_added else "")
                     failure_label_added = True
                 else:
