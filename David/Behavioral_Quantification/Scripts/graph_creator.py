@@ -2822,7 +2822,8 @@ class multiFileGraphs:
         
         # X locations for the bars and jittered scatter points
         x = np.arange(len(labels))
-        width = 0.6
+        print("x: ", x)
+        width = 0.3
         
         # Create figure and axes
         fig, ax = plt.subplots(figsize=(8, 6))
@@ -2862,8 +2863,11 @@ class multiFileGraphs:
             # Vertical position of the line
             text = stars
             y = y_max + i * y_step
-            ax.plot([x[a], x[a], x[b], x[b]], [y, y + 0.01, y + 0.01, y], color='black', linewidth=1.2)
-            ax.text((x[a] + x[b]) / 2, y + 0.015, text, ha='center', va='bottom', fontsize=12)
+            pad = 0.1  # Padding to extend the bar beyond the bar centers
+            xa, xb = x[a], x[b]
+            ax.plot([xa - pad, xa - pad, xb + pad, xb + pad], [y, y + 0.01, y + 0.01, y], 
+                    color='black', linewidth=1.2, zorder=10)
+            ax.text((xa + xb) / 2, y + 0.015, stars, ha='center', va='bottom', fontsize=12, zorder=11)
         
         # Labels and formatting
         ax.set_ylabel('Average Distance', fontsize = 13)
@@ -2875,7 +2879,7 @@ class multiFileGraphs:
         
         plt.tight_layout()
         if (self.save):
-            plt.savefig(f"{self.prefix}X_Distance_SuccessZonevsNoSuccess.png")
+            plt.savefig(f"{self.prefix}X_Distance_SuccessZonevsNoSuccess_2Cats.png")
         plt.show()
         plt.close()
         
