@@ -1864,8 +1864,8 @@ def getGroupRatPairs():
     return [fe.getLevsDatapath(grouped = True), fe.getMagsDatapath(grouped = True), fe.getPosDatapath(grouped = True), fpsList, totFramesList]
 
 
-data = getGroupRatPairs()
-pairGraphs = MicePairGraphs(data[0], data[1], data[2], data[3], data[4])
+#data = getGroupRatPairs()
+#pairGraphs = MicePairGraphs(data[0], data[1], data[2], data[3], data[4])
 
 
 '''magFiles = [["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv"],
@@ -1878,9 +1878,9 @@ posFiles = [["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/B
 pairGraphs = MicePairGraphs(magFiles, levFiles, posFiles)'''
 
 
-pairGraphs.lineGraphSuccess()
-pairGraphs.lineGraphGazing()
-pairGraphs.lineGraphInteractions()
+#pairGraphs.lineGraphSuccess()
+#pairGraphs.lineGraphGazing()
+#pairGraphs.lineGraphInteractions()
 
 '''pairGraphs.boxplot_avg_gaze_length()
 pairGraphs.boxplot_lever_presses_per_trial()
@@ -5474,15 +5474,20 @@ class multiFileGraphs:
         
         individual_trials_distance = []
         individual_trials_timeUntilPress = []
+        individual_trials_success = []
         
         for exp_idx, exp in enumerate(self.experiments): 
             lev = exp.lev
             pos = exp.pos
             fps = exp.fps
+            print("\nlev_file: ", exp.lev_file)
             
             trial_starts = lev.returnTimeStartTrials()  # List of trial start times
             first_presses = lev.returnFirstPressAbsTimes()  # List of first press times
             ids_first_press = lev.returnRatIDFirstPressTrial()
+            succ_trials = lev.returnSuccessTrials()
+            succ_trials = self._filterToLeverPressTrials(succ_trials, lev)
+            
             
             if (len(trial_starts) != len(first_presses) or len(first_presses) != len(ids_first_press)):
                 print("len(trial_starts): ", len(trial_starts))
@@ -5497,6 +5502,8 @@ class multiFileGraphs:
                 t_begin = trial_starts[trial_idx]
                 t_first_press = first_presses[trial_idx]
                 rat_first_press = ids_first_press[trial_idx]
+                succ = succ_trials[trial_idx]
+                print("succ: ", succ)
                 
                 if (t_begin == None or t_first_press == None or rat_first_press == None):
                     continue
@@ -5517,6 +5524,8 @@ class multiFileGraphs:
                         continue
                     elif (pos.distanceFromLever(1, frameStart) and rat_first_press != 1):
                         continue
+                    elif(pos.returnRatLocationTime(0, frameStart) in levAreas and pos.returnRatLocationTime(1, frameStart) in levAreas):
+                        continue
                     sumDistances += dist
                     sumNumConsidered += 1
                     sumTimeUntilPress += t_first_press - t_begin
@@ -5524,6 +5533,7 @@ class multiFileGraphs:
                     if (dist < 1500 and t_first_press - t_begin < 10):
                         individual_trials_distance.append(dist)
                         individual_trials_timeUntilPress.append(t_first_press - t_begin)
+                        individual_datapoints_avgDistance.append(succ)
                     else: 
                         print("Trial Idx: ", trial_idx)
                         print("t_begin: ", t_begin)
@@ -5570,11 +5580,26 @@ class multiFileGraphs:
         else:
             print("Insufficient data to create scatterplot.")
             
+        # === by trial === 
             
         if len(individual_trials_distance) >= 2 and len(individual_trials_timeUntilPress) >= 2:
             plt.figure(figsize=(8, 6))
-            plt.scatter(individual_trials_distance, individual_trials_timeUntilPress,
-                        alpha=0.5, color='blue', label='Experiments')
+            
+            # Track if labels have been added to avoid duplicate legend entries
+            success_label_added = False
+            failure_label_added = False
+            
+            for dist, time, success in zip(individual_trials_distance, individual_trials_timeUntilPress, individual_trials_success):
+                if success == 1:
+                    plt.scatter(dist, time, color='red', alpha=0.6,
+                                label='Success' if not success_label_added else "")
+                    success_label_added = True
+                elif success == 0:
+                    plt.scatter(dist, time, color='blue', alpha=0.6,
+                                label='Failure' if not failure_label_added else "")
+                    failure_label_added = True
+                else:
+                    plt.scatter(dist, time, color='gray', alpha=0.4)
     
             if len(set(individual_trials_distance)) >= 2:
                 slope, intercept, r_value, p_value, std_err = linregress(individual_trials_distance, individual_trials_timeUntilPress)
@@ -7713,6 +7738,8 @@ class multiFileGraphs:
             pos = exp.pos
             
             
+            
+            
 
 
 #Testing Multi File Graphs
@@ -7771,7 +7798,7 @@ totFramesList = [15000, 15000]
 initialNanList = [0.15, 0.12]
 '''
 
-'''
+
 arr = getFiltered()
 #arr = getUnfamiliar()
 #arr = getAllTrainingCoop()
@@ -7783,7 +7810,7 @@ fpsList = arr[3]
 totFramesList = arr[4]
 initialNanList = arr[5]
 #fiberPhoto = arr[6]
-'''
+
 
 '''
 lev_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/4_nanerror_lev.csv"]
@@ -7808,14 +7835,14 @@ initialNanList = [0.3]
 '''
 
 print("Start MultiFileGraphs Regular")
-#experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "", save=True)
+experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "", save=True)
 #experiment.successVsAverageDistance()
 #experiment.stateTransitionModel()
 #experiment.classifyStrategies()
 #experiment.stateTransitionModel()
 #experiment.cooperativeRegionStrategiesQuantification()
 #experiment.pcaAndGLMCoopSuccessPredictors()
-#experiment.trueCooperationTesting()
+experiment.trueCooperationTesting()
 #experiment.gazingOverTrial()
 
 #experiment.testMotivation()
