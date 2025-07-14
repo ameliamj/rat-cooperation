@@ -5507,11 +5507,11 @@ class multiFileGraphs:
                 succ = succ_trials[trial_idx]
                 #print("succ: ", succ)
                 
-                if (t_begin == None or t_first_press == None or rat_first_press == None):
+                if (t_begin == None or t_first_press == None or rat_first_press == None or succ == None):
                     continue
                 
                 # Check for NaN in timings
-                if any(np.isnan(t) for t in [t_begin, t_first_press, rat_first_press]):
+                if any(np.isnan(t) for t in [t_begin, t_first_press, rat_first_press, succ]):
                     print(f"[Exp {exp_idx}, Trial {trial_idx}] Skipped: NaN in timings (begin={t_begin}, first_press={t_first_press}, rat_first_press={rat_first_press})")
                     continue
                                 
@@ -5527,7 +5527,8 @@ class multiFileGraphs:
                     elif (pos.distanceFromLever(1, frameStart) and rat_first_press != 1):
                         continue
                     elif(pos.returnRatLocationTime(0, frameStart) in levAreas and pos.returnRatLocationTime(1, frameStart) in levAreas):
-                        continue
+                        print("both rats in lever areas")
+                        #continue
                     sumDistances += dist
                     sumNumConsidered += 1
                     sumTimeUntilPress += t_first_press - t_begin
@@ -7742,10 +7743,10 @@ class multiFileGraphs:
         '''
         
         
-        for exp in self.experiments:
+        for exp_idx, exp in enumerate(self.experiments):
             lev = exp.lev
             pos = exp.pos
-            
+            fps = exp.fps
             
             trial_starts = lev.returnTimeStartTrials()  # List of trial start times
             first_presses = lev.returnFirstPressAbsTimes()  # List of first press times
@@ -7753,6 +7754,23 @@ class multiFileGraphs:
             succ_trials = lev.returnSuccessTrials()
             succ_trials = self._filterToLeverPressTrials(succ_trials, lev)
             
+            for trial_idx in len(trial_starts):
+                t_begin = trial_starts[trial_idx]
+                t_first_press = first_presses[trial_idx]
+                rat_first_press = ids_first_press[trial_idx]
+                succ = succ_trials[trial_idx]
+                #print("succ: ", succ)
+                
+                if (t_begin == None or t_first_press == None or rat_first_press == None):
+                    continue
+                
+                # Check for NaN in timings
+                if any(np.isnan(t) for t in [t_begin, t_first_press, rat_first_press]):
+                    print(f"[Exp {exp_idx}, Trial {trial_idx}] Skipped: NaN in timings (begin={t_begin}, first_press={t_first_press}, rat_first_press={rat_first_press})")
+                    continue
+                                
+                frameStart = int(t_begin * fps)
+                frameFirstPress = int(t_first_press * fps)
             
             
             
