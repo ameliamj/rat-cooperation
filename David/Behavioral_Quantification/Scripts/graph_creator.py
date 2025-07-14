@@ -5476,11 +5476,12 @@ class multiFileGraphs:
         individual_trials_timeUntilPress = []
         individual_trials_success = []
         
+        print("Num Exps: ", len(self.experiments))
         for exp_idx, exp in enumerate(self.experiments): 
             lev = exp.lev
             pos = exp.pos
             fps = exp.fps
-            print("\nlev_file: ", exp.lev_file)
+            #print("\nlev_file: ", exp.lev_file)
             
             trial_starts = lev.returnTimeStartTrials()  # List of trial start times
             first_presses = lev.returnFirstPressAbsTimes()  # List of first press times
@@ -5489,7 +5490,7 @@ class multiFileGraphs:
             succ_trials = self._filterToLeverPressTrials(succ_trials, lev)
             
             
-            if (len(trial_starts) != len(first_presses) or len(first_presses) != len(ids_first_press)):
+            if (len(trial_starts) != len(first_presses) or len(first_presses) != len(ids_first_press) or len(first_presses) != len(succ_trials)):
                 print("len(trial_starts): ", len(trial_starts))
                 print("len(ids_first_press): ", len(ids_first_press))
                 raise ValueError("Inequal Sizes")
@@ -5498,6 +5499,7 @@ class multiFileGraphs:
             sumNumConsidered = 0
             sumTimeUntilPress = 0
             
+            print("len(trial_starts): ", len(trial_starts))
             for trial_idx, trialStart in enumerate(trial_starts):
                 t_begin = trial_starts[trial_idx]
                 t_first_press = first_presses[trial_idx]
@@ -7743,6 +7745,13 @@ class multiFileGraphs:
         for exp in self.experiments:
             lev = exp.lev
             pos = exp.pos
+            
+            
+            trial_starts = lev.returnTimeStartTrials()  # List of trial start times
+            first_presses = lev.returnFirstPressAbsTimes()  # List of first press times
+            ids_first_press = lev.returnRatIDFirstPressTrial()
+            succ_trials = lev.returnSuccessTrials()
+            succ_trials = self._filterToLeverPressTrials(succ_trials, lev)
             
             
             
