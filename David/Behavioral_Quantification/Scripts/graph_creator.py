@@ -1162,11 +1162,12 @@ print("Done")
 
 
 class MicePairGraphs:       
-    def __init__(self, magGroups, levGroups, posGroups, fpsGroups, totFramesGroups):
+    def __init__(self, magGroups, levGroups, posGroups, fpsGroups, totFramesGroups, saveFile = True):
         print("Initializing MicePairGraphs")
         assert len(magGroups) == len(levGroups) == len(posGroups), "Mismatched group lengths."
         self.experimentGroups = []
         self.prefix = "filtered_"
+        self.save = saveFile
         deleted_count = 0
 
         for group_idx, (mag_list, lev_list, pos_list, fps_list, tot_frames_list) in enumerate(zip(magGroups, levGroups, posGroups, fpsGroups, totFramesGroups)):
@@ -1630,6 +1631,7 @@ class MicePairGraphs:
         MIN_SESSIONS = 5
         '''
        
+       print("\nStarting Line Graph Success")
        success_counts = {}
        trial_counts = {}
        session_counts = {}
@@ -1713,6 +1715,8 @@ class MicePairGraphs:
         Plots average percent gazing throughout training
         '''
         
+        print("\nStarting Line Graph Gazing")
+        
         gaze_counts = {}
         frame_counts = {}
         session_counts = {}
@@ -1781,6 +1785,8 @@ class MicePairGraphs:
         '''
         Plots average percent interactions throughout training
         '''
+        
+        print("\nStarting Line Graph Interactions")
         
         interaction_counts = {}
         frame_counts = {}
