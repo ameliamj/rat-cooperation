@@ -1847,7 +1847,7 @@ class MicePairGraphs:
     
                 
                 
-groupRatPairs = "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Sorted_Data_Files/group_rat_pairs_corrected.csv"
+groupRatPairs = "/gpfs/radev/project/saxena/drb83/rat-cooperation/David/Behavioral_Quantification/Sorted_Data_Files/group_rat_pairs_corrected.csv"
 
 def getGroupRatPairs():
     fe = fileExtractor(groupRatPairs)
