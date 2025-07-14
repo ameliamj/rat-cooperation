@@ -1578,6 +1578,58 @@ class MicePairGraphs:
             plt.show()
             plt.close()
     
+    
+    def lineGraphSuccess(self):
+       '''
+       Comments
+       '''
+       
+       success_counts = {}
+       trial_counts = {}
+       session_counts = {}
+       
+       for group_idx, group in enumerate(self.experimentGroups):
+           for exp_idx, exp in enumerate(group):
+               lev = exp.lev
+               pos = exp.pos
+               
+               animal_id = lev.returnAnimalID()
+               numSuccess = lev.returnNumSuccessfulTrials()
+               totTrials = lev.returnNumTotalTrials()
+               
+               if (exp_idx not in success_counts):
+                   success_counts[exp_idx] = 0
+                   trial_counts[exp_idx] = 0
+                   session_counts[exp_idx] = 0
+               
+               success_counts[exp_idx] += (numSuccess)
+               trial_counts[exp_idx] += (totTrials)
+               session_counts[exp_idx] += 1
+               
+               
+
+    def lineGraphGazing(self):
+        '''
+        Comments
+        '''
+         
+        for group_idx, group in enumerate(self.experimentGroups):
+            for exp_idx, exp in enumerate(group):
+                lev = exp.lev
+                pos = exp.pos
+                
+        
+    def lineGraphInteractions(self):
+        '''
+        Comments
+        '''
+         
+        for group_idx, group in enumerate(self.experimentGroups):
+            for exp_idx, exp in enumerate(group):
+                lev = exp.lev
+                pos = exp.pos
+                
+                
 
 groupMicePairs = "/gpfs/radev/project/saxena/drb83/rat-cooperation/David/Behavioral_Quantification/Sorted_Data_Files/group_mice_pairs.csv"
 
@@ -2760,6 +2812,74 @@ class multiFileGraphs:
         plt.show()
         plt.close()
         
+        #Only 2 Cat Plot: 
+            
+        # Labels and values for the bar plot
+        labels = ['No Success', 'Success Zone']
+        #averages = [averageDistance_NoSuccess, averageDistance_Success_NoZone, averageDistance_SuccessZone] ###Normal One
+        averages = [np.mean(datapoints_NoSuccess), np.mean(datapoints_SuccessZone)]
+        datapoints = [datapoints_NoSuccess, datapoints_SuccessZone]        
+        
+        # X locations for the bars and jittered scatter points
+        x = np.arange(len(labels))
+        width = 0.6
+        
+        # Create figure and axes
+        fig, ax = plt.subplots(figsize=(8, 6))
+        
+        # Plot bar chart
+        bars = ax.bar(x, averages, width, color=['red', 'green'], alpha=0.6, edgecolor='black')
+        
+        # Overlay individual data points
+        for i, points in enumerate(datapoints):
+            # Add jitter to the x-position of each point for visibility
+            jittered_x = np.random.normal(loc=x[i], scale=0.05, size=len(points))
+            ax.scatter(jittered_x, points, alpha=0.8, color='black', s=20)
+        
+        # Add statistical significance annotations
+        comparisons = [(0, 1)]
+        y_max = max(max(d) for d in datapoints) * 1.1
+        y_step = (y_max - min(min(d) for d in datapoints)) * 0.1
+        
+        for i, (a, b) in enumerate(comparisons):
+            stat, pval = ttest_ind(datapoints[a], datapoints[b], equal_var=False)
+            stat2, pval2 = mannwhitneyu(datapoints[a], datapoints[b], alternative='two-sided')
+            
+            print("(a,b): ", (a, b))
+            print("pval: ", pval)
+            print("pval2: ", pval2)
+            
+            # Significance text
+            if pval < 0.001:
+                stars = '***'
+            elif pval < 0.01:
+                stars = '**'
+            elif pval < 0.05:
+                stars = '*'
+            else:
+                stars = 'n.s.'
+        
+            # Vertical position of the line
+            text = stars
+            y = y_max + i * y_step
+            ax.plot([x[a], x[a], x[b], x[b]], [y, y + 0.01, y + 0.01, y], color='black', linewidth=1.2)
+            ax.text((x[a] + x[b]) / 2, y + 0.015, text, ha='center', va='bottom', fontsize=12)
+        
+        # Labels and formatting
+        ax.set_ylabel('Average Distance', fontsize = 13)
+        ax.set_title('Average Head-Body X-Distance per Trial', fontsize = 15)
+        ax.set_xticks(x)
+        ax.set_xticklabels(labels, fontsize = 13)
+        ax.tick_params(axis='y', labelsize=13)  # Set y-axis tick font size for consistency
+        ax.axhline(0, color='gray', linewidth=0.8, linestyle='--')
+        
+        plt.tight_layout()
+        if (self.save):
+            plt.savefig(f"{self.prefix}X_Distance_SuccessZonevsNoSuccess.png")
+        plt.show()
+        plt.close()
+        
+        
         # Prepare data: calculate averages for each key and collect individual points
         keys = sorted(successInARowvsDistance.keys())
         averages = [np.mean(successInARowvsDistance[k]) for k in keys]
@@ -2799,7 +2919,7 @@ class multiFileGraphs:
         # Save and show the plot
         plt.tight_layout()
         if (self.save):
-            plt.savefig(f"{self.prefix}Smoothed_X_Distance_vs_SuccessInARow.png")
+            plt.savefig(f"{self.prefix}Smoothed_X_Distance_vs_SuccessInARow2Cat.png")
         plt.show()
         plt.close()
         
@@ -7441,9 +7561,9 @@ experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFrames
 #experiment.stateTransitionModel()
 #experiment.classifyStrategies()
 #experiment.stateTransitionModel()
-#experiment.cooperativeRegionStrategiesQuantification()
+experiment.cooperativeRegionStrategiesQuantification()
 #experiment.pcaAndGLMCoopSuccessPredictors()
-experiment.trueCooperationTesting()
+#experiment.trueCooperationTesting()
 #experiment.gazingOverTrial()
 
 #experiment.testMotivation()

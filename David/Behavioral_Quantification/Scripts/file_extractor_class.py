@@ -468,7 +468,7 @@ class fileExtractor:
     
         # Optional CSV save
         if saveFile:
-            pd.concat(grouped).to_csv("group_mice_pairs.csv", index=False)
+            pd.concat(grouped).to_csv("group_rat_pairs_Unfamiliar.csv", index=False)
     
         return grouped
     
