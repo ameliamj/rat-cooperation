@@ -2871,6 +2871,7 @@ class multiFileGraphs:
             
             listTrials = lev.returnCooperativeSuccessRegionsBool()
             startTimeTrials = lev.returnTimeStartTrials()
+            coop_or_last_press = lev.returnCoopTimeorLastPressTime()
             endTimeTrials = lev.returnTimeEndTrials()
             
             successTrial = lev.returnSuccessTrials()
@@ -2895,11 +2896,12 @@ class multiFileGraphs:
                 continue
             
             for i, trialBool in enumerate(listTrials):
-                if (np.isnan(startTimeTrials[i]) or np.isnan(endTimeTrials[i]) or np.isnan(successInARow[i]) or startTimeTrials[i] == None or endTimeTrials[i] == None or successInARow[i] == None):
+                if (np.isnan(startTimeTrials[i]) or np.isnan(coop_or_last_press[i]) or np.isnan(endTimeTrials[i]) or np.isnan(successInARow[i]) or startTimeTrials[i] == None or endTimeTrials[i] == None or successInARow[i] == None):
                     continue
                 
                 startFrame = int(startTimeTrials[i] * fps)
-                endFrame = int(endTimeTrials[i] * fps)
+                endFrame = int(coop_or_last_press[i] * fps)
+                #endFrame = int(endTimeTrials[i] * fps)
                 
                 #print("startFrame: ", startFrame)
                 #print("endFrame: ", endFrame)
@@ -5701,8 +5703,7 @@ class multiFileGraphs:
             plt.close()
         else:
             print("No valid trials to generate bar chart.")
-        
-            
+                    
     
     def testMotivation(self):
         def filterToLeverPressTrials(original_list, lev):
