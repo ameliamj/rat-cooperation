@@ -11,6 +11,8 @@ import cv2
 import numpy as np
 import re
 from lev_class import levLoader
+from datetime import datetime
+
 
 class fileExtractor:
     def __init__(self, information_path):
@@ -448,10 +450,19 @@ class fileExtractor:
             else:
                 return mouse2 + "-" + mouse1
     
-        def extract_date(vid):
+        '''def extract_date(vid):
             date = int(vid[:6]) if vid[:6].isdigit() else float('inf')
-            print("date: ", date)
-            return 
+            #print("date: ", date)
+            return '''
+        
+        def extract_date(vid):
+            date_str = vid[:6]
+            try:
+                dt = datetime.strptime(date_str, "%m%d%y")
+                return dt
+            except ValueError:
+                return datetime.max  # if parsing fails, push to the end
+        
     
         def extract_trnum(vid):
             match = re.search(r'TrNum(\d+)', vid)
@@ -689,10 +700,10 @@ only_transparent = "/Users/david/Documents/Research/Saxena Lab/rat-cooperation/D
 only_unfamiliar = "/Users/david/Documents/Research/Saxena Lab/rat-cooperation/David/Behavioral_Quantification/Sorted Data Files/only_unfamiliar_partners.csv"
 only_trainingpartners = "/Users/david/Documents/Research/Saxena Lab/rat-cooperation/David/Behavioral_Quantification/Sorted Data Files/only_training_partners.csv"
 
-#fe = fileExtractor(fixedExpanded)
-#fe.deleteInvalid()
-#fe.deleteBadNaN()
-#fe.sortByMicePairs(saveFile=True)
+fe = fileExtractor(fixedExpanded)
+fe.deleteInvalid()
+fe.deleteBadNaN()
+fe.sortByMicePairs(saveFile=True)
 
 #fe.deleteOnlyFullyInvalid()
 #fe.onlyFiberPhoto()
