@@ -1611,13 +1611,26 @@ class MicePairGraphs:
         x = np.array(filtered_indices)
         y = np.array(success_rates)
         yerr = np.array(std_errors)
-    
+        
+        print("\nx: ", x)
+        print("y: ", y)
+        print("yerr: ", yerr)
+        
+        valid = np.isfinite(yerr)
+        x, y, yerr = x[valid], y[valid], yerr[valid]
+        
+        print("\nOnly Valid: ")
+        print("x: ", x)
+        print("y: ", y)
+        print("yerr: ", yerr)
+        
         # Spearman correlation
         rho, p_rho = spearmanr(x, y)
     
         # Linear regression
         slope, intercept, r_val, p_lin, _ = linregress(x, y)
         regline = intercept + slope * x
+        
     
         # Plot
         plt.plot(x, y, marker='o', color=color, label=f"{label}")
@@ -1698,8 +1711,8 @@ class MicePairGraphs:
        # === Plot call ===
        plt.figure(figsize=(10, 6))
        self.plot_by_exp_idx(success_counts, trial_counts, session_counts, label="All", color="blue")
-       self.plot_by_exp_idx(success_counts_KL, trial_counts_KL, session_counts_KL, label="KL", color="purple")
-       self.plot_by_exp_idx(success_counts_EB, trial_counts_EB, session_counts_EB, label="EB", color="green")
+       #self.plot_by_exp_idx(success_counts_KL, trial_counts_KL, session_counts_KL, label="KL", color="purple")
+       #self.plot_by_exp_idx(success_counts_EB, trial_counts_EB, session_counts_EB, label="EB", color="green")
        
        plt.xlabel('Experiment Index', fontsize=13)
        plt.ylabel('Avg Success Rate (%)', fontsize=13)
@@ -1708,7 +1721,7 @@ class MicePairGraphs:
        plt.legend(fontsize=10)
        plt.tight_layout()
        if self.save:
-           plt.savefig(f'{self.prefix}SuccessRateByExperimentIndex.png')
+           plt.savefig(f'{self.prefix}SuccessRateByExperimentIndex_onlyAll.png')
        plt.show()
        plt.close()
                 
@@ -1769,8 +1782,8 @@ class MicePairGraphs:
         # === Plot call ===
         plt.figure(figsize=(10, 6))
         self.plot_by_exp_idx(gaze_counts, frame_counts, session_counts, label="All", color="blue")
-        self.plot_by_exp_idx(gaze_counts_KL, frame_counts_KL, session_counts_KL, label="KL", color="purple")
-        self.plot_by_exp_idx(gaze_counts_EB, frame_counts_EB, session_counts_EB, label="EB", color="green")
+        #self.plot_by_exp_idx(gaze_counts_KL, frame_counts_KL, session_counts_KL, label="KL", color="purple")
+        #self.plot_by_exp_idx(gaze_counts_EB, frame_counts_EB, session_counts_EB, label="EB", color="green")
     
         plt.xlabel('Experiment Index', fontsize=13)
         plt.ylabel('Percent Gazing', fontsize=13)
@@ -1779,7 +1792,7 @@ class MicePairGraphs:
         plt.legend(fontsize=10)
         plt.tight_layout()
         if self.save:
-            plt.savefig(f'{self.prefix}GazingByExperimentIndex.png')
+            plt.savefig(f'{self.prefix}GazingByExperimentIndex_onlyAll.png')
         plt.show()
         plt.close()
         
@@ -1840,8 +1853,8 @@ class MicePairGraphs:
         # === Plot call ===
         plt.figure(figsize=(10, 6))
         self.plot_by_exp_idx(interaction_counts, frame_counts, session_counts, label="All", color="blue")
-        self.plot_by_exp_idx(interaction_counts_KL, frame_counts_KL, session_counts_KL, label="KL", color="purple")
-        self.plot_by_exp_idx(interaction_counts_EB, frame_counts_EB, session_counts_EB, label="EB", color="green")
+        #self.plot_by_exp_idx(interaction_counts_KL, frame_counts_KL, session_counts_KL, label="KL", color="purple")
+        #self.plot_by_exp_idx(interaction_counts_EB, frame_counts_EB, session_counts_EB, label="EB", color="green")
     
         plt.xlabel('Experiment Index', fontsize=13)
         plt.ylabel('Percent Interacting', fontsize=13)
@@ -1850,7 +1863,7 @@ class MicePairGraphs:
         plt.legend(fontsize=10)
         plt.tight_layout()
         if self.save:
-            plt.savefig(f'{self.prefix}InteractionByExperimentIndex.png')
+            plt.savefig(f'{self.prefix}InteractionByExperimentIndex_onlyAll.png')
         plt.show()
         plt.close()
     
@@ -1867,8 +1880,8 @@ def getGroupRatPairs():
     return [fe.getLevsDatapath(grouped = True), fe.getMagsDatapath(grouped = True), fe.getPosDatapath(grouped = True), fpsList, totFramesList]
 
 
-#data = getGroupRatPairs()
-#pairGraphs = MicePairGraphs(data[0], data[1], data[2], data[3], data[4])
+data = getGroupRatPairs()
+pairGraphs = MicePairGraphs(data[0], data[1], data[2], data[3], data[4])
 
 
 '''magFiles = [["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv"],
@@ -1881,9 +1894,9 @@ posFiles = [["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/B
 pairGraphs = MicePairGraphs(magFiles, levFiles, posFiles)'''
 
 
-#pairGraphs.lineGraphSuccess()
-#pairGraphs.lineGraphGazing()
-#pairGraphs.lineGraphInteractions()
+pairGraphs.lineGraphSuccess()
+pairGraphs.lineGraphGazing()
+pairGraphs.lineGraphInteractions()
 
 '''pairGraphs.boxplot_avg_gaze_length()
 pairGraphs.boxplot_lever_presses_per_trial()
@@ -8251,15 +8264,15 @@ totFramesList = [15000]
 initialNanList = [0.3]
 '''
 
-print("Start MultiFileGraphs Regular")
-experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "", save=True)
+#print("Start MultiFileGraphs Regular")
+#experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "", save=True)
 #experiment.moreGazeComparisons()
 #experiment.successVsAverageDistance()
 #experiment.stateTransitionModel()
 #experiment.classifyStrategies()
 #experiment.stateTransitionModel()
 #experiment.cooperativeRegionStrategiesQuantification()
-experiment.pcaAndGLMCoopSuccessPredictors()
+#experiment.pcaAndGLMCoopSuccessPredictors()
 #experiment.trueCooperationTesting()
 #experiment.gazingOverTrial()
 
