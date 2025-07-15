@@ -7620,13 +7620,14 @@ class multiFileGraphs:
             # rot_animation.save(f"{self.prefix}PCA_3D_Rotation.gif", dpi=100, writer='pillow', fps=20)
         
         plt.close(fig)  # Don't display static figure
-        
+        print("Video Saved")
         
         
         
         # Explained Variance Plot
-        pca = PCA(n_components=10)
-        explained_variance = pca.explained_variance_ratio_
+        pca_10 = PCA(n_components=8)
+        X_pca_10 = pca_10.fit_transform(X_scaled_filtered)
+        explained_variance = pca_10.explained_variance_ratio_
         cumulative_variance = np.cumsum(explained_variance)
         num_components = len(explained_variance)
         
