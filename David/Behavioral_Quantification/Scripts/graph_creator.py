@@ -1711,8 +1711,8 @@ class MicePairGraphs:
        # === Plot call ===
        plt.figure(figsize=(10, 6))
        self.plot_by_exp_idx(success_counts, trial_counts, session_counts, label="All", color="blue")
-       self.plot_by_exp_idx(success_counts_KL, trial_counts_KL, session_counts_KL, label="KL", color="purple")
-       self.plot_by_exp_idx(success_counts_EB, trial_counts_EB, session_counts_EB, label="EB", color="green")
+       #self.plot_by_exp_idx(success_counts_KL, trial_counts_KL, session_counts_KL, label="KL", color="purple")
+       #self.plot_by_exp_idx(success_counts_EB, trial_counts_EB, session_counts_EB, label="EB", color="green")
        
        plt.xlabel('Experiment Index', fontsize=13)
        plt.ylabel('Avg Success Rate (%)', fontsize=13)
@@ -1721,7 +1721,7 @@ class MicePairGraphs:
        plt.legend(fontsize=10)
        plt.tight_layout()
        if self.save:
-           plt.savefig(f'{self.prefix}SuccessRateByExperimentIndex.png')
+           plt.savefig(f'{self.prefix}SuccessRateByExperimentIndex_onlyAll.png')
        plt.show()
        plt.close()
                 
@@ -1782,8 +1782,8 @@ class MicePairGraphs:
         # === Plot call ===
         plt.figure(figsize=(10, 6))
         self.plot_by_exp_idx(gaze_counts, frame_counts, session_counts, label="All", color="blue")
-        self.plot_by_exp_idx(gaze_counts_KL, frame_counts_KL, session_counts_KL, label="KL", color="purple")
-        self.plot_by_exp_idx(gaze_counts_EB, frame_counts_EB, session_counts_EB, label="EB", color="green")
+        #self.plot_by_exp_idx(gaze_counts_KL, frame_counts_KL, session_counts_KL, label="KL", color="purple")
+        #self.plot_by_exp_idx(gaze_counts_EB, frame_counts_EB, session_counts_EB, label="EB", color="green")
     
         plt.xlabel('Experiment Index', fontsize=13)
         plt.ylabel('Percent Gazing', fontsize=13)
@@ -1792,7 +1792,7 @@ class MicePairGraphs:
         plt.legend(fontsize=10)
         plt.tight_layout()
         if self.save:
-            plt.savefig(f'{self.prefix}GazingByExperimentIndex.png')
+            plt.savefig(f'{self.prefix}GazingByExperimentIndex_onlyAll.png')
         plt.show()
         plt.close()
         
@@ -1853,8 +1853,8 @@ class MicePairGraphs:
         # === Plot call ===
         plt.figure(figsize=(10, 6))
         self.plot_by_exp_idx(interaction_counts, frame_counts, session_counts, label="All", color="blue")
-        self.plot_by_exp_idx(interaction_counts_KL, frame_counts_KL, session_counts_KL, label="KL", color="purple")
-        self.plot_by_exp_idx(interaction_counts_EB, frame_counts_EB, session_counts_EB, label="EB", color="green")
+        #self.plot_by_exp_idx(interaction_counts_KL, frame_counts_KL, session_counts_KL, label="KL", color="purple")
+        #self.plot_by_exp_idx(interaction_counts_EB, frame_counts_EB, session_counts_EB, label="EB", color="green")
     
         plt.xlabel('Experiment Index', fontsize=13)
         plt.ylabel('Percent Interacting', fontsize=13)
@@ -1863,7 +1863,7 @@ class MicePairGraphs:
         plt.legend(fontsize=10)
         plt.tight_layout()
         if self.save:
-            plt.savefig(f'{self.prefix}InteractionByExperimentIndex.png')
+            plt.savefig(f'{self.prefix}InteractionByExperimentIndex_onlyAll.png')
         plt.show()
         plt.close()
     
