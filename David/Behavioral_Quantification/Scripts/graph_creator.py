@@ -5660,11 +5660,11 @@ class multiFileGraphs:
             plt.figure(figsize=(6, 6))
             bars = plt.bar(['Success', 'Failure'], means, color=colors, edgecolor='black')
             for bar, time in zip(bars, means):
-                plt.text(bar.get_x() + bar.get_width()/2, bar.get_height() + 0.1,
+                plt.text(bar.get_x() + bar.get_width()/2, bar.get_height() + 0.05,
                          f"{time:.2f}s", ha='center', fontsize=12)
             
             # === Scatter points overlaid on bars ===
-            jitter_strength = 0.08
+            jitter_strength = 0.2
             for x_base, times, dists in zip([0, 1], [success_times, failure_times], [success_dists, failure_dists]):
                 for t, d in zip(times, dists):
                     jitter = np.random.uniform(-jitter_strength, jitter_strength)
