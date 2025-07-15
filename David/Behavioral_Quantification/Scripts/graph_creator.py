@@ -7811,13 +7811,14 @@ class multiFileGraphs:
         #3
         gaze_success = {'succ': [], 'fail': []}
         
-        #4
+        #4-6
+        countGazing = 0
+        countMutual = 0
+        countGazeandInteracting = 0
+        countInteracting = 0
+        
         perc_gaze_that_are_interactions = 0
-        
-        #5
-        percent_gazing_that_is_mutual = 0
-        
-        #6 
+        percent_gazing_that_is_mutual = 0        
         perc_interactions_that_are_gazing = 0
         
         
@@ -7958,10 +7959,6 @@ class multiFileGraphs:
          
                 
             #Graph 4, 5, 6
-            countGazing = 0
-            countMutual = 0
-            countGazeandInteracting = 0
-            countInteracting = 0
             
             for frame_idx in range(totalFrames):
                 gazing0 = isGazing0[frame_idx]
@@ -7983,10 +7980,10 @@ class multiFileGraphs:
                     gazingCategoryCounts['rest'] += (isGazing0[f] or isGazing1[f])
                     totalCategoryCounts['rest'] += 1
                     
+        if (countGazing > 0):
             perc_gaze_that_are_interactions = countGazeandInteracting / countGazing
-            
             percent_gazing_that_is_mutual = countMutual / countGazing
-            
+        if (countInteracting > 0):
             perc_interactions_that_are_gazing = countGazeandInteracting / countInteracting
             
             
