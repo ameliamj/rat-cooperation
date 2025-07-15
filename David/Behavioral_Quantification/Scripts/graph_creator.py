@@ -7788,46 +7788,273 @@ class multiFileGraphs:
         '''
         Graphs: 
             1) 5 seconds before press vs. 5 seconds after press vs. 5 seconds before mag vs . 5 seconds after mag vs. rest
-            2) Gazing as a percentage of trial w/ std error
-            3) Does Gazing in Prior Trials Affect Success in Future Trials 
-            4) Gaze vs. Success Find it
-            5) Percent of Gazing Frames that are also Interactions
+            2) Gazing as a percentage of trial that has passed w/ std error (30 bins)
+            3) Bar Chart: % Gazing in Successful vs. Unsuccessful Trials
+            4) Percent of Gazing Frames that are also Interactions
+            5) Percent of Mutual Gazing (Both Rats are Gazing at each Other)
+            6) Percent of Interacting Frames that are also Gazing
         '''
+        
+        # Global Vars
+        NUM_BINS = 30
+        SECONDS_BEFORE_AND_AFTER = 5
+        
+        # === Data Storage Declarations ===  
+        #1
+        gazingCategoryCounts = {'pre_press':0, 'post_press':0, 'pre_mag':0, 'post_mag':0, 'rest':0}
+        totalCategoryCounts = {'pre_press':0, 'post_press':0, 'pre_mag':0, 'post_mag':0, 'rest':0}
+        
+        #2
+        bin_gaze_frames = np.zeros(self.NUM_BINS)
+        bin_total_frames = np.zeros(self.NUM_BINS)
+        
+        #3
+        gaze_success = {'succ': [], 'fail': []}
+        
+        #4
+        perc_gaze_that_are_interactions = 0
+        
+        #5
+        percent_gazing_that_is_mutual = 0
+        
+        #6 
+        perc_interactions_that_are_gazing = 0
         
         
         for exp_idx, exp in enumerate(self.experiments):
             lev = exp.lev
             pos = exp.pos
+            mag = exp.mag
             fps = exp.fps
             
             trial_starts = lev.returnTimeStartTrials()  # List of trial start times
-            first_presses = lev.returnFirstPressAbsTimes()  # List of first press times
-            ids_first_press = lev.returnRatIDFirstPressTrial()
+            trial_ends = lev.returnTimeEndTrials() # List of Trial End Times
             succ_trials = lev.returnSuccessTrials()
-            succ_trials = self._filterToLeverPressTrials(succ_trials, lev)
-            totalFrames = pos.totalFrames
+            succ_trials = self._filterToLeverPressTrials(succ_trials, lev) # List of whether a trial is successful (1) or unsuccessful (0)
+            totalFrames = pos.totalFrames # Total Frames in Session
+            isGazing0 = pos.returnIsGazing(0) # List of whether rat 0 is gazing (1) or not gazing (0) for each frame
+            isGazing1 = pos.returnIsGazing(1) # List of whether rat 1 is gazing (1) or not gazing (0) for each frame
+            isInteracting = pos.returnIsInteracting()
+            levPressFrames0 = lev.getLeverPressFrames(0)
+            levPressFrames1 = lev.getLeverPressFrames(1)
+            levPressFrames = levPressFrames0.union(levPressFrames1) #Set of all frames in which a lever was pressed
             
-            for trial_idx in len(trial_starts):
+            magEntryFrames0 = mag.getEnteredMagFrames(0)
+            magEntryFrames1 = mag.getEnteredMagFrames(1)
+            magEntryFrames = magEntryFrames0.union(magEntryFrames1)
+            
+            #Graphs 2, 3
+            for trial_idx in range(len(trial_starts)):
                 t_begin = trial_starts[trial_idx]
-                t_first_press = first_presses[trial_idx]
-                rat_first_press = ids_first_press[trial_idx]
+                t_end = trial_ends[trial_idx]
                 succ = succ_trials[trial_idx]
                 #print("succ: ", succ)
                 
-                if (t_begin == None or t_first_press == None or rat_first_press == None):
+                if (t_begin == None or t_end == None or succ == None):
                     continue
                 
                 # Check for NaN in timings
-                if any(np.isnan(t) for t in [t_begin, t_first_press, rat_first_press]):
-                    print(f"[Exp {exp_idx}, Trial {trial_idx}] Skipped: NaN in timings (begin={t_begin}, first_press={t_first_press}, rat_first_press={rat_first_press})")
+                if any(np.isnan(t) for t in [t_begin, t_end, succ]):
+                    print(f"[Exp {exp_idx}, Trial {trial_idx}] Skipped: NaN in timings (begin={t_begin}, end={t_end})")
                     continue
                                 
                 frameStart = int(t_begin * fps)
-                frameFirstPress = int(t_first_press * fps)
-            
-            
-            
+                frameEnd = int(t_end * fps)
+                
+                
+                #Calculations: 
+                numGazing0 = np.sum(isGazing0[frameStart:frameEnd])
+                numGazing1 = np.sum(isGazing1[frameStart:frameEnd])    
+                
+                # 2 — Gaze by percent of trial
+                trial_length = frameEnd - frameStart
+                if trial_length < 30:
+                    continue
+                for i in range(30):
+                    bin_start = frameStart + i * trial_length // 30
+                    bin_end = frameStart + (i + 1) * trial_length // 30
+                    
+                    numGazing0_bin = np.sum(isGazing0[bin_start:bin_end])
+                    numGazing1_bin = np.sum(isGazing1[bin_start:bin_end])    
+                    
+                    bin_gaze_frames[i] += numGazing0_bin + numGazing1_bin            
+                    bin_total_frames[i] += bin_end - bin_start
+                    
+                # 3
+                gaze_percentage = (numGazing0 + numGazing1) / 2 / (trial_length) * 100
+                (gaze_success['succ'] if succ else gaze_success['fail']).append(gaze_percentage)
+                    
+            #Graph 1
+            listFrames = set()
+            for pressFrame in levPressFrames0:
+                f_before = int(pressFrame - SECONDS_BEFORE_AND_AFTER * fps)
+                f_after = int(pressFrame + SECONDS_BEFORE_AND_AFTER * fps)
+                
+                if (f_before < 0 or f_after > totalFrames):
+                    continue
+                
+                for f in (range(f_before, pressFrame)):
+                    listFrames.add(f)
+                    gazingCategoryCounts['pre_press'] += (isGazing0[f])
+                    totalCategoryCounts['pre_press'] += 1
+                
+                for f in range(pressFrame, f_after):
+                    listFrames.add(f)
+                    gazingCategoryCounts['post_press'] += (isGazing0[f])
+                    totalCategoryCounts['post_press'] += 1
+                    
+            for pressFrame in levPressFrames1:
+                f_before = int(pressFrame - SECONDS_BEFORE_AND_AFTER * fps)
+                f_after = int(pressFrame + SECONDS_BEFORE_AND_AFTER * fps)
+                
+                if (f_before < 0 or f_after > totalFrames):
+                    continue
+                
+                for f in (range(f_before, pressFrame)):
+                    listFrames.add(f)
+                    gazingCategoryCounts['pre_press'] += (isGazing1[f])
+                    totalCategoryCounts['pre_press'] += 1
+                
+                for f in range(pressFrame, f_after):
+                    listFrames.add(f)
+                    gazingCategoryCounts['post_press'] += (isGazing1[f])
+                    totalCategoryCounts['post_press'] += 1
 
+            
+            for pressFrame in magEntryFrames0:
+                f_before = int(pressFrame - SECONDS_BEFORE_AND_AFTER * fps)
+                f_after = int(pressFrame + SECONDS_BEFORE_AND_AFTER * fps)
+                
+                if (f_before < 0 or f_after > totalFrames):
+                    continue
+                
+                for f in (range(f_before, pressFrame)):
+                    listFrames.add(f)
+                    gazingCategoryCounts['pre_press'] += (isGazing0[f])
+                    totalCategoryCounts['pre_press'] += 1
+                
+                for f in range(pressFrame, f_after):
+                    listFrames.add(f)
+                    gazingCategoryCounts['post_press'] += (isGazing0[f])
+                    totalCategoryCounts['post_press'] += 1
+
+            
+            for entryFrame in magEntryFrames1:
+                f_before = int(pressFrame - SECONDS_BEFORE_AND_AFTER * fps)
+                f_after = int(pressFrame + SECONDS_BEFORE_AND_AFTER * fps)
+                
+                if (f_before < 0 or f_after > totalFrames):
+                    continue
+                
+                for f in (range(f_before, pressFrame)):
+                    listFrames.add(f)
+                    gazingCategoryCounts['pre_mag'] += (isGazing0[f])
+                    totalCategoryCounts['pre_mag'] += 1
+                
+                for f in range(pressFrame, f_after):
+                    listFrames.add(f)
+                    gazingCategoryCounts['post_mag'] += (isGazing0[f])
+                    totalCategoryCounts['post_mag'] += 1
+         
+                
+            #Graph 4, 5, 6
+            countGazing = 0
+            countMutual = 0
+            countGazeandInteracting = 0
+            countInteracting = 0
+            
+            for frame_idx in range(totalFrames):
+                gazing0 = isGazing0[frame_idx]
+                gazing1 = isGazing1[frame_idx]
+                interacting = isInteracting[frame_idx]
+                
+                if (gazing0 or gazing1):
+                    countGazing += 1
+                    if (interacting):
+                        countGazeandInteracting += 1
+                
+                if (gazing0 and gazing1):
+                    countMutual += 1
+                
+                if (interacting):
+                    countInteracting += 1
+                    
+                if (frame_idx not in listFrames):
+                    gazingCategoryCounts['rest'] += (isGazing0[f] or isGazing1[f])
+                    totalCategoryCounts['rest'] += 1
+                    
+            perc_gaze_that_are_interactions = countGazeandInteracting / countGazing
+            
+            percent_gazing_that_is_mutual = countMutual / countGazing
+            
+            perc_interactions_that_are_gazing = countGazeandInteracting / countInteracting
+            
+            
+        # === Plotting ===
+        # Graph 1 – Bar Plot
+        labels = ['Pre-Press', 'Post-Press', 'Pre-Mag', 'Post-Mag', 'Rest']
+        values = [100 * gazingCategoryCounts[k] / totalCategoryCounts[k] if totalCategoryCounts[k] > 0 else 0 for k in ['pre_press', 'post_press', 'pre_mag', 'post_mag', 'rest']]
+        plt.figure(figsize=(8, 5))
+        plt.bar(labels, values, color='skyblue', edgecolor='black')
+        plt.ylabel('% Gazing Frames', fontsize=self.labelSize)
+        plt.title('Gazing Around Behavioral Events', fontsize=self.titleSize)
+        plt.tight_layout()
+        if self.save: plt.savefig(f"{self.prefix}Gaze_Per_Event.png")
+        plt.show()
+    
+        # Graph 2 – Gaze by trial time
+        means = bin_gaze_frames / bin_total_frames
+        std_errors = np.sqrt((means * (1 - means)) / bin_total_frames)
+        x_vals = np.linspace(0, 100, NUM_BINS)
+        plt.figure(figsize=(8, 5))
+        plt.plot(x_vals, means * 100, color='blue', label='Gazing %')
+        plt.fill_between(x_vals, (means - std_errors) * 100, (means + std_errors) * 100, color='blue', alpha=0.3)
+        plt.xlabel('% of Trial Passed', fontsize=self.labelSize)
+        plt.ylabel('% Gazing', fontsize=self.labelSize)
+        plt.title('Gazing Over Time in Trial', fontsize=self.titleSize)
+        plt.grid(True)
+        plt.tight_layout()
+        if self.save: plt.savefig(f"{self.prefix}Gaze_Percent_Over_Trial.png")
+        plt.show()
+    
+        # Graph 3 – Success vs Fail
+        labels = ['Unsuccessful', 'Successful']
+        data = [gaze_success['fail'], gaze_success['succ']]
+        means = [np.mean(d) for d in data]
+        std_errs = [np.std(d) / np.sqrt(len(d)) if len(d) > 1 else 0 for d in data]
+        plt.figure(figsize=(6, 5))
+        plt.bar(labels, means, yerr=std_errs, color=['red', 'green'], edgecolor='black', capsize=5)
+        plt.ylabel('% Gaze During Trial', fontsize=self.labelSize)
+        plt.title('Gazing in Success vs. Failure Trials', fontsize=self.titleSize)
+        plt.tight_layout()
+        if self.save: plt.savefig(f"{self.prefix}Gaze_Success_Comparison.png")
+        plt.show()
+    
+        # Graph 4–6 – Pie Charts
+        self._plot_pie(
+            [countGazeandInteracting, countGazing - countGazeandInteracting],
+            ['Gaze+Interaction', 'Gaze Only'],
+            ['gold', 'gray'],
+            "GazeInteractionPie.png",
+            "Frames Where Gaze is Also Interaction"
+        )
+    
+        self._plot_pie(
+            [countMutual, countGazing - countMutual],
+            ['Mutual Gaze', 'Single Gaze'],
+            ['purple', 'lightgray'],
+            "MutualGazePie.png",
+            "Percent of Gazing Frames That Are Mutual"
+        )
+    
+        self._plot_pie(
+            [countGazeandInteracting, countInteracting - countGazeandInteracting],
+            ['Interaction+Gaze', 'Interaction Only'],
+            ['teal', 'orange'],
+            "InteractionGazePie.png",
+            "Frames Where Interaction is Also Gaze"
+        )
+        
 
 #Testing Multi File Graphs
 #
@@ -7923,13 +8150,14 @@ initialNanList = [0.3]
 
 print("Start MultiFileGraphs Regular")
 experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "", save=True)
+experiment.moreGazeComparisons()
 #experiment.successVsAverageDistance()
 #experiment.stateTransitionModel()
 #experiment.classifyStrategies()
 #experiment.stateTransitionModel()
 #experiment.cooperativeRegionStrategiesQuantification()
 #experiment.pcaAndGLMCoopSuccessPredictors()
-experiment.trueCooperationTesting()
+#experiment.trueCooperationTesting()
 #experiment.gazingOverTrial()
 
 #experiment.testMotivation()
