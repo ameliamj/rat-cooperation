@@ -5530,7 +5530,7 @@ class multiFileGraphs:
                         continue
                     elif(pos.returnRatLocationTime(0, frameStart) in levAreas and pos.returnRatLocationTime(1, frameStart) in levAreas):
                         print("both rats in lever areas")
-                        continue
+                        #continue
                     sumDistances += dist
                     sumNumConsidered += 1
                     sumTimeUntilPress += t_first_press - t_begin
