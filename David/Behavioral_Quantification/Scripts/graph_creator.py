@@ -43,6 +43,7 @@ from itertools import combinations
 
 from matplotlib.patches import Patch
 import matplotlib.cm as cm
+from matplotlib import animation
 
 import seaborn as sns
 
@@ -7587,6 +7588,79 @@ class multiFileGraphs:
         plt.show()
         plt.close()
         
+        # --- 3D PCA Animation: Colored by Success Streak ---
+        fig = plt.figure(figsize=(10, 8))
+        ax = fig.add_subplot(111, projection='3d')
+        
+        # Plot once and store scatter objects
+        scatters = []
+        for i in range(6):
+            idx = (binned_streaks == i)
+            scatter = ax.scatter(X_pca_3d[idx, 0], X_pca_3d[idx, 1], X_pca_3d[idx, 2],
+                                 color=palette[i], label=streak_labels[i], alpha=0.6, s=40)
+            scatters.append(scatter)
+        
+        ax.set_xlabel(f"PC1 ({pca_3d.explained_variance_ratio_[0]*100:.1f}%)")
+        ax.set_ylabel(f"PC2 ({pca_3d.explained_variance_ratio_[1]*100:.1f}%)")
+        ax.set_zlabel(f"PC3 ({pca_3d.explained_variance_ratio_[2]*100:.1f}%)")
+        ax.set_title("3D PCA Colored by Success Streak")
+        ax.legend(title="Streak")
+        
+        # Rotation function
+        def rotate(angle):
+            ax.view_init(elev=30, azim=angle)
+        
+        # Create animation
+        rot_animation = animation.FuncAnimation(fig, rotate, frames=np.arange(0, 360, 2), interval=50)
+        
+        # Save the animation
+        if self.save:
+            rot_animation.save(f"{self.prefix}PCA_3D_Rotation.mp4", dpi=200, fps=20)
+            # Optional: also save as GIF (requires imagemagick or pillow)
+            # rot_animation.save(f"{self.prefix}PCA_3D_Rotation.gif", dpi=100, writer='pillow', fps=20)
+        
+        plt.close(fig)  # Don't display static figure
+        
+        
+        
+        
+        # Explained Variance Plot
+        pca = PCA(n_components=10)
+        explained_variance = pca.explained_variance_ratio_
+        cumulative_variance = np.cumsum(explained_variance)
+        num_components = len(explained_variance)
+        
+        plt.figure(figsize=(10, 6))
+        
+        # Bar plot for individual explained variance
+        bars = plt.bar(range(1, num_components + 1), explained_variance, alpha=0.6, align='center', color='green', label="Individual Explained Variance")
+        
+        # Line plot for cumulative explained variance
+        plt.plot(range(1, num_components + 1), cumulative_variance, marker='o', color='red', label='Cumulative Explained Variance')
+        
+        # Annotate bars with percentages
+        for i in range(num_components):
+            plt.text(i + 1, explained_variance[i] + 0.01, f"{explained_variance[i]*100:.0f}%", ha='center', va='bottom')
+        
+        # Annotate cumulative points with percentages
+        for i in range(num_components):
+            plt.text(i + 1, cumulative_variance[i] + 0.01, f"{cumulative_variance[i]*100:.0f}%", ha='center', va='bottom', color='red')
+        
+        plt.title("Explained Variance by Different Principal Components")
+        plt.xlabel("Principal Components")
+        plt.ylabel("Explained Variance")
+        plt.xticks(range(1, num_components + 1))
+        plt.ylim(0, 1.1)
+        plt.legend(loc='best')
+        plt.grid(True, linestyle='--', alpha=0.5)
+        plt.tight_layout()
+        
+        if self.save:
+            plt.savefig(f"{self.prefix}PCA_ExplainedVariance.png")
+        
+        plt.show()
+        plt.close()
+        
         
         # Create a DataFrame for easy manipulation
         pca_df = pd.DataFrame(X_pca, columns=["PC1", "PC2"])
@@ -8178,13 +8252,13 @@ initialNanList = [0.3]
 
 print("Start MultiFileGraphs Regular")
 experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "", save=True)
-experiment.moreGazeComparisons()
+#experiment.moreGazeComparisons()
 #experiment.successVsAverageDistance()
 #experiment.stateTransitionModel()
 #experiment.classifyStrategies()
 #experiment.stateTransitionModel()
 #experiment.cooperativeRegionStrategiesQuantification()
-#experiment.pcaAndGLMCoopSuccessPredictors()
+experiment.pcaAndGLMCoopSuccessPredictors()
 #experiment.trueCooperationTesting()
 #experiment.gazingOverTrial()
 
