@@ -700,10 +700,10 @@ only_transparent = "/Users/david/Documents/Research/Saxena Lab/rat-cooperation/D
 only_unfamiliar = "/Users/david/Documents/Research/Saxena Lab/rat-cooperation/David/Behavioral_Quantification/Sorted Data Files/only_unfamiliar_partners.csv"
 only_trainingpartners = "/Users/david/Documents/Research/Saxena Lab/rat-cooperation/David/Behavioral_Quantification/Sorted Data Files/only_training_partners.csv"
 
-fe = fileExtractor(fixedExpanded)
-fe.deleteInvalid()
-fe.deleteBadNaN()
-fe.sortByMicePairs(saveFile=True)
+#fe = fileExtractor(fixedExpanded)
+#fe.deleteInvalid()
+#fe.deleteBadNaN()
+#fe.sortByMicePairs(saveFile=True)
 
 #fe.deleteOnlyFullyInvalid()
 #fe.onlyFiberPhoto()
