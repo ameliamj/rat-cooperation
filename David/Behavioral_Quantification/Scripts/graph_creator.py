@@ -5530,7 +5530,7 @@ class multiFileGraphs:
                         continue
                     elif(pos.returnRatLocationTime(0, frameStart) in levAreas and pos.returnRatLocationTime(1, frameStart) in levAreas):
                         print("both rats in lever areas")
-                        #continue
+                        continue
                     sumDistances += dist
                     sumNumConsidered += 1
                     sumTimeUntilPress += t_first_press - t_begin
@@ -5664,7 +5664,7 @@ class multiFileGraphs:
                          f"{time:.2f}s", ha='center', fontsize=12)
             
             # === Scatter points overlaid on bars ===
-            jitter_strength = 0.2
+            jitter_strength = 0.275
             for x_base, times, dists in zip([0, 1], [success_times, failure_times], [success_dists, failure_dists]):
                 for t, d in zip(times, dists):
                     jitter = np.random.uniform(-jitter_strength, jitter_strength)
