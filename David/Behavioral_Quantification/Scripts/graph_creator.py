@@ -5594,6 +5594,7 @@ class multiFileGraphs:
         print("len(individual_trials_distance): ", len(individual_trials_distance))
         print("len(individual_trials_success): ", len(individual_trials_success))
         
+        
         if len(individual_trials_distance) >= 2 and len(individual_trials_timeUntilPress) >= 2:
             plt.figure(figsize=(8, 6))
             
@@ -5607,6 +5608,7 @@ class multiFileGraphs:
                                 label='Success' if not success_label_added else "")
                     success_label_added = True
                 elif success == 0:
+                    continue
                     plt.scatter(dist, time, color='red', alpha=0.6,
                                 label='Failure' if not failure_label_added else "")
                     failure_label_added = True
@@ -5632,7 +5634,7 @@ class multiFileGraphs:
             plt.grid(True)
             plt.tight_layout()
             if self.save:
-                plt.savefig(f"{self.prefix}distance_vs_time_until_press_byTrial.png")
+                plt.savefig(f"{self.prefix}distance_vs_time_until_press_byTrial_onlySuccesses.png")
             plt.show()
             plt.close()
         else:
@@ -5651,7 +5653,8 @@ class multiFileGraphs:
             dists = [np.mean(success_dists), np.mean(failure_dists)]
     
             # Normalize distances for coloring (lighter = closer, darker = farther)
-            norm = plt.Normalize(min(dists), max(dists))
+            all_dists = success_dists + failure_dists
+            norm = plt.Normalize(min(all_dists), max(all_dists))
             colors = [cm.viridis(norm(d)) for d in dists]
     
             plt.figure(figsize=(6, 6))
@@ -5659,7 +5662,15 @@ class multiFileGraphs:
             for bar, time in zip(bars, means):
                 plt.text(bar.get_x() + bar.get_width()/2, bar.get_height() + 0.1,
                          f"{time:.2f}s", ha='center', fontsize=12)
-    
+            
+            # === Scatter points overlaid on bars ===
+            jitter_strength = 0.08
+            for x_base, times, dists in zip([0, 1], [success_times, failure_times], [success_dists, failure_dists]):
+                for t, d in zip(times, dists):
+                    jitter = np.random.uniform(-jitter_strength, jitter_strength)
+                    plt.scatter(x_base + jitter, t, color=cm.viridis(norm(d)), alpha=0.5, edgecolor='black', linewidth=0.3, s=50)
+            
+            #Color Bar
             sm = cm.ScalarMappable(cmap=cm.viridis, norm=norm)
             sm.set_array([])
             ax = plt.gca()
@@ -5671,7 +5682,7 @@ class multiFileGraphs:
             plt.grid(axis='y', linestyle='--', alpha=0.5)
             plt.tight_layout()
             if self.save:
-                plt.savefig(f"{self.prefix}SuccessVsFailure_TimeColoredByDistance.png")
+                plt.savefig(f"{self.prefix}SuccessVsFailure_TimeColoredByDistance_scattered.png")
             plt.show()
             plt.close()
         else:
@@ -7794,7 +7805,7 @@ class multiFileGraphs:
             ids_first_press = lev.returnRatIDFirstPressTrial()
             succ_trials = lev.returnSuccessTrials()
             succ_trials = self._filterToLeverPressTrials(succ_trials, lev)
-            totalFrames 
+            totalFrames = pos.totalFrames
             
             for trial_idx in len(trial_starts):
                 t_begin = trial_starts[trial_idx]
