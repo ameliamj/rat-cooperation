@@ -7975,12 +7975,15 @@ class multiFileGraphs:
                 
                 # 2 — Gaze by percent of trial
                 trial_length = frameEnd - frameStart
+                print("\ntrial_length: ", trial_length)
                 if trial_length < 30:
                     continue
                 for i in range(30):
                     bin_start = frameStart + i * trial_length // 30
                     bin_end = frameStart + (i + 1) * trial_length // 30
                     
+                    print("i: ", i)
+                    print("frame_start: ", frame_start)
                     print("bin_start: ", bin_start)
                     print("bin_end: ", bin_end)
                     
@@ -8135,7 +8138,7 @@ class multiFileGraphs:
         plt.title('Gazing Over Time in Trial', fontsize=self.titleSize)
         plt.grid(True)
         plt.tight_layout()
-        if self.save: plt.savefig(f"{self.prefix}Gaze_Percent_Over_Trial_SuccvsUnsucc.png")
+        if self.save: plt.savefig(f"{self.prefix}Gaze_Percent_Over_Trial.png")
         plt.show()
         plt.close()
         
@@ -8163,7 +8166,7 @@ class multiFileGraphs:
         plt.grid(True)
         plt.legend()
         plt.tight_layout()
-        if self.save: plt.savefig(f"{self.prefix}Gaze_Percent_Over_Trial_EqualTrialWeighting.png")
+        if self.save: plt.savefig(f"{self.prefix}Gaze_Percent_Over_Trial_EqualTrialWeighting_succvsunsucc.png")
         plt.show()
         plt.close()
         
@@ -8302,7 +8305,7 @@ initialNanList = [0.3]
 
 #print("Start MultiFileGraphs Regular")
 experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "", save=True)
-#experiment.moreGazeComparisons()
+experiment.moreGazeComparisons()
 #experiment.successVsAverageDistance()
 #experiment.stateTransitionModel()
 #experiment.classifyStrategies()
@@ -8320,7 +8323,7 @@ experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFrames
 #experiment.successVsAverageDistance()
 #experiment.interactionVSSuccess()
 
-experiment.classifyStrategies()
+#experiment.classifyStrategies()
 
 #experiment.gazeHeatmap()
 #experiment.trialStateModel()
