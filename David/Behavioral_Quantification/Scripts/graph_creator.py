@@ -6343,6 +6343,11 @@ class multiFileGraphs:
                     trial_y_single.append(frames_at_least_one_waited)
                     trial_y.append(frames_both_waited)
                     trial_success_streak.append(successInARow[trial_idx])
+                    
+                    if (frames_at_least_one_waited > 300 or x < 50):
+                        print("\nlev File: ", exp.lev_file)
+                        print("time begin: ", t_begin)
+                        print("avg Diff in X: ", x, "   framesBothWaited: ", frames_both_waited)
                 else:
                     print("\nlev File: ", exp.lev_file)
                     print("time begin: ", t_begin)
@@ -8289,7 +8294,7 @@ initialNanList = [0.3]
 
 #print("Start MultiFileGraphs Regular")
 experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "", save=True)
-experiment.moreGazeComparisons()
+#experiment.moreGazeComparisons()
 #experiment.successVsAverageDistance()
 #experiment.stateTransitionModel()
 #experiment.classifyStrategies()
