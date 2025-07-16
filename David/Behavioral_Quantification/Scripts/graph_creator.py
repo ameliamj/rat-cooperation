@@ -8247,6 +8247,7 @@ class multiFileGraphs:
         plt.grid(True)
         plt.tight_layout()
         plt.show()
+        plt.save("gazePercentage_vs_Success.png")
         plt.close()
 
 #Testing Multi File Graphs
