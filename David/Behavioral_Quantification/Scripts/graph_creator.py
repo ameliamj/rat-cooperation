@@ -8362,41 +8362,67 @@ class multiFileGraphs:
                     print(f"/nOnly {numValidTrials} trials")
         
         
-        ### Graph 1: Pie Chart
-        fig, axs = plt.subplots(1, 3, figsize=(18, 5))
+        # --- Graph 1: Pie Chart ---
+        fig, ax = plt.subplots(figsize=(6, 6))
         labels = ['Successful Trials', 'Failed Trials']
         sizes = [totalSucc, totalValidTrials - totalSucc]
         colors = ['#66b3ff', '#ff9999']
-        axs[0].pie(sizes, labels=labels, colors=colors, autopct='%1.1f%%', startangle=140)
-        axs[0].axis('equal')
-        axs[0].set_title("Success Rate (Only One Rat at Lever Start)")
-    
-        ### Helper function for scatter + regression
-        def scatter_with_fit(ax, x, y, title, xlab, ylab):
+        ax.pie(sizes, labels=labels, colors=colors, autopct='%1.1f%%', startangle=140)
+        ax.axis('equal')
+        ax.set_title("Success Rate (Only One Rat at Lever Start)")
+        
+        if self.save:
+            plt.savefig(f"{self.prefix}piechart_success_rate_one_rat.png")
+        
+        plt.show()
+        plt.close()
+        
+        # --- Helper function for scatter + regression ---
+        def plot_scatter_with_fit(x, y, title, xlab, ylab, filename):
+            fig, ax = plt.subplots(figsize=(7, 6))
             slope, intercept, r_value, p_value, std_err = linregress(x, y)
             x_vals = np.array(x)
             y_fit = slope * x_vals + intercept
+        
             ax.scatter(x, y, color='tab:blue')
             ax.plot(x_vals, y_fit, color='black', linestyle='--', label=f'R² = {r_value**2:.2f}')
             ax.set_title(title)
             ax.set_xlabel(xlab)
             ax.set_ylabel(ylab)
             ax.legend()
-    
-        ### Graph 2: Avg Waiting Time vs. Filtered Success Rate
-        scatter_with_fit(axs[1], averageWaitingTimes, successRates,
-                         "Waiting Time vs. One-Rat Success Rate",
-                         "Average Max Waiting Time (frames)",
-                         "Filtered Success Rate")
-    
-        ### Graph 3: Avg Waiting Time vs. Real Success Rate
-        scatter_with_fit(axs[2], averageWaitingTimes, successRatesReal,
-                         "Waiting Time vs. Overall Success Rate",
-                         "Average Max Waiting Time (frames)",
-                         "Real Success Rate")
-    
-        plt.tight_layout()
-        plt.show()
+        
+            # Add R² text box
+            ax.text(0.95, 0.84,
+                    f"Slope = {slope:.3f}\n$R^2$ = {r_value**2:.3f}\n p = {p_value:.3g}",
+                    transform=ax.transAxes,
+                    ha='right', va='bottom', fontsize=12,
+                    bbox=dict(facecolor='white', edgecolor='gray'))
+        
+            plt.tight_layout()
+            if self.save:
+                plt.savefig(f"{self.prefix}{filename}")
+            plt.show()
+            plt.close()
+        
+        # --- Graph 2: Filtered Success Rate ---
+        plot_scatter_with_fit(
+            averageWaitingTimes,
+            successRates,
+            "Waiting Time vs. One-Rat Success Rate",
+            "Average Max Waiting Time (frames)",
+            "Filtered Success Rate",
+            "scatter_waiting_vs_filtered_success.png"
+        )
+        
+        # --- Graph 3: Real Success Rate ---
+        plot_scatter_with_fit(
+            averageWaitingTimes,
+            successRatesReal,
+            "Waiting Time vs. Overall Success Rate",
+            "Average Max Waiting Time (frames)",
+            "Real Success Rate",
+            "scatter_waiting_vs_real_success.png"
+        )
                 
 
 #Testing Multi File Graphs
@@ -8494,7 +8520,7 @@ initialNanList = [0.3]
 
 #print("Start MultiFileGraphs Regular")
 experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "", save=True)
-#experiment.onlyOneRatWaitedGraphs()
+experiment.onlyOneRatWaitedGraphs()
 #experiment.percentGazingvsSuccess()
 #experiment.moreGazeComparisons()
 #experiment.successVsAverageDistance()
@@ -8503,7 +8529,7 @@ experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFrames
 #experiment.stateTransitionModel()
 #experiment.cooperativeRegionStrategiesQuantification()
 #experiment.pcaAndGLMCoopSuccessPredictors()
-experiment.trueCooperationTesting()
+#experiment.trueCooperationTesting()
 #experiment.gazingOverTrial()
 
 #experiment.testMotivation()
