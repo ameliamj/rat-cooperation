@@ -8341,7 +8341,7 @@ class multiFileGraphs:
                     t -= 1
 
                 min_wait = min(rat0_waiting, rat1_waiting)
-                max_wait = max(rat0_waiting, rat_waiting)
+                max_wait = max(rat0_waiting, rat1_waiting)
                 
                 if (min_wait == 0 and max_wait > 0):
                     #Exactly One Rat at Lever Area
