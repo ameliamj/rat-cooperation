@@ -8110,6 +8110,8 @@ class multiFileGraphs:
     
         # Graph 2 – Gaze by trial time
         means = bin_gaze_frames / bin_total_frames
+        print("Means OG: ", means)
+        
         std_errors = np.sqrt((means * (1 - means)) / bin_total_frames)
         x_vals = np.linspace(0, 100, NUM_BINS)
         plt.figure(figsize=(8, 5))
@@ -8124,7 +8126,10 @@ class multiFileGraphs:
         plt.show()
         plt.close()
         
+        
+        print("bin_gaze_percentages_per_trial: ", bin_gaze_percentages_per_trial)
         means = np.array([np.mean(bin) if len(bin) > 0 else 0 for bin in bin_gaze_percentages_per_trial])
+        print("means: ", means)
         std_errors = np.array([np.std(bin, ddof=1) / np.sqrt(len(bin)) if len(bin) > 1 else 0 for bin in bin_gaze_percentages_per_trial])
         means_succ = np.array([np.mean(bin) if len(bin) > 0 else 0 for bin in bin_gaze_percentages_per_trial_successful])
         std_errors_succ = np.array([np.std(bin, ddof=1) / np.sqrt(len(bin)) if len(bin) > 1 else 0 for bin in bin_gaze_percentages_per_trial_successful])
