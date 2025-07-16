@@ -8251,6 +8251,132 @@ class multiFileGraphs:
         plt.savefig("gazePercentage_vs_Success.png")
         plt.close()
 
+    def onlyOneRatWaitedGraphs(self): 
+        '''
+        Graph #1: Pie Chart with Success Rate in which only one rat is in lever at beginning of trial
+        Graph #2: ScatterPlot of averageWaitingTimes vs. success Rates
+        Graph #3: Scatterplot of averageWaitingTimes vs. success Rates Real
+        
+        '''
+        
+        successRates = []
+        successRatesReal = []
+        averageWaitingTimes = []
+        numTrials = []
+        
+        totalSucc = 0
+        totalValidTrials = 0
+        
+        for exp in self.experiments: 
+            lev = exp.lev
+            pos = exp.pos
+            fps = exp.fps
+            
+            # Retrieve trial data
+            start_times = lev.returnTimeStartTrials()  # Array of trial start times (in seconds) for all trials
+            total_trials = lev.returnNumTotalTrialswithLeverPress()  # Total number of trials with at least one lever press
+            success_trials = lev.returnSuccessTrials()  # Array indicating whether each trial was successful (True/False)
+            success_trials = self._filterToLeverPressTrials(success_trials, lev)
+            # Calculate waiting before trial start
+            rat0_locations = pos.returnMouseLocation(0)
+            rat1_locations = pos.returnMouseLocation(1)
+            
+            invalid_trial_count = 0
+            
+            succCount = 0
+            sumWaiting = 0
+            numValidTrials = 0
+
+            for trial_idx in range(total_trials):
+                start_time = start_times[trial_idx]
+                succ = success_trials[trial_idx]
+                
+                if (np.isnan(start_time)):
+                    continue
+                
+                start_frame = int(start_time * fps)
+                
+                #Wait Before Queue Analysis
+                t = start_frame - 1
+                rat0_waiting = 0
+                rat1_waiting = 0
+                rat0_active = True
+                rat1_active = True
+
+                while t >= 0 and t < len(rat0_locations) and t < len(rat1_locations) and rat0_locations[t] is not None:
+                    if rat0_locations[t] in ['lev_top', 'lev_bottom'] and rat0_active:
+                        rat0_waiting += 1
+                    else:
+                        rat0_active = False
+
+                    if rat1_locations[t] in ['lev_top', 'lev_bottom'] and rat1_active:
+                        rat1_waiting += 1
+                    else:
+                        rat1_active = False
+
+                    if not (rat0_active or rat1_active):
+                        break
+                    t -= 1
+
+                min_wait = min(rat0_waiting, rat1_waiting)
+                max_wait = max(rat0_waiting)
+                
+                if (min_wait == 0 and max_wait > 0):
+                    #Exactly One Rat at Lever Area
+                    numValidTrials += 1
+                    if (succ):
+                        succCount += 1
+                    
+                    sumWaiting += max_wait
+                    
+                totalSucc += succCount
+                totalValidTrials += numValidTrials
+                if (numValidTrials > 4):
+                    print("\nNumValidTrials: ", numValidTrials)
+                    successRates.append(succCount / numValidTrials)
+                    successRatesReal.append(lev.returnSuccessPercentage())
+                    averageWaitingTimes.append(sumWaiting / numValidTrials)
+                else:
+                    print(f"/nOnly {numValidTrials} trials")
+        
+        
+        ### Graph 1: Pie Chart
+        fig, axs = plt.subplots(1, 3, figsize=(18, 5))
+        labels = ['Successful Trials', 'Failed Trials']
+        sizes = [totalSucc, totalValidTrials - totalSucc]
+        colors = ['#66b3ff', '#ff9999']
+        axs[0].pie(sizes, labels=labels, colors=colors, autopct='%1.1f%%', startangle=140)
+        axs[0].axis('equal')
+        axs[0].set_title("Success Rate (Only One Rat at Lever Start)")
+    
+        ### Helper function for scatter + regression
+        def scatter_with_fit(ax, x, y, title, xlab, ylab):
+            slope, intercept, r_value, p_value, std_err = linregress(x, y)
+            x_vals = np.array(x)
+            y_fit = slope * x_vals + intercept
+            ax.scatter(x, y, color='tab:blue')
+            ax.plot(x_vals, y_fit, color='black', linestyle='--', label=f'R² = {r_value**2:.2f}')
+            ax.set_title(title)
+            ax.set_xlabel(xlab)
+            ax.set_ylabel(ylab)
+            ax.legend()
+    
+        ### Graph 2: Avg Waiting Time vs. Filtered Success Rate
+        scatter_with_fit(axs[1], averageWaitingTimes, successRates,
+                         "Waiting Time vs. One-Rat Success Rate",
+                         "Average Max Waiting Time (frames)",
+                         "Filtered Success Rate")
+    
+        ### Graph 3: Avg Waiting Time vs. Real Success Rate
+        scatter_with_fit(axs[2], averageWaitingTimes, successRatesReal,
+                         "Waiting Time vs. Overall Success Rate",
+                         "Average Max Waiting Time (frames)",
+                         "Real Success Rate")
+    
+        plt.tight_layout()
+        plt.show()
+                
+
 #Testing Multi File Graphs
 #
 #
@@ -8307,7 +8433,7 @@ totFramesList = [15000, 15000]
 initialNanList = [0.15, 0.12]
 '''
 
-'''
+
 arr = getFiltered()
 #arr = getUnfamiliar()
 #arr = getAllTrainingCoop()
@@ -8319,7 +8445,7 @@ fpsList = arr[3]
 totFramesList = arr[4]
 initialNanList = arr[5]
 #fiberPhoto = arr[6]
-'''
+
 
 
 '''
@@ -8345,7 +8471,8 @@ initialNanList = [0.3]
 '''
 
 #print("Start MultiFileGraphs Regular")
-#experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "", save=True)
+experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "", save=True)
+experiment.onlyOneRatWaitedGraphs()
 #experiment.percentGazingvsSuccess()
 #experiment.moreGazeComparisons()
 #experiment.successVsAverageDistance()
