@@ -8210,6 +8210,44 @@ class multiFileGraphs:
             "Frames Where Interaction is Also Gaze"
         )
         
+    def percentGazingvsSuccess(self):
+        
+        dataPointsSucc = []
+        dataPointsGaze = []
+        
+        for exp in self.experiments:
+            lev = exp.lev
+            pos = exp.pos
+            
+            succPercentage = lev.returnSuccessPercentage() * 100
+            gazePercentage = (pos.returnTotalFramesGazing(0) + pos.returnTotalFramesGazing(1)) / 2
+            gazePercentage = gazePercentage * 100 / pos.returnNumFrames()
+            
+            dataPointsSucc.append(succPercentage)
+            dataPointsGaze.append(gazePercentage)
+            
+        # Convert to numpy arrays
+        x = np.array(dataPointsGaze)
+        y = np.array(dataPointsSucc)
+    
+        # Linear regression
+        slope, intercept, r_value, p_value, std_err = linregress(x, y)
+        line = slope * x + intercept
+    
+        # Plot
+        plt.figure(figsize=(7, 5))
+        plt.scatter(x, y, color='blue', label='Data Points')
+        plt.plot(x, line, color='red', linestyle='--', label=f'Fit: y={slope:.2f}x+{intercept:.2f}')
+        plt.xlabel('Average Gaze Percentage')
+        plt.ylabel('Success Percentage')
+        plt.title('Success vs. Gaze Behavior')
+        plt.text(0.05, 0.95, f'$R^2$ = {r_value**2:.3f}', transform=plt.gca().transAxes,
+                 fontsize=12, verticalalignment='top')
+        plt.legend()
+        plt.grid(True)
+        plt.tight_layout()
+        plt.show()
+        plt.close()
 
 #Testing Multi File Graphs
 #
@@ -8305,7 +8343,8 @@ initialNanList = [0.3]
 
 #print("Start MultiFileGraphs Regular")
 experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "", save=True)
-experiment.moreGazeComparisons()
+experiment.percentGazingvsSuccess()
+#experiment.moreGazeComparisons()
 #experiment.successVsAverageDistance()
 #experiment.stateTransitionModel()
 #experiment.classifyStrategies()
