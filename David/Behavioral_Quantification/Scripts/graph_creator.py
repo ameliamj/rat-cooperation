@@ -7642,7 +7642,8 @@ class multiFileGraphs:
         
         # Save the animation
         if self.save:
-            rot_animation.save(f"{self.prefix}PCA_3D_Rotation.mp4", dpi=200, fps=20)
+            rot_animation.save(f"{self.prefix}PCA_3D_RotationGif.gif", writer='pillow', fps=20)
+            rot_animation.save(f"{self.prefix}PCA_3D_Rotation.mp4", writer='ffmpeg', dpi=200, fps=20)
             # Optional: also save as GIF (requires imagemagick or pillow)
             # rot_animation.save(f"{self.prefix}PCA_3D_Rotation.gif", dpi=100, writer='pillow', fps=20)
         
@@ -8344,14 +8345,14 @@ initialNanList = [0.3]
 
 #print("Start MultiFileGraphs Regular")
 experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "", save=True)
-experiment.percentGazingvsSuccess()
+#experiment.percentGazingvsSuccess()
 #experiment.moreGazeComparisons()
 #experiment.successVsAverageDistance()
 #experiment.stateTransitionModel()
 #experiment.classifyStrategies()
 #experiment.stateTransitionModel()
 #experiment.cooperativeRegionStrategiesQuantification()
-#experiment.pcaAndGLMCoopSuccessPredictors()
+experiment.pcaAndGLMCoopSuccessPredictors()
 #experiment.trueCooperationTesting()
 #experiment.gazingOverTrial()
 
