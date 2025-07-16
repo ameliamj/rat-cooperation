@@ -7983,7 +7983,7 @@ class multiFileGraphs:
                     bin_end = frameStart + (i + 1) * trial_length // 30
                     
                     print("i: ", i)
-                    print("frame_start: ", frame_start)
+                    print("frameStart: ", frameStart)
                     print("bin_start: ", bin_start)
                     print("bin_end: ", bin_end)
                     
