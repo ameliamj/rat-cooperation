@@ -8341,7 +8341,7 @@ class multiFileGraphs:
                     t -= 1
 
                 min_wait = min(rat0_waiting, rat1_waiting)
-                max_wait = max(rat0_waiting)
+                max_wait = max(rat0_waiting, rat_waiting)
                 
                 if (min_wait == 0 and max_wait > 0):
                     #Exactly One Rat at Lever Area
@@ -8494,7 +8494,7 @@ initialNanList = [0.3]
 
 #print("Start MultiFileGraphs Regular")
 experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "", save=True)
-#experiment.onlyOneRatWaitedGraphs()
+experiment.onlyOneRatWaitedGraphs()
 #experiment.percentGazingvsSuccess()
 #experiment.moreGazeComparisons()
 #experiment.successVsAverageDistance()
@@ -8503,7 +8503,7 @@ experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFrames
 #experiment.stateTransitionModel()
 #experiment.cooperativeRegionStrategiesQuantification()
 #experiment.pcaAndGLMCoopSuccessPredictors()
-experiment.trueCooperationTesting()
+#experiment.trueCooperationTesting()
 #experiment.gazingOverTrial()
 
 #experiment.testMotivation()
