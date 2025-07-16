@@ -6271,6 +6271,9 @@ class multiFileGraphs:
                 f_begin = int(t_begin * fps)
                 f_coop = int(t_coop * fps)
                 f_first_press= int(t_first_press * fps)
+                success = success_status[trial_idx]
+                if (success != 1):
+                    continue
                 
                 #––––––––––––––––––––––––––––––––––––––––––––––––
                 
@@ -6308,6 +6311,11 @@ class multiFileGraphs:
                     trial_y_beforepress.append(time_waited)
                     distances.append(dist)
                     trial_x_before_press.append(x)
+                    
+                    if (dist > 1000 and time_waited > 1):
+                        print("\nlev File: ", exp.lev_file)
+                        print("time begin: ", t_begin)
+                        print("dist: ", dist, ";    time_waited: ", time_waited)
                 
                 
                 #Waiting Before Queue Analysis
@@ -6367,7 +6375,7 @@ class multiFileGraphs:
             plt.title('Pre-Press Strategy Scatter (Colored by Distance)', fontsize=14)
             plt.grid(True, linestyle='--', alpha=0.4)
             if self.save:
-                plt.savefig("scatter_strategy_prepress_distance.png")
+                plt.savefig("scatter_strategy_prepress_distance_onlysucc.png")
             plt.show()
             plt.close()
             
@@ -6403,7 +6411,7 @@ class multiFileGraphs:
             plt.ylabel('Frames Both Rats Waited')
             plt.title('Transparent Scatter of Trial Strategies')
             if self.save:
-                plt.savefig("scatter_strategy_plot.png")
+                plt.savefig("scatter_strategy_plot_onlysucc.png")
             plt.show()
             plt.close()
             
@@ -6415,7 +6423,7 @@ class multiFileGraphs:
             plt.ylabel('Frames AT least 1 Rat Waited')
             plt.title('Transparent Scatter of Trial Strategies')
             if self.save:
-                plt.savefig("scatter_strategy_plot_single_waiting.png")
+                plt.savefig("scatter_strategy_plot_single_waiting_onlysucc.png")
             plt.show()
             plt.close()
         
@@ -8312,7 +8320,7 @@ experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFrames
 #experiment.successVsAverageDistance()
 #experiment.interactionVSSuccess()
 
-#experiment.classifyStrategies()
+experiment.classifyStrategies()
 
 #experiment.gazeHeatmap()
 #experiment.trialStateModel()
