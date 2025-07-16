@@ -7898,6 +7898,8 @@ class multiFileGraphs:
         bin_total_frames = np.zeros(self.NUM_BINS)
         
         bin_gaze_percentages_per_trial = [[] for _ in range(NUM_BINS)]
+        bin_gaze_percentages_per_trial_successful = [[] for _ in range(NUM_BINS)]
+        bin_gaze_percentages_per_trial_unsuccessful = [[] for _ in range(NUM_BINS)]
         
         #3
         gaze_success = {'succ': [], 'fail': []}
@@ -7981,6 +7983,11 @@ class multiFileGraphs:
                     gaze_percent = (numGazing0_bin + numGazing1_bin) / (2 * bin_len)
 
                     bin_gaze_percentages_per_trial[i].append(gaze_percent)
+                    
+                    if (succ):
+                        bin_gaze_percentages_per_trial_successful[i].append(gaze_percent)
+                    else:
+                        bin_gaze_percentages_per_trial_unsuccessful[i].append(gaze_percent)
                     
                 # 3
                 gaze_percentage = (numGazing0 + numGazing1) / 2 / (trial_length) * 100
@@ -8113,20 +8120,30 @@ class multiFileGraphs:
         plt.title('Gazing Over Time in Trial', fontsize=self.titleSize)
         plt.grid(True)
         plt.tight_layout()
-        if self.save: plt.savefig(f"{self.prefix}Gaze_Percent_Over_Trial.png")
+        if self.save: plt.savefig(f"{self.prefix}Gaze_Percent_Over_Trial_SuccvsUnsucc.png")
         plt.show()
         plt.close()
         
         means = np.array([np.mean(bin) if len(bin) > 0 else 0 for bin in bin_gaze_percentages_per_trial])
         std_errors = np.array([np.std(bin, ddof=1) / np.sqrt(len(bin)) if len(bin) > 1 else 0 for bin in bin_gaze_percentages_per_trial])
+        means_succ = np.array([np.mean(bin) if len(bin) > 0 else 0 for bin in bin_gaze_percentages_per_trial_successful])
+        std_errors_succ = np.array([np.std(bin, ddof=1) / np.sqrt(len(bin)) if len(bin) > 1 else 0 for bin in bin_gaze_percentages_per_trial_successful])
+        means_unsucc = np.array([np.mean(bin) if len(bin) > 0 else 0 for bin in bin_gaze_percentages_per_trial_unsuccessful])
+        std_errors_unsucc = np.array([np.std(bin, ddof=1) / np.sqrt(len(bin)) if len(bin) > 1 else 0 for bin in bin_gaze_percentages_per_trial_unsuccessful])
+        
         x_vals = np.linspace(0, 100, NUM_BINS)
         plt.figure(figsize=(8, 5))
         plt.plot(x_vals, means * 100, color='blue', label='Gazing %')
+        plt.plot(x_vals, means_succ * 100, color='green', label='Succ Gazing %')
+        plt.plot(x_vals, means_unsucc * 100, color='red', label='Non-Succ Gazing %')
         plt.fill_between(x_vals, (means - std_errors) * 100, (means + std_errors) * 100, color='blue', alpha=0.3)
+        plt.fill_between(x_vals, (means_succ - std_errors_succ) * 100, (means_succ + std_errors_succ) * 100, color='green', alpha=0.3)
+        plt.fill_between(x_vals, (means_unsucc - std_errors_unsucc) * 100, (means_unsucc + std_errors_unsucc) * 100, color='red', alpha=0.3)
         plt.xlabel('% of Trial Passed', fontsize=self.labelSize)
         plt.ylabel('% Gazing', fontsize=self.labelSize)
         plt.title('Gazing Over Time in Trial', fontsize=self.titleSize)
         plt.grid(True)
+        plt.legend()
         plt.tight_layout()
         if self.save: plt.savefig(f"{self.prefix}Gaze_Percent_Over_Trial_EqualTrialWeighting.png")
         plt.show()
