@@ -8439,6 +8439,7 @@ class multiFileGraphs:
         )
         
         # --- Graph 4: Comparing Success Rate by Rats at Lever at Cue --- 
+        print("Comparing Success Rate by Rats at Lever at Cue")
         
         # Compute success rates (handle divide-by-zero cases)
         rate_0 = totalSucc_0rats / totalValidTrials_0rats if totalValidTrials_0rats > 0 else 0
@@ -8472,6 +8473,8 @@ class multiFileGraphs:
             plt.savefig(f"{self.prefix}success_rate_by_num_rats_at_start.png")
         plt.show()
         plt.close()
+        
+        print("Done")
                 
 
 #Testing Multi File Graphs
