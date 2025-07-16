@@ -8351,15 +8351,15 @@ class multiFileGraphs:
                     
                     sumWaiting += max_wait
                     
-                totalSucc += succCount
-                totalValidTrials += numValidTrials
-                if (numValidTrials > 4):
-                    print("\nNumValidTrials: ", numValidTrials)
-                    successRates.append(succCount / numValidTrials)
-                    successRatesReal.append(lev.returnSuccessPercentage())
-                    averageWaitingTimes.append(sumWaiting / numValidTrials)
-                else:
-                    print(f"/nOnly {numValidTrials} trials")
+            totalSucc += succCount
+            totalValidTrials += numValidTrials
+            if (numValidTrials > 4):
+                print("\nNumValidTrials: ", numValidTrials)
+                successRates.append(succCount / numValidTrials)
+                successRatesReal.append(lev.returnSuccessPercentage())
+                averageWaitingTimes.append(sumWaiting / numValidTrials)
+            else:
+                print(f"/nOnly {numValidTrials} trials")
         
         
         # --- Graph 1: Pie Chart ---
@@ -8369,8 +8369,8 @@ class multiFileGraphs:
         colors = ['#66b3ff', '#ff9999']
         ax.pie(sizes, labels=labels, colors=colors, autopct='%1.1f%%', startangle=140)
         ax.axis('equal')
-        ax.set_title("Success Rate (Only One Rat at Lever Start)")
-        
+        ax.set_title("Success Rate: Only One Rat at Lever Start")
+        plt.tight_layout()
         if self.save:
             plt.savefig(f"{self.prefix}piechart_success_rate_one_rat.png")
         
@@ -8409,19 +8409,19 @@ class multiFileGraphs:
             averageWaitingTimes,
             successRates,
             "Waiting Time vs. One-Rat Success Rate",
-            "Average Max Waiting Time (frames)",
+            "Average Waiting Time (frames)",
             "Filtered Success Rate",
-            "scatter_waiting_vs_filtered_success.png"
+            "scatter_one_rat_waiting_vs_filtered_success.png"
         )
         
         # --- Graph 3: Real Success Rate ---
         plot_scatter_with_fit(
             averageWaitingTimes,
             successRatesReal,
-            "Waiting Time vs. Overall Success Rate",
-            "Average Max Waiting Time (frames)",
-            "Real Success Rate",
-            "scatter_waiting_vs_real_success.png"
+            "Waiting Time vs. Success Rate",
+            "Waiting Time (frames)",
+            "Success Rate",
+            "scatter_one_rat_waiting_vs_real_success.png"
         )
                 
 
