@@ -5546,7 +5546,7 @@ class multiFileGraphs:
                         continue
                     elif(pos.returnRatLocationTime(0, frameStart) in levAreas and pos.returnRatLocationTime(1, frameStart) in levAreas):
                         print("both rats in lever areas")
-                        #continue
+                        continue
                     sumDistances += dist
                     sumNumConsidered += 1
                     sumTimeUntilPress += t_first_press - t_begin
@@ -5618,19 +5618,41 @@ class multiFileGraphs:
             success_label_added = False
             failure_label_added = False
             
+            # Create filtered lists for trend line computation (only success trials)
+            dist_success = []
+            time_success = []
+            
             for dist, time, success in zip(individual_trials_distance, individual_trials_timeUntilPress, individual_trials_success):
                 if success == 1:
                     plt.scatter(dist, time, color='green', alpha=0.6,
                                 label='Success' if not success_label_added else "")
                     success_label_added = True
+                    dist_success.append(dist)
+                    time_success.append(time)
                 elif success == 0:
                     continue
                     plt.scatter(dist, time, color='red', alpha=0.6,
                                 label='Failure' if not failure_label_added else "")
                     failure_label_added = True
+                    dist_success.append(dist)
+                    time_success.append(time)
                 else:
                     plt.scatter(dist, time, color='gray', alpha=0.4)
-    
+                    dist_success.append(dist)
+                    time_success.append(time)
+            
+            if len(dist_success) >= 2 and len(set(dist_success)) > 1:
+                slope, intercept, r_value, p_value, std_err = linregress(dist_success, time_success)
+                r_squared = r_value ** 2
+        
+                x_vals = np.linspace(min(dist_success), max(dist_success), 100)
+                plt.plot(x_vals, slope * x_vals + intercept, color='black', linestyle='--', label='Trendline')
+                plt.text(0.95, 0.84,
+                         f"Slope = {slope:.3f}\n$R^2$ = {r_squared:.3f}\n p = {p_value:.3g}",
+                         transform=plt.gca().transAxes,
+                         ha='right', va='bottom', fontsize=12,
+                         bbox=dict(facecolor='white', edgecolor='gray'))
+            '''
             if len(set(individual_trials_distance)) >= 2:
                 slope, intercept, r_value, p_value, std_err = linregress(individual_trials_distance, individual_trials_timeUntilPress)
                 r_squared = r_value ** 2
@@ -5641,7 +5663,7 @@ class multiFileGraphs:
                  f"Slope = {slope:.3f}\n$R^2$ = {r_squared:.3f}\n p-value = {p_value:.3g}",
                  transform=plt.gca().transAxes,
                  ha='right', va='bottom', fontsize=12,
-                 bbox=dict(facecolor='white', edgecolor='gray'))
+                 bbox=dict(facecolor='white', edgecolor='gray'))'''
     
             plt.xlabel('Average Distance from Lever', fontsize = self.labelSize)
             plt.ylabel('Average Time Until First Press (s)', fontsize = self.labelSize)
@@ -8472,7 +8494,7 @@ initialNanList = [0.3]
 
 #print("Start MultiFileGraphs Regular")
 experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "", save=True)
-experiment.onlyOneRatWaitedGraphs()
+#experiment.onlyOneRatWaitedGraphs()
 #experiment.percentGazingvsSuccess()
 #experiment.moreGazeComparisons()
 #experiment.successVsAverageDistance()
@@ -8481,7 +8503,7 @@ experiment.onlyOneRatWaitedGraphs()
 #experiment.stateTransitionModel()
 #experiment.cooperativeRegionStrategiesQuantification()
 #experiment.pcaAndGLMCoopSuccessPredictors()
-#experiment.trueCooperationTesting()
+experiment.trueCooperationTesting()
 #experiment.gazingOverTrial()
 
 #experiment.testMotivation()
