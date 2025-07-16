@@ -8289,6 +8289,12 @@ class multiFileGraphs:
         totalSucc = 0
         totalValidTrials = 0
         
+        totalSucc_2rats = 0
+        totalValidTrials_2rats = 0
+        
+        totalSucc_0rats = 0
+        totalValidTrials_0rats = 0
+        
         for exp in self.experiments: 
             lev = exp.lev
             pos = exp.pos
@@ -8350,6 +8356,14 @@ class multiFileGraphs:
                         succCount += 1
                     
                     sumWaiting += max_wait
+                elif (max_wait == 0):
+                    totalValidTrials_0rats += 1
+                    if (succ):
+                        totalSucc_0rats += 1
+                else:
+                    totalValidTrials_2rats += 1
+                    if (succ):
+                        totalSucc_2rats += 1
                     
             totalSucc += succCount
             totalValidTrials += numValidTrials
@@ -8423,6 +8437,41 @@ class multiFileGraphs:
             "Success Rate",
             "scatter_one_rat_waiting_vs_real_success.png"
         )
+        
+        # --- Graph 4: Comparing Success Rate by Rats at Lever at Cue --- 
+        
+        # Compute success rates (handle divide-by-zero cases)
+        rate_0 = totalSucc_0rats / totalValidTrials_0rats if totalValidTrials_0rats > 0 else 0
+        rate_1 = totalSucc / totalValidTrials if totalValidTrials > 0 else 0
+        rate_2 = totalSucc_2rats / totalValidTrials_2rats if totalValidTrials_2rats > 0 else 0
+        
+        # Data for the bar chart
+        success_rates = [rate_0, rate_1, rate_2]
+        valid_trials = [totalValidTrials_0rats, totalValidTrials, totalValidTrials_2rats]
+        labels = ['0 Rats at Lever', '1 Rat at Lever', '2 Rats at Lever']
+        colors = ['gray', 'skyblue', 'green']
+        
+        # Create bar chart
+        fig, ax = plt.subplots(figsize=(8, 6))
+        bars = ax.bar(labels, success_rates, color=colors, edgecolor='black')
+        
+        # Add text on top of bars
+        for i, bar in enumerate(bars):
+            height = bar.get_height()
+            ax.text(bar.get_x() + bar.get_width() / 2, height + 0.02,
+                    f'n = {valid_trials[i]}', ha='center', va='bottom', fontsize=12)
+        
+        # Axis formatting
+        ax.set_ylim(0, 1.1)  # allow room for labels
+        ax.set_ylabel('Success Rate', fontsize=14)
+        ax.set_title('Success Rate by Number of Rats at Lever Start', fontsize=16)
+        ax.grid(axis='y', linestyle='--', alpha=0.6)
+        
+        plt.tight_layout()
+        if self.save:
+            plt.savefig(f"{self.prefix}success_rate_by_num_rats_at_start.png")
+        plt.show()
+        plt.close()
                 
 
 #Testing Multi File Graphs
