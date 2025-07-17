@@ -8345,6 +8345,8 @@ class multiFileGraphs:
             
         # === Plotting ===
         # Graph 1 – Bar Plot
+        print("gazingCategoryCounts: ", gazingCategoryCounts)
+        print("totalCategoryCounts: ", totalCategoryCounts)
         labels = ['Pre-Press', 'Post-Press', 'Pre-Mag', 'Post-Mag', 'Rest']
         values = [100 * gazingCategoryCounts[k] / totalCategoryCounts[k] if totalCategoryCounts[k] > 0 else 0 for k in ['pre_press', 'post_press', 'pre_mag', 'post_mag', 'rest']]
         plt.figure(figsize=(8, 5))
@@ -8473,15 +8475,15 @@ class multiFileGraphs:
         plt.bar([i - width/2 for i in x], succ_percentages, width, label='Success', color='green', edgecolor='black')
         plt.bar([i + width/2 for i in x], fail_percentages, width, label='Failure', color='red', edgecolor='black')
         
-        maxPercent = max(succ_percentages, fail_percentages)
+        maxPercent = max(max(succ_percentages), max(fail_percentages))
         increase = maxPercent / 15
         
         # Add frame count labels above each bar
         for i in range(len(categories)):
             # Success bars
-            plt.text(i - width/2, succ_percentages[i] + increase, f'n={succ_totals[i]}', ha='center', va='bottom', fontsize=9)
+            plt.text(i - width/2, succ_percentages[i] + increase, f'n={succ_totals[i] / 30}s', ha='center', va='bottom', fontsize=9)
             # Failure bars
-            plt.text(i + width/2, fail_percentages[i] + increase, f'n={fail_totals[i]}', ha='center', va='bottom', fontsize=9)
+            plt.text(i + width/2, fail_percentages[i] + increase, f'n={fail_totals[i] / 30}s', ha='center', va='bottom', fontsize=9)
         
         plt.xticks(x, ['Pre-Press', 'Post-Press', 'Pre-Mag', 'Post-Mag', 'Whole Trial'])
         plt.ylabel('% Gazing Frames')
