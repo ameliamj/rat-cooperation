@@ -725,6 +725,20 @@ class levLoader:
         frames = (press_data['AbsTime'] * self.fps).astype(int)
         return set(frames)
     
+    def getLeverPressFramesandSucc(self, rat_id):
+        """
+        Returns a set of tuples (frame_index, coopSucc) where the specified rat pressed the lever.
+        coopSucc is 1 if the trial was successful, 0 otherwise.
+        """
+        if self.data is None or self.data.empty:
+            return set()
+    
+        press_data = self.data[self.data['RatID'] == rat_id]
+        frames = (press_data['AbsTime'] * self.fps).astype(int)
+        success = press_data['coopSucc'].astype(int)
+    
+        return set(zip(frames, success))
+    
     def returnLastPressTime(self):
         '''
         Returns the last press in each trial:

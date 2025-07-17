@@ -263,7 +263,17 @@ class magLoader:
             return set()
         reward_data = self.data[(self.data['Hit'] == 0) & (self.data['RatID'] == rat_id)]
         frames = (reward_data['AbsTime'] * self.fps).astype(int)
+        
         return set(frames)
+    
+    def getEnteredMagFramesandSucc(self, rat_id):
+        if self.data is None or self.data.empty:
+            return set()
+        reward_data = self.data[(self.data['RatID'] == rat_id)]
+        frames = (reward_data['AbsTime'] * self.fps).astype(int)
+        success = reward_data['coopSucc'].astype(int)
+    
+        return set(zip(frames, success))
     
 
 

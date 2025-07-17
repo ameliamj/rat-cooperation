@@ -7918,6 +7918,7 @@ class multiFileGraphs:
             4) Percent of Gazing Frames that are also Interactions
             5) Percent of Mutual Gazing (Both Rats are Gazing at each Other)
             6) Percent of Interacting Frames that are also Gazing
+            7) Same as #1 except Success vs. Non-Success
         '''
         
         # Global Vars
@@ -7950,6 +7951,21 @@ class multiFileGraphs:
         percent_gazing_that_is_mutual = 0        
         perc_interactions_that_are_gazing = 0
         
+        #7
+        gazingCategoryCountsBySuccess = {
+            'pre_press': {'succ': 0, 'fail': 0},
+            'post_press': {'succ': 0, 'fail': 0},
+            'pre_mag': {'succ': 0, 'fail': 0},
+            'post_mag': {'succ': 0, 'fail': 0},
+            'rest': {'succ': 0, 'fail': 0},
+        }
+        totalCategoryCountsBySuccess = {
+            'pre_press': {'succ': 0, 'fail': 0},
+            'post_press': {'succ': 0, 'fail': 0},
+            'pre_mag': {'succ': 0, 'fail': 0},
+            'post_mag': {'succ': 0, 'fail': 0},
+            'rest': {'succ': 0, 'fail': 0},
+        }
         
         for exp_idx, exp in enumerate(self.experiments):
             lev = exp.lev
@@ -7965,12 +7981,12 @@ class multiFileGraphs:
             isGazing0 = pos.returnIsGazing(0) # List of whether rat 0 is gazing (1) or not gazing (0) for each frame
             isGazing1 = pos.returnIsGazing(1) # List of whether rat 1 is gazing (1) or not gazing (0) for each frame
             isInteracting = pos.returnIsInteracting()
-            levPressFrames0 = lev.getLeverPressFrames(0)
-            levPressFrames1 = lev.getLeverPressFrames(1)
+            levPressFrames0 = lev.getLeverPressFramesandSucc(0)
+            levPressFrames1 = lev.getLeverPressFramesandSucc(1)
             levPressFrames = levPressFrames0.union(levPressFrames1) #Set of all frames in which a lever was pressed
             
-            magEntryFrames0 = mag.getEnteredMagFrames(0)
-            magEntryFrames1 = mag.getEnteredMagFrames(1)
+            magEntryFrames0 = mag.getEnteredMagFramesandSucc(0)
+            magEntryFrames1 = mag.getEnteredMagFramesandSucc(1)
             magEntryFrames = magEntryFrames0.union(magEntryFrames1)
             
             #Graphs 2, 3
@@ -8034,7 +8050,7 @@ class multiFileGraphs:
                     
             #Graph 1
             listFrames = set()
-            for pressFrame in levPressFrames0:
+            for pressFrame, succ in levPressFrames0:
                 f_before = int(pressFrame - SECONDS_BEFORE_AND_AFTER * fps)
                 f_after = int(pressFrame + SECONDS_BEFORE_AND_AFTER * fps)
                 
@@ -8045,13 +8061,30 @@ class multiFileGraphs:
                     listFrames.add(f)
                     gazingCategoryCounts['pre_press'] += (isGazing0[f])
                     totalCategoryCounts['pre_press'] += 1
-                
+                    
+                    if (succ):
+                        key = 'succ'
+                    else:
+                        key = 'fail'
+                    
+                    gazingCategoryCountsBySuccess['pre_press'][key] += isGazing0[f]
+                    totalCategoryCountsBySuccess['pre_press'][key] += 1
+                        
+                    
                 for f in range(pressFrame, f_after):
                     listFrames.add(f)
                     gazingCategoryCounts['post_press'] += (isGazing0[f])
                     totalCategoryCounts['post_press'] += 1
                     
-            for pressFrame in levPressFrames1:
+                    if (succ):
+                        key = 'succ'
+                    else:
+                        key = 'fail'
+                    
+                    gazingCategoryCountsBySuccess['post_press'][key] += isGazing0[f]
+                    totalCategoryCountsBySuccess['post_press'][key] += 1
+                    
+            for pressFrame, succ in levPressFrames1:
                 f_before = int(pressFrame - SECONDS_BEFORE_AND_AFTER * fps)
                 f_after = int(pressFrame + SECONDS_BEFORE_AND_AFTER * fps)
                 
@@ -8062,32 +8095,30 @@ class multiFileGraphs:
                     listFrames.add(f)
                     gazingCategoryCounts['pre_press'] += (isGazing1[f])
                     totalCategoryCounts['pre_press'] += 1
+                    
+                    if (succ):
+                        key = 'succ'
+                    else:
+                        key = 'fail'
+                    
+                    gazingCategoryCountsBySuccess['pre_press'][key] += isGazing1[f]
+                    totalCategoryCountsBySuccess['pre_press'][key] += 1
                 
                 for f in range(pressFrame, f_after):
                     listFrames.add(f)
                     gazingCategoryCounts['post_press'] += (isGazing1[f])
                     totalCategoryCounts['post_press'] += 1
+                    
+                    if (succ):
+                        key = 'succ'
+                    else:
+                        key = 'fail'
+                    
+                    gazingCategoryCountsBySuccess['post_press'][key] += isGazing1[f]
+                    totalCategoryCountsBySuccess['post_press'][key] += 1
 
             
-            for pressFrame in magEntryFrames0:
-                f_before = int(pressFrame - SECONDS_BEFORE_AND_AFTER * fps)
-                f_after = int(pressFrame + SECONDS_BEFORE_AND_AFTER * fps)
-                
-                if (f_before < 0 or f_after > totalFrames):
-                    continue
-                
-                for f in (range(f_before, pressFrame)):
-                    listFrames.add(f)
-                    gazingCategoryCounts['pre_press'] += (isGazing0[f])
-                    totalCategoryCounts['pre_press'] += 1
-                
-                for f in range(pressFrame, f_after):
-                    listFrames.add(f)
-                    gazingCategoryCounts['post_press'] += (isGazing0[f])
-                    totalCategoryCounts['post_press'] += 1
-
-            
-            for entryFrame in magEntryFrames1:
+            for pressFrame, succ in magEntryFrames0:
                 f_before = int(pressFrame - SECONDS_BEFORE_AND_AFTER * fps)
                 f_after = int(pressFrame + SECONDS_BEFORE_AND_AFTER * fps)
                 
@@ -8098,11 +8129,61 @@ class multiFileGraphs:
                     listFrames.add(f)
                     gazingCategoryCounts['pre_mag'] += (isGazing0[f])
                     totalCategoryCounts['pre_mag'] += 1
+                    
+                    if (succ):
+                        key = 'succ'
+                    else:
+                        key = 'fail'
+                    
+                    gazingCategoryCountsBySuccess['pre_mag'][key] += isGazing1[f]
+                    totalCategoryCountsBySuccess['pre_mag'][key] += 1
                 
                 for f in range(pressFrame, f_after):
                     listFrames.add(f)
                     gazingCategoryCounts['post_mag'] += (isGazing0[f])
                     totalCategoryCounts['post_mag'] += 1
+                    
+                    if (succ):
+                        key = 'succ'
+                    else:
+                        key = 'fail'
+                    
+                    gazingCategoryCountsBySuccess['post_mag'][key] += isGazing1[f]
+                    totalCategoryCountsBySuccess['post_mag'][key] += 1
+
+            
+            for entryFrame, succ in magEntryFrames1:
+                f_before = int(pressFrame - SECONDS_BEFORE_AND_AFTER * fps)
+                f_after = int(pressFrame + SECONDS_BEFORE_AND_AFTER * fps)
+                
+                if (f_before < 0 or f_after > totalFrames):
+                    continue
+                
+                for f in (range(f_before, pressFrame)):
+                    listFrames.add(f)
+                    gazingCategoryCounts['pre_mag'] += (isGazing0[f])
+                    totalCategoryCounts['pre_mag'] += 1
+                    
+                    if (succ):
+                        key = 'succ'
+                    else:
+                        key = 'fail'
+                    
+                    gazingCategoryCountsBySuccess['pre_mag'][key] += isGazing1[f]
+                    totalCategoryCountsBySuccess['pre_mag'][key] += 1
+                
+                for f in range(pressFrame, f_after):
+                    listFrames.add(f)
+                    gazingCategoryCounts['post_mag'] += (isGazing0[f])
+                    totalCategoryCounts['post_mag'] += 1
+                    
+                    if (succ):
+                        key = 'succ'
+                    else:
+                        key = 'fail'
+                    
+                    gazingCategoryCountsBySuccess['post_mag'][key] += isGazing1[f]
+                    totalCategoryCountsBySuccess['post_mag'][key] += 1
          
                 
             #Graph 4, 5, 6
@@ -8828,9 +8909,9 @@ initialNanList = [0.15, 0.12]
 '''
 
 
-#arr = getFiltered()
+arr = getFiltered()
 
-arr = trainingCoopData()
+#arr = trainingCoopData()
 #arr = trainingCoopDataThresh1()
 #arr = getUnfamiliar()
 #arr = getAllTrainingCoop()
@@ -8897,7 +8978,7 @@ experiment.expandedSynchronizationStrategyGraphs()
 #experiment.trialStateModel()
 #experiment.waitingStrategy()
 
-    
+'''
 arr = trainingCoopDataThresh1()
 lev_files = arr[0]
 mag_files = arr[1]
@@ -8907,7 +8988,7 @@ totFramesList = arr[4]
 initialNanList = arr[5]
 experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "trainingCoopThresh1_", save=True)
 experiment.expandedSynchronizationStrategyGraphs()
-
+'''
 
 # ---------------------------------------------------------------------------------------------------------
 
