@@ -8563,7 +8563,7 @@ class multiFileGraphs:
         slope, intercept, r_value, _, _ = linregress(xDiff, adjustedSuccPercentage)
         trend = slope * xDiff + intercept
         plt.plot(xDiff, trend, color='black', label=f'R² = {r_value**2:.2f}')
-        plt.xlabel('Avg Distance Between Rats (HB, px)')
+        plt.xlabel('Avg X-Distance Between Rats')
         plt.ylabel('Adjusted Success %')
         plt.title('Adjusted Success vs. Avg Distance Moved')
         plt.legend()
@@ -8578,7 +8578,7 @@ class multiFileGraphs:
         slope, intercept, r_value, _, _ = linregress(xDiff, realSuccPercentage)
         trend = slope * xDiff + intercept
         plt.plot(xDiff, trend, color='black', label=f'R² = {r_value**2:.2f}')
-        plt.xlabel('Avg Distance Between Rats (HB, px)')
+        plt.xlabel('Avg X-Distance Between Rats')
         plt.ylabel('Real Success %')
         plt.title('Real Success vs. Avg X-Distance')
         plt.legend()
@@ -8846,7 +8846,7 @@ initialNanList = [0.3]
 #print("Start MultiFileGraphs Regular")
 experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "", save=True)
 
-#experiment.expandedSynchronizationStrategyGraphs()
+experiment.expandedSynchronizationStrategyGraphs()
 #experiment.onlyOneRatWaitedGraphs()
 #experiment.percentGazingvsSuccess()
 #experiment.moreGazeComparisons()
@@ -8856,7 +8856,7 @@ experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFrames
 #experiment.stateTransitionModel()
 #experiment.cooperativeRegionStrategiesQuantification()
 #experiment.pcaAndGLMCoopSuccessPredictors()
-experiment.trueCooperationTesting()
+#experiment.trueCooperationTesting()
 #experiment.gazingOverTrial()
 
 #experiment.testMotivation()
