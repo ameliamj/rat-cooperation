@@ -1908,7 +1908,7 @@ class MicePairGraphs:
                         continue
                     
                     tempNumTrials += 1
-                    startFrame = startTimes[i] * fps
+                    startFrame = int(startTimes[i] * fps)
                     
                     rat0_loc_start = pos.returnRatLocationTime(0, startFrame)
                     rat1_loc_start = pos.returnRatLocationTime(1, startFrame)
