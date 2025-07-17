@@ -1880,8 +1880,8 @@ def getGroupRatPairs():
     return [fe.getLevsDatapath(grouped = True), fe.getMagsDatapath(grouped = True), fe.getPosDatapath(grouped = True), fpsList, totFramesList]
 
 
-data = getGroupRatPairs()
-pairGraphs = MicePairGraphs(data[0], data[1], data[2], data[3], data[4])
+#data = getGroupRatPairs()
+#pairGraphs = MicePairGraphs(data[0], data[1], data[2], data[3], data[4])
 
 
 '''magFiles = [["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv"],
@@ -1894,7 +1894,7 @@ posFiles = [["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/B
 pairGraphs = MicePairGraphs(magFiles, levFiles, posFiles)'''
 
 
-pairGraphs.lineGraphSuccess()
+#pairGraphs.lineGraphSuccess()
 #pairGraphs.lineGraphGazing()
 #pairGraphs.lineGraphInteractions()
 
@@ -8580,11 +8580,11 @@ class multiFileGraphs:
         plt.plot(xDiff, trend, color='black', label=f'R² = {r_value**2:.2f}')
         plt.xlabel('Avg Distance Between Rats (HB, px)')
         plt.ylabel('Real Success %')
-        plt.title('Real Success vs. Avg Distance Moved')
+        plt.title('Real Success vs. Avg X-Distance')
         plt.legend()
         plt.grid(True)
         plt.tight_layout()
-        plt.savefig('real_success_vs_avg_distance.png', dpi=300)
+        plt.savefig('real_success_vs_avg_x_distance.png', dpi=300)
         plt.close()
     
         # ----- Graph 3: Bar Plot with Error Bars -----
@@ -8805,7 +8805,9 @@ initialNanList = [0.15, 0.12]
 '''
 
 
-arr = getFiltered()
+#arr = getFiltered()
+
+arr = trainingCoopDataThresh1()
 #arr = getUnfamiliar()
 #arr = getAllTrainingCoop()
 #arr = getFiberPhoto()
@@ -8844,7 +8846,7 @@ initialNanList = [0.3]
 #print("Start MultiFileGraphs Regular")
 experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "", save=True)
 
-experiment.expandedSynchronizationStrategyGraphs()
+#experiment.expandedSynchronizationStrategyGraphs()
 #experiment.onlyOneRatWaitedGraphs()
 #experiment.percentGazingvsSuccess()
 #experiment.moreGazeComparisons()
@@ -8854,7 +8856,7 @@ experiment.expandedSynchronizationStrategyGraphs()
 #experiment.stateTransitionModel()
 #experiment.cooperativeRegionStrategiesQuantification()
 #experiment.pcaAndGLMCoopSuccessPredictors()
-#experiment.trueCooperationTesting()
+experiment.trueCooperationTesting()
 #experiment.gazingOverTrial()
 
 #experiment.testMotivation()
