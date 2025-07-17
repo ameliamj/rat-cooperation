@@ -8744,7 +8744,8 @@ class multiFileGraphs:
     
         # ----- Graph 1: Adjusted-Expected Success vs. Avg Distance Moved -----
         plt.figure(figsize=(5, 4))
-        if (max(adjustedSuccminusExpectedSucc) > 1):
+        print("max(adjustedSuccminusExpectedSucc): ", max(adjustedSuccminusExpectedSucc))
+        if (max(adjustedSuccminusExpectedSucc) > 1.5):
             sc1 = plt.scatter(xDiff, adjustedSuccminusExpectedSucc, c=succThreshold, cmap='viridis', alpha=0.7)
             plt.colorbar(sc1, label='Success Threshold')
         else:
