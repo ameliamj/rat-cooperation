@@ -5707,7 +5707,7 @@ class multiFileGraphs:
                     dist_success.append(dist)
                     time_success.append(time)
                 elif success == 0:
-                    continue
+                    #continue
                     plt.scatter(dist, time, color='red', alpha=0.6,
                                 label='Failure' if not failure_label_added else "")
                     failure_label_added = True
@@ -9073,7 +9073,6 @@ def trainingCoopDataThresh1():
     fe = fileExtractor(only_TrainingCoop_filtered)
     fe.keepOnlyThresh1()
     fe.data = fe.deleteBadNaN()
-    fe.getFirstSessionPerMicePair()
     fpsList, totFramesList = fe.returnFPSandTotFrames()
     initial_nan_list = fe.returnNaNPercentage()
     return [fe.getLevsDatapath(), fe.getMagsDatapath(), fe.getPosDatapath(), fpsList, totFramesList, initial_nan_list]
@@ -9115,7 +9114,7 @@ initialNanList = [0.15, 0.12]
 
 arr = getFiltered()
 
-#arr = trainingCoopData()
+arr = trainingCoopData()
 #arr = trainingCoopDataThresh1()
 #arr = getUnfamiliar()
 #arr = getAllTrainingCoop()
@@ -9153,19 +9152,19 @@ initialNanList = [0.3]
 '''
 
 #print("Start MultiFileGraphs Regular")
-experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "", save=True)
+experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "trainingCoop_", save=True)
 
 #experiment.expandedSynchronizationStrategyGraphs()
 #experiment.onlyOneRatWaitedGraphs()
 #experiment.percentGazingvsSuccess()
-experiment.moreGazeComparisons()
+#experiment.moreGazeComparisons()
 #experiment.successVsAverageDistance()
 #experiment.stateTransitionModel()
 #experiment.classifyStrategies()
 #experiment.stateTransitionModel()
 #experiment.cooperativeRegionStrategiesQuantification()
 #experiment.pcaAndGLMCoopSuccessPredictors()
-#experiment.trueCooperationTesting()
+experiment.trueCooperationTesting()
 #experiment.gazingOverTrial()
 
 #experiment.testMotivation()
