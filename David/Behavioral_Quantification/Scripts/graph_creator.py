@@ -8167,7 +8167,14 @@ class multiFileGraphs:
             for entryFrame, trial in magEntryFrames1:
                 f_before = int(pressFrame - SECONDS_BEFORE_AND_AFTER * fps)
                 f_after = int(pressFrame + SECONDS_BEFORE_AND_AFTER * fps)
-                succ = og_succ_trials[trial-1]==1
+                
+                if (trial < len(og_succ_trials)):
+                    succ = og_succ_trials[trial-1]==1
+                else:
+                    succ = False
+                    print("trial #: ", trial)
+                    print("lev_file: ", exp.lev_file)
+                    print("len(succs): ", len(og_succ_trials))
                 
                 if (f_before < 0 or f_after > totalFrames):
                     continue
@@ -8525,10 +8532,10 @@ class multiFileGraphs:
         colors = ['#66b3ff', '#ff9999']
         ax.pie(sizes, labels=labels, colors=colors, autopct='%1.1f%%', startangle=140)
         ax.axis('equal')
-        ax.set_title("Success Rate: Only One Rat at Lever Start")
+        ax.set_title("Success Rate: Only One Rat at Lever at Cue")
         plt.tight_layout()
         if self.save:
-            plt.savefig(f"{self.prefix}piechart_success_rate_one_rat.png")
+            plt.savefig(f"{self.prefix}piechart_success_rate_by_rats_at_lever.png")
         
         plt.show()
         plt.close()
