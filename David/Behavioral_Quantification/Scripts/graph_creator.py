@@ -8494,6 +8494,7 @@ class multiFileGraphs:
         xDiffSucc = []
         xDiffFail = []
         
+        # --------- Loop through experiments ---------
         for exp in self.experiments:
             lev = exp.lev
             pos = exp.pos
@@ -8551,57 +8552,200 @@ class multiFileGraphs:
                 xDiff.append(tempXDiff / tempNumFrames)
                 numTrials.append(tempNumTrials)
             
-            # Convert to numpy arrays
-            xDiff = np.array(xDiff)
-            adjustedSuccPercentage = np.array(adjustedSuccPercentage) * 100
-            realSuccPercentage = np.array(realSuccPercentage) * 100
-        
-            # ----- Graph 1: Adjusted Success vs. Avg Distance Moved -----
-            plt.figure(figsize=(5, 4))
-            plt.scatter(xDiff, adjustedSuccPercentage, c='blue', alpha=0.7, label='Data')
-            slope, intercept, r_value, _, _ = linregress(xDiff, adjustedSuccPercentage)
-            trend = slope * xDiff + intercept
-            plt.plot(xDiff, trend, color='black', label=f'R² = {r_value**2:.2f}')
-            plt.xlabel('Avg Distance Between Rats (HB, px)')
-            plt.ylabel('Adjusted Success %')
-            plt.title('Adjusted Success vs. Avg Distance Moved')
-            plt.legend()
-            plt.grid(True)
-            plt.tight_layout()
-            plt.savefig('adjusted_success_vs_avg_distance.png', dpi=300)
-            plt.close()
-        
-            # ----- Graph 2: Real Success vs. Avg Distance Moved -----
-            plt.figure(figsize=(5, 4))
-            plt.scatter(xDiff, realSuccPercentage, c='green', alpha=0.7, label='Data')
-            slope, intercept, r_value, _, _ = linregress(xDiff, realSuccPercentage)
-            trend = slope * xDiff + intercept
-            plt.plot(xDiff, trend, color='black', label=f'R² = {r_value**2:.2f}')
-            plt.xlabel('Avg Distance Between Rats (HB, px)')
-            plt.ylabel('Real Success %')
-            plt.title('Real Success vs. Avg Distance Moved')
-            plt.legend()
-            plt.grid(True)
-            plt.tight_layout()
-            plt.savefig('real_success_vs_avg_distance.png', dpi=300)
-            plt.close()
-        
-            # ----- Graph 3: Bar Plot with Error Bars -----
-            avgSucc = np.mean(xDiffSucc) if xDiffSucc else np.nan
-            avgFail = np.mean(xDiffFail) if xDiffFail else np.nan
-            semSucc = np.std(xDiffSucc) / np.sqrt(len(xDiffSucc)) if len(xDiffSucc) > 1 else 0
-            semFail = np.std(xDiffFail) / np.sqrt(len(xDiffFail)) if len(xDiffFail) > 1 else 0
-        
-            plt.figure(figsize=(4, 4))
-            plt.bar(['Success', 'Failure'], [avgSucc, avgFail], 
-                    yerr=[semSucc, semFail], capsize=5, color=['purple', 'orange'])
-            plt.ylabel('Avg Distance Between Rats (HB, px)')
-            plt.title('X-Diff by Trial Outcome')
-            plt.tight_layout()
-            plt.savefig('xdiff_success_vs_failure.png', dpi=300)
-            plt.close()
+        # Convert to numpy arrays
+        xDiff = np.array(xDiff)
+        adjustedSuccPercentage = np.array(adjustedSuccPercentage) * 100
+        realSuccPercentage = np.array(realSuccPercentage) * 100
+    
+        # ----- Graph 1: Adjusted Success vs. Avg Distance Moved -----
+        plt.figure(figsize=(5, 4))
+        plt.scatter(xDiff, adjustedSuccPercentage, c='blue', alpha=0.7, label='Data')
+        slope, intercept, r_value, _, _ = linregress(xDiff, adjustedSuccPercentage)
+        trend = slope * xDiff + intercept
+        plt.plot(xDiff, trend, color='black', label=f'R² = {r_value**2:.2f}')
+        plt.xlabel('Avg Distance Between Rats (HB, px)')
+        plt.ylabel('Adjusted Success %')
+        plt.title('Adjusted Success vs. Avg Distance Moved')
+        plt.legend()
+        plt.grid(True)
+        plt.tight_layout()
+        plt.savefig('adjusted_success_vs_avg_distance.png', dpi=300)
+        plt.close()
+    
+        # ----- Graph 2: Real Success vs. Avg Distance Moved -----
+        plt.figure(figsize=(5, 4))
+        plt.scatter(xDiff, realSuccPercentage, c='green', alpha=0.7, label='Data')
+        slope, intercept, r_value, _, _ = linregress(xDiff, realSuccPercentage)
+        trend = slope * xDiff + intercept
+        plt.plot(xDiff, trend, color='black', label=f'R² = {r_value**2:.2f}')
+        plt.xlabel('Avg Distance Between Rats (HB, px)')
+        plt.ylabel('Real Success %')
+        plt.title('Real Success vs. Avg Distance Moved')
+        plt.legend()
+        plt.grid(True)
+        plt.tight_layout()
+        plt.savefig('real_success_vs_avg_distance.png', dpi=300)
+        plt.close()
+    
+        # ----- Graph 3: Bar Plot with Error Bars -----
+        avgSucc = np.mean(xDiffSucc) if xDiffSucc else np.nan
+        avgFail = np.mean(xDiffFail) if xDiffFail else np.nan
+        semSucc = np.std(xDiffSucc) / np.sqrt(len(xDiffSucc)) if len(xDiffSucc) > 1 else 0
+        semFail = np.std(xDiffFail) / np.sqrt(len(xDiffFail)) if len(xDiffFail) > 1 else 0
+    
+        plt.figure(figsize=(4, 4))
+        plt.bar(['Success', 'Failure'], [avgSucc, avgFail], 
+                yerr=[semSucc, semFail], capsize=5, color=['purple', 'orange'])
+        plt.ylabel('Avg Distance Between Rats (HB, px)')
+        plt.title('X-Diff by Trial Outcome')
+        plt.tight_layout()
+        plt.savefig('xdiff_success_vs_failure.png', dpi=300)
+        plt.close()
                 
-                
+    def plotGazeOverNormalizedTrial(self):
+        def returnMagStartAbsTimes(lev, mag):
+            """
+            For each trial number present in lev.data (i.e., trials with lever presses),
+            find the first magazine entry in mag.data with the same TrialNum.
+            However, there's the additional condition that the abs time has to be greater 
+            than that of the last lever press.
+        
+            Returns:
+                list: A list of relative times (AbsTime - TrialTime) for mag entries
+                      corresponding to lever press trials. Returns None if no mag entry exists.
+                      Length equals lev.returnNumTotalTrialswithLeverPress().
+            """
+            if lev.data is None or mag.data is None:
+                raise ValueError("Lever or magazine data is missing.")
+        
+            required_cols = {'TrialNum', 'AbsTime'}
+            for loader_name, df in [('lev', lev.data), ('mag', mag.data)]:
+                if not required_cols.issubset(df.columns):
+                    raise ValueError(f"{loader_name}.data missing required columns: {required_cols - set(df.columns)}")
+        
+            # All trials with lever presses
+            coopOrLastPress = lev.returnCoopTimeorLastPressTime()
+            lever_trials = sorted(lev.data['TrialNum'].dropna().unique())
+            #print("lever_trials: ", lever_trials)
+            mag_grouped = mag.data.groupby('TrialNum')
+        
+            rel_times = []
+            for trial_idx, trial in enumerate(lever_trials):
+                if trial not in mag_grouped.groups:
+                    rel_times.append(None)
+                    continue
+        
+                group = mag_grouped.get_group(trial)
+                if group.empty:
+                    rel_times.append(None)
+                    continue
+        
+                press_time = coopOrLastPress[trial_idx]
+                # Filter for mag entries that occur after the press time
+                valid_mags = group[group['AbsTime'] > press_time]
+        
+                if valid_mags.empty:
+                    rel_times.append(None)
+                else:
+                    first_valid = valid_mags.loc[valid_mags['AbsTime'].idxmin()]
+                    rel_times.append(first_valid['AbsTime'])
+        
+            return rel_times
+        
+        stage_labels = ['Start→1st Press', '1st→Coop/Last Press', 'Coop/Last→1st Mag', '1st Mag→Next']
+        stage_bins = 30
+    
+        success_trials_gaze = []
+        fail_trials_gaze = []
+        stage_avg_durations = np.zeros(4)
+    
+        for exp in self.experiments:
+            lev = exp.lev
+            mag = exp.mag
+            pos = exp.pos
+            fps = exp.fps
+            total_frames = exp.endFrame
+    
+            trial_starts = lev.returnTimeStartTrials()
+            first_presses = lev.returnFirstPressAbsTimes()
+            coop_or_last = lev.returnCoopTimeorLastPressTime()
+            first_mags = returnMagStartAbsTimes(lev, mag)
+            success_flags = self._filterToLeverPressTrials(lev.returnSuccessTrials(), lev)
+    
+            n_trials = min(len(trial_starts), len(first_presses), len(coop_or_last), len(first_mags), len(success_flags))
+            for i in range(n_trials):
+                if success_flags[i] == -1: continue
+                t0, t1, t2, t3 = trial_starts[i], first_presses[i], coop_or_last[i], first_mags[i]
+                t4 = trial_starts[i + 1] if i + 1 < len(trial_starts) else total_frames / fps
+    
+                if None in (t0, t1, t2, t3) or any(np.isnan(t) for t in [t0, t1, t2, t3]): continue
+                if t2 <= t1: continue
+    
+                stage_times = [t1 - t0, t2 - t1, t3 - t2, t4 - t3]
+                for j in range(4): stage_avg_durations[j] += stage_times[j]
+    
+                frames = [
+                    (int(t0*fps), int(t1*fps)),
+                    (int(t1*fps), int(t2*fps)),
+                    (int(t2*fps), int(t3*fps)),
+                    (int(t3*fps), int(t4*fps))
+                ]
+    
+                trial_gaze = []
+                for start, end in frames:
+                    if end <= start or end > total_frames: trial_gaze.extend([np.nan]*stage_bins); continue
+                    rat0 = pos.returnIsGazing(0)[start:end]
+                    rat1 = pos.returnIsGazing(1)[start:end]
+                    both = (rat0 + rat1) / 2
+                    binned = np.array_split(both, stage_bins)
+                    trial_gaze.extend([np.nanmean(b) * 100 if len(b) > 0 else np.nan for b in binned])
+    
+                if success_flags[i] == 1:
+                    success_trials_gaze.append(trial_gaze)
+                else:
+                    fail_trials_gaze.append(trial_gaze)
+    
+        success_array = np.array(success_trials_gaze)
+        fail_array = np.array(fail_trials_gaze)
+    
+        stage_avg_durations /= (len(success_trials_gaze) + len(fail_trials_gaze))
+        stage_proportions = stage_avg_durations / np.sum(stage_avg_durations)
+    
+        x_positions = []
+        cursor = 0
+        for prop in stage_proportions:
+            for i in range(stage_bins):
+                x_positions.append(cursor + i * (prop * 100 / stage_bins))
+            cursor += prop * 100
+    
+        plt.figure(figsize=(12, 6))
+    
+        def plot_line_with_shading(data, label, color):
+            mean = np.nanmean(data, axis=0)
+            error = sem(data, axis=0, nan_policy='omit')
+            plt.plot(x_positions, mean, label=label, color=color)
+            plt.fill_between(x_positions, mean - error, mean + error, color=color, alpha=0.3)
+    
+        if len(success_trials_gaze) > 0:
+            plot_line_with_shading(success_array, "Successful Trials", 'green')
+        if len(fail_trials_gaze) > 0:
+            plot_line_with_shading(fail_array, "Unsuccessful Trials", 'red')
+    
+        # Add stage boundary lines
+        stage_boundaries = np.cumsum(stage_proportions) * 100
+        for b in stage_boundaries[:-1]:
+            plt.axvline(b, linestyle='--', color='gray', alpha=0.7)
+    
+        plt.xticks(stage_boundaries[:-1], stage_labels[1:], rotation=0)
+        plt.xlabel("Percent of Trial Passed (0–100%)")
+        plt.ylabel("Gaze Percentage (%)")
+        plt.title("Gazing Behavior Over Normalized Trial Time")
+        plt.legend()
+        plt.tight_layout()
+        if self.save:
+            plt.savefig(f"{self.prefix}GazeOverNormalizedTrial.png")
+        plt.show()
+        plt.close()
 
 
 #Testing Multi File Graphs
@@ -8699,6 +8843,7 @@ initialNanList = [0.3]
 
 #print("Start MultiFileGraphs Regular")
 experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "", save=True)
+
 experiment.expandedSynchronizationStrategyGraphs()
 #experiment.onlyOneRatWaitedGraphs()
 #experiment.percentGazingvsSuccess()
