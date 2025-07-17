@@ -8489,6 +8489,7 @@ class multiFileGraphs:
         xDiff = []
         realSuccPercentage = []
         adjustedSuccPercentage = []
+        succThreshold = []
         numTrials = []
         
         xDiffSucc = []
@@ -8506,11 +8507,14 @@ class multiFileGraphs:
             succPercentage = lev.returnSuccessPercentage()
             success_trials = lev.returnSuccessTrials()  # Array indicating whether each trial was successful (True/False)
             success_trials = self._filterToLeverPressTrials(success_trials, lev)
+            thresh = lev.returnSuccThreshold()
             
             tempNumTrials = 0
             tempSucc = 0
             tempXDiff = 0
             tempNumFrames = 0
+            
+            print("Num Trials: ", num_trials)
             
             for trial_idx in range(num_trials):
                 if (np.isnan(start_times[trial_idx]) or np.isnan(end_times[trial_idx])):
@@ -8551,6 +8555,8 @@ class multiFileGraphs:
                 adjustedSuccPercentage.append(tempSucc / tempNumTrials)
                 xDiff.append(tempXDiff / tempNumFrames)
                 numTrials.append(tempNumTrials)
+                succThreshold.append(thresh)
+                
             
         # Convert to numpy arrays
         xDiff = np.array(xDiff)
@@ -8559,22 +8565,31 @@ class multiFileGraphs:
     
         # ----- Graph 1: Adjusted Success vs. Avg Distance Moved -----
         plt.figure(figsize=(5, 4))
-        plt.scatter(xDiff, adjustedSuccPercentage, c='blue', alpha=0.7, label='Data')
+        if (max(succThreshold) > 1):
+            sc1 = plt.scatter(xDiff, adjustedSuccPercentage, c=succThreshold, cmap='viridis', alpha=0.7)
+            plt.colorbar(sc1, label='Success Threshold')
+        else:
+            plt.scatter(xDiff, adjustedSuccPercentage, c='blue', alpha=0.7, label='Data')
         slope, intercept, r_value, _, _ = linregress(xDiff, adjustedSuccPercentage)
         trend = slope * xDiff + intercept
         plt.plot(xDiff, trend, color='black', label=f'R² = {r_value**2:.2f}')
         plt.xlabel('Avg X-Distance Between Rats')
         plt.ylabel('Adjusted Success %')
-        plt.title('Adjusted Success vs. Avg Distance Moved')
+        plt.title('Adjusted Success vs. Avg X-Distance')
         plt.legend()
         plt.grid(True)
         plt.tight_layout()
-        plt.savefig('adjusted_success_vs_avg_distance.png', dpi=300)
+        plt.savefig('adjusted_success_vs_avg_x_distance.png', dpi=300)
         plt.close()
     
         # ----- Graph 2: Real Success vs. Avg Distance Moved -----
         plt.figure(figsize=(5, 4))
-        plt.scatter(xDiff, realSuccPercentage, c='green', alpha=0.7, label='Data')
+        
+        if (max(succThreshold) > 1):
+            sc2 = plt.scatter(xDiff, realSuccPercentage, c=succThreshold, cmap='viridis', alpha=0.7)
+            plt.colorbar(sc2, label='Success Threshold')
+        else:
+            plt.scatter(xDiff, realSuccPercentage, c='green', alpha=0.7, label='Data')
         slope, intercept, r_value, _, _ = linregress(xDiff, realSuccPercentage)
         trend = slope * xDiff + intercept
         plt.plot(xDiff, trend, color='black', label=f'R² = {r_value**2:.2f}')
@@ -8761,6 +8776,14 @@ def getFiltered():
     return [fe.getLevsDatapath(), fe.getMagsDatapath(), fe.getPosDatapath(), fpsList, totFramesList, initial_nan_list]
 
 
+def trainingCoopData():
+    fe = fileExtractor(only_TrainingCoop_filtered)
+    fe.data = fe.deleteBadNaN()
+    fe.getFirstSessionPerMicePair()
+    fpsList, totFramesList = fe.returnFPSandTotFrames()
+    initial_nan_list = fe.returnNaNPercentage()
+    return [fe.getLevsDatapath(), fe.getMagsDatapath(), fe.getPosDatapath(), fpsList, totFramesList, initial_nan_list]
+
 def trainingCoopDataThresh1():
     fe = fileExtractor(only_TrainingCoop_filtered)
     fe.keepOnlyThresh1()
@@ -8807,7 +8830,8 @@ initialNanList = [0.15, 0.12]
 
 #arr = getFiltered()
 
-arr = trainingCoopDataThresh1()
+arr = trainingCoopData()
+#arr = trainingCoopDataThresh1()
 #arr = getUnfamiliar()
 #arr = getAllTrainingCoop()
 #arr = getFiberPhoto()
@@ -8846,7 +8870,7 @@ initialNanList = [0.3]
 #print("Start MultiFileGraphs Regular")
 experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "", save=True)
 
-#experiment.expandedSynchronizationStrategyGraphs()
+experiment.expandedSynchronizationStrategyGraphs()
 #experiment.onlyOneRatWaitedGraphs()
 #experiment.percentGazingvsSuccess()
 #experiment.moreGazeComparisons()
@@ -8856,7 +8880,7 @@ experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFrames
 #experiment.stateTransitionModel()
 #experiment.cooperativeRegionStrategiesQuantification()
 #experiment.pcaAndGLMCoopSuccessPredictors()
-experiment.trueCooperationTesting()
+#experiment.trueCooperationTesting()
 #experiment.gazingOverTrial()
 
 #experiment.testMotivation()
