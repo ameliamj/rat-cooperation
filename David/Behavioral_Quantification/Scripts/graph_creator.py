@@ -8132,7 +8132,17 @@ class multiFileGraphs:
             for pressFrame, trial in magEntryFrames0:
                 f_before = int(pressFrame - SECONDS_BEFORE_AND_AFTER * fps)
                 f_after = int(pressFrame + SECONDS_BEFORE_AND_AFTER * fps)
-                succ = og_succ_trials[trial-1]==1
+                
+                if (trial < len(og_succ_trials)):
+                    succ = og_succ_trials[trial-1]==1
+                else:
+                    succ = False
+                    print("trial #: ", trial)
+                    print("lev_file: ", exp.lev_file)
+                    print("len(succs): ", len(og_succ_trials))
+                
+                if (f_before < 0 or f_after > totalFrames):
+                    continue
                 
                 if (f_before < 0 or f_after > totalFrames):
                     continue
