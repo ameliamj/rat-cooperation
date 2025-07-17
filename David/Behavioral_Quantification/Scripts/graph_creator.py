@@ -1912,11 +1912,20 @@ class MicePairGraphs:
                         continue
                     
                     tempNumTrials += 1
-                    frameStart = startTimes[i] * fps
+                    startFrame = startTimes[i] * fps
                     
+                    rat0_loc_start = pos.returnRatLocationTime(0, startFrame)
+                    rat1_loc_start = pos.returnRatLocationTime(1, startFrame)
                     
+                    lever_zones = ['lev_top', 'lev_bottom']
                     
-                    
+                    if (rat0_loc_start in lever_zones and rat1_loc_start in lever_zones):
+                        tempWait2 += 1
+                    elif (rat0_loc_start in lever_zones or rat1_loc_start in lever_zones):
+                        tempWait1 += 1
+                    else:
+                        tempWait0 += 1
+
                 
                 # Initialize all dicts
                 for d in [(waiting0_counts, session0_counts),
@@ -5623,7 +5632,7 @@ class multiFileGraphs:
                         continue
                     elif(pos.returnRatLocationTime(0, frameStart) in levAreas and pos.returnRatLocationTime(1, frameStart) in levAreas):
                         print("both rats in lever areas")
-                        #continue
+                        continue
                     sumDistances += dist
                     sumNumConsidered += 1
                     sumTimeUntilPress += t_first_press - t_begin
@@ -5749,7 +5758,7 @@ class multiFileGraphs:
             plt.grid(True)
             plt.tight_layout()
             if self.save:
-                plt.savefig(f"{self.prefix}distance_vs_time_until_press_byTrial_onlySuccesses.png")
+                plt.savefig(f"{self.prefix}distance_vs_time_until_press_byTrial_notBothinLever.png")
             plt.show()
             plt.close()
         else:
