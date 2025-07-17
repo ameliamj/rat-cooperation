@@ -8270,7 +8270,7 @@ class multiFileGraphs:
         plt.grid(True)
         plt.tight_layout()
         plt.show()
-        plt.savefig("gazePercentage_vs_Success.png")
+        plt.savefig(f"{self.prefix}gazePercentage_vs_Success.png")
         plt.close()
 
     def onlyOneRatWaitedGraphs(self): 
@@ -8476,6 +8476,20 @@ class multiFileGraphs:
         
         print("Done")
                 
+    def expandedSynchronizationStrategyGraphs(self):
+        for exp in self.experiments:
+            lev = exp.lev
+            pos = exp.pos
+            fps = exp.fps
+            
+            start_times = lev.returnTimeStartTrials()
+            end_times = lev.returnTimeEndTrials()
+            num_trials = lev.returnNumTotalTrialswithLeverPress()
+            
+            for trial_idx in range(num_trials):
+                if (np.isnan(start_times[trial_idx]) or np.isnan()):
+                    continue
+
 
 #Testing Multi File Graphs
 #
@@ -8571,10 +8585,10 @@ initialNanList = [0.3]
 '''
 
 #print("Start MultiFileGraphs Regular")
-experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "", save=True)
-experiment.onlyOneRatWaitedGraphs()
-#experiment.percentGazingvsSuccess()
-#experiment.moreGazeComparisons()
+experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "new_gaze_", save=True)
+#experiment.onlyOneRatWaitedGraphs()
+experiment.percentGazingvsSuccess()
+experiment.moreGazeComparisons()
 #experiment.successVsAverageDistance()
 #experiment.stateTransitionModel()
 #experiment.classifyStrategies()
@@ -8582,7 +8596,7 @@ experiment.onlyOneRatWaitedGraphs()
 #experiment.cooperativeRegionStrategiesQuantification()
 #experiment.pcaAndGLMCoopSuccessPredictors()
 #experiment.trueCooperationTesting()
-#experiment.gazingOverTrial()
+experiment.gazingOverTrial()
 
 #experiment.testMotivation()
 

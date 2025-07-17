@@ -291,8 +291,16 @@ class posLoader:
             target = other_body[:, :, t]  # shape (2, 5)
             if self._gaze_intersects_body(gaze_origin, gaze_vec, target):
                 result[t] = True
-
-        return np.where(result)[0] if test else result
+        
+        isInteraction = self.returnIsInteracting()
+        if (len(result) != len(isInteraction)):
+            print("LENGTHS NOT EQUAL")
+        
+        filteredGaze = result & (~isInteraction)
+        
+        isGazing = np.where(result)[0] if test else filteredGaze
+        
+        return isGazing
     
     
     #Graph Stuff
