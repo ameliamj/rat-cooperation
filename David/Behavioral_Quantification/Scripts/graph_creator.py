@@ -1867,8 +1867,62 @@ class MicePairGraphs:
         plt.show()
         plt.close()
     
+    
+    def lineGraphWaiting(self):
+        '''
+        Plots average percent interactions throughout training
+        '''
+        
+        print("\nStarting Line Graph Interactions")
+        
+        waiting0_counts = {}
+        trial0_counts = {}
+        session0_counts = {}
+    
+        waiting1_counts = {}
+        trial1_counts = {}
+        session1_counts = {}
+    
+        waiting2_counts = {}
+        trial2_counts = {}
+        session2_counts = {}
+    
+        for group_idx, group in enumerate(self.experimentGroups):
+            if (len(group) < 5):
+                continue
+            for exp_idx, exp in enumerate(group):
+                lev = exp.lev
+                pos = exp.pos
+    
+                totFrames = pos.returnNumFrames()
+                numWaiting1Frames
                 
-                
+                # Initialize all dicts
+                for d in [(waiting0_counts, trial0_counts, session0_counts),
+                          (waiting1_counts, trial1_counts, session1_counts),
+                          (waiting2_counts, trial2_counts, session2_counts)]:
+                    if exp_idx not in d[0]:
+                        d[0][exp_idx] = 0
+                        d[1][exp_idx] = 0
+                        d[2][exp_idx] = 0
+    
+        # === Plot call ===
+        plt.figure(figsize=(10, 6))
+        self.plot_by_exp_idx(waiting0_counts, trial0_counts, session0_counts, label="0 Waiting", color="blue")
+        self.plot_by_exp_idx(waiting1_counts, trial1_counts, session1_counts, label="1 Waiting", color="purple")
+        self.plot_by_exp_idx(waiting2_counts, trial2_counts, session2_counts, label="2 Waiting", color="green")
+    
+        plt.xlabel('Experiment Index', fontsize=13)
+        plt.ylabel('Percent Interacting', fontsize=13)
+        plt.title('Average Interaction Throughout Training', fontsize=15)
+        plt.grid(True, linestyle='--', alpha=0.6)
+        plt.legend(fontsize=10)
+        plt.tight_layout()
+        if self.save:
+            plt.savefig(f'{self.prefix}InteractionByExperimentIndex_onlyAll.png')
+        plt.show()
+        plt.close()
+            
 groupRatPairs = "/gpfs/radev/project/saxena/drb83/rat-cooperation/David/Behavioral_Quantification/Sorted_Data_Files/group_rat_pairs_corrected.csv"
 
 def getGroupRatPairs():
@@ -8744,8 +8798,8 @@ class multiFileGraphs:
     
         # ----- Graph 1: Adjusted-Expected Success vs. Avg Distance Moved -----
         plt.figure(figsize=(5, 4))
-        print("max(adjustedSuccminusExpectedSucc): ", max(adjustedSuccminusExpectedSucc))
-        if (max(adjustedSuccminusExpectedSucc) > 1.5):
+        print("max(succThreshold): ", max(succThreshold))
+        if (max(succThreshold) > 1):
             sc1 = plt.scatter(xDiff, adjustedSuccminusExpectedSucc, c=succThreshold, cmap='viridis', alpha=0.7)
             plt.colorbar(sc1, label='Success Threshold')
         else:
