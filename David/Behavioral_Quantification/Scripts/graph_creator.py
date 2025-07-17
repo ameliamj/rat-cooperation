@@ -1875,15 +1875,11 @@ class MicePairGraphs:
         
         print("\nStarting Line Graph Interactions")
         
-        waiting0_counts = {}
-        session0_counts = {}
-    
-        waiting1_counts = {}
-        session1_counts = {}
-    
+        waiting0_counts = {}    
+        waiting1_counts = {}    
         waiting2_counts = {}
-        session2_counts = {}
         
+        session_counts = {}
         trial_counts = {}
     
         for group_idx, group in enumerate(self.experimentGroups):
@@ -1928,30 +1924,39 @@ class MicePairGraphs:
 
                 
                 # Initialize all dicts
-                for d in [(waiting0_counts, session0_counts),
-                          (waiting1_counts, session1_counts),
-                          (waiting2_counts, session2_counts)]:
+                for d in [(waiting0_counts),
+                          (waiting1_counts),
+                          (waiting2_counts)]:
                     if exp_idx not in d[0]:
                         d[0][exp_idx] = 0
-                        d[1][exp_idx] = 0
                 
                 if exp_idx not in trial_counts:
                     trial_counts[exp_idx] = 0
                 
+                if exp_idx not in session_counts:
+                    session_counts[exp_idx] = 0
+                    
+                trial_counts[exp_idx] += tempNumTrials
+                waiting0_counts[exp_idx] += tempWait0
+                waiting1_counts[exp_idx] += tempWait1
+                waiting2_counts[exp_idx] += tempWait2
+                session_counts[exp_idx] += 1
+                
+                
         # === Plot call ===
         plt.figure(figsize=(10, 6))
-        self.plot_by_exp_idx(waiting0_counts, trial_counts, session0_counts, label="0 Waiting", color="blue")
-        self.plot_by_exp_idx(waiting1_counts, trial_counts, session1_counts, label="1 Waiting", color="purple")
-        self.plot_by_exp_idx(waiting2_counts, trial_counts, session2_counts, label="2 Waiting", color="green")
+        self.plot_by_exp_idx(waiting0_counts, trial_counts, session_counts, label="0 Waiting", color="blue")
+        self.plot_by_exp_idx(waiting1_counts, trial_counts, session_counts, label="1 Waiting", color="purple")
+        self.plot_by_exp_idx(waiting2_counts, trial_counts, session_counts, label="2 Waiting", color="green")
     
         plt.xlabel('Experiment Index', fontsize=13)
-        plt.ylabel('Percent Interacting', fontsize=13)
-        plt.title('Average Interaction Throughout Training', fontsize=15)
+        plt.ylabel('Percent Waiting', fontsize=13)
+        plt.title('Average Waiting Variability Throughout Training', fontsize=15)
         plt.grid(True, linestyle='--', alpha=0.6)
         plt.legend(fontsize=10)
         plt.tight_layout()
         if self.save:
-            plt.savefig(f'{self.prefix}InteractionByExperimentIndex_onlyAll.png')
+            plt.savefig(f'{self.prefix}RatWaitingVariabilityByExperimentIndex.png')
         plt.show()
         plt.close()
             
@@ -1966,8 +1971,8 @@ def getGroupRatPairs():
     return [fe.getLevsDatapath(grouped = True), fe.getMagsDatapath(grouped = True), fe.getPosDatapath(grouped = True), fpsList, totFramesList]
 
 
-#data = getGroupRatPairs()
-#pairGraphs = MicePairGraphs(data[0], data[1], data[2], data[3], data[4])
+data = getGroupRatPairs()
+pairGraphs = MicePairGraphs(data[0], data[1], data[2], data[3], data[4])
 
 
 '''magFiles = [["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv"],
@@ -1980,6 +1985,7 @@ posFiles = [["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/B
 pairGraphs = MicePairGraphs(magFiles, levFiles, posFiles)'''
 
 
+pairGraphs.lineGraphWaiting()
 #pairGraphs.lineGraphSuccess()
 #pairGraphs.lineGraphGazing()
 #pairGraphs.lineGraphInteractions()
@@ -9123,7 +9129,7 @@ initialNanList = [0.15, 0.12]
 
 arr = getFiltered()
 
-arr = trainingCoopData()
+#arr = trainingCoopData()
 #arr = trainingCoopDataThresh1()
 #arr = getUnfamiliar()
 #arr = getAllTrainingCoop()
@@ -9161,7 +9167,7 @@ initialNanList = [0.3]
 '''
 
 #print("Start MultiFileGraphs Regular")
-experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "trainingCoop_", save=True)
+#experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "", save=True)
 
 #experiment.expandedSynchronizationStrategyGraphs()
 #experiment.onlyOneRatWaitedGraphs()
@@ -9173,7 +9179,7 @@ experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFrames
 #experiment.stateTransitionModel()
 #experiment.cooperativeRegionStrategiesQuantification()
 #experiment.pcaAndGLMCoopSuccessPredictors()
-experiment.trueCooperationTesting()
+#experiment.trueCooperationTesting()
 #experiment.gazingOverTrial()
 
 #experiment.testMotivation()
