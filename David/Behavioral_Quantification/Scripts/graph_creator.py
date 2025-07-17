@@ -8804,6 +8804,7 @@ class multiFileGraphs:
                 if (avgDistanceMoved < MIN_AVG_MOVED):
                     continue
                 
+                
                 rat0_loc_start = pos.returnRatLocationTime(0, startFrame)
                 rat1_loc_start = pos.returnRatLocationTime(1, startFrame)
                 
@@ -8828,6 +8829,11 @@ class multiFileGraphs:
                     xDiffFail.append(difference / numFrames)
             
             if (tempNumTrials > 5):
+                if (tempXDiff / tempNumFrames > 1000):
+                    print("avgXDiff: ", tempXDiff / tempNumFrames)
+                    print("lev_file: ", exp.lev_file)
+                    continue
+                
                 print("tempNumTrials: ", tempNumTrials)
                 
                 realSuccPercentage.append(succPercentage)
