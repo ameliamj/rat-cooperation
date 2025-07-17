@@ -8478,15 +8478,21 @@ class multiFileGraphs:
                 
     def expandedSynchronizationStrategyGraphs(self):
         '''
-        Graph #1: avgDistanceMoved
-        #Graph #2: 
+        Graph #1: Scatterplot avgDistanceMoved vs. adjustedSuccPercentage
+        Graph #2: Scatterplot avgDistanceMoved vs. realSuccPercentage
+        Graph #3: Barplot of average of xDiffSucc vs. avg of xDiffFail
         '''
         
         MIN_AVG_MOVED = 10
         
         
-        distanceMoved = []
+        xDiff = []
+        realSuccPercentage = []
+        adjustedSuccPercentage = []
+        numTrials = []
         
+        xDiffSucc = []
+        xDiffFail = []
         
         for exp in self.experiments:
             lev = exp.lev
@@ -8497,6 +8503,13 @@ class multiFileGraphs:
             end_times = lev.returnTimeEndTrials()
             num_trials = lev.returnNumTotalTrialswithLeverPress()
             succPercentage = lev.returnSuccessPercentage()
+            success_trials = lev.returnSuccessTrials()  # Array indicating whether each trial was successful (True/False)
+            success_trials = self._filterToLeverPressTrials(success_trials, lev)
+            
+            tempNumTrials = 0
+            tempSucc = 0
+            tempXDiff = 0
+            tempNumFrames = 0
             
             for trial_idx in range(num_trials):
                 if (np.isnan(start_times[trial_idx]) or np.isnan(end_times[trial_idx])):
@@ -8504,6 +8517,7 @@ class multiFileGraphs:
                 
                 startFrame = int(start_times[trial_idx] * fps)
                 endFrame = int(end_times[trial_idx] * fps)
+                succ = success_trials[trial_idx]
                 
                 numFrames = endFrame - startFrame
                 
@@ -8511,12 +8525,81 @@ class multiFileGraphs:
                 rat2_xlocations = pos.data[1, 0, pos.HB_INDEX, startFrame:endFrame]
                 
                 difference = sum(abs(a - b) for a, b in zip(rat1_xlocations, rat2_xlocations))
-                distanceMoved = 1#Find distance moved
+                distanceMoved = np.sum(np.abs(np.diff(rat1_xlocations))) + np.sum(np.abs(np.diff(rat2_xlocations)))
                 avgDistanceMoved = distanceMoved / numFrames
                 print("\nAvg Distance moved: ", avgDistanceMoved)
                 
                 if (avgDistanceMoved < MIN_AVG_MOVED):
                     continue
+                
+                if (succ):
+                    tempSucc += 1
+                tempNumTrials += 1
+                tempXDiff += difference
+                tempNumFrames += numFrames
+                
+                if (succ):
+                    xDiffSucc.append(difference / numFrames)
+                else:
+                    xDiffFail.append(difference / numFrames)
+            
+            if (tempNumTrials > 5):
+                print("tempNumTrials: ", tempNumTrials)
+                
+                realSuccPercentage.append(succPercentage)
+                adjustedSuccPercentage.append(tempSucc / tempNumTrials)
+                xDiff.append(tempXDiff / tempNumFrames)
+                numTrials.append(tempNumTrials)
+            
+            # Convert to numpy arrays
+            xDiff = np.array(xDiff)
+            adjustedSuccPercentage = np.array(adjustedSuccPercentage) * 100
+            realSuccPercentage = np.array(realSuccPercentage) * 100
+        
+            # ----- Graph 1: Adjusted Success vs. Avg Distance Moved -----
+            plt.figure(figsize=(5, 4))
+            plt.scatter(xDiff, adjustedSuccPercentage, c='blue', alpha=0.7, label='Data')
+            slope, intercept, r_value, _, _ = linregress(xDiff, adjustedSuccPercentage)
+            trend = slope * xDiff + intercept
+            plt.plot(xDiff, trend, color='black', label=f'R² = {r_value**2:.2f}')
+            plt.xlabel('Avg Distance Between Rats (HB, px)')
+            plt.ylabel('Adjusted Success %')
+            plt.title('Adjusted Success vs. Avg Distance Moved')
+            plt.legend()
+            plt.grid(True)
+            plt.tight_layout()
+            plt.savefig('adjusted_success_vs_avg_distance.png', dpi=300)
+            plt.close()
+        
+            # ----- Graph 2: Real Success vs. Avg Distance Moved -----
+            plt.figure(figsize=(5, 4))
+            plt.scatter(xDiff, realSuccPercentage, c='green', alpha=0.7, label='Data')
+            slope, intercept, r_value, _, _ = linregress(xDiff, realSuccPercentage)
+            trend = slope * xDiff + intercept
+            plt.plot(xDiff, trend, color='black', label=f'R² = {r_value**2:.2f}')
+            plt.xlabel('Avg Distance Between Rats (HB, px)')
+            plt.ylabel('Real Success %')
+            plt.title('Real Success vs. Avg Distance Moved')
+            plt.legend()
+            plt.grid(True)
+            plt.tight_layout()
+            plt.savefig('real_success_vs_avg_distance.png', dpi=300)
+            plt.close()
+        
+            # ----- Graph 3: Bar Plot with Error Bars -----
+            avgSucc = np.mean(xDiffSucc) if xDiffSucc else np.nan
+            avgFail = np.mean(xDiffFail) if xDiffFail else np.nan
+            semSucc = np.std(xDiffSucc) / np.sqrt(len(xDiffSucc)) if len(xDiffSucc) > 1 else 0
+            semFail = np.std(xDiffFail) / np.sqrt(len(xDiffFail)) if len(xDiffFail) > 1 else 0
+        
+            plt.figure(figsize=(4, 4))
+            plt.bar(['Success', 'Failure'], [avgSucc, avgFail], 
+                    yerr=[semSucc, semFail], capsize=5, color=['purple', 'orange'])
+            plt.ylabel('Avg Distance Between Rats (HB, px)')
+            plt.title('X-Diff by Trial Outcome')
+            plt.tight_layout()
+            plt.savefig('xdiff_success_vs_failure.png', dpi=300)
+            plt.close()
                 
                 
 
@@ -8615,10 +8698,11 @@ initialNanList = [0.3]
 '''
 
 #print("Start MultiFileGraphs Regular")
-experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "new_gaze_", save=True)
+experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "", save=True)
+experiment.expandedSynchronizationStrategyGraphs()
 #experiment.onlyOneRatWaitedGraphs()
-experiment.percentGazingvsSuccess()
-experiment.moreGazeComparisons()
+#experiment.percentGazingvsSuccess()
+#experiment.moreGazeComparisons()
 #experiment.successVsAverageDistance()
 #experiment.stateTransitionModel()
 #experiment.classifyStrategies()
@@ -8626,7 +8710,7 @@ experiment.moreGazeComparisons()
 #experiment.cooperativeRegionStrategiesQuantification()
 #experiment.pcaAndGLMCoopSuccessPredictors()
 #experiment.trueCooperationTesting()
-experiment.gazingOverTrial()
+#experiment.gazingOverTrial()
 
 #experiment.testMotivation()
 
