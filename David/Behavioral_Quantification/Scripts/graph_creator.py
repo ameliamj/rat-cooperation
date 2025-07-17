@@ -8579,7 +8579,7 @@ class multiFileGraphs:
         plt.legend()
         plt.grid(True)
         plt.tight_layout()
-        plt.savefig('adjusted_success_vs_avg_x_distance.png', dpi=300)
+        plt.savefig(f'{self.prefix}adjusted_success_vs_avg_x_distance.png', dpi=300)
         plt.close()
     
         # ----- Graph 2: Real Success vs. Avg Distance Moved -----
@@ -8599,7 +8599,7 @@ class multiFileGraphs:
         plt.legend()
         plt.grid(True)
         plt.tight_layout()
-        plt.savefig('real_success_vs_avg_x_distance.png', dpi=300)
+        plt.savefig(f'{self.prefix}real_success_vs_avg_x_distance.png', dpi=300)
         plt.close()
     
         # ----- Graph 3: Bar Plot with Error Bars -----
@@ -8614,7 +8614,7 @@ class multiFileGraphs:
         plt.ylabel('Avg Distance Between Rats (HB, px)')
         plt.title('X-Diff by Trial Outcome')
         plt.tight_layout()
-        plt.savefig('xdiff_success_vs_failure.png', dpi=300)
+        plt.savefig(f'{self.prefix}xdiff_success_vs_failure.png', dpi=300)
         plt.close()
                 
     def plotGazeOverNormalizedTrial(self):
@@ -8830,8 +8830,8 @@ initialNanList = [0.15, 0.12]
 
 #arr = getFiltered()
 
-#arr = trainingCoopData()
-arr = trainingCoopDataThresh1()
+arr = trainingCoopData()
+#arr = trainingCoopDataThresh1()
 #arr = getUnfamiliar()
 #arr = getAllTrainingCoop()
 #arr = getFiberPhoto()
@@ -8897,18 +8897,17 @@ experiment.expandedSynchronizationStrategyGraphs()
 #experiment.trialStateModel()
 #experiment.waitingStrategy()
 
-'''
-arr = getUnfamiliar()
+    
+arr = trainingCoopDataThresh1()
 lev_files = arr[0]
 mag_files = arr[1]
 pos_files = arr[2]
 fpsList = arr[3]
 totFramesList = arr[4]
 initialNanList = arr[5]
-experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "Unfamiliar_", save=True)
-experiment.testMotivation()
-#experiment.gazingOverTrial()
-'''
+experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "trainingCoopThresh1_", save=True)
+experiment.expandedSynchronizationStrategyGraphs()
+
 
 # ---------------------------------------------------------------------------------------------------------
 
