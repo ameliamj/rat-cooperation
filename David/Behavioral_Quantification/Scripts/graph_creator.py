@@ -5716,7 +5716,7 @@ class multiFileGraphs:
                     dist_success.append(dist)
                     time_success.append(time)
                 elif success == 0:
-                    #continue
+                    continue
                     plt.scatter(dist, time, color='red', alpha=0.6,
                                 label='Failure' if not failure_label_added else "")
                     failure_label_added = True
@@ -5758,7 +5758,7 @@ class multiFileGraphs:
             plt.grid(True)
             plt.tight_layout()
             if self.save:
-                plt.savefig(f"{self.prefix}distance_vs_time_until_press_byTrial_notBothinLever.png")
+                plt.savefig(f"{self.prefix}distance_vs_time_until_press_byTrial_onlySuccesses_notBothinLever.png")
             plt.show()
             plt.close()
         else:
