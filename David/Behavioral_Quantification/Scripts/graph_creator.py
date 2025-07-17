@@ -8779,7 +8779,7 @@ def getFiltered():
 def trainingCoopData():
     fe = fileExtractor(only_TrainingCoop_filtered)
     fe.data = fe.deleteBadNaN()
-    fe.getFirstSessionPerMicePair()
+    #fe.getFirstSessionPerMicePair()
     fpsList, totFramesList = fe.returnFPSandTotFrames()
     initial_nan_list = fe.returnNaNPercentage()
     return [fe.getLevsDatapath(), fe.getMagsDatapath(), fe.getPosDatapath(), fpsList, totFramesList, initial_nan_list]
@@ -8830,8 +8830,8 @@ initialNanList = [0.15, 0.12]
 
 #arr = getFiltered()
 
-arr = trainingCoopData()
-#arr = trainingCoopDataThresh1()
+#arr = trainingCoopData()
+arr = trainingCoopDataThresh1()
 #arr = getUnfamiliar()
 #arr = getAllTrainingCoop()
 #arr = getFiberPhoto()
