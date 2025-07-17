@@ -735,7 +735,8 @@ class levLoader:
     
         press_data = self.data[self.data['RatID'] == rat_id]
         frames = (press_data['AbsTime'] * self.fps).astype(int)
-        success = press_data['coopSucc'].astype(int)
+        print("\nNum NaNs: ", press_data['coopSucc'].isna().sum())
+        success = press_data['coopSucc'].fillna(0).astype(int)
     
         return set(zip(frames, success))
     

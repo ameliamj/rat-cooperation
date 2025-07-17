@@ -8032,10 +8032,10 @@ class multiFileGraphs:
                     bin_start = frameStart + i * trial_length // 30
                     bin_end = frameStart + (i + 1) * trial_length // 30
                     
-                    print("i: ", i)
-                    print("frameStart: ", frameStart)
-                    print("bin_start: ", bin_start)
-                    print("bin_end: ", bin_end)
+                    #print("i: ", i)
+                    #print("frameStart: ", frameStart)
+                    #print("bin_start: ", bin_start)
+                    #print("bin_end: ", bin_end)
                     
                     numGazing0_bin = np.sum(isGazing0[bin_start:bin_end])
                     numGazing1_bin = np.sum(isGazing1[bin_start:bin_end])    
