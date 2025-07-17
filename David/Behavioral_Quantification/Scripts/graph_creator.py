@@ -8648,11 +8648,16 @@ class multiFileGraphs:
         xDiff = []
         realSuccPercentage = []
         adjustedSuccPercentage = []
+        adjustedSuccminusExpectedSucc = []
         succThreshold = []
         numTrials = []
         
         xDiffSucc = []
         xDiffFail = []
+        
+        TWO_RAT_START_PERCENTAGE = 0.83
+        ONE_RAT_START_PERCENTAGE = 0.21
+        ZERO_RAT_START_PERCENTAGE = 0.16
         
         # --------- Loop through experiments ---------
         for exp in self.experiments:
@@ -8672,6 +8677,7 @@ class multiFileGraphs:
             tempSucc = 0
             tempXDiff = 0
             tempNumFrames = 0
+            expectedSucc = 0
             
             print("Num Trials: ", num_trials)
             
@@ -8696,6 +8702,18 @@ class multiFileGraphs:
                 if (avgDistanceMoved < MIN_AVG_MOVED):
                     continue
                 
+                rat0_loc_start = pos.returnRatLocationTime(0, startFrame)
+                rat1_loc_start = pos.returnRatLocationTime(1, startFrame)
+                
+                lever_zones = ['lev_top', 'lev_bottom']
+                
+                if (rat0_loc_start in lever_zones and rat1_loc_start in lever_zones):
+                    expectedSucc += TWO_RAT_START_PERCENTAGE
+                elif (rat0_loc_start in lever_zones or rat1_loc_start in lever_zones):
+                    expectedSucc += ONE_RAT_START_PERCENTAGE
+                else:
+                    expectedSucc += ZERO_RAT_START_PERCENTAGE
+                
                 if (succ):
                     tempSucc += 1
                 tempNumTrials += 1
@@ -8715,12 +8733,34 @@ class multiFileGraphs:
                 xDiff.append(tempXDiff / tempNumFrames)
                 numTrials.append(tempNumTrials)
                 succThreshold.append(thresh)
+                adjustedSuccminusExpectedSucc.append(tempSucc / tempNumTrials - expectedSucc / tempNumTrials)
                 
             
         # Convert to numpy arrays
         xDiff = np.array(xDiff)
         adjustedSuccPercentage = np.array(adjustedSuccPercentage) * 100
         realSuccPercentage = np.array(realSuccPercentage) * 100
+        adjustedSuccminusExpectedSucc = np.array(adjustedSuccminusExpectedSucc) * 100
+    
+        # ----- Graph 1: Adjusted-Expected Success vs. Avg Distance Moved -----
+        plt.figure(figsize=(5, 4))
+        if (max(adjustedSuccminusExpectedSucc) > 1):
+            sc1 = plt.scatter(xDiff, adjustedSuccminusExpectedSucc, c=succThreshold, cmap='viridis', alpha=0.7)
+            plt.colorbar(sc1, label='Success Threshold')
+        else:
+            plt.scatter(xDiff, adjustedSuccminusExpectedSucc, c='blue', alpha=0.7, label='Data')
+        slope, intercept, r_value, _, _ = linregress(xDiff, adjustedSuccminusExpectedSucc)
+        trend = slope * xDiff + intercept
+        plt.plot(xDiff, trend, color='black', label=f'R² = {r_value**2:.2f}')
+        plt.xlabel('Avg X-Distance Between Rats')
+        plt.ylabel('Adjusted-Expected Success %')
+        plt.title('Adjusted-Expected Success vs. Avg X-Distance')
+        plt.legend()
+        plt.grid(True)
+        plt.tight_layout()
+        plt.savefig(f'{self.prefix}adjusted_minus_expected_success_vs_avg_x_distance.png', dpi=300)
+        plt.close()
+    
     
         # ----- Graph 1: Adjusted Success vs. Avg Distance Moved -----
         plt.figure(figsize=(5, 4))
@@ -9029,10 +9069,10 @@ initialNanList = [0.3]
 #print("Start MultiFileGraphs Regular")
 experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "", save=True)
 
-#experiment.expandedSynchronizationStrategyGraphs()
+experiment.expandedSynchronizationStrategyGraphs()
 #experiment.onlyOneRatWaitedGraphs()
 #experiment.percentGazingvsSuccess()
-experiment.moreGazeComparisons()
+#experiment.moreGazeComparisons()
 #experiment.successVsAverageDistance()
 #experiment.stateTransitionModel()
 #experiment.classifyStrategies()
