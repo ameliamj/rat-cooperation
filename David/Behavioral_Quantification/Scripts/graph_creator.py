@@ -8477,6 +8477,17 @@ class multiFileGraphs:
         print("Done")
                 
     def expandedSynchronizationStrategyGraphs(self):
+        '''
+        Graph #1: avgDistanceMoved
+        #Graph #2: 
+        '''
+        
+        MIN_AVG_MOVED = 10
+        
+        
+        distanceMoved = []
+        
+        
         for exp in self.experiments:
             lev = exp.lev
             pos = exp.pos
@@ -8485,10 +8496,29 @@ class multiFileGraphs:
             start_times = lev.returnTimeStartTrials()
             end_times = lev.returnTimeEndTrials()
             num_trials = lev.returnNumTotalTrialswithLeverPress()
+            succPercentage = lev.returnSuccessPercentage()
             
             for trial_idx in range(num_trials):
-                if (np.isnan(start_times[trial_idx]) or np.isnan()):
+                if (np.isnan(start_times[trial_idx]) or np.isnan(end_times[trial_idx])):
                     continue
+                
+                startFrame = int(start_times[trial_idx] * fps)
+                endFrame = int(end_times[trial_idx] * fps)
+                
+                numFrames = endFrame - startFrame
+                
+                rat1_xlocations = pos.data[0, 0, pos.HB_INDEX, startFrame:endFrame]
+                rat2_xlocations = pos.data[1, 0, pos.HB_INDEX, startFrame:endFrame]
+                
+                difference = sum(abs(a - b) for a, b in zip(rat1_xlocations, rat2_xlocations))
+                distanceMoved = 1#Find distance moved
+                avgDistanceMoved = distanceMoved / numFrames
+                print("\nAvg Distance moved: ", avgDistanceMoved)
+                
+                if (avgDistanceMoved < MIN_AVG_MOVED):
+                    continue
+                
+                
 
 
 #Testing Multi File Graphs

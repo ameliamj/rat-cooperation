@@ -296,6 +296,8 @@ class posLoader:
         if (len(result) != len(isInteraction)):
             print("LENGTHS NOT EQUAL")
         
+        result = np.array(result, dtype=bool)
+        isInteraction = np.array(isInteraction, dtype=bool)
         filteredGaze = result & (~isInteraction)
         
         isGazing = np.where(result)[0] if test else filteredGaze
