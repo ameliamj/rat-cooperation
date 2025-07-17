@@ -7975,8 +7975,8 @@ class multiFileGraphs:
             
             trial_starts = lev.returnTimeStartTrials()  # List of trial start times
             trial_ends = lev.returnTimeEndTrials() # List of Trial End Times
-            succ_trials = lev.returnSuccessTrials()
-            succ_trials = self._filterToLeverPressTrials(succ_trials, lev) # List of whether a trial is successful (1) or unsuccessful (0)
+            og_succ_trials = lev.returnSuccessTrials()
+            succ_trials = self._filterToLeverPressTrials(og_succ_trials, lev) # List of whether a trial is successful (1) or unsuccessful (0)
             totalFrames = pos.totalFrames # Total Frames in Session
             isGazing0 = pos.returnIsGazing(0) # List of whether rat 0 is gazing (1) or not gazing (0) for each frame
             isGazing1 = pos.returnIsGazing(1) # List of whether rat 1 is gazing (1) or not gazing (0) for each frame
@@ -8129,9 +8129,10 @@ class multiFileGraphs:
                     totalCategoryCountsBySuccess['post_press'][key] += 1
 
             
-            for pressFrame, succ in magEntryFrames0:
+            for pressFrame, trial in magEntryFrames0:
                 f_before = int(pressFrame - SECONDS_BEFORE_AND_AFTER * fps)
                 f_after = int(pressFrame + SECONDS_BEFORE_AND_AFTER * fps)
+                succ = og_succ_trials[trial-1]==1
                 
                 if (f_before < 0 or f_after > totalFrames):
                     continue
@@ -8163,9 +8164,10 @@ class multiFileGraphs:
                     totalCategoryCountsBySuccess['post_mag'][key] += 1
 
             
-            for entryFrame, succ in magEntryFrames1:
+            for entryFrame, trial in magEntryFrames1:
                 f_before = int(pressFrame - SECONDS_BEFORE_AND_AFTER * fps)
                 f_after = int(pressFrame + SECONDS_BEFORE_AND_AFTER * fps)
+                succ = og_succ_trials[trial-1]==1
                 
                 if (f_before < 0 or f_after > totalFrames):
                     continue
@@ -8330,6 +8332,8 @@ class multiFileGraphs:
         categories = ['pre_press', 'post_press', 'pre_mag', 'post_mag', 'all']
         succ_percentages = []
         fail_percentages = []
+        succ_totals = []
+        fail_totals = []
         
         for cat in categories:
             succ_total = totalCategoryCountsBySuccess[cat]['succ']
@@ -8343,6 +8347,8 @@ class multiFileGraphs:
         
             succ_percentages.append(succ_percent)
             fail_percentages.append(fail_percent)
+            succ_totals.append(succ_total)
+            fail_totals.append(fail_total)
         
         # Plotting
         x = range(len(categories))
@@ -8351,6 +8357,13 @@ class multiFileGraphs:
         plt.figure(figsize=(10, 6))
         plt.bar([i - width/2 for i in x], succ_percentages, width, label='Success', color='green', edgecolor='black')
         plt.bar([i + width/2 for i in x], fail_percentages, width, label='Failure', color='red', edgecolor='black')
+        
+        # Add frame count labels above each bar
+        for i in range(len(categories)):
+            # Success bars
+            plt.text(i - width/2, succ_percentages[i] + 1, f'n={succ_totals[i]}', ha='center', va='bottom', fontsize=9)
+            # Failure bars
+            plt.text(i + width/2, fail_percentages[i] + 1, f'n={fail_totals[i]}', ha='center', va='bottom', fontsize=9)
         
         plt.xticks(x, ['Pre-Press', 'Post-Press', 'Pre-Mag', 'Post-Mag', 'Whole Trial'])
         plt.ylabel('% Gazing Frames')
@@ -8957,10 +8970,10 @@ initialNanList = [0.15, 0.12]
 '''
 
 
-#arr = getFiltered()
+arr = getFiltered()
 
 #arr = trainingCoopData()
-arr = trainingCoopDataThresh1()
+#arr = trainingCoopDataThresh1()
 #arr = getUnfamiliar()
 #arr = getAllTrainingCoop()
 #arr = getFiberPhoto()
@@ -8997,12 +9010,12 @@ initialNanList = [0.3]
 '''
 
 #print("Start MultiFileGraphs Regular")
-experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "trainingCoop_", save=True)
+experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "", save=True)
 
 #experiment.expandedSynchronizationStrategyGraphs()
-experiment.onlyOneRatWaitedGraphs()
+#experiment.onlyOneRatWaitedGraphs()
 #experiment.percentGazingvsSuccess()
-#experiment.moreGazeComparisons()
+experiment.moreGazeComparisons()
 #experiment.successVsAverageDistance()
 #experiment.stateTransitionModel()
 #experiment.classifyStrategies()

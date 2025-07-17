@@ -271,9 +271,9 @@ class magLoader:
             return set()
         reward_data = self.data[(self.data['RatID'] == rat_id)]
         frames = (reward_data['AbsTime'] * self.fps).astype(int)
-        success = reward_data['coopSucc'].astype(int)
+        trialNums = reward_data['TrialNum'].astype(int)
     
-        return set(zip(frames, success))
+        return set(zip(frames, trialNums))
     
 
 
