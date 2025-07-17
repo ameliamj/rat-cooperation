@@ -1891,8 +1891,8 @@ class MicePairGraphs:
                 fps = exp.fps
     
                 totFrames = pos.returnNumFrames()
-                numTrials = exp.returnNumTotalTrialswithLeverPress()
-                startTimes = exp.returnTimeStartTrials()
+                numTrials = lev.returnNumTotalTrialswithLeverPress()
+                startTimes = lev.returnTimeStartTrials()
                                 
                 if (numTrials != len(startTimes)): 
                     print("MISMATCH STARTTIMES AND NUM TRIALS")
@@ -5818,7 +5818,6 @@ class multiFileGraphs:
         else:
             print("No valid trials to generate bar chart.")
                     
-    
     def testMotivation(self):
         def filterToLeverPressTrials(original_list, lev):
             """
@@ -8335,6 +8334,7 @@ class multiFileGraphs:
                     countInteracting += 1
                     
                 if (frame_idx not in listFrames):
+                    print("hi")
                     gazingCategoryCounts['rest'] += (isGazing0[f] or isGazing1[f])
                     totalCategoryCounts['rest'] += 1
                     
@@ -8475,17 +8475,21 @@ class multiFileGraphs:
         plt.bar([i - width/2 for i in x], succ_percentages, width, label='Success', color='green', edgecolor='black')
         plt.bar([i + width/2 for i in x], fail_percentages, width, label='Failure', color='red', edgecolor='black')
         
+        maxPercent = max(succ_percentages, fail_percentages)
+        increase = maxPercent / 15
+        
         # Add frame count labels above each bar
         for i in range(len(categories)):
             # Success bars
-            plt.text(i - width/2, succ_percentages[i] + 1, f'n={succ_totals[i]}', ha='center', va='bottom', fontsize=9)
+            plt.text(i - width/2, succ_percentages[i] + increase, f'n={succ_totals[i]}', ha='center', va='bottom', fontsize=9)
             # Failure bars
-            plt.text(i + width/2, fail_percentages[i] + 1, f'n={fail_totals[i]}', ha='center', va='bottom', fontsize=9)
+            plt.text(i + width/2, fail_percentages[i] + increase, f'n={fail_totals[i]}', ha='center', va='bottom', fontsize=9)
         
         plt.xticks(x, ['Pre-Press', 'Post-Press', 'Pre-Mag', 'Post-Mag', 'Whole Trial'])
         plt.ylabel('% Gazing Frames')
         plt.title('Gazing Around Trial Events: Success vs. Failure')
         plt.legend()
+        plt.ylim(0, 1.1 * maxPercent)
         plt.tight_layout()
         if self.save: plt.savefig(f"{self.prefix}Gaze_Per_Event_SuccvsNonSucc.png")
         plt.show()
