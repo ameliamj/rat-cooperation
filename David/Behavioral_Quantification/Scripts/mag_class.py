@@ -272,6 +272,10 @@ class magLoader:
         reward_data = self.data[(self.data['RatID'] == rat_id)]
         frames = (reward_data['AbsTime'] * self.fps).astype(int)
         trialNums = reward_data['TrialNum'].astype(int)
+        print("mag_file:", self.filename)
+        print("reward_data: ", reward_data)
+        print("frames: ", frames)
+        print("trialNums: ", trialNums)
     
         return set(zip(frames, trialNums))
     

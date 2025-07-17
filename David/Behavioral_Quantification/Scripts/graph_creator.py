@@ -1924,11 +1924,9 @@ class MicePairGraphs:
 
                 
                 # Initialize all dicts
-                for d in [(waiting0_counts),
-                          (waiting1_counts),
-                          (waiting2_counts)]:
-                    if exp_idx not in d[0]:
-                        d[0][exp_idx] = 0
+                for d in [waiting0_counts, waiting1_counts, waiting2_counts]:
+                    if exp_idx not in d:
+                        d[exp_idx] = 0
                 
                 if exp_idx not in trial_counts:
                     trial_counts[exp_idx] = 0
@@ -8277,7 +8275,7 @@ class multiFileGraphs:
                 f_before = int(pressFrame - SECONDS_BEFORE_AND_AFTER * fps)
                 f_after = int(pressFrame + SECONDS_BEFORE_AND_AFTER * fps)
                 
-                if (trial < len(og_succ_trials)):
+                if (trial-1 < len(og_succ_trials)):
                     succ = og_succ_trials[trial-1]==1
                 else:
                     succ = False
