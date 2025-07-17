@@ -1876,16 +1876,15 @@ class MicePairGraphs:
         print("\nStarting Line Graph Interactions")
         
         waiting0_counts = {}
-        trial0_counts = {}
         session0_counts = {}
     
         waiting1_counts = {}
-        trial1_counts = {}
         session1_counts = {}
     
         waiting2_counts = {}
-        trial2_counts = {}
         session2_counts = {}
+        
+        trial_counts = {}
     
         for group_idx, group in enumerate(self.experimentGroups):
             if (len(group) < 5):
@@ -1893,24 +1892,48 @@ class MicePairGraphs:
             for exp_idx, exp in enumerate(group):
                 lev = exp.lev
                 pos = exp.pos
+                fps = exp.fps
     
                 totFrames = pos.returnNumFrames()
-                numWaiting1Frames
+                numTrials = exp.returnNumTotalTrialswithLeverPress()
+                startTimes = exp.returnTimeStartTrials()
+                                
+                if (numTrials != len(startTimes)): 
+                    print("MISMATCH STARTTIMES AND NUM TRIALS")
+                    continue
+                
+                tempNumTrials = 0
+                tempWait0 = 0
+                tempWait1 = 0
+                tempWait2 = 0
+                
+                for i in range(numTrials):
+                    if (np.isnan(startTimes[i])):
+                        continue
+                    
+                    tempNumTrials += 1
+                    frameStart = startTimes[i] * fps
+                    
+                    
+                    
+                    
                 
                 # Initialize all dicts
-                for d in [(waiting0_counts, trial0_counts, session0_counts),
-                          (waiting1_counts, trial1_counts, session1_counts),
-                          (waiting2_counts, trial2_counts, session2_counts)]:
+                for d in [(waiting0_counts, session0_counts),
+                          (waiting1_counts, session1_counts),
+                          (waiting2_counts, session2_counts)]:
                     if exp_idx not in d[0]:
                         d[0][exp_idx] = 0
                         d[1][exp_idx] = 0
-                        d[2][exp_idx] = 0
-    
+                
+                if exp_idx not in trial_counts:
+                    trial_counts[exp_idx] = 0
+                
         # === Plot call ===
         plt.figure(figsize=(10, 6))
-        self.plot_by_exp_idx(waiting0_counts, trial0_counts, session0_counts, label="0 Waiting", color="blue")
-        self.plot_by_exp_idx(waiting1_counts, trial1_counts, session1_counts, label="1 Waiting", color="purple")
-        self.plot_by_exp_idx(waiting2_counts, trial2_counts, session2_counts, label="2 Waiting", color="green")
+        self.plot_by_exp_idx(waiting0_counts, trial_counts, session0_counts, label="0 Waiting", color="blue")
+        self.plot_by_exp_idx(waiting1_counts, trial_counts, session1_counts, label="1 Waiting", color="purple")
+        self.plot_by_exp_idx(waiting2_counts, trial_counts, session2_counts, label="2 Waiting", color="green")
     
         plt.xlabel('Experiment Index', fontsize=13)
         plt.ylabel('Percent Interacting', fontsize=13)
@@ -8066,9 +8089,17 @@ class multiFileGraphs:
                 numGazing0 = np.sum(isGazing0[frameStart:frameEnd])
                 numGazing1 = np.sum(isGazing1[frameStart:frameEnd])    
                 
+
                 slice0 = isGazing0[frameStart:frameEnd]
                 slice1 = isGazing1[frameStart:frameEnd]
                 numGazingEither = np.sum(slice0 | slice1)
+                
+                if (trial_idx == 1):
+                    print("slice0: ", slice0)
+                    print("slice1: ", slice1)
+                    print("slice0 | slice1: ", slice0 | slice1)
+                    print("numGazingEither: ", numGazingEither)
+                    print("numFrames: ", frameEnd-frameStart)
                 
                 if (succ):
                     totalCategoryCountsBySuccess['all']['succ'] += frameEnd - frameStart
@@ -8187,7 +8218,7 @@ class multiFileGraphs:
                 f_before = int(pressFrame - SECONDS_BEFORE_AND_AFTER * fps)
                 f_after = int(pressFrame + SECONDS_BEFORE_AND_AFTER * fps)
                 
-                if (trial < len(og_succ_trials)):
+                if (trial-1 < len(og_succ_trials)):
                     succ = og_succ_trials[trial-1]==1
                 else:
                     succ = False
@@ -9124,10 +9155,10 @@ initialNanList = [0.3]
 #print("Start MultiFileGraphs Regular")
 experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "", save=True)
 
-experiment.expandedSynchronizationStrategyGraphs()
+#experiment.expandedSynchronizationStrategyGraphs()
 #experiment.onlyOneRatWaitedGraphs()
 #experiment.percentGazingvsSuccess()
-#experiment.moreGazeComparisons()
+experiment.moreGazeComparisons()
 #experiment.successVsAverageDistance()
 #experiment.stateTransitionModel()
 #experiment.classifyStrategies()
