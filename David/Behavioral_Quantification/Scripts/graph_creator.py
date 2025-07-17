@@ -7957,14 +7957,14 @@ class multiFileGraphs:
             'post_press': {'succ': 0, 'fail': 0},
             'pre_mag': {'succ': 0, 'fail': 0},
             'post_mag': {'succ': 0, 'fail': 0},
-            'rest': {'succ': 0, 'fail': 0},
+            'all': {'succ': 0, 'fail': 0},
         }
         totalCategoryCountsBySuccess = {
             'pre_press': {'succ': 0, 'fail': 0},
             'post_press': {'succ': 0, 'fail': 0},
             'pre_mag': {'succ': 0, 'fail': 0},
             'post_mag': {'succ': 0, 'fail': 0},
-            'rest': {'succ': 0, 'fail': 0},
+            'all': {'succ': 0, 'fail': 0},
         }
         
         for exp_idx, exp in enumerate(self.experiments):
@@ -8011,6 +8011,17 @@ class multiFileGraphs:
                 #Calculations: 
                 numGazing0 = np.sum(isGazing0[frameStart:frameEnd])
                 numGazing1 = np.sum(isGazing1[frameStart:frameEnd])    
+                
+                slice0 = isGazing0[frameStart:frameEnd]
+                slice1 = isGazing1[frameStart:frameEnd]
+                numGazingEither = np.sum(slice0 | slice1)
+                
+                if (succ):
+                    totalCategoryCountsBySuccess['all']['succ'] += frameEnd - frameStart
+                    gazingCategoryCountsBySuccess['all']['succ'] += numGazingEither
+                else:
+                    totalCategoryCountsBySuccess['all']['fail'] += frameEnd - frameStart
+                    gazingCategoryCountsBySuccess['all']['fail'] += numGazingEither
                 
                 # 2 — Gaze by percent of trial
                 trial_length = frameEnd - frameStart
@@ -8313,6 +8324,43 @@ class multiFileGraphs:
             "InteractionGazePie.png",
             "Frames Where Interaction is Also Gaze"
         )
+        
+        #Graph #7: 
+        # Compute percentages
+        categories = ['pre_press', 'post_press', 'pre_mag', 'post_mag', 'all']
+        succ_percentages = []
+        fail_percentages = []
+        
+        for cat in categories:
+            succ_total = totalCategoryCountsBySuccess[cat]['succ']
+            fail_total = totalCategoryCountsBySuccess[cat]['fail']
+        
+            succ_gaze = gazingCategoryCountsBySuccess[cat]['succ']
+            fail_gaze = gazingCategoryCountsBySuccess[cat]['fail']
+        
+            succ_percent = 100 * succ_gaze / succ_total if succ_total > 0 else 0
+            fail_percent = 100 * fail_gaze / fail_total if fail_total > 0 else 0
+        
+            succ_percentages.append(succ_percent)
+            fail_percentages.append(fail_percent)
+        
+        # Plotting
+        x = range(len(categories))
+        width = 0.35
+        
+        plt.figure(figsize=(10, 6))
+        plt.bar([i - width/2 for i in x], succ_percentages, width, label='Success', color='green', edgecolor='black')
+        plt.bar([i + width/2 for i in x], fail_percentages, width, label='Failure', color='red', edgecolor='black')
+        
+        plt.xticks(x, ['Pre-Press', 'Post-Press', 'Pre-Mag', 'Post-Mag', 'Whole Trial'])
+        plt.ylabel('% Gazing Frames')
+        plt.title('Gazing Around Trial Events: Success vs. Failure')
+        plt.legend()
+        plt.tight_layout()
+        if self.save: plt.savefig(f"{self.prefix}Gaze_Per_Event_SuccvsNonSucc.png")
+        plt.show()
+        plt.close()
+        
         
     def percentGazingvsSuccess(self):
         
@@ -8949,12 +8997,12 @@ initialNanList = [0.3]
 '''
 
 #print("Start MultiFileGraphs Regular")
-experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "trainingCoop_", save=True)
+experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "", save=True)
 
-experiment.expandedSynchronizationStrategyGraphs()
+#experiment.expandedSynchronizationStrategyGraphs()
 #experiment.onlyOneRatWaitedGraphs()
 #experiment.percentGazingvsSuccess()
-#experiment.moreGazeComparisons()
+experiment.moreGazeComparisons()
 #experiment.successVsAverageDistance()
 #experiment.stateTransitionModel()
 #experiment.classifyStrategies()
