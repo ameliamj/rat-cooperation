@@ -1130,7 +1130,7 @@ categoryExperiments.printSummaryStats()
 
 
 #Transparent vs. Translucent vs. Opaque
-'''
+
 print("Running Transparency")
 dataTransparent = getOnlyTransparent() #Transparent
 dataTranslucent = getOnlyTranslucent() #Translucent
@@ -1141,7 +1141,7 @@ magFiles = [dataTransparent[1], dataTranslucent[1], dataOpaque[1]]
 posFiles = [dataTransparent[2], dataTranslucent[2], dataOpaque[2]]
 categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["Transparent", "Translucent", "Opaque"])
 #categoryExperiments.compareSuccesfulTrials()
-'''
+
 
 '''
 print("0")
@@ -9139,7 +9139,7 @@ totFramesList = [15000, 15000]
 initialNanList = [0.15, 0.12]
 '''
 
-
+'''
 arr = getFiltered()
 
 #arr = trainingCoopData()
@@ -9154,7 +9154,7 @@ fpsList = arr[3]
 totFramesList = arr[4]
 initialNanList = arr[5]
 #fiberPhoto = arr[6]
-
+'''
 
 
 '''
@@ -9180,12 +9180,12 @@ initialNanList = [0.3]
 '''
 
 #print("Start MultiFileGraphs Regular")
-experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "", save=True)
+#experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "", save=True)
 
 #experiment.expandedSynchronizationStrategyGraphs()
 #experiment.onlyOneRatWaitedGraphs()
 #experiment.percentGazingvsSuccess()
-experiment.moreGazeComparisons()
+#experiment.moreGazeComparisons()
 #experiment.successVsAverageDistance()
 #experiment.stateTransitionModel()
 #experiment.classifyStrategies()
