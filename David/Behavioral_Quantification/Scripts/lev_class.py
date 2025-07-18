@@ -7,6 +7,8 @@ Created on Wed May 28 11:23:52 2025
 """
 import pandas as pd
 import numpy as np
+import math
+
 
 class levLoader: 
     #Class to read, store, and access a csv file with data from each lever press for a single coop experimental session
@@ -799,6 +801,21 @@ class levLoader:
                     times.append(None)
     
         return times
+    
+    def numSuccFirstQuarter(self):
+        numTrials = math.ceil(self.returnNumTotalTrials() / 4)
+        succTrials = self.returnSuccessTrials()
+        
+        countSucc = 0
+        for i in range(1, numTrials):
+            if succTrials[i] == 1:
+                countSucc += 1
+                
+        return countSucc
+        
+    def numTotalFirstQuarter(self):
+        numTrials = math.ceil(self.returnNumTotalTrials() / 4) - 1
+        return numTrials
         
         
 #Testing
