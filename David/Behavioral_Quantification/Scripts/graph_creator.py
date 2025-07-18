@@ -261,7 +261,7 @@ class multiFileGraphsCategories:
             for mag, lev, pos in zip(magFiles[c], levFiles[c], posFiles[c]):
                 exp = singleExperiment(mag, lev, pos)
                 
-                mag_missing = [col for col in exp.mag.categories if col not in exp.mag.data.columns]
+                '''mag_missing = [col for col in exp.mag.categories if col not in exp.mag.data.columns]
                 lev_missing = [col for col in exp.lev.categories if col not in exp.lev.data.columns]
                 
                 if mag_missing or lev_missing:
@@ -272,7 +272,7 @@ class multiFileGraphsCategories:
                     if lev_missing:
                         print(f"  LevFile missing: {lev_missing}")
                         print(f"  Lev File: {lev}")
-                    continue
+                    continue'''
                 
                 file_group.append(exp)
             self.allFileGroupExperiments.append(file_group)
