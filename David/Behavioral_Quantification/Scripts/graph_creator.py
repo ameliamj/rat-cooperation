@@ -475,7 +475,7 @@ class multiFileGraphsCategories:
                 
                 num_succ_old = loader.returnNumSuccessfulTrials()
                 num_total_old = loader.returnNumTotalTrials()
-                print(f"/nLev is: {exp.lev_file}")
+                print("/nLev is: {exp.lev_file}")
                 print(f"num_succ_quarter: {num_succ}, num_succ: {num_succ_old}")
                 print(f"num_total_quarter: {num_total}, num_total: {num_total_old}")
                 
