@@ -278,7 +278,7 @@ class multiFileGraphsCategories:
             self.allFileGroupExperiments.append(file_group)
         
         self.prefix = "filtered_"
-        self.endSaveName = ""
+        self.endSaveName = "_quarterData"
         for cat in categoryNames:    
             self.endSaveName += f"_{cat}"
         
@@ -1140,7 +1140,8 @@ levFiles = [dataTransparent[0], dataTranslucent[0], dataOpaque[0]]
 magFiles = [dataTransparent[1], dataTranslucent[1], dataOpaque[1]]
 posFiles = [dataTransparent[2], dataTranslucent[2], dataOpaque[2]]
 categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["Transparent", "Translucent", "Opaque"])
-#categoryExperiments.compareSuccesfulTrials()
+categoryExperiments.compareSuccesfulTrials()
+print("DONE WITH TRANSPARENCY")
 
 
 '''
