@@ -818,7 +818,7 @@ class levLoader:
         return numTrials
         
     def numSuccFirst31(self): 
-        numTrials = 32
+        numTrials = min(self.returnNumTotalTrials() + 1, 32)
         succTrials = self.returnSuccessTrials()
         
         countSucc = 0
@@ -829,7 +829,7 @@ class levLoader:
         return countSucc
     
     def numTotalFirst31(self): 
-        return 31
+        return min(self.returnNumTotalTrials(), 31)
         
 #Testing
 #
