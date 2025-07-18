@@ -469,6 +469,12 @@ class multiFileGraphsCategories:
                 #num_total = loader.returnNumTotalTrials()
                 num_succ = loader.numSuccFirstQuarter()
                 num_total = loader.numTotalFirstQuarter()
+                
+                num_succ_old = loader.returnNumSuccessfulTrials()
+                num_total_old = loader.returnNumTotalTrials()
+                print(f"num_succ_quarter: {num_succ}, num_succ: {num_succ_old}")
+                print(f"num_total_quarter: {num_total}, num_total: {num_total_old}")
+                
                 animal_id = loader.returnAnimalID()
                 thresh = loader.returnSuccThreshold()
                 totalSucc += num_succ
