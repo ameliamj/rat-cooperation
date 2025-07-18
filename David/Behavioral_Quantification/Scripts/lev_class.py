@@ -817,6 +817,19 @@ class levLoader:
         numTrials = math.ceil(self.returnNumTotalTrials() / 4) - 1
         return numTrials
         
+    def numSuccFirst31(self): 
+        numTrials = 32
+        succTrials = self.returnSuccessTrials()
+        
+        countSucc = 0
+        for i in range(1, numTrials):
+            if succTrials[i] == 1:
+                countSucc += 1
+                
+        return countSucc
+    
+    def numTotalFirst31(self): 
+        return 31
         
 #Testing
 #

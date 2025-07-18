@@ -467,8 +467,11 @@ class multiFileGraphsCategories:
                 # Add to totals for computing the average success rate across the category
                 #num_succ = loader.returnNumSuccessfulTrials()
                 #num_total = loader.returnNumTotalTrials()
-                num_succ = loader.numSuccFirstQuarter()
-                num_total = loader.numTotalFirstQuarter()
+                #num_succ = loader.numSuccFirstQuarter()
+                #num_total = loader.numTotalFirstQuarter()
+                
+                num_succ = loader.numSuccFirst31()
+                num_total = loader.numTotalFirst31()
                 
                 num_succ_old = loader.returnNumSuccessfulTrials()
                 num_total_old = loader.returnNumTotalTrials()
