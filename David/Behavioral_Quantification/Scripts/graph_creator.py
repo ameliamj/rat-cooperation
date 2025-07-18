@@ -1132,9 +1132,9 @@ categoryExperiments.printSummaryStats()
 #Transparent vs. Translucent vs. Opaque
 
 print("Running Transparency")
-dataTransparent = getOnlyTransparent() #Transparent
-dataTranslucent = getOnlyTranslucent() #Translucent
-dataOpaque = getOnlyOpaque() #Opaque
+dataTransparent = getAllTransparent() #Transparent
+dataTranslucent = getAllTranslucent() #Translucent
+dataOpaque = getAllOpaque() #Opaque
 
 levFiles = [dataTransparent[0], dataTranslucent[0], dataOpaque[0]]
 magFiles = [dataTransparent[1], dataTranslucent[1], dataOpaque[1]]
