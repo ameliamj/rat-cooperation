@@ -353,6 +353,7 @@ class allDataCSVsCreator:
             # Get trial data
             trial_starts = lev.returnTimeStartTrials()
             trial_ends = lev.returnTimeEndTrials()
+            successes_unfiltered = lev.returnSuccessTrials()
             successes = lev.returnSuccessTrialsFiltered()
             first_presses = lev.returnTimeFirstPress()  
             first_mag_entries = mag.returnTimeFirstMagEntry()  # Assumed method for first mag entry time
@@ -363,12 +364,14 @@ class allDataCSVsCreator:
             successes_in_row = 0
             success_counts = []
     
-            for succ in successes:
-                if succ:
+            for succ in successes_unfiltered:
+                if succ == 1:
                     successes_in_row += 1
                 else:
                     successes_in_row = 0
-                success_counts.append(successes_in_row)
+                    
+                if (succ != -1):
+                    success_counts.append(successes_in_row)
     
             # Process each trial
             for trial_idx, start_time in enumerate(trial_starts):
@@ -380,13 +383,39 @@ class allDataCSVsCreator:
                 total_frames = end_frame - start_frame if end_frame > start_frame else 0
     
                 # Trial metrics
-                trial_number = trial_idx
+                trial_number = trial_idx + trialCounter
+                if (trial_number in list_trials_no_press):
+                    print("Trial Number No Press: ", trial_number)
+                    trial_data.append({
+                        'session_id': session_id,
+                        'rat_pair': rat_pair,
+                        'familiarity': familiarity,
+                        'barrier_transparency': barrier_transparency,
+                        'trial_number': trial_number,
+                        'time_begin': None,
+                        'time_first_press': None,
+                        'time_first_mag_entry': None,
+                        'successes_in_row': None,
+                        'success': 0,
+                        'total_frames': total_frames,
+                        'lever_press_exists': False,
+                        'percent_gazing': None,
+                        'percent_interacting': None,
+                        'time_wait_before_cue': None,
+                        'time_wait_to_press_one': None,
+                        'dist_furthest_from_lever': None,
+                        'avg_horizontal_distance': None,
+                        'avg_distance': None
+                    })
+                    trial_number += 1
+                    trialCounter += 1
+                
                 time_begin = start_time
                 time_first_press = first_presses[trial_idx] if trial_idx < len(first_presses) and pd.notna(first_presses[trial_idx]) else None
                 time_first_mag_entry = first_mag_entries[trial_idx] if trial_idx < len(first_mag_entries) and pd.notna(first_mag_entries[trial_idx]) else None
                 successes_in_row = success_counts[trial_idx]
                 success = successes[trial_idx]
-                lever_press_exists = pd.notna(time_first_press)
+                lever_press_exists = True
     
                 # Gazing percentage
                 gaze_frames_rat0 = pos.returnTotalFramesGazing(0, start_frame=start_frame, end_frame=end_frame)
@@ -416,6 +445,11 @@ class allDataCSVsCreator:
                         rat1_active = False
                     t -= 1
                 time_wait_before_cue = min(rat0_waiting, rat1_waiting) / fps if fps > 0 else 0
+                
+                if (max(rat0_waiting, rat1_waiting) > 0):
+                    distance_vs_wait_valid = True
+                else:
+                    distance_vs_wait_valid = False
     
                 # Time waited to press lever if one rat at lever initially
                 time_wait_to_press_one = None
@@ -451,11 +485,12 @@ class allDataCSVsCreator:
                     'time_first_mag_entry': time_first_mag_entry,
                     'successes_in_row': successes_in_row,
                     'success': success,
-                    'total_frames': total_frames,
+                    'trial_frames': total_frames,
                     'lever_press_exists': lever_press_exists,
                     'percent_gazing': percent_gazing,
                     'percent_interacting': percent_interacting,
-                    'time_wait_before_cue': time_wait_before_cue,
+                    'wait_before_cue_both': time_wait_before_cue,
+                    'distance_vs_wait_valid': distance_vs_wait_valid,
                     'time_wait_to_press_one': time_wait_to_press_one,
                     'dist_furthest_from_lever': dist_furthest_from_lever,
                     'avg_horizontal_distance': avg_horizontal_distance,
@@ -472,4 +507,5 @@ class allDataCSVsCreator:
 metadata_path = "/gpfs/radev/project/saxena/drb83/rat-cooperation/David/Behavioral_Quantification/Sorted_Data_Files/Filtered.csv"
 
 creator = allDataCSVsCreator(metadata_path)
-creator.createSessionCSV()
+#creator.createSessionCSV()
+creator.createTrialCSV()
