@@ -86,7 +86,7 @@ class allDataCSVsCreator:
         
         return tempExps
     
-    def returnMagStartAbsTimes(lev, mag):
+    def returnMagStartAbsTimes(self, lev, mag):
         """
         For each trial number present in lev.data (i.e., trials with lever presses),
         find the first magazine entry in mag.data with the same TrialNum.
