@@ -217,7 +217,19 @@ class levLoader:
                     arr.append(0)
         
         return arr
+    
+    def returnListTrialsNoPress(self):
+        n = self.returnNumTotalTrials()
+        arr = []
         
+        for i in range(n):
+            trial_df = self.data[self.data['TrialNum'] == i + 1]
+            
+            if trial_df.empty:
+                print("Skipped Trial Num: ", i + 1)
+                arr.append(i + 1)
+        
+        return arr
         
     def returnTimeStartTrials(self):  
         """

@@ -330,35 +330,146 @@ class allDataCSVsCreator:
         df.to_csv('session_metrics.csv', index=False)
         
     def createTrialCSV(self):
-        '''
-        Metrics: 
-            Session ID
-            Rat Pair 
-            Familiarity
-            Barrier Transparency 
-            Trial #
-            Time Begin
-            Time First Press (NaN if none)
-            Time first Mag Entry (NaN if none)
-            Number of Successes in a Row
-            Success vs. Fail
-            Total Frames in Trial
-            Whether a Lever Press Exists for this Trial 
-            Percent Gazing
-            Percent Interacting
-            Time Wait Before Cue
-            Time waited to press the Lever if one of the rats is at lever initially (if not NaN)
-            Distance of Furthest Rat from Lever
-            Average Horizontal Distance
-            Average Distance
-        '''
-        a = 1
+        """
+        Creates a CSV file containing per-trial metrics for all experiments.
+        Metrics include session info, trial timing, success metrics, gaze, interaction, and spatial metrics.
+        Saves the output to 'trial_metrics.csv'.
+        """
+        trial_data = []
+    
+        for idx, exp in enumerate(self.experiments):
+            session_id = f"exp_{idx:03d}"
+            pos = exp.pos
+            mag = exp.mag
+            lev = exp.lev
+            fps = exp.fps
+            total_frames_session = pos.returnNumFrames()
+    
+            # Extract session-level data
+            rat_pair = exp.ratPair
+            familiarity = exp.trainingPartner  # 0 for TP, 1 for UF
+            barrier_transparency = exp.transparency  # 0 for transparent, 1 for translucent, 2 for opaque
+    
+            # Get trial data
+            trial_starts = lev.returnTimeStartTrials()
+            trial_ends = lev.returnTimeEndTrials()
+            successes = lev.returnSuccessTrialsFiltered()
+            first_presses = lev.returnTimeFirstPress()  # Assumed method for first lever press time
+            first_mag_entries = mag.returnTimeFirstMagEntry()  # Assumed method for first mag entry time
+            list_trials_no_press = lev.returnListTrialsNoPress()
+            trialCounter = 1
+    
+            # Compute successes in a row
+            successes_in_row = 0
+            success_counts = []
+    
+            for succ in successes:
+                if succ:
+                    successes_in_row += 1
+                else:
+                    successes_in_row = 0
+                success_counts.append(successes_in_row)
+    
+            # Process each trial
+            for trial_idx, start_time in enumerate(trial_starts):
+                if pd.isna(start_time) or pd.isna(trial_ends[trial_idx]):
+                    continue
+    
+                start_frame = int(start_time * fps)
+                end_frame = int(trial_ends[trial_idx] * fps)
+                total_frames = end_frame - start_frame if end_frame > start_frame else 0
+    
+                # Trial metrics
+                trial_number = trial_idx
+                time_begin = start_time
+                time_first_press = first_presses[trial_idx] if trial_idx < len(first_presses) and pd.notna(first_presses[trial_idx]) else None
+                time_first_mag_entry = first_mag_entries[trial_idx] if trial_idx < len(first_mag_entries) and pd.notna(first_mag_entries[trial_idx]) else None
+                successes_in_row = success_counts[trial_idx]
+                success = successes[trial_idx]
+                lever_press_exists = pd.notna(time_first_press)
+    
+                # Gazing percentage
+                gaze_frames_rat0 = pos.returnTotalFramesGazing(0, start_frame=start_frame, end_frame=end_frame)
+                gaze_frames_rat1 = pos.returnTotalFramesGazing(1, start_frame=start_frame, end_frame=end_frame)
+                percent_gazing = ((gaze_frames_rat0 + gaze_frames_rat1) / (2 * total_frames)) * 100 if total_frames > 0 else 0
+    
+                # Interaction percentage
+                interaction_frames = pos.returnTotalFramesInteracting(start_frame=start_frame, end_frame=end_frame)
+                percent_interacting = (interaction_frames / total_frames) * 100 if total_frames > 0 else 0
+    
+                # Time wait before cue
+                rat0_locations = pos.returnMouseLocation(0)
+                rat1_locations = pos.returnMouseLocation(1)
+                t = start_frame - 1
+                rat0_waiting = 0
+                rat1_waiting = 0
+                rat0_active = True
+                rat1_active = True
+                while t >= 0 and t < len(rat0_locations) and t < len(rat1_locations) and (rat0_active or rat1_active):
+                    if rat0_locations[t] in ['lev_top', 'lev_bottom'] and rat0_active:
+                        rat0_waiting += 1
+                    else:
+                        rat0_active = False
+                    if rat1_locations[t] in ['lev_top', 'lev_bottom'] and rat1_active:
+                        rat1_waiting += 1
+                    else:
+                        rat1_active = False
+                    t -= 1
+                time_wait_before_cue = min(rat0_waiting, rat1_waiting) / fps if fps > 0 else 0
+    
+                # Time waited to press lever if one rat at lever initially
+                time_wait_to_press_one = None
+                if rat0_locations[start_frame] in ['lev_top', 'lev_bottom'] or rat1_locations[start_frame] in ['lev_top', 'lev_bottom']:
+                    if time_first_press is not None:
+                        time_wait_to_press_one = time_first_press - start_time if time_first_press >= start_time else 0
+    
+                # Distance of furthest rat from lever
+                dist_rat0 = pos.returnDistanceFromLever(0, start_frame)  # Assumed method
+                dist_rat1 = pos.returnDistanceFromLever(1, start_frame)
+                dist_furthest_from_lever = max(dist_rat0, dist_rat1) if dist_rat0 is not None and dist_rat1 is not None else 0
+    
+                # Average horizontal distance
+                rat1_xlocations = pos.data[0, 0, pos.HB_INDEX, start_frame:end_frame]
+                rat2_xlocations = pos.data[1, 0, pos.HB_INDEX, start_frame:end_frame]
+                if len(rat1_xlocations) > 0 and len(rat2_xlocations) > 0:
+                    avg_horizontal_distance = np.mean([abs(a - b) for a, b in zip(rat1_xlocations, rat2_xlocations)])
+                else:
+                    avg_horizontal_distance = 0
+    
+                # Average distance
+                distances = pos.returnInterMouseDistance(start_frame=start_frame, end_frame=end_frame)
+                avg_distance = np.nanmean(distances) if len(distances) > 0 else 0
+    
+                trial_data.append({
+                    'session_id': session_id,
+                    'rat_pair': rat_pair,
+                    'familiarity': familiarity,
+                    'barrier_transparency': barrier_transparency,
+                    'trial_number': trial_number,
+                    'time_begin': time_begin,
+                    'time_first_press': time_first_press,
+                    'time_first_mag_entry': time_first_mag_entry,
+                    'successes_in_row': successes_in_row,
+                    'success': success,
+                    'total_frames': total_frames,
+                    'lever_press_exists': lever_press_exists,
+                    'percent_gazing': percent_gazing,
+                    'percent_interacting': percent_interacting,
+                    'time_wait_before_cue': time_wait_before_cue,
+                    'time_wait_to_press_one': time_wait_to_press_one,
+                    'dist_furthest_from_lever': dist_furthest_from_lever,
+                    'avg_horizontal_distance': avg_horizontal_distance,
+                    'avg_distance': avg_distance
+                })
+    
+        df = pd.DataFrame(trial_data)
+        df.to_csv('trial_metrics.csv', index=False)
         
     def createFrameCSV(self):
         a = 1
         
     
-metadata_path = "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Sorted_Data_Files/Filtered.csv"
+metadata_path = "/gpfs/radev/project/saxena/drb83/rat-cooperation/David/Behavioral_Quantification/Sorted_Data_Files/Filtered.csv"
 
 creator = allDataCSVsCreator(metadata_path)
 creator.createSessionCSV()
