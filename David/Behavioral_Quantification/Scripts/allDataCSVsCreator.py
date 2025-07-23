@@ -524,7 +524,7 @@ class allDataCSVsCreator:
                     avg_horizontal_distance = 0
     
                 # Average distance
-                distances = pos.returnInterMouseDistance(start_frame=start_frame, end_frame=end_frame)
+                distances = pos.returnInterMouseDistance()[start_frame, end_frame]
                 avg_distance = np.nanmean(distances) if len(distances) > 0 else 0
     
                 trial_data.append({
@@ -560,5 +560,5 @@ class allDataCSVsCreator:
 metadata_path = "/gpfs/radev/project/saxena/drb83/rat-cooperation/David/Behavioral_Quantification/Sorted_Data_Files/dyed_preds_fixed_expanded.csv"
 
 creator = allDataCSVsCreator(metadata_path)
-creator.createSessionCSV()
-#creator.createTrialCSV()
+#creator.createSessionCSV()
+creator.createTrialCSV()
