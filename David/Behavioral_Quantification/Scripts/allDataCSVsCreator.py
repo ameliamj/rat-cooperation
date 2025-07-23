@@ -32,7 +32,9 @@ class allDataCSVsCreator:
     
     def _getExps(self):
         fe = fileExtractor(self.metadata_path)
+        fe.deleteInvalid()
         fe.data = fe.deleteBadNaN()
+        
         fpsList, totFramesList = fe.returnFPSandTotFrames()
         initialNanList = fe.returnNaNPercentage()
         
@@ -344,7 +346,6 @@ class allDataCSVsCreator:
             session_data.append({
                 'session_id': session_id,
                 'lev_file': lev_file,
-                'mag_file': mag_file,
                 'rat_pair': rat_pair,
                 'cohort': cohort,
                 'familiarity': familiarity,
@@ -507,8 +508,8 @@ class allDataCSVsCreator:
                         time_wait_to_press_one = time_first_press - start_time if time_first_press >= start_time else 0
     
                 # Distance of furthest rat from lever
-                dist_rat0 = pos.returnDistanceFromLever(0, start_frame)  # Assumed method
-                dist_rat1 = pos.returnDistanceFromLever(1, start_frame)
+                dist_rat0 = pos.distanceFromLever(0, start_frame)  # Assumed method
+                dist_rat1 = pos.distanceFromLever(1, start_frame)
                 dist_furthest_from_lever = max(dist_rat0, dist_rat1) if dist_rat0 is not None and dist_rat1 is not None else 0
     
                 # Average horizontal distance
@@ -553,7 +554,7 @@ class allDataCSVsCreator:
         a = 1
         
     
-metadata_path = "/gpfs/radev/project/saxena/drb83/rat-cooperation/David/Behavioral_Quantification/Sorted_Data_Files/Filtered.csv"
+metadata_path = "/gpfs/radev/project/saxena/drb83/rat-cooperation/David/Behavioral_Quantification/Sorted_Data_Files/dyed_preds_fixed_expanded.csv"
 
 creator = allDataCSVsCreator(metadata_path)
 #creator.createSessionCSV()
