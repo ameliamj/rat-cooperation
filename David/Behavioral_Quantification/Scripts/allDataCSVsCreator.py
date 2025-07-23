@@ -472,7 +472,7 @@ class allDataCSVsCreator:
                 percent_gazing = ((gaze_frames_rat0 + gaze_frames_rat1) / (2 * total_frames)) * 100 if total_frames > 0 else 0
     
                 # Interaction percentage
-                interaction_frames = pos.returnTotalFramesInteracting(start_frame=start_frame, end_frame=end_frame)
+                interaction_frames = np.sum(pos.returnIsInteracting()[start_frame:end_frame])
                 percent_interacting = (interaction_frames / total_frames) * 100 if total_frames > 0 else 0
     
                 # Time wait before cue
