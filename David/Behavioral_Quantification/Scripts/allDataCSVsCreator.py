@@ -291,7 +291,7 @@ class allDataCSVsCreator:
                 end_frame = int(end_times[trial_idx] * fps)
                 succ = successes_filtered[trial_idx]
                 
-                levers = [['lev_top', 'lev_bottom']]
+                levers = ['lev_top', 'lev_bottom']
                 
                 numFrames = end_frame - start_frame
                 
@@ -302,6 +302,9 @@ class allDataCSVsCreator:
                 distanceMoved = np.sum(np.abs(np.diff(rat1_xlocations))) + np.sum(np.abs(np.diff(rat2_xlocations)))
                 avgDistanceMoved = distanceMoved / numFrames
                 isSynchronized = avgDifference < MAX_SYNCHRONIZED and avgDistanceMoved > MIN_AVG_MOVED
+                
+                print("rat0_locations[start_frame]: ", rat0_locations[start_frame])
+                print("rat1_locations[start_frame]: ", rat1_locations[start_frame])
                 
                 if (rat0_locations[start_frame] in levers and rat1_locations[start_frame] in levers):
                     counts_2rats += 1
@@ -319,19 +322,19 @@ class allDataCSVsCreator:
                         successes_1rat += 1
                     
                     if (isSynchronized):
-                        synchronized_counts_2rats += 1
+                        synchronized_counts_1rat += 1
                         if (succ):
-                            synchronized_successes_2rats += 1
+                            synchronized_successes_1rat += 1
                             
                 else:
-                    counts_1rat += 1
+                    counts_0rats += 1
                     if (succ):
                         successes_0rats += 1
                     
                     if (isSynchronized):
-                        synchronized_counts_2rats += 1
+                        synchronized_counts_0rats += 1
                         if (succ):
-                            synchronized_successes_2rats += 1
+                            synchronized_successes_0rats += 1
                 
             
             successRate_0rats = np.divide(successes_0rats, counts_0rats, where=counts_0rats != 0)
