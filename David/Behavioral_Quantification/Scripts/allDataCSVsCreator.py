@@ -234,7 +234,7 @@ class allDataCSVsCreator:
                 continue
             
             for trial_idx, start_time in enumerate(trial_starts):
-                if pd.isna(start_time) and pd.isna(end_times[trial_idx]):
+                if pd.isna(start_time) or pd.isna(end_times[trial_idx]):
                     continue
                 start_frame = int(start_time * fps)
                 end_frame = int(end_times[trial_idx] * fps)
