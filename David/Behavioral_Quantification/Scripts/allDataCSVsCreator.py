@@ -283,13 +283,13 @@ class allDataCSVsCreator:
                             synchronized_successes_2rats += 1
                 
             
-            successRate_0rats = successes_0rats / counts_0rats
-            successRate_1rats = successes_1rat / counts_1rat
-            successRate_2rats = successes_2rats / counts_2rats
+            successRate_0rats = np.divide(successes_0rats, counts_0rats, where=counts_0rats != 0)
+            successRate_1rats = np.divide(successes_1rat, counts_1rat, where=counts_1rat != 0)
+            successRate_2rats = np.divide(successes_2rats, counts_2rats, where=counts_2rats != 0)
             
-            synchronized_successRate_0rats = synchronized_successes_0rats / synchronized_counts_0rats
-            synchronized_successRate_1rats = synchronized_successes_1rat / synchronized_counts_1rat
-            synchronized_successRate_2rats = synchronized_successes_2rats / synchronized_counts_2rats
+            synchronized_successRate_0rats = np.divide(synchronized_successes_0rats, synchronized_counts_0rats, where=synchronized_counts_0rats != 0)
+            synchronized_successRate_1rats = np.divide(synchronized_successes_1rat, synchronized_counts_1rat, where=synchronized_counts_1rat != 0)
+            synchronized_successRate_2rats = np.divide(synchronized_successes_2rats, synchronized_counts_2rats, where=synchronized_counts_2rats != 0)
             
             # Append session data
             session_data.append({
@@ -355,7 +355,7 @@ class allDataCSVsCreator:
             trial_ends = lev.returnTimeEndTrials()
             successes = lev.returnSuccessTrialsFiltered()
             first_presses = lev.returnTimeFirstPress()  
-            first_mag_entries = mag.returnTimeFirstMagEntry() 
+            first_mag_entries = mag.returnTimeFirstMagEntry()  # Assumed method for first mag entry time
             list_trials_no_press = lev.returnListTrialsNoPress()
             trialCounter = 1
     
