@@ -756,21 +756,37 @@ class fileExtractor:
             match = re.search(r'TrNum(\d+)', vid)
             return int(match.group(1)) if match else float('inf')
         
-        # Add helper columns for sorting
+        # Add helper columns and preserve index
         df['rat_pair'] = df.apply(extract_rat_pair, axis=1)
         df['date'] = df['vid'].apply(extract_date)
         df['trnum'] = df['vid'].apply(extract_trnum)
+        df = df.reset_index()  # Convert index to a column named 'index'
         
-        # Sort within groups to determine session order per rat pair
+        # Group and sort by rat pair, date, and trnum
         grouped = []
         for _, group_df in df.groupby('rat_pair'):
             sorted_group = group_df.sort_values(by=['date', 'trnum'], ascending=True)
-            # Assign the number of prior sessions (index in sorted order)
-            sorted_group['num_sessions_before'] = range(len(sorted_group))
             grouped.append(sorted_group)
+        sorted_df = pd.concat(grouped)  # Keep 'index' column
         
-        # Concatenate sorted groups and merge back to original order
-        sorted_df = pd.concat(grouped).reset_index()
+        # Count sessions before each session
+        num_sessions_before = []
+        for idx, row in df.iterrows():
+            rat_pair = row['rat_pair']
+            current_date = row['date']
+            current_trnum = row['trnum']
+            # Count sessions with same rat pair before this session
+            prior_sessions = sorted_df[
+                (sorted_df['rat_pair'] == rat_pair) &
+                ((sorted_df['date'] < current_date) |
+                 ((sorted_df['date'] == current_date) & (sorted_df['trnum'] < current_trnum)))
+            ]
+            num_sessions_before.append(len(prior_sessions))
+        
+        # Add num_sessions_before to sorted_df
+        sorted_df['num_sessions_before'] = num_sessions_before
+        
+        # Merge back to original order using the 'index' column
         original_order = df.merge(sorted_df[['index', 'num_sessions_before']], on='index', how='left')
         
         return original_order['num_sessions_before'].tolist()

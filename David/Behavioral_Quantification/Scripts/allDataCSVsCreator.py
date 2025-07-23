@@ -347,15 +347,15 @@ class allDataCSVsCreator:
     
             # Extract session-level data
             rat_pair = exp.ratPair
-            familiarity = exp.trainingPartner  # 0 for TP, 1 for UF
-            barrier_transparency = exp.transparency  # 0 for transparent, 1 for translucent, 2 for opaque
+            familiarity = exp.trainingPartner  
+            barrier_transparency = exp.transparency  
     
             # Get trial data
             trial_starts = lev.returnTimeStartTrials()
             trial_ends = lev.returnTimeEndTrials()
             successes = lev.returnSuccessTrialsFiltered()
-            first_presses = lev.returnTimeFirstPress()  # Assumed method for first lever press time
-            first_mag_entries = mag.returnTimeFirstMagEntry()  # Assumed method for first mag entry time
+            first_presses = lev.returnTimeFirstPress()  
+            first_mag_entries = mag.returnTimeFirstMagEntry() 
             list_trials_no_press = lev.returnListTrialsNoPress()
             trialCounter = 1
     
