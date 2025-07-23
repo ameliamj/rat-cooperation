@@ -560,5 +560,5 @@ class allDataCSVsCreator:
 metadata_path = "/gpfs/radev/project/saxena/drb83/rat-cooperation/David/Behavioral_Quantification/Sorted_Data_Files/dyed_preds_fixed_expanded.csv"
 
 creator = allDataCSVsCreator(metadata_path)
-#creator.createSessionCSV()
-creator.createTrialCSV()
+creator.createSessionCSV()
+#creator.createTrialCSV()
