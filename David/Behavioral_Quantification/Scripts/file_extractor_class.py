@@ -686,6 +686,95 @@ class fileExtractor:
         
         return initial_nan_column
     
+    def getFamiliarityList(self):
+        """
+        Returns a list of familiarity values for each session in self.data.
+        Maps 'TP' (Training Partners) to 0 and 'UF' (Unfamiliar) to 1.
+        Calls writeNewFixedFile to ensure familiarity column is populated.
+        """
+        self.writeNewFixedFile()  # Ensure familiarity is set
+        familiarity_map = {'TP': 'Training Partner', 'UF': 'Unfamiliar'}
+        return [familiarity_map.get(row['familiarity'], 1) for _, row in self.data.iterrows()]
+
+    def getBarrierTransparencyList(self):
+        """
+        Returns a list of barrier transparency values for each session in self.data.
+        Maps 'transparent' to 0, 'translucent' to 1, 'opaque' to 2.
+        Calls writeNewFixedFile to ensure dividers column is populated.
+        """
+        self.writeNewFixedFile()  # Ensure dividers is set
+        transparency_map = {'transparent': 'transparent', 'translucent': 'translucent', 'opaque': 'opaque'}
+        return [transparency_map.get(row['dividers'], 0) for _, row in self.data.iterrows()]
+    
+    def getRatPairList(self):
+        """
+        Returns a list of rat pairs for each session in self.data.
+        Rat pairs are extracted from the 'vid' column, ordered alphabetically (e.g., 'KL007Y-KL007G').
+        """
+        def extract_rat_pair(row):
+            vid = row['vid']
+            category = row['test/train']
+            if category == 'test':
+                full_pair = vid[-13:]
+            elif category == 'train':
+                full_pair = vid[:-8][-13:] if len(vid) >= 21 else vid[-13:]
+            else:
+                return "UNKNOWN"
+            mouse1, mouse2 = full_pair[:6], full_pair[-6:]
+            return f"{mouse1}-{mouse2}" if mouse1 <= mouse2 else f"{mouse2}-{mouse1}"
+        
+        return [extract_rat_pair(row) for _, row in self.data.iterrows()]
+    
+    def getNumSessionsBefore(self):
+        """
+        Returns a list of the number of experimental sessions conducted for each rat pair
+        before the current session, in the original order of self.data.
+        Sessions are sorted by date (MMDDYY from vid) and TrNum within each rat pair.
+        """
+        df = self.data.copy()
+        
+        def extract_rat_pair(row):
+            vid = row['vid']
+            category = row['test/train']
+            if category == 'test':
+                full_pair = vid[-13:]
+            elif category == 'train':
+                full_pair = vid[:-8][-13:] if len(vid) >= 21 else vid[-13:]
+            else:
+                return "UNKNOWN"
+            mouse1, mouse2 = full_pair[:6], full_pair[-6:]
+            return f"{mouse1}-{mouse2}" if mouse1 <= mouse2 else f"{mouse2}-{mouse1}"
+        
+        def extract_date(vid):
+            date_str = vid[:6]
+            try:
+                return datetime.strptime(date_str, "%m%d%y")
+            except ValueError:
+                return datetime.max  # Push invalid dates to the end
+        
+        def extract_trnum(vid):
+            match = re.search(r'TrNum(\d+)', vid)
+            return int(match.group(1)) if match else float('inf')
+        
+        # Add helper columns for sorting
+        df['rat_pair'] = df.apply(extract_rat_pair, axis=1)
+        df['date'] = df['vid'].apply(extract_date)
+        df['trnum'] = df['vid'].apply(extract_trnum)
+        
+        # Sort within groups to determine session order per rat pair
+        grouped = []
+        for _, group_df in df.groupby('rat_pair'):
+            sorted_group = group_df.sort_values(by=['date', 'trnum'], ascending=True)
+            # Assign the number of prior sessions (index in sorted order)
+            sorted_group['num_sessions_before'] = range(len(sorted_group))
+            grouped.append(sorted_group)
+        
+        # Concatenate sorted groups and merge back to original order
+        sorted_df = pd.concat(grouped).reset_index()
+        original_order = df.merge(sorted_df[['index', 'num_sessions_before']], on='index', how='left')
+        
+        return original_order['num_sessions_before'].tolist()
+    
 #information_path = "/Users/david/Documents/Research/Saxena Lab/rat-cooperation/scripts/notebooks/dyed_preds_df.csv"
 #information_path = "/Users/david/Documents/Research/Saxena Lab/rat-cooperation/David/Behavioral Quantification/Sorted Data Files/dyed_preds_df_fixed.csv"
 information_path = "/Users/david/Documents/Research/Saxena Lab/rat-cooperation/David/Behavioral_Quantification/Sorted_Data_Files/originalFile.csv"

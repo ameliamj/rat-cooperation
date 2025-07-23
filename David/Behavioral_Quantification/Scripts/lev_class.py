@@ -198,6 +198,26 @@ class levLoader:
                     arr[i] = 0
         
         return arr
+    
+    def returnSuccessTrialsFiltered(self):
+        n = self.returnNumTotalTrials()
+        arr = []
+        
+        for i in range(n):
+            trial_df = self.data[self.data['TrialNum'] == i + 1]
+            
+            if trial_df.empty:
+                print("Skipped Trial Num: ", i + 1)
+            else:
+                # Take first row (if there are multiple)
+                trial = trial_df.iloc[0]
+                if trial['coopSucc'] == 1:
+                    arr.append(1)
+                else:
+                    arr.append(0)
+        
+        return arr
+        
         
     def returnTimeStartTrials(self):  
         """

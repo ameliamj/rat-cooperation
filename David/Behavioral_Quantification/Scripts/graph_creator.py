@@ -532,12 +532,23 @@ class multiFileGraphsCategories:
             probsEB.append(prob2EB)
             probsNonEB.append(prob2NonEB)
     
+    
+        # Compute standard error of the mean for error bars
+        error_bars = []
+        for datapoints in individual_datapoints:
+            clean_points = [p for p in datapoints if not np.isnan(p)]
+            if len(clean_points) > 1:
+                error_bars.append(sem(clean_points))
+            else:
+                error_bars.append(0)
+                
         # --- Plotting ---
         plt.figure(figsize=(8, 6))
     
         # Bar plot for average success probability per category
         bar_positions = range(len(probs))
-        plt.bar(bar_positions, probs, color='green', label='Category Average')
+        plt.bar(bar_positions, probs, yerr=error_bars, capsize=6, color='green', label='Category Average', edgecolor='black')
+
     
         # Overlay individual datapoints as scatter plot
         for i, datapoints in enumerate(individual_datapoints):

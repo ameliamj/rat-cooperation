@@ -14,10 +14,16 @@ from pos_class import posLoader
 from fiberPhotoClass import fiberPhotoLoader
 
 class singleExperiment:
-    def __init__(self, mag_file, lev_file, pos_file, fps = 30, endFrame = 5000, initialNan = 0.1, fp_files = None):
+    def __init__(self, mag_file, lev_file, pos_file, fps = 30, endFrame = 5000, initialNan = 0.1, fp_files = None, trainingPartner = "Training Partner", transparency = "Transparent", ratPair = "", numSessionsBefore = 0):
         self.mag_file = mag_file
         self.lev_file = lev_file
         self.pos_file = pos_file
+        
+        #Session Data
+        self.familiarity = trainingPartner
+        self.transparency = transparency
+        self.ratPair = ratPair
+        self.numSessionsBefore = numSessionsBefore
         
         self.mag = magLoader(mag_file, fps=fps)
         self.lev = levLoader(lev_file, endFrame, fps)
