@@ -86,6 +86,55 @@ class allDataCSVsCreator:
         
         return tempExps
     
+    def returnMagStartAbsTimes(lev, mag):
+        """
+        For each trial number present in lev.data (i.e., trials with lever presses),
+        find the first magazine entry in mag.data with the same TrialNum.
+        However, there's the additional condition that the abs time has to be greater 
+        than that of the last lever press.
+    
+        Returns:
+            list: A list of relative times (AbsTime - TrialTime) for mag entries
+                  corresponding to lever press trials. Returns None if no mag entry exists.
+                  Length equals lev.returnNumTotalTrialswithLeverPress().
+        """
+        if lev.data is None or mag.data is None:
+            raise ValueError("Lever or magazine data is missing.")
+    
+        required_cols = {'TrialNum', 'AbsTime'}
+        for loader_name, df in [('lev', lev.data), ('mag', mag.data)]:
+            if not required_cols.issubset(df.columns):
+                raise ValueError(f"{loader_name}.data missing required columns: {required_cols - set(df.columns)}")
+    
+        # All trials with lever presses
+        coopOrLastPress = lev.returnCoopTimeorLastPressTime()
+        lever_trials = sorted(lev.data['TrialNum'].dropna().unique())
+        #print("lever_trials: ", lever_trials)
+        mag_grouped = mag.data.groupby('TrialNum')
+    
+        rel_times = []
+        for trial_idx, trial in enumerate(lever_trials):
+            if trial not in mag_grouped.groups:
+                rel_times.append(None)
+                continue
+    
+            group = mag_grouped.get_group(trial)
+            if group.empty:
+                rel_times.append(None)
+                continue
+    
+            press_time = coopOrLastPress[trial_idx]
+            # Filter for mag entries that occur after the press time
+            valid_mags = group[group['AbsTime'] > press_time]
+    
+            if valid_mags.empty:
+                rel_times.append(None)
+            else:
+                first_valid = valid_mags.loc[valid_mags['AbsTime'].idxmin()]
+                rel_times.append(first_valid['AbsTime'])
+    
+        return rel_times
+    
     def createSessionCSV(self):
         """
         Creates a CSV file containing per-session metrics for all experiments.
@@ -355,8 +404,8 @@ class allDataCSVsCreator:
             trial_ends = lev.returnTimeEndTrials()
             successes_unfiltered = lev.returnSuccessTrials()
             successes = lev.returnSuccessTrialsFiltered()
-            first_presses = lev.returnTimeFirstPress()  
-            first_mag_entries = mag.returnTimeFirstMagEntry()  # Assumed method for first mag entry time
+            first_presses = lev.returnFirstPressAbsTimes()  
+            first_mag_entries = self.returnMagStartAbsTimes(lev, mag)  
             list_trials_no_press = lev.returnListTrialsNoPress()
             trialCounter = 1
     
