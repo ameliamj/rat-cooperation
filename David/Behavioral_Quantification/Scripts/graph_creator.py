@@ -1151,7 +1151,7 @@ categoryExperiments.printSummaryStats()
 
 #Transparent vs. Translucent vs. Opaque
 
-print("Running Transparency")
+'''print("Running Transparency")
 dataTransparent = getAllTransparent() #Transparent
 dataTranslucent = getAllTranslucent() #Translucent
 dataOpaque = getAllOpaque() #Opaque
@@ -1161,7 +1161,7 @@ magFiles = [dataTransparent[1], dataTranslucent[1], dataOpaque[1]]
 posFiles = [dataTransparent[2], dataTranslucent[2], dataOpaque[2]]
 categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["Transparent", "Translucent", "Opaque"])
 categoryExperiments.compareSuccesfulTrials()
-print("DONE WITH TRANSPARENCY")
+print("DONE WITH TRANSPARENCY")'''
 
 
 '''
@@ -8876,7 +8876,7 @@ class multiFileGraphs:
         realSuccPercentage = np.array(realSuccPercentage) * 100
         adjustedSuccminusExpectedSucc = np.array(adjustedSuccminusExpectedSucc) * 100
     
-        # ----- Graph 1: Adjusted-Expected Success vs. Avg Distance Moved -----
+        '''# ----- Graph 1: Adjusted-Expected Success vs. Avg Distance Moved -----
         plt.figure(figsize=(5, 4))
         print("max(succThreshold): ", max(succThreshold))
         if (max(succThreshold) > 1):
@@ -8934,7 +8934,7 @@ class multiFileGraphs:
         plt.grid(True)
         plt.tight_layout()
         plt.savefig(f'{self.prefix}real_success_vs_avg_x_distance.png', dpi=300)
-        plt.close()
+        plt.close()'''
     
         # ----- Graph 3: Bar Plot with Error Bars -----
         avgSucc = np.mean(xDiffSucc) if xDiffSucc else np.nan
@@ -8942,13 +8942,19 @@ class multiFileGraphs:
         semSucc = np.std(xDiffSucc) / np.sqrt(len(xDiffSucc)) if len(xDiffSucc) > 1 else 0
         semFail = np.std(xDiffFail) / np.sqrt(len(xDiffFail)) if len(xDiffFail) > 1 else 0
     
-        plt.figure(figsize=(4, 4))
-        plt.bar(['Success', 'Failure'], [avgSucc, avgFail], 
-                yerr=[semSucc, semFail], capsize=5, color=['purple', 'orange'])
-        plt.ylabel('Avg Distance Between Rats (HB, px)')
-        plt.title('X-Diff by Trial Outcome')
+        plt.figure(figsize=(6.33, 4.3))
+        plt.bar(['Success', 'Failure'],
+                [avgSucc, avgFail],
+                yerr=[semSucc, semFail],
+                capsize=5,
+                color=['purple', 'pink'])
+        
+        plt.xticks(fontsize=15)  # <-- category label font size
+        plt.ylabel('Avg Horizontal Distance Between Rats', fontsize=14)
+        plt.title('Horizontal Distance by Trial Outcome', fontsize=17)
         plt.tight_layout()
         plt.savefig(f'{self.prefix}xdiff_success_vs_failure.png', dpi=300)
+        plt.show()
         plt.close()
                 
     def plotGazeOverNormalizedTrial(self):
@@ -9148,7 +9154,7 @@ def getFiberPhoto():
     return [fe.getLevsDatapath(), fe.getMagsDatapath(), fe.getPosDatapath(), fpsList, totFramesList, initial_nan_list, fiberFiles]
 
 
-'''
+
 lev_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv"]
 
 mag_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_mag.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_mag.csv"] 
@@ -9158,7 +9164,7 @@ pos_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/B
 fpsList = [30, 30]
 totFramesList = [15000, 15000]
 initialNanList = [0.15, 0.12]
-'''
+
 
 '''
 arr = getFiltered()
@@ -9201,9 +9207,9 @@ initialNanList = [0.3]
 '''
 
 #print("Start MultiFileGraphs Regular")
-#experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "", save=True)
+experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "", save=True)
 
-#experiment.expandedSynchronizationStrategyGraphs()
+experiment.expandedSynchronizationStrategyGraphs()
 #experiment.onlyOneRatWaitedGraphs()
 #experiment.percentGazingvsSuccess()
 #experiment.moreGazeComparisons()

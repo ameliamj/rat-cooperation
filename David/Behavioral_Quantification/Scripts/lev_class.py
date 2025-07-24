@@ -326,7 +326,7 @@ class levLoader:
         
         return leverNums
     
-    def returnFirstPressAbsTimes(self):
+    def FirstPressAbsTimes(self):
         """
         Returns a list of absolute times (in seconds) for the first press in each trial.
         The function groups the data by 'TrialNum' and finds the smallest 'AbsTime' per trial.
