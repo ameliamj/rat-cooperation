@@ -1791,7 +1791,7 @@ class MicePairGraphs:
         session_counts_EB = {}
     
         for group_idx, group in enumerate(self.experimentGroups):
-            if (len(group) < 5):
+            if (len(group) < 19):
                 continue
             for exp_idx, exp in enumerate(group):
                 lev = exp.lev
