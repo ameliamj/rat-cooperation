@@ -304,7 +304,7 @@ class posLoader:
         
         isGazing = np.where(result)[0] if test else filteredGaze
         
-        return isGazing
+        return result
     
     
     #Graph Stuff
