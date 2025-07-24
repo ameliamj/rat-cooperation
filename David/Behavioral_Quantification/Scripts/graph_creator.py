@@ -1150,7 +1150,7 @@ categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["
 #categoryExperiments.compareSuccesfulTrials()
 '''
 
-
+'''
 #Unfamiliar vs. Training Partners
 print("Running UF vs TP")
 dataUF = getOnlyUnfamiliar() #Unfamiliar
@@ -1162,7 +1162,7 @@ posFiles = [dataUF[2], dataTP[2]]
 categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["Unfamiliar", "Training Partners"])
 categoryExperiments.printSummaryStats()
 #categoryExperiments.compareSuccesfulTrials()
-
+'''
 
 
 #Transparent vs. Translucent vs. Opaque
@@ -1644,25 +1644,25 @@ class MicePairGraphs:
         
         print("data_y: ", success_rates)
         
-        std_errors = [np.sqrt(p*(1-p)/trial_counts[i]) * 100 
-                      for i, p in zip(filtered_indices, np.array(success_rates)/100)]
+        #std_errors = [np.sqrt(p*(1-p)/trial_counts[i]) * 100 
+                      #for i, p in zip(filtered_indices, np.array(success_rates)/100)]
     
         # Convert to arrays
         x = np.array(filtered_indices)
         y = np.array(success_rates)
-        yerr = np.array(std_errors)
+        #yerr = np.array(std_errors)
         
         print("\nx: ", x)
         print("y: ", y)
-        print("yerr: ", yerr)
+        #print("yerr: ", yerr)
         
-        valid = np.isfinite(yerr)
-        x, y, yerr = x[valid], y[valid], yerr[valid]
+        #valid = np.isfinite(yerr)
+        #x, y, yerr = x[valid], y[valid], yerr[valid]
         
         print("\nOnly Valid: ")
         print("x: ", x)
         print("y: ", y)
-        print("yerr: ", yerr)
+       # print("yerr: ", yerr)
         
         # Spearman correlation
         rho, p_rho = spearmanr(x, y)
@@ -1674,9 +1674,9 @@ class MicePairGraphs:
     
         # Plot
         plt.plot(x, y, marker='o', color=color, label=f"{label}")
-        plt.fill_between(x, y - yerr, y + yerr, color=color, alpha=0.2)
-        plt.plot(x, regline, linestyle='--', color=color,
-                 label=f"{label} Fit: slope={slope:.2f}, $R^2$={r_val**2:.2f}, ρ={rho:.2f}, p={p_rho:.3f}")
+        #plt.fill_between(x, y - yerr, y + yerr, color=color, alpha=0.2)
+        plt.plot(x, regline, linestyle='--', color=color)#,
+                 #label=f"{label} Fit: slope={slope:.2f}, $R^2$={r_val**2:.2f}, ρ={rho:.2f}, p={p_rho:.3f}")
     
     def lineGraphSuccess(self):
        '''
@@ -1998,6 +1998,76 @@ class MicePairGraphs:
         plt.show()
         plt.close()
             
+
+    def lineGraphSuccessGazingInteractions(self):
+        success_counts = {}
+        trial_counts = {}
+        interaction_counts = {}
+        gaze_counts = {}
+        frame_counts = {}
+        session_counts = {}
+        
+        for group_idx, group in enumerate(self.experimentGroups):
+            if (len(group) < 5):
+                continue
+            for exp_idx, exp in enumerate(group):
+                lev = exp.lev
+                pos = exp.pos
+    
+                numInteractionFrames = pos.returnTotalFramesInteracting()
+                numGazeFrames = (pos.returnTotalFramesGazing(0) + pos.returnTotalFramesGazing(1)) / 2
+                totFrames = pos.returnNumFrames()
+                numSuccess = lev.returnNumSuccessfulTrials()
+                totTrials = lev.returnNumTotalTrials()
+                
+                if (exp_idx not in interaction_counts):
+                    interaction_counts[exp_idx] = 0
+                    gaze_counts[exp_idx] = 0 
+                    frame_counts[exp_idx] = 0
+                    session_counts[exp_idx] = 0
+                    success_counts[exp_idx] = 0
+                    trial_counts[exp_idx] = 0
+                
+                interaction_counts[exp_idx] += numInteractionFrames
+                gaze_counts[exp_idx] += numGazeFrames
+                frame_counts[exp_idx] += totFrames
+                session_counts[exp_idx] += 1
+                success_counts[exp_idx] += (numSuccess)
+                trial_counts[exp_idx] += (totTrials)
+
+        # === Plot call ===
+        plt.figure(figsize=(6.33, 4.3))
+        self.plot_by_exp_idx(success_counts, trial_counts, session_counts, label="Percent Success", color="green")
+        self.plot_by_exp_idx(gaze_counts, frame_counts, session_counts, label="Percent Gazing", color="purple")
+        self.plot_by_exp_idx(interaction_counts, frame_counts, session_counts, label="Percent Interacting", color="blue")
+    
+        plt.xlabel('Experiment Index', fontsize=17)
+        plt.ylabel('Percent (%)', fontsize=17)
+        plt.title('Gazing/Interacting/Success Throughout Training', fontsize=18)
+        plt.grid(True, linestyle='--', alpha=0.6)
+        plt.legend(fontsize=17)
+        plt.tight_layout()
+        if self.save:
+            plt.savefig(f'{self.prefix}Gazing_Interacting_Success_ThroughoutTraining.png')
+        plt.show()
+        plt.close()
+        
+        plt.figure(figsize=(6.353, 3.56))
+        self.plot_by_exp_idx(success_counts, trial_counts, session_counts, label="Percent Success", color="pink")
+        self.plot_by_exp_idx(gaze_counts, frame_counts, session_counts, label="Percent Gazing", color="purple")
+        self.plot_by_exp_idx(interaction_counts, frame_counts, session_counts, label="Percent Interacting", color="blue")
+    
+        plt.xlabel('Experiment Index', fontsize=17)
+        plt.ylabel('Percent (%)', fontsize=17)
+        plt.title('Gazing/Interacting/Success Throughout Training', fontsize=18)
+        plt.grid(True, linestyle='--', alpha=0.6)
+        plt.legend(fontsize=17)
+        plt.tight_layout()
+        if self.save:
+            plt.savefig(f'{self.prefix}Gazing_Interacting_Success_ThroughoutTraining_figalt.png')
+        plt.show()
+        plt.close()
+
 groupRatPairs = "/gpfs/radev/project/saxena/drb83/rat-cooperation/David/Behavioral_Quantification/Sorted_Data_Files/group_rat_pairs_corrected.csv"
 
 def getGroupRatPairs():
@@ -2009,8 +2079,8 @@ def getGroupRatPairs():
     return [fe.getLevsDatapath(grouped = True), fe.getMagsDatapath(grouped = True), fe.getPosDatapath(grouped = True), fpsList, totFramesList]
 
 
-#data = getGroupRatPairs()
-#pairGraphs = MicePairGraphs(data[0], data[1], data[2], data[3], data[4])
+data = getGroupRatPairs()
+pairGraphs = MicePairGraphs(data[0], data[1], data[2], data[3], data[4])
 
 
 '''magFiles = [["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv"],
@@ -2022,6 +2092,8 @@ posFiles = [["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/B
 
 pairGraphs = MicePairGraphs(magFiles, levFiles, posFiles)'''
 
+
+pairGraphs.lineGraphSuccessGazingInteractions()
 
 #pairGraphs.lineGraphWaiting()
 #pairGraphs.lineGraphSuccess()
