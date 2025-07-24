@@ -184,7 +184,6 @@ def getOnlyPairedTesting(filtered = True, onlyFirst = False):
     
     return [fe.getLevsDatapath(), fe.getMagsDatapath(), fe.getPosDatapath(), fpsList, totFramesList, initial_nan_list]
 
-
 def getOnlyTrainingCoop(filtered = True, onlyFirst = False):
     if (onlyFirst):
         fe = fileExtractor(only_TrainingCoop_filtered_onlyFirst)
@@ -681,52 +680,64 @@ class multiFileGraphsCategories:
             plt.close()
             
     def make_bar_plot(self, data, ylabel, title, saveFileName, individual_data = None, animal_ids = None):
-        plt.figure(figsize=(8, 5))
+        plt.figure(figsize=(6.33, 4.3))
         x = range(len(data))
         
-        # Create bar plot
-        plt.bar(x, data, color='skyblue', alpha=0.6, label='Mean')
+        # --- Compute error bars (standard error of the mean) ---
+        if individual_data is not None:
+            errors = [np.std(cat_data) / np.sqrt(len(cat_data)) if len(cat_data) > 0 else 0 for cat_data in individual_data]
+        else:
+            errors = [0] * len(data)
+    
+        # --- Create bar plot with error bars ---
+        plt.bar(x, data, color='skyblue', alpha=0.6, label='Mean', yerr=errors, capsize=5, error_kw=dict(lw=1.5))
         
         # Overlay scatter points for individual data if provided
-        if individual_data is not None and animal_ids is not None:
-            # Track which labels have been added to avoid duplicates
-            legend_added = {'KL': False, 'EB': False, 'Other': False}
-            
-            for i, (cat_data, cat_animal_ids) in enumerate(zip(individual_data, animal_ids)):
-                # Generate slight jitter for x-coordinates to avoid overlap
-                red_dots = []  # Store values for red dots to calculate average
+        if individual_data is not None:
+            for i, cat_data in enumerate(individual_data):
                 x_jitter = np.random.normal(i, 0.1, size=len(cat_data))
-                for j, (y, animal_id) in enumerate(zip(cat_data, cat_animal_ids)):
-                    color = 'black' if animal_id == 'KL' else 'red' if animal_id == 'EB' else 'blue'
-                    
-                    # Add label only if not yet added for this category
-                    label = None
-                    if animal_id == 'KL' and not legend_added['KL']:
-                        label = 'KL (black)'
-                        legend_added['KL'] = True
-                    elif animal_id == 'EB' and not legend_added['EB']:
-                        label = 'EB (red)'
-                        legend_added['EB'] = True
-                    elif animal_id not in ['KL', 'EB'] and not legend_added['Other']:
-                        label = 'Other (blue)'
-                        legend_added['Other'] = True
-                    plt.scatter(x_jitter[j], y, color=color, alpha=0.5, s=50, label=label)
-                    if animal_id == 'EB':
-                        red_dots.append(y)
-            
-                # Draw red line for average of red dots (EB) for this category
-                if red_dots:
-                    red_avg = np.mean(red_dots)
-                    # Draw a short horizontal line centered on the category bar
-                    plt.hlines(y=red_avg, xmin=i-0.2, xmax=i+0.2, color='red', linestyle='--', linewidth=1.5, 
-                               label=f'EB Mean {self.categoryNames[i]} ({red_avg:.2f})' if i == 0 else None)
+        
+                if animal_ids is not None:
+                    # Color by ID
+                    cat_animal_ids = animal_ids[i]
+                    red_dots = []
+                    legend_added = {'KL': False, 'EB': False, 'Other': False}
+        
+                    for j, (y, animal_id) in enumerate(zip(cat_data, cat_animal_ids)):
+                        color = 'black' if animal_id == 'KL' else 'red' if animal_id == 'EB' else 'blue'
+                        label = None
+        
+                        if animal_id == 'KL' and not legend_added['KL']:
+                            label = 'KL (black)'
+                            legend_added['KL'] = True
+                        elif animal_id == 'EB' and not legend_added['EB']:
+                            label = 'EB (red)'
+                            legend_added['EB'] = True
+                        elif animal_id not in ['KL', 'EB'] and not legend_added['Other']:
+                            label = 'Other (blue)'
+                            legend_added['Other'] = True
+        
+                        plt.scatter(x_jitter[j], y, color=color, alpha=0.5, s=50, label=label)
+                        if animal_id == 'EB':
+                            red_dots.append(y)
+        
+                    if red_dots:
+                        red_avg = np.mean(red_dots)
+                        plt.hlines(y=red_avg, xmin=i - 0.2, xmax=i + 0.2, color='red', linestyle='--', linewidth=1.5,
+                                   label=f'EB Mean {self.categoryNames[i]} ({red_avg:.2f})' if i == 0 else None)
+        
+                elif animal_ids is None:
+                    # Plot all black points (no label logic)
+                    for j, y in enumerate(cat_data):
+                        plt.scatter(x_jitter[j], y, color='black', alpha=0.5, s=50)
             
             # Customize legend
-            plt.legend(title='Animal ID', loc='best', fontsize=10)
+            #plt.legend(title='Animal ID', loc='best', fontsize=16)
         
-        plt.xticks(x, self.categoryNames, fontsize = 13)
-        plt.ylabel(ylabel, fontsize = 13)
-        plt.title(title, fontsize = 15)
+        plt.xticks(x, self.categoryNames, fontsize = 16)
+        plt.yticks(fontsize=15) 
+        plt.ylabel(ylabel, fontsize = 16)
+        plt.title(title, fontsize = 18)
         
         # --- Statistical Significance Tests ---
         if (individual_data is not None):
@@ -741,7 +752,7 @@ class multiFileGraphsCategories:
         if self.numCategories == 2:
             # Mann-Whitney U test
             stat, p = mannwhitneyu(individual_data[0], individual_data[1], alternative='two-sided')
-            plt.text(0.5, y_max * 1.05, f"Mann-Whitney U: p = {p:.3g}", ha='center', fontsize=13)
+            plt.text(0.5, y_max * 1.05, f"Mann-Whitney U: p = {p:.3g}", ha='center', fontsize=15)
             # Optional: line between the bars
             #plt.plot([0, 1], [y_max * 1.1, y_max * 1.1], color='black', lw=1.2)
         
@@ -794,8 +805,8 @@ class multiFileGraphsCategories:
             for exp in group:
                 loader = exp.pos
                 
-                g0 = loader.returnIsGazing(0, alternateDef=False)
-                g1 = loader.returnIsGazing(1, alternateDef=False)
+                #g0 = loader.returnIsGazing(0, alternateDef=False)
+                #g1 = loader.returnIsGazing(1, alternateDef=False)
                 
                 #print("g0: ", ', '.join(map(str, g0[2000:4000])))
                 #print("g1: ", ', '.join(map(str, g1)))
@@ -809,24 +820,24 @@ class multiFileGraphsCategories:
                 #print("g3 (alternate): ", ', '.join(map(str, g3)))
                 
                 # Count gaze events and sum up the frames with gazing behavior
-                curGazeEvents = loader.returnNumGazeEvents(0, alternateDef=False) + loader.returnNumGazeEvents(1, alternateDef=False)
-                curGazeFrames = np.sum(g0) + np.sum(g1)
+                #curGazeEvents = loader.returnNumGazeEvents(0, alternateDef=False) + loader.returnNumGazeEvents(1, alternateDef=False)
+                #curGazeFrames = np.sum(g0) + np.sum(g1)
                 
                 curGazeEventsAlternate = loader.returnNumGazeEvents(0) + loader.returnNumGazeEvents(1)
                 curGazeFramesAlternate = np.sum(g2) + np.sum(g3)
                 
-                curFrames = g0.shape[0]
+                curFrames = g2.shape[0]
                 
-                total_gaze_events += curGazeEvents
-                total_gaze_frames += curGazeFrames
+                #total_gaze_events += curGazeEvents
+                #total_gaze_frames += curGazeFrames
                 total_frames += curFrames
                 
                 total_gaze_events_alternate += curGazeEventsAlternate
                 total_gaze_frames_alternate += curGazeFramesAlternate
                 
                 # Calculate individual experiment metrics
-                if total_gaze_events > 0:
-                    cat_gaze_lengths.append(curGazeFrames / curGazeEvents)
+                #if total_gaze_events > 0:
+                    #cat_gaze_lengths.append(curGazeFrames / curGazeEvents)
                 if total_gaze_events_alternate > 0:
                     cat_gaze_lengths_alternate.append(curGazeFramesAlternate / curGazeEventsAlternate)
                 if total_frames > 0:
@@ -885,10 +896,10 @@ class multiFileGraphsCategories:
             print(f"  Total Trials: {total_trials}")
             print(f"  Successful Trials: {successful_trials}")
             print(f"  Percent Successful: {successful_trials / total_trials:.2f}")
-            print(f"  Frames Gazing: {total_gaze_frames}")
-            print(f"  Total Gaze Events: {total_gaze_events}")
-            print(f"  Average Gaze Length: {total_gaze_frames / total_gaze_events:.2f}")
-            print(f"  Percent Gazing: {100 * total_gaze_frames / total_frames:.2f}%")
+            #print(f"  Frames Gazing: {total_gaze_frames}")
+            #print(f"  Total Gaze Events: {total_gaze_events}")
+            #print(f"  Average Gaze Length: {total_gaze_frames / total_gaze_events:.2f}")
+            #print(f"  Percent Gazing: {100 * total_gaze_frames / total_frames:.2f}%")
             print(f"  Total Gaze Events (Alternate): {total_gaze_events_alternate}")
             print(f"  Average Gaze Length (Alternate): {total_gaze_frames_alternate / total_gaze_events_alternate:.2f}")
             print(f"  Percent Gazing (Alternate): {100 * total_gaze_frames_alternate / total_frames:.2f}%")
@@ -897,7 +908,7 @@ class multiFileGraphsCategories:
             print(f"  Avg Mag Events per Trial: {total_mag_events / total_trials:.2f}")
             print(f"  Total Mag Events: {total_mag_events}")
     
-        self.make_bar_plot(
+        '''self.make_bar_plot(
             avg_gaze_lengths,
             'Avg Gaze Length (frames)',
             'Average Gaze Length per Category',
@@ -931,16 +942,20 @@ class multiFileGraphsCategories:
             "Avg_Mag_Events_perTrial",
             individual_data=individual_mag_per_trial,
             animal_ids=individual_animal_ids
-        )
+        )'''
+        
+        print("Got here")
         
         self.make_bar_plot(
             percent_gazing_alternate,
-            'Percent Gazing per Trial',
-            'Percent Gazing (Alternate) per Category',
+            'Avg Percent Gazing',
+            'Percent Gazing per Category',
             "Avg_PercentGazing_Alternate_perTrial",
-            individual_data=individual_percentGazing_per_trial,
-            animal_ids=individual_animal_ids
+            individual_data=individual_percentGazing_per_trial#,
+            #animal_ids=individual_animal_ids
         )
+        
+        print("Done")
         
     def rePressingBehavior(self):
         """
@@ -1096,21 +1111,22 @@ class multiFileGraphsCategories:
 #levFiles = [["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_mag.csv"], ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_mag.csv"]]
 #posFiles = [["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G.predictions.h5"], ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.predictions.h5"]]                   
 
-levFiles = [["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv"],
+'''levFiles = [["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv"],
             ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv"]]
 magFiles = [["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_mag.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_mag.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_mag.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_mag.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_mag.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_mag.csv"], 
             ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_mag.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_mag.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_mag.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_mag.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_mag.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_mag.csv"]]
 posFiles = [["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.predictions.h5"], 
             ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.predictions.h5"]]
-
 '''
+
+
 levFiles = [["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv"], 
             ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv"]]
 magFiles = [["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_mag.csv"], 
             ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_mag.csv"]]
 posFiles = [["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G.predictions.h5"], 
             ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.predictions.h5"]]
-'''
+
 
 #categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["Paired_Testing", "Training_Cooperation"], save=False)
 #categoryExperiments.compareGazeEventsCategories()
@@ -1121,7 +1137,7 @@ posFiles = [["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/B
 #categoryExperiments.gazeAlignmentAngle()
 
 #Paired Testing vs. Training Cooperation
-'''
+
 print("Running Paired Testing vs Training Cooperation")
 dataPT = getOnlyPairedTesting()
 dataTC = getOnlyTrainingCoop()
@@ -1131,8 +1147,8 @@ magFiles = [dataPT[1], dataTC[1]]
 posFiles = [dataPT[2], dataTC[2]]
 categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["Paired_Testing", "Training_Cooperation"])
 #categoryExperiments.printSummaryStats()
-categoryExperiments.compareSuccesfulTrials()
-'''
+#categoryExperiments.compareSuccesfulTrials()
+
 
 '''
 #Unfamiliar vs. Training Partners
@@ -1164,9 +1180,9 @@ categoryExperiments.compareSuccesfulTrials()
 print("DONE WITH TRANSPARENCY")'''
 
 
-'''
+
 print("0")
-categoryExperiments.compareGazeEventsCategories()
+#categoryExperiments.compareGazeEventsCategories()
 print("1")
 #categoryExperiments.compareSuccesfulTrials()
 print("2")
@@ -1178,7 +1194,7 @@ print("4")
 print("5")
 categoryExperiments.printSummaryStats()
 print("Done")
-'''
+
 
 # ---------------------------------------------------------------------------------------------------------
 
@@ -8949,9 +8965,10 @@ class multiFileGraphs:
                 capsize=5,
                 color=['purple', 'pink'])
         
-        plt.xticks(fontsize=15)  # <-- category label font size
-        plt.ylabel('Avg Horizontal Distance Between Rats', fontsize=14)
-        plt.title('Horizontal Distance by Trial Outcome', fontsize=17)
+        plt.xticks(fontsize=16)  # <-- category label font size
+        plt.yticks(fontsize=15) 
+        plt.ylabel('Horizontal Distance Between Rats', fontsize=15)
+        plt.title('Synchronization by Trial Outcome', fontsize=17)
         plt.tight_layout()
         plt.savefig(f'{self.prefix}xdiff_success_vs_failure.png', dpi=300)
         plt.show()
@@ -9166,7 +9183,7 @@ totFramesList = [15000, 15000]
 initialNanList = [0.15, 0.12]
 '''
 
-
+'''
 arr = getFiltered()
 
 #arr = trainingCoopData()
@@ -9181,7 +9198,7 @@ fpsList = arr[3]
 totFramesList = arr[4]
 initialNanList = arr[5]
 #fiberPhoto = arr[6]
-
+'''
 
 
 '''
@@ -9207,9 +9224,9 @@ initialNanList = [0.3]
 '''
 
 #print("Start MultiFileGraphs Regular")
-experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "", save=True)
+#experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "", save=True)
 
-experiment.expandedSynchronizationStrategyGraphs()
+#experiment.expandedSynchronizationStrategyGraphs()
 #experiment.onlyOneRatWaitedGraphs()
 #experiment.percentGazingvsSuccess()
 #experiment.moreGazeComparisons()

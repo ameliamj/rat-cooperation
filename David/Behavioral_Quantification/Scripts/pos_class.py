@@ -282,6 +282,8 @@ class posLoader:
         otherID = 1 - mouseID
         other_body = self.data[otherID]  # shape (2, 5, num_frames)
 
+        #print("numFrames")
+    
         for t in range(num_frames):
             #print("t: ", t)
             if not still_mask[t]:
@@ -714,8 +716,9 @@ class posLoader:
         isInteracting = []
         distances = self.returnInteractionDistance()
         count = 0
+        numFrames = self.returnNumFrames()
         
-        for t in range(self.totalFrames):
+        for t in range(numFrames):
             loc0 = self.returnRatLocationTime(0, t)
             loc1 = self.returnRatLocationTime(1, t)
             dist = distances[t]
