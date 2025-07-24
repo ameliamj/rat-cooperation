@@ -2030,7 +2030,7 @@ class MicePairGraphs:
         legend = ax1.legend(
             lines_1 + lines_2,
             labels_1 + labels_2,
-            fontsize=13,
+            fontsize=11,
             frameon=True,          # show the legend box
             facecolor='white',     # white background
             edgecolor='black',     # black border
@@ -2041,7 +2041,7 @@ class MicePairGraphs:
         ax1.add_artist(legend)
         ax1.tick_params(axis='x', labelsize=13)     # bottom x-axis
         ax1.tick_params(axis='y', labelsize=13)     # left y-axis
-        ax1.set_ylim(0, 90)
+        ax1.set_ylim(0, 100)
         ax2.tick_params(axis='y', labelsize=13)     # right y-axis
         plt.title('Strategy Variability Throughout Training', fontsize=16)
         plt.tight_layout()
@@ -2149,9 +2149,9 @@ posFiles = [["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/B
 pairGraphs = MicePairGraphs(magFiles, levFiles, posFiles)'''
 
 
-pairGraphs.lineGraphSuccessGazingInteractions()
+#pairGraphs.lineGraphSuccessGazingInteractions()
 
-#pairGraphs.lineGraphStrategies()
+pairGraphs.lineGraphStrategies()
 #pairGraphs.lineGraphSuccess()
 #pairGraphs.lineGraphGazing()
 #pairGraphs.lineGraphInteractions()
