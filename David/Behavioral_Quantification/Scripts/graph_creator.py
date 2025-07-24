@@ -5881,7 +5881,7 @@ class multiFileGraphs:
             
             for dist, time, success in zip(individual_trials_distance, individual_trials_timeUntilPress, individual_trials_success):
                 if (success != -1):
-                    plt.scatter(dist, time, color='black', alpha=0.6)
+                    plt.scatter(dist, time, color='blue', alpha=0.6)
                     dist_success.append(dist)
                     time_success.append(time)
                 elif success == 1:
