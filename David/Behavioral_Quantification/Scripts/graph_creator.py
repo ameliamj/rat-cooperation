@@ -1647,20 +1647,20 @@ class MicePairGraphs:
         
         print("data_y: ", success_rates)
         
-        #std_errors = [np.sqrt(p*(1-p)/trial_counts[i]) * 100 
-                      #for i, p in zip(filtered_indices, np.array(success_rates)/100)]
+        std_errors = [np.sqrt(p*(1-p)/trial_counts[i]) * 100 
+                      for i, p in zip(filtered_indices, np.array(success_rates)/100)]
     
         # Convert to arrays
         x = np.array(filtered_indices)
         y = np.array(success_rates)
-        #yerr = np.array(std_errors)
+        yerr = np.array(std_errors)
         
         print("\nx: ", x)
         print("y: ", y)
         #print("yerr: ", yerr)
         
-        #valid = np.isfinite(yerr)
-        #x, y, yerr = x[valid], y[valid], yerr[valid]
+        valid = np.isfinite(yerr)
+        x, y, yerr = x[valid], y[valid], yerr[valid]
         
         print("\nOnly Valid: ")
         print("x: ", x)
@@ -1679,7 +1679,7 @@ class MicePairGraphs:
         
         # Plot
         ax.plot(x, y_smooth, marker='o', color=color, label=label)
-        #plt.fill_between(x, y - yerr, y + yerr, color=color, alpha=0.2)
+        plt.fill_between(x, y - yerr, y + yerr, color=color, alpha=0.2)
         ax.plot(x, regline, linestyle='--', color=color)#,
                  #label=f"{label} Fit: slope={slope:.2f}, $R^2$={r_val**2:.2f}, ρ={rho:.2f}, p={p_rho:.3f}")
     
@@ -1756,13 +1756,15 @@ class MicePairGraphs:
        # === Plot call ===
        plt.figure(figsize=(10, 6))
        self.plot_by_exp_idx(success_counts, trial_counts, session_counts, label="All", color="blue")
-       self.plot_by_exp_idx(success_counts_KL, trial_counts_KL, session_counts_KL, label="KL", color="purple")
-       self.plot_by_exp_idx(success_counts_EB, trial_counts_EB, session_counts_EB, label="EB", color="green")
+       #self.plot_by_exp_idx(success_counts_KL, trial_counts_KL, session_counts_KL, label="KL", color="purple")
+       #self.plot_by_exp_idx(success_counts_EB, trial_counts_EB, session_counts_EB, label="EB", color="green")
        
-       plt.xlabel('Experiment Index', fontsize=13)
-       plt.ylabel('Avg Success Rate (%)', fontsize=13)
-       plt.title('Average Success Rate Throughout Training', fontsize=15)
+       plt.xlabel('Experiment Index', fontsize=16)
+       plt.ylabel('Avg Success Rate (%)', fontsize=16)
+       plt.title('Average Success Rate Throughout Training', fontsize=17)
        plt.grid(True, linestyle='--', alpha=0.6)
+       plt.xticks(fontsize = 14)
+       plt.yticks(fontsize=14) 
        plt.legend(fontsize=10)
        plt.tight_layout()
        if self.save:
@@ -2151,8 +2153,8 @@ pairGraphs = MicePairGraphs(magFiles, levFiles, posFiles)'''
 
 #pairGraphs.lineGraphSuccessGazingInteractions()
 
-pairGraphs.lineGraphStrategies()
-#pairGraphs.lineGraphSuccess()
+#pairGraphs.lineGraphStrategies()
+pairGraphs.lineGraphSuccess()
 #pairGraphs.lineGraphGazing()
 #pairGraphs.lineGraphInteractions()
 
