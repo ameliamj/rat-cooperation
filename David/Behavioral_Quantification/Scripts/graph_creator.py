@@ -1673,12 +1673,12 @@ class MicePairGraphs:
         # Linear regression
         slope, intercept, r_val, p_lin, _ = linregress(x, y)
         regline = intercept + slope * x
-        
+        y_smooth = uniform_filter1d(y, size=3)
         if ax is None:
             ax = plt.gca()
         
         # Plot
-        ax.plot(x, y, marker='o', color=color, label=f"{label}")
+        ax.plot(x, y_smooth, marker='o', color=color, label=label)
         #plt.fill_between(x, y - yerr, y + yerr, color=color, alpha=0.2)
         ax.plot(x, regline, linestyle='--', color=color)#,
                  #label=f"{label} Fit: slope={slope:.2f}, $R^2$={r_val**2:.2f}, ρ={rho:.2f}, p={p_rho:.3f}")
@@ -2034,7 +2034,8 @@ class MicePairGraphs:
             frameon=True,          # show the legend box
             facecolor='white',     # white background
             edgecolor='black',     # black border
-            framealpha=1.0
+            framealpha=1.0,
+            ncol = 2
         )
         legend.set_zorder(999)
         ax1.add_artist(legend)
