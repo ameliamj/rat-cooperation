@@ -6975,7 +6975,7 @@ class multiFileGraphs:
         plt.xlabel('Average Interaction Percentage',fontsize=16)
         plt.ylabel('Success Percentage',fontsize=16)
         plt.title('Interaction Behavior vs. Success',fontsize=17)
-        plt.text(0.05, 0.95, f'$R^2$ = {r_value**2:.3f}', transform=plt.gca().transAxes,
+        plt.text(0.95, 0.95, f'$R^2$ = {r_value**2:.3f}', transform=plt.gca().transAxes,
                  fontsize=15, verticalalignment='top')
         plt.xticks(fontsize = 15)
         plt.yticks(fontsize=15) 
@@ -8708,7 +8708,7 @@ class multiFileGraphs:
         plt.xlabel('Average Gaze Percentage',fontsize=16)
         plt.ylabel('Success Percentage',fontsize=16)
         plt.title('Gaze Behavior vs. Success',fontsize=17)
-        plt.text(0.05, 0.95, f'$R^2$ = {r_value**2:.3f}', transform=plt.gca().transAxes,
+        plt.text(0.95, 0.95, f'$R^2$ = {r_value**2:.3f}', transform=plt.gca().transAxes,
                  fontsize=15, verticalalignment='top')
         plt.xticks(fontsize = 15)
         plt.yticks(fontsize=15) 
