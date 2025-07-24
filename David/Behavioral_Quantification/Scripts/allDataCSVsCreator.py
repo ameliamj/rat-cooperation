@@ -375,7 +375,21 @@ class allDataCSVsCreator:
                 'successRate_2rats': successRate_2rats,
                 'synchronized_successRate_0rats': synchronized_successRate_0rats,
                 'synchronized_successRate_1rat': synchronized_successRate_1rats,
-                'synchronized_successRate_2rats': synchronized_successRate_2rats
+                'synchronized_successRate_2rats': synchronized_successRate_2rats,
+                
+                # Add raw counts
+                'successes_0rats': successes_0rats,
+                'successes_1rat': successes_1rat,
+                'successes_2rats': successes_2rats,
+                'counts_0rats': counts_0rats,
+                'counts_1rat': counts_1rat,
+                'counts_2rats': counts_2rats,
+                'synchronized_successes_0rats': synchronized_successes_0rats,
+                'synchronized_successes_1rat': synchronized_successes_1rat,
+                'synchronized_successes_2rats': synchronized_successes_2rats,
+                'synchronized_counts_0rats': synchronized_counts_0rats,
+                'synchronized_counts_1rat': synchronized_counts_1rat,
+                'synchronized_counts_2rats': synchronized_counts_2rats
                 
             })
     
@@ -562,6 +576,6 @@ metadata_path = "/gpfs/radev/project/saxena/drb83/rat-cooperation/David/Behavior
 metadata_smol = "/gpfs/radev/project/saxena/drb83/rat-cooperation/David/Behavioral_Quantification/Sorted_Data_Files/only_opaque_sessions_filtered_onlyFirst.csv"
 metadata_filtered = "/gpfs/radev/project/saxena/drb83/rat-cooperation/David/Behavioral_Quantification/Sorted_Data_Files/Filtered.csv"
 
-creator = allDataCSVsCreator(metadata_smol, post="_filtered")
+creator = allDataCSVsCreator(metadata_filtered, post="_filtered")
 creator.createSessionCSV()
 #creator.createTrialCSV()
