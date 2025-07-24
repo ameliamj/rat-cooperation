@@ -2027,14 +2027,16 @@ class MicePairGraphs:
         # Combine legends from both axes
         lines_1, labels_1 = ax1.get_legend_handles_labels()
         lines_2, labels_2 = ax2.get_legend_handles_labels()
-        ax1.legend(
+        legend = ax1.legend(
             lines_1 + lines_2,
             labels_1 + labels_2,
             fontsize=13,
             frameon=True,          # show the legend box
             facecolor='white',     # white background
-            edgecolor='black'      # black border
+            edgecolor='black',     # black border
+            framealpha=1.0
         )
+        legend.set_zorder(999)
         ax1.tick_params(axis='x', labelsize=13)     # bottom x-axis
         ax1.tick_params(axis='y', labelsize=13)     # left y-axis
         ax2.tick_params(axis='y', labelsize=13)     # right y-axis
