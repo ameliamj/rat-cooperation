@@ -2011,17 +2011,17 @@ class MicePairGraphs:
         # Second axis
         ax2 = ax1.twinx()
         self.plot_by_exp_idx(horizontalDistanceCounts, frameCounts, session_counts, label="x-dist", color="red", ax=ax2)
-        ax2.set_ylabel('Avg Horizontal Distance', fontsize=17)
+        ax2.set_ylabel('Avg Horizontal Distance', fontsize=15)
         
         # Combine legends from both axes
         lines_1, labels_1 = ax1.get_legend_handles_labels()
         lines_2, labels_2 = ax2.get_legend_handles_labels()
-        ax1.legend(lines_1 + lines_2, labels_1 + labels_2, fontsize=17)
-        plt.xticks(fontsize=15)                     # bottom x-axis
-        ax1.tick_params(axis='y', labelsize=15)     # left y-axis
-        ax2.tick_params(axis='y', labelsize=15)     # right y-axis
+        ax1.legend(lines_1 + lines_2, labels_1 + labels_2, fontsize=14)
+        ax1.tick_params(axis='x', labelsize=14)     # bottom x-axis
+        ax1.tick_params(axis='y', labelsize=14)     # left y-axis
+        ax2.tick_params(axis='y', labelsize=14)     # right y-axis
         plt.tight_layout()
-        plt.title('Strategy Variability Throughout Training', fontsize=18)
+        plt.title('Strategy Variability Throughout Training', fontsize=17)
         plt.tight_layout()
         if self.save:
             plt.savefig(f'{self.prefix}StrategyVariabilityByExperimentIndex.png')
@@ -2127,9 +2127,9 @@ posFiles = [["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/B
 pairGraphs = MicePairGraphs(magFiles, levFiles, posFiles)'''
 
 
-pairGraphs.lineGraphSuccessGazingInteractions()
+#pairGraphs.lineGraphSuccessGazingInteractions()
 
-#pairGraphs.lineGraphStrategies()
+pairGraphs.lineGraphStrategies()
 #pairGraphs.lineGraphSuccess()
 #pairGraphs.lineGraphGazing()
 #pairGraphs.lineGraphInteractions()
