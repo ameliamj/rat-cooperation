@@ -2102,7 +2102,7 @@ class MicePairGraphs:
         plt.legend(fontsize=17)
         plt.tight_layout()
         if self.save:
-            plt.savefig(f'{self.prefix}Gazing_Interacting_Success_ThroughoutTraining_olddef.png')
+            plt.savefig(f'{self.prefix}Gazing_Interacting_Success_ThroughoutTraining_olddef1.png')
         plt.show()
         plt.close()
         
@@ -2149,9 +2149,9 @@ posFiles = [["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/B
 pairGraphs = MicePairGraphs(magFiles, levFiles, posFiles)'''
 
 
-#pairGraphs.lineGraphSuccessGazingInteractions()
+pairGraphs.lineGraphSuccessGazingInteractions()
 
-pairGraphs.lineGraphStrategies()
+#pairGraphs.lineGraphStrategies()
 #pairGraphs.lineGraphSuccess()
 #pairGraphs.lineGraphGazing()
 #pairGraphs.lineGraphInteractions()
