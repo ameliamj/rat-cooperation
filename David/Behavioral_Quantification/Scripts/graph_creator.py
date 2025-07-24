@@ -1150,7 +1150,7 @@ categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["
 #categoryExperiments.compareSuccesfulTrials()
 '''
 
-
+'''
 #Unfamiliar vs. Training Partners
 print("Running UF vs TP")
 dataUF = getOnlyUnfamiliar() #Unfamiliar
@@ -1162,7 +1162,7 @@ posFiles = [dataUF[2], dataTP[2]]
 categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["Unfamiliar", "Training Partners"])
 categoryExperiments.printSummaryStats()
 #categoryExperiments.compareSuccesfulTrials()
-
+'''
 
 
 #Transparent vs. Translucent vs. Opaque
@@ -1984,6 +1984,10 @@ class MicePairGraphs:
                 difference = sum(abs(a - b) for a, b in zip(rat1_xlocations, rat2_xlocations))  
                 total_frames = pos.returnNumFrames()
                 
+                print("Difference: ", difference)
+                print("total_frames: ", total_frames)
+                print("totFrames: ", totFrames)
+                
                 horizontalDistanceCounts[exp_idx] += difference
                 frameCounts[exp_idx] += total_frames
                 
@@ -2004,8 +2008,8 @@ class MicePairGraphs:
         self.plot_by_exp_idx(waiting1_counts, trial_counts, session_counts, label="1 Waiting", color="purple", ax=ax1)
         self.plot_by_exp_idx(waiting2_counts, trial_counts, session_counts, label="2 Waiting", color="green", ax=ax1)
         
-        ax1.set_xlabel('Experiment Index', fontsize=17)
-        ax1.set_ylabel('Percent Waiting', fontsize=17)
+        ax1.set_xlabel('Experiment Index', fontsize=15)
+        ax1.set_ylabel('Percent Waiting', fontsize=15)
         ax1.grid(True, linestyle='--', alpha=0.6)
         
         # Second axis
@@ -2016,12 +2020,12 @@ class MicePairGraphs:
         # Combine legends from both axes
         lines_1, labels_1 = ax1.get_legend_handles_labels()
         lines_2, labels_2 = ax2.get_legend_handles_labels()
-        ax1.legend(lines_1 + lines_2, labels_1 + labels_2, fontsize=14)
-        ax1.tick_params(axis='x', labelsize=14)     # bottom x-axis
-        ax1.tick_params(axis='y', labelsize=14)     # left y-axis
-        ax2.tick_params(axis='y', labelsize=14)     # right y-axis
+        ax1.legend(lines_1 + lines_2, labels_1 + labels_2, fontsize=13)
+        ax1.tick_params(axis='x', labelsize=13)     # bottom x-axis
+        ax1.tick_params(axis='y', labelsize=13)     # left y-axis
+        ax2.tick_params(axis='y', labelsize=13)     # right y-axis
         plt.tight_layout()
-        plt.title('Strategy Variability Throughout Training', fontsize=17)
+        plt.title('Strategy Variability Throughout Training', fontsize=16)
         plt.tight_layout()
         if self.save:
             plt.savefig(f'{self.prefix}StrategyVariabilityByExperimentIndex.png')
