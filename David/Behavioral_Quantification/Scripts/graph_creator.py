@@ -40,7 +40,7 @@ import statistics
 import statsmodels.api as sm
 from itertools import combinations
 
-
+import matplotlib.colors as mcolors
 from matplotlib.patches import Patch
 import matplotlib.cm as cm
 from matplotlib import animation
@@ -8748,6 +8748,9 @@ class multiFileGraphs:
         Graph #4: Comparing Success Rate by # of Rats at Lever at Cue
         '''
         
+        MIN_AVG_MOVED = 10
+        MAX_SYNCHRONIZED = 325
+        
         successRates = []
         successRatesReal = []
         averageWaitingTimes = []
@@ -8762,6 +8765,14 @@ class multiFileGraphs:
         totalSucc_0rats = 0
         totalValidTrials_0rats = 0
         
+        synchronized_successes_0rats = 0
+        synchronized_successes_1rat = 0
+        synchronized_successes_2rats = 0
+        synchronized_counts_0rats = 0
+        synchronized_counts_1rat = 0
+        synchronized_counts_2rats = 0
+        
+        
         for exp in self.experiments: 
             lev = exp.lev
             pos = exp.pos
@@ -8769,6 +8780,7 @@ class multiFileGraphs:
             
             # Retrieve trial data
             start_times = lev.returnTimeStartTrials()  # Array of trial start times (in seconds) for all trials
+            end_times = lev.returnTimeEndTrials()
             total_trials = lev.returnNumTotalTrialswithLeverPress()  # Total number of trials with at least one lever press
             success_trials = lev.returnSuccessTrials()  # Array indicating whether each trial was successful (True/False)
             success_trials = self._filterToLeverPressTrials(success_trials, lev)
@@ -8784,12 +8796,23 @@ class multiFileGraphs:
 
             for trial_idx in range(total_trials):
                 start_time = start_times[trial_idx]
+                end_time = end_times[trial_idx]
                 succ = success_trials[trial_idx]
                 
-                if (np.isnan(start_time)):
+                if (np.isnan(start_time) or np.isnan(end_time)):
                     continue
                 
                 start_frame = int(start_time * fps)
+                end_frame = int(end_time * fps)
+                numFrames = end_frame - start_frame
+                
+                #Synchronized Comparison
+                rat1_xlocations = pos.data[0, 0, pos.HB_INDEX, start_frame:end_frame]
+                rat2_xlocations = pos.data[1, 0, pos.HB_INDEX, start_frame:end_frame]
+                avgDifference = sum(abs(a - b) for a, b in zip(rat1_xlocations, rat2_xlocations)) / numFrames
+                distanceMoved = np.sum(np.abs(np.diff(rat1_xlocations))) + np.sum(np.abs(np.diff(rat2_xlocations)))
+                avgDistanceMoved = distanceMoved / numFrames
+                isSynchronized = avgDifference < MAX_SYNCHRONIZED and avgDistanceMoved > MIN_AVG_MOVED
                 
                 #Wait Before Queue Analysis
                 t = start_frame - 1
@@ -8822,15 +8845,30 @@ class multiFileGraphs:
                     if (succ):
                         succCount += 1
                     
+                    if (isSynchronized):
+                        synchronized_counts_1rat += 1
+                        if (succ):
+                            synchronized_successes_1rat += 1
+                            
                     sumWaiting += max_wait
                 elif (max_wait == 0):
                     totalValidTrials_0rats += 1
                     if (succ):
                         totalSucc_0rats += 1
+                        
+                    if (isSynchronized):
+                        synchronized_counts_0rats += 1
+                        if (succ):
+                            synchronized_successes_0rats += 1
                 else:
                     totalValidTrials_2rats += 1
                     if (succ):
                         totalSucc_2rats += 1
+                    
+                    if (isSynchronized):
+                        synchronized_counts_2rats += 1
+                        if (succ):
+                            synchronized_successes_2rats += 1
                     
             totalSucc += succCount
             totalValidTrials += numValidTrials
@@ -8913,31 +8951,66 @@ class multiFileGraphs:
         rate_1 = totalSucc / totalValidTrials if totalValidTrials > 0 else 0
         rate_2 = totalSucc_2rats / totalValidTrials_2rats if totalValidTrials_2rats > 0 else 0
         
+        synchronized_rate_0 = np.divide(synchronized_successes_0rats, synchronized_counts_0rats, where=synchronized_counts_0rats != 0)
+        synchronized_rate_1 = np.divide(synchronized_successes_1rat, synchronized_counts_1rat, where=synchronized_counts_1rat != 0)
+        synchronized_rate_2 = np.divide(synchronized_successes_2rats, synchronized_counts_2rats, where=synchronized_counts_2rats != 0)
+        
         # Data for the bar chart
         success_rates = [rate_0, rate_1, rate_2]
+        synchronized_rates = [synchronized_rate_0, synchronized_rate_1, synchronized_rate_2]
         valid_trials = [totalValidTrials_0rats, totalValidTrials, totalValidTrials_2rats]
         labels = ['0 Rats at Lever', '1 Rat at Lever', '2 Rats at Lever']
-        colors = ['gray', 'skyblue', 'green']
+        base_colors = ['blue', 'purple', 'pink']
+        
+        # Lighter color function
+        def lighten_color(color, amount=0.5):
+            c = mcolors.to_rgb(color)
+            return tuple(1 - (1 - x) * (1 - amount) for x in c)
         
         # Create bar chart
-        fig, ax = plt.subplots(figsize=(8, 6))
-        bars = ax.bar(labels, success_rates, color=colors, edgecolor='black')
+        fig, ax = plt.subplots(figsize=(6.33, 4.3))
+        bar_width = 0.6
+        x = np.arange(len(labels))
         
-        # Add text on top of bars
-        for i, bar in enumerate(bars):
-            height = bar.get_height()
-            ax.text(bar.get_x() + bar.get_width() / 2, height + 0.02,
-                    f'n = {valid_trials[i]}', ha='center', va='bottom', fontsize=12)
+        # Draw base bars
+        for i in range(len(success_rates)):
+            bar_color = base_colors[i]
+            bar_height = success_rates[i]
+            sync_height = synchronized_rates[i]
+            
+            # Draw base (regular) bar
+            ax.bar(x[i], bar_height, width=bar_width, color=bar_color, edgecolor='black', zorder=2)
+        
+            # Compute the difference and draw overlay
+            diff = sync_height - bar_height
+            lighter = lighten_color(bar_color, 0.4)
+            
+            if diff > 0:
+                # Extend upward with lighter color
+                ax.bar(x[i], diff, bottom=bar_height, width=bar_width, color=lighter, edgecolor='black', alpha=0.7, hatch='///', zorder=3)
+            elif diff < 0:
+                # Inset lighter bar to show lower synchronized rate
+                ax.bar(x[i], -diff, bottom=sync_height, width=bar_width, color=lighter, edgecolor='black', alpha=0.7, hatch='\\\\\\', zorder=3)
+        
+        # Add legend handles manually
+        legend_elements = [
+            Patch(facecolor='gray', edgecolor='black', label='Overall Success'),
+            Patch(facecolor=lighten_color('gray', 0.4), edgecolor='black', label='Synchronized Diff', hatch='///', alpha=0.7)
+        ]
+        ax.legend(handles=legend_elements, fontsize=15, loc='upper left')
         
         # Axis formatting
-        ax.set_ylim(0, 1.1)  # allow room for labels
-        ax.set_ylabel('Success Rate', fontsize=14)
-        ax.set_title('Success Rate by Number of Rats at Lever Start', fontsize=16)
+        ax.set_xticks(x)
+        ax.set_xticklabels(labels, fontsize=16)
+        ax.set_ylim(0, 1.1)
+        ax.set_ylabel('Success Rate', fontsize=16)
+        ax.set_title('Success Rate with Synchronized Overlay', fontsize=17)
+        ax.tick_params(axis='y', labelsize=14)
         ax.grid(axis='y', linestyle='--', alpha=0.6)
         
         plt.tight_layout()
         if self.save:
-            plt.savefig(f"{self.prefix}success_rate_by_num_rats_at_start.png")
+            plt.savefig(f"{self.prefix}success_rate_with_synchronized_overlay.png")
         plt.show()
         plt.close()
         
@@ -9335,7 +9408,7 @@ def getFiberPhoto():
     return [fe.getLevsDatapath(), fe.getMagsDatapath(), fe.getPosDatapath(), fpsList, totFramesList, initial_nan_list, fiberFiles]
 
 
-
+'''
 lev_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv"]
 
 mag_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_mag.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_mag.csv"] 
@@ -9345,7 +9418,7 @@ pos_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/B
 fpsList = [30, 30]
 totFramesList = [15000, 15000]
 initialNanList = [0.15, 0.12]
-
+'''
 
 
 arr = getFiltered()
@@ -9389,12 +9462,12 @@ initialNanList = [0.3]
 
 #print("Start MultiFileGraphs Regular")
 experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "", save=True)
-experiment.waitingStrategy()
+#experiment.waitingStrategy()
 #experiment.percentGazingvsSuccess()
 #experiment.interactionVSSuccess()
 
 #experiment.expandedSynchronizationStrategyGraphs()
-#experiment.onlyOneRatWaitedGraphs()
+experiment.onlyOneRatWaitedGraphs()
 #experiment.percentGazingvsSuccess()
 #experiment.moreGazeComparisons()
 #experiment.successVsAverageDistance()
@@ -9403,7 +9476,7 @@ experiment.waitingStrategy()
 #experiment.stateTransitionModel()
 #experiment.cooperativeRegionStrategiesQuantification()
 #experiment.pcaAndGLMCoopSuccessPredictors()
-experiment.trueCooperationTesting()
+#experiment.trueCooperationTesting()
 #experiment.gazingOverTrial()
 
 #experiment.testMotivation()
