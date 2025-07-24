@@ -6997,7 +6997,7 @@ class multiFileGraphs:
         plt.ylabel('Success Percentage',fontsize=16)
         plt.title('Interaction Behavior vs. Success',fontsize=17)
         plt.text(0.95, 0.95, f'$R^2$ = {r_value**2:.3f}', transform=plt.gca().transAxes,
-                 fontsize=15, verticalalignment='top')
+         fontsize=15, verticalalignment='top', horizontalalignment='right')
         plt.xticks(fontsize = 15)
         plt.yticks(fontsize=15) 
         #plt.legend()
@@ -8730,7 +8730,7 @@ class multiFileGraphs:
         plt.ylabel('Success Percentage',fontsize=16)
         plt.title('Gaze Behavior vs. Success',fontsize=17)
         plt.text(0.95, 0.95, f'$R^2$ = {r_value**2:.3f}', transform=plt.gca().transAxes,
-                 fontsize=15, verticalalignment='top')
+         fontsize=15, verticalalignment='top', horizontalalignment='right')
         plt.xticks(fontsize = 15)
         plt.yticks(fontsize=15) 
         #plt.legend()
@@ -9462,9 +9462,9 @@ initialNanList = [0.3]
 
 #print("Start MultiFileGraphs Regular")
 experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "", save=True)
-experiment.waitingStrategy()
-#experiment.percentGazingvsSuccess()
-#experiment.interactionVSSuccess()
+#experiment.waitingStrategy()
+experiment.percentGazingvsSuccess()
+experiment.interactionVSSuccess()
 
 #experiment.expandedSynchronizationStrategyGraphs()
 #experiment.onlyOneRatWaitedGraphs()
@@ -9476,7 +9476,7 @@ experiment.waitingStrategy()
 #experiment.stateTransitionModel()
 #experiment.cooperativeRegionStrategiesQuantification()
 #experiment.pcaAndGLMCoopSuccessPredictors()
-experiment.trueCooperationTesting()
+#experiment.trueCooperationTesting()
 #experiment.gazingOverTrial()
 
 #experiment.testMotivation()
