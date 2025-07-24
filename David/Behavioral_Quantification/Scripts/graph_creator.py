@@ -2132,8 +2132,8 @@ def getGroupRatPairs():
     return [fe.getLevsDatapath(grouped = True), fe.getMagsDatapath(grouped = True), fe.getPosDatapath(grouped = True), fpsList, totFramesList]
 
 
-data = getGroupRatPairs()
-pairGraphs = MicePairGraphs(data[0], data[1], data[2], data[3], data[4])
+#data = getGroupRatPairs()
+#pairGraphs = MicePairGraphs(data[0], data[1], data[2], data[3], data[4])
 
 
 '''magFiles = [["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv"],
@@ -2148,7 +2148,7 @@ pairGraphs = MicePairGraphs(magFiles, levFiles, posFiles)'''
 
 #pairGraphs.lineGraphSuccessGazingInteractions()
 
-pairGraphs.lineGraphStrategies()
+#pairGraphs.lineGraphStrategies()
 #pairGraphs.lineGraphSuccess()
 #pairGraphs.lineGraphGazing()
 #pairGraphs.lineGraphInteractions()
@@ -4464,7 +4464,7 @@ class multiFileGraphs:
         
         
         # Generate visualizations
-        self._plot_bar_wait_times(
+        '''self._plot_bar_wait_times(
             total_both_wait_before_success / total_successful_trials if total_successful_trials > 0 else 0,
             total_both_wait_before / total_trials if total_trials > 0 else 0,
             "both_rats_success_vs_all.png",
@@ -4476,16 +4476,16 @@ class multiFileGraphs:
             total_wait_before_all / total_trials if total_trials > 0 else 0,
             "max_wait_success_vs_all.png",
             "Average Wait Time: Successful vs. All Trials"
-        )
+        )'''
 
         self._plot_scatter(
             both_wait_before_means, success_rates,
             "both_rats_waiting_before_vs_success.png",
-            "Avg Waiting Time of Both Rats Before Trial vs. Cooperative Success Rate",
-            "Average Waiting Time before Queue (frames)"
+            "Waiting Before Cue vs. Cooperative Success Rate",
+            "Waiting Time before Cue (frames)"
         )
 
-        self._plot_scatter(
+        '''self._plot_scatter(
             avg_waiting_times, success_rates,
             "waiting_during_trial_vs_success.png",
             "Waiting Time during Trial vs. Cooperative Success Rate",
@@ -4593,7 +4593,7 @@ class multiFileGraphs:
         if self.save:
             plt.savefig(f"{self.prefix}lever_occupancy_over_time.png")
         plt.show()
-        plt.close()
+        plt.close()'''
         
         '''self._plot_line(
             gaussian_filter1d(avg_occupancy, sigma=2),
@@ -4740,14 +4740,16 @@ class multiFileGraphs:
                 x_vals = np.linspace(min(x_data), max(x_data), 100)
                 plt.plot(x_vals, slope * x_vals + intercept, color='red', linestyle='--', label='Trendline')
                 plt.text(0.95, 0.05, f"$R^2$ = {r_value**2:.3f}", transform=plt.gca().transAxes,
-                         ha='right', va='bottom', fontsize=12, bbox=dict(facecolor='white', edgecolor='gray'))
+                         ha='right', va='bottom', fontsize=15, bbox=dict(facecolor='white', edgecolor='gray'))
         
-        plt.xlabel(x_label, fontsize=self.labelSize)
+        plt.xticks(fontsize=15)
+        plt.yticks(fontsize=15)
+        plt.xlabel(x_label, fontsize=17)
         if (y_label == None):
-            plt.ylabel('Cooperative Success Rate', fontsize=self.labelSize)
+            plt.ylabel('Cooperative Success Rate', fontsize=17)
         else:
-            plt.xlabel(y_label, fontsize=self.labelSize)
-        plt.title(title, fontsize=self.titleSize)
+            plt.ylabel(y_label, fontsize=self.labelSize)
+        plt.title(title, fontsize=18)
         plt.legend()
         plt.grid(True)
         plt.tight_layout()
@@ -9322,7 +9324,7 @@ def getFiberPhoto():
     return [fe.getLevsDatapath(), fe.getMagsDatapath(), fe.getPosDatapath(), fpsList, totFramesList, initial_nan_list, fiberFiles]
 
 
-'''
+
 lev_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv"]
 
 mag_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_mag.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_mag.csv"] 
@@ -9332,9 +9334,9 @@ pos_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/B
 fpsList = [30, 30]
 totFramesList = [15000, 15000]
 initialNanList = [0.15, 0.12]
+
+
 '''
-
-
 arr = getFiltered()
 
 #arr = trainingCoopData()
@@ -9349,7 +9351,7 @@ fpsList = arr[3]
 totFramesList = arr[4]
 initialNanList = arr[5]
 #fiberPhoto = arr[6]
-
+'''
 
 
 '''
@@ -9375,7 +9377,8 @@ initialNanList = [0.3]
 '''
 
 #print("Start MultiFileGraphs Regular")
-#experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "", save=True)
+experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "", save=True)
+experiment.waitingStrategy()
 #experiment.percentGazingvsSuccess()
 #experiment.interactionVSSuccess()
 
