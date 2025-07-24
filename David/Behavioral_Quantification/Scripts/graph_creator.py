@@ -1929,7 +1929,7 @@ class MicePairGraphs:
         trial_counts = {}
     
         for group_idx, group in enumerate(self.experimentGroups):
-            if (len(group) < 19):
+            if (len(group) < 5):
                 continue
             for exp_idx, exp in enumerate(group):
                 lev = exp.lev
@@ -2059,7 +2059,7 @@ class MicePairGraphs:
         session_counts = {}
         
         for group_idx, group in enumerate(self.experimentGroups):
-            if (len(group) < 5):
+            if (len(group) < 19):
                 continue
             for exp_idx, exp in enumerate(group):
                 lev = exp.lev
@@ -2148,7 +2148,7 @@ posFiles = [["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/B
 pairGraphs = MicePairGraphs(magFiles, levFiles, posFiles)'''
 
 
-pairGraphs.lineGraphSuccessGazingInteractions()
+#pairGraphs.lineGraphSuccessGazingInteractions()
 
 pairGraphs.lineGraphStrategies()
 #pairGraphs.lineGraphSuccess()
