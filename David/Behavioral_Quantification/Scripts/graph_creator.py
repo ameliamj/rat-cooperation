@@ -1626,7 +1626,7 @@ class MicePairGraphs:
             plt.close()
     
     
-    def plot_by_exp_idx(self, success_counts, trial_counts, session_counts, label, color):
+    def plot_by_exp_idx(self, success_counts, trial_counts, session_counts, label, color, ax=None):
         print("data_y_count: ", success_counts)
         print("data_y_division: ", trial_counts)
         print("session_counts: ", session_counts)
@@ -1671,11 +1671,13 @@ class MicePairGraphs:
         slope, intercept, r_val, p_lin, _ = linregress(x, y)
         regline = intercept + slope * x
         
-    
+        if ax is None:
+            ax = plt.gca()
+        
         # Plot
-        plt.plot(x, y, marker='o', color=color, label=f"{label}")
+        ax.plot(x, y, marker='o', color=color, label=f"{label}")
         #plt.fill_between(x, y - yerr, y + yerr, color=color, alpha=0.2)
-        plt.plot(x, regline, linestyle='--', color=color)#,
+        ax.plot(x, regline, linestyle='--', color=color)#,
                  #label=f"{label} Fit: slope={slope:.2f}, $R^2$={r_val**2:.2f}, ρ={rho:.2f}, p={p_rho:.3f}")
     
     def lineGraphSuccess(self):
@@ -1908,7 +1910,7 @@ class MicePairGraphs:
         plt.close()
     
     
-    def lineGraphWaiting(self):
+    def lineGraphStrategies(self):
         '''
         Plots average percent interactions throughout training
         '''
@@ -1918,7 +1920,8 @@ class MicePairGraphs:
         waiting0_counts = {}    
         waiting1_counts = {}    
         waiting2_counts = {}
-        
+        horizontalDistanceCounts = {}
+        frameCounts = {}
         session_counts = {}
         trial_counts = {}
     
@@ -1970,10 +1973,21 @@ class MicePairGraphs:
                 
                 if exp_idx not in trial_counts:
                     trial_counts[exp_idx] = 0
-                
-                if exp_idx not in session_counts:
                     session_counts[exp_idx] = 0
+                    horizontalDistanceCounts[exp_idx] = 0
+                    frameCounts[exp_idx] = 0
                     
+                #Synchronization Strategy
+                rat1_xlocations = pos.data[0, 0, pos.HB_INDEX]
+                rat2_xlocations = pos.data[1, 0, pos.HB_INDEX]
+                
+                difference = sum(abs(a - b) for a, b in zip(rat1_xlocations, rat2_xlocations))  
+                total_frames = pos.returnNumFrames()
+                
+                horizontalDistanceCounts[exp_idx] += difference
+                frameCounts[exp_idx] += total_frames
+                
+                #Waiting Strategy
                 trial_counts[exp_idx] += tempNumTrials
                 waiting0_counts[exp_idx] += tempWait0
                 waiting1_counts[exp_idx] += tempWait1
@@ -1982,19 +1996,35 @@ class MicePairGraphs:
                 
                 
         # === Plot call ===
-        plt.figure(figsize=(10, 6))
-        self.plot_by_exp_idx(waiting0_counts, trial_counts, session_counts, label="0 Waiting", color="blue")
-        self.plot_by_exp_idx(waiting1_counts, trial_counts, session_counts, label="1 Waiting", color="purple")
-        self.plot_by_exp_idx(waiting2_counts, trial_counts, session_counts, label="2 Waiting", color="green")
-    
-        plt.xlabel('Experiment Index', fontsize=13)
-        plt.ylabel('Percent Waiting', fontsize=13)
-        plt.title('Average Waiting Variability Throughout Training', fontsize=15)
-        plt.grid(True, linestyle='--', alpha=0.6)
-        plt.legend(fontsize=10)
+        plt.figure(figsize=(6.33, 4.3))
+
+        # First axis
+        ax1 = plt.gca()
+        self.plot_by_exp_idx(waiting0_counts, trial_counts, session_counts, label="0 Waiting", color="blue", ax=ax1)
+        self.plot_by_exp_idx(waiting1_counts, trial_counts, session_counts, label="1 Waiting", color="purple", ax=ax1)
+        self.plot_by_exp_idx(waiting2_counts, trial_counts, session_counts, label="2 Waiting", color="green", ax=ax1)
+        
+        ax1.set_xlabel('Experiment Index', fontsize=17)
+        ax1.set_ylabel('Percent Waiting', fontsize=17)
+        ax1.grid(True, linestyle='--', alpha=0.6)
+        
+        # Second axis
+        ax2 = ax1.twinx()
+        self.plot_by_exp_idx(horizontalDistanceCounts, frameCounts, session_counts, label="x-dist", color="red", ax=ax2)
+        ax2.set_ylabel('Avg Horizontal Distance', fontsize=17)
+        
+        # Combine legends from both axes
+        lines_1, labels_1 = ax1.get_legend_handles_labels()
+        lines_2, labels_2 = ax2.get_legend_handles_labels()
+        ax1.legend(lines_1 + lines_2, labels_1 + labels_2, fontsize=17)
+        plt.xticks(fontsize=15)                     # bottom x-axis
+        ax1.tick_params(axis='y', labelsize=15)     # left y-axis
+        ax2.tick_params(axis='y', labelsize=15)     # right y-axis
+        plt.tight_layout()
+        plt.title('Strategy Variability Throughout Training', fontsize=18)
         plt.tight_layout()
         if self.save:
-            plt.savefig(f'{self.prefix}RatWaitingVariabilityByExperimentIndex.png')
+            plt.savefig(f'{self.prefix}StrategyVariabilityByExperimentIndex.png')
         plt.show()
         plt.close()
             
@@ -2045,6 +2075,8 @@ class MicePairGraphs:
         plt.ylabel('Percent (%)', fontsize=17)
         plt.title('Gazing/Interacting/Success Throughout Training', fontsize=18)
         plt.grid(True, linestyle='--', alpha=0.6)
+        plt.xticks(fontsize = 15)
+        plt.yticks(fontsize=15) 
         plt.legend(fontsize=17)
         plt.tight_layout()
         if self.save:
@@ -2061,6 +2093,8 @@ class MicePairGraphs:
         plt.ylabel('Percent (%)', fontsize=17)
         plt.title('Gazing/Interacting/Success Throughout Training', fontsize=18)
         plt.grid(True, linestyle='--', alpha=0.6)
+        plt.xticks(fontsize = 15)
+        plt.yticks(fontsize=15) 
         plt.legend(fontsize=17)
         plt.tight_layout()
         if self.save:
@@ -2093,9 +2127,9 @@ posFiles = [["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/B
 pairGraphs = MicePairGraphs(magFiles, levFiles, posFiles)'''
 
 
-pairGraphs.lineGraphSuccessGazingInteractions()
+#pairGraphs.lineGraphSuccessGazingInteractions()
 
-#pairGraphs.lineGraphWaiting()
+pairGraphs.lineGraphStrategies()
 #pairGraphs.lineGraphSuccess()
 #pairGraphs.lineGraphGazing()
 #pairGraphs.lineGraphInteractions()
