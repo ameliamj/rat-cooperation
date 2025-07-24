@@ -9336,7 +9336,7 @@ totFramesList = [15000, 15000]
 initialNanList = [0.15, 0.12]
 
 
-'''
+
 arr = getFiltered()
 
 #arr = trainingCoopData()
@@ -9351,7 +9351,7 @@ fpsList = arr[3]
 totFramesList = arr[4]
 initialNanList = arr[5]
 #fiberPhoto = arr[6]
-'''
+
 
 
 '''
