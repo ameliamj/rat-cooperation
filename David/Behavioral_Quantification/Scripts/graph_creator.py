@@ -4481,7 +4481,7 @@ class multiFileGraphs:
         self._plot_scatter(
             both_wait_before_means, success_rates,
             "both_rats_waiting_before_vs_success.png",
-            "Waiting Before Cue vs. Cooperative Success Rate",
+            "Waiting Before Cue vs. Success Rate",
             "Waiting Time before Cue (frames)"
         )
 
@@ -5881,7 +5881,7 @@ class multiFileGraphs:
             
             for dist, time, success in zip(individual_trials_distance, individual_trials_timeUntilPress, individual_trials_success):
                 if (success != -1):
-                    plt.scatter(dist, time, color='gray', alpha=0.6)
+                    plt.scatter(dist, time, color='black', alpha=0.6)
                     dist_success.append(dist)
                     time_success.append(time)
                 elif success == 1:
@@ -5909,7 +5909,7 @@ class multiFileGraphs:
                 x_vals = np.linspace(min(dist_success), max(dist_success), 100)
                 plt.plot(x_vals, slope * x_vals + intercept, color='black', linestyle='--', label='Trendline')
                 plt.text(0.95, 0.84,
-                         f"R^2$ = {r_squared:.3f}",
+                         f"$R^2$ = {r_squared:.3f}",
                          transform=plt.gca().transAxes,
                          ha='right', va='bottom', fontsize=16,
                          bbox=dict(facecolor='white', edgecolor='gray'))
@@ -5931,8 +5931,8 @@ class multiFileGraphs:
                  ha='right', va='bottom', fontsize=12,
                  bbox=dict(facecolor='white', edgecolor='gray'))'''
             
-            plt.xlabel('Average Distance from Lever', fontsize = self.labelSize)
-            plt.ylabel('Average Time Until First Press (s)', fontsize = self.labelSize)
+            plt.xlabel('Distance from Lever', fontsize = self.labelSize)
+            plt.ylabel('Time Until First Press (s)', fontsize = self.labelSize)
             plt.xticks(fontsize = 15)
             plt.yticks(fontsize=15) 
             plt.title('Lever Distance vs. Time Until First Press', fontsize=self.titleSize)
@@ -9462,12 +9462,12 @@ initialNanList = [0.3]
 
 #print("Start MultiFileGraphs Regular")
 experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "", save=True)
-#experiment.waitingStrategy()
+experiment.waitingStrategy()
 #experiment.percentGazingvsSuccess()
 #experiment.interactionVSSuccess()
 
 #experiment.expandedSynchronizationStrategyGraphs()
-experiment.onlyOneRatWaitedGraphs()
+#experiment.onlyOneRatWaitedGraphs()
 #experiment.percentGazingvsSuccess()
 #experiment.moreGazeComparisons()
 #experiment.successVsAverageDistance()
@@ -9476,7 +9476,7 @@ experiment.onlyOneRatWaitedGraphs()
 #experiment.stateTransitionModel()
 #experiment.cooperativeRegionStrategiesQuantification()
 #experiment.pcaAndGLMCoopSuccessPredictors()
-#experiment.trueCooperationTesting()
+experiment.trueCooperationTesting()
 #experiment.gazingOverTrial()
 
 #experiment.testMotivation()
