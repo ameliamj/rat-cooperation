@@ -1626,7 +1626,7 @@ class MicePairGraphs:
             plt.close()
     
     
-    def plot_by_exp_idx(self, success_counts, trial_counts, session_counts, label, color, ax=None):
+    def plot_by_exp_idx(self, success_counts, trial_counts, session_counts, label, color, ax=None, multiplyBy100=True):
         print("data_y_count: ", success_counts)
         print("data_y_division: ", trial_counts)
         print("session_counts: ", session_counts)
@@ -1639,8 +1639,11 @@ class MicePairGraphs:
         if not filtered_indices:
             print(f"No data for {label} with > 3 sessions.")
             return
-    
-        success_rates = [success_counts[i] / trial_counts[i] * 100 for i in filtered_indices]
+        
+        if (multiplyBy100):
+            success_rates = [success_counts[i] / trial_counts[i] * 100 for i in filtered_indices]
+        else:
+            success_rates = [success_counts[i] / trial_counts[i] for i in filtered_indices]
         
         print("data_y: ", success_rates)
         
@@ -1985,8 +1988,12 @@ class MicePairGraphs:
                 total_frames = pos.returnNumFrames()
                 
                 print("Difference: ", difference)
-                print("total_frames: ", total_frames)
+                #print("total_frames: ", total_frames)
                 print("totFrames: ", totFrames)
+                
+                if (difference / total_frames > 1000):
+                    print("difference/total_frames: ", difference / total_frames)
+                    print("exp.lev_file: ", exp.lev_file)
                 
                 horizontalDistanceCounts[exp_idx] += difference
                 frameCounts[exp_idx] += total_frames
@@ -2014,7 +2021,7 @@ class MicePairGraphs:
         
         # Second axis
         ax2 = ax1.twinx()
-        self.plot_by_exp_idx(horizontalDistanceCounts, frameCounts, session_counts, label="x-dist", color="red", ax=ax2)
+        self.plot_by_exp_idx(horizontalDistanceCounts, frameCounts, session_counts, label="x-dist", color="red", ax=ax2, multiplyBy100=False)
         ax2.set_ylabel('Avg Horizontal Distance', fontsize=15)
         
         # Combine legends from both axes
