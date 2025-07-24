@@ -1653,14 +1653,14 @@ class MicePairGraphs:
         # Convert to arrays
         x = np.array(filtered_indices)
         y = np.array(success_rates)
-        yerr = np.array(std_errors)
+        #yerr = np.array(std_errors)
         
         print("\nx: ", x)
         print("y: ", y)
         #print("yerr: ", yerr)
         
-        valid = np.isfinite(yerr)
-        x, y, yerr = x[valid], y[valid], yerr[valid]
+        #valid = np.isfinite(yerr)
+        #x, y, yerr = x[valid], y[valid], yerr[valid]
         
         print("\nOnly Valid: ")
         print("x: ", x)
@@ -1679,7 +1679,7 @@ class MicePairGraphs:
         
         # Plot
         ax.plot(x, y_smooth, marker='o', color=color, label=label)
-        plt.fill_between(x, y - yerr, y + yerr, color=color, alpha=0.2)
+        #plt.fill_between(x, y - yerr, y + yerr, color=color, alpha=0.2)
         ax.plot(x, regline, linestyle='--', color=color)#,
                  #label=f"{label} Fit: slope={slope:.2f}, $R^2$={r_val**2:.2f}, ρ={rho:.2f}, p={p_rho:.3f}")
     
