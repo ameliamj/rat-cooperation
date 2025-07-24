@@ -26,9 +26,10 @@ Definitions:
 
 
 class allDataCSVsCreator:
-    def __init__(self, metadata_path):
+    def __init__(self, metadata_path, post = None):
         self.metadata_path = metadata_path
         self.experiments = self._getExps()
+        self.post = post
     
     def _getExps(self):
         fe = fileExtractor(self.metadata_path)
@@ -380,7 +381,7 @@ class allDataCSVsCreator:
     
         # Create DataFrame and save to CSV
         df = pd.DataFrame(session_data)
-        df.to_csv('session_metrics.csv', index=False)
+        df.to_csv(f'session_metrics{self.post}.csv', index=False)
         
     def createTrialCSV(self):
         """
@@ -551,14 +552,15 @@ class allDataCSVsCreator:
                 })
     
         df = pd.DataFrame(trial_data)
-        df.to_csv('trial_metrics.csv', index=False)
+        df.to_csv(f'trial_metrics{self.post}.csv', index=False)
         
     def createFrameCSV(self):
         a = 1
         
     
 metadata_path = "/gpfs/radev/project/saxena/drb83/rat-cooperation/David/Behavioral_Quantification/Sorted_Data_Files/dyed_preds_fixed_expanded.csv"
+metadata_smol = "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Sorted_Data_Files/only_opaque_sessions_filtered_onlyFirst.csv"
 
-creator = allDataCSVsCreator(metadata_path)
-#creator.createSessionCSV()
+creator = allDataCSVsCreator(metadata_smol, post="_onlyOpaque")
+creator.createSessionCSV()
 creator.createTrialCSV()
