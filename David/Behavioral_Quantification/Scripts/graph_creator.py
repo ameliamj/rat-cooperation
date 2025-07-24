@@ -1713,9 +1713,9 @@ class MicePairGraphs:
                lev = exp.lev
                pos = exp.pos
                
-               if (lev.returnSuccThreshold() != 1):
+               '''if (lev.returnSuccThreshold() != 1):
                    counter += 1
-                   continue
+                   continue'''
                
                idx = exp_idx - counter
                
