@@ -2124,8 +2124,8 @@ def getGroupRatPairs():
     return [fe.getLevsDatapath(grouped = True), fe.getMagsDatapath(grouped = True), fe.getPosDatapath(grouped = True), fpsList, totFramesList]
 
 
-data = getGroupRatPairs()
-pairGraphs = MicePairGraphs(data[0], data[1], data[2], data[3], data[4])
+#data = getGroupRatPairs()
+#pairGraphs = MicePairGraphs(data[0], data[1], data[2], data[3], data[4])
 
 
 '''magFiles = [["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv"],
@@ -2138,7 +2138,7 @@ posFiles = [["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/B
 pairGraphs = MicePairGraphs(magFiles, levFiles, posFiles)'''
 
 
-pairGraphs.lineGraphSuccessGazingInteractions()
+#pairGraphs.lineGraphSuccessGazingInteractions()
 
 #pairGraphs.lineGraphStrategies()
 #pairGraphs.lineGraphSuccess()
@@ -6962,6 +6962,30 @@ class multiFileGraphs:
             sessionCountsStandardized.append(countInteractionMoment / countValidFrames * 100)
             percentFramesInteracted.append(countInteractionMomentFrames / countValidFrames * 100)
         
+        # Plot
+        x = np.array(percentFramesInteracted)
+        y = np.array(successRates)
+        
+        slope, intercept, r_value, p_value, std_err = linregress(x, y)
+        line = slope * x + intercept
+        
+        plt.figure(figsize=(7, 5))
+        plt.scatter(x, y, color='blue', label='Data Points')
+        plt.plot(x, line, color='red', linestyle='--', label=f'Fit: y={slope:.2f}x+{intercept:.2f}')
+        plt.xlabel('Average Interaction Percentage',fontsize=16)
+        plt.ylabel('Success Percentage',fontsize=16)
+        plt.title('Interaction Behavior vs. Success',fontsize=17)
+        plt.text(0.05, 0.95, f'$R^2$ = {r_value**2:.3f}', transform=plt.gca().transAxes,
+                 fontsize=15, verticalalignment='top')
+        plt.xticks(fontsize = 15)
+        plt.yticks(fontsize=15) 
+        #plt.legend()
+        plt.grid(True)
+        plt.tight_layout()
+        plt.show()
+        plt.savefig(f"{self.prefix}PercentInteractingvsSuccessScatterplot_corrected.png")
+        plt.close()
+        
         self._plot_scatter(sessionCountsStandardized, successRates, "numberOfInteractionsvsSuccessScatterplot", "Frequency of Interactions vs. Success", "Interaction Frequency")
         self._plot_scatter(percentFramesInteracted, successRates, "PercentInteractingvsSuccessScatterplot", "Percent of Frames Interacting vs. Success", "Interaction Percentage")
         # Plot interaction type heatmaps
@@ -8681,12 +8705,14 @@ class multiFileGraphs:
         plt.figure(figsize=(7, 5))
         plt.scatter(x, y, color='blue', label='Data Points')
         plt.plot(x, line, color='red', linestyle='--', label=f'Fit: y={slope:.2f}x+{intercept:.2f}')
-        plt.xlabel('Average Gaze Percentage')
-        plt.ylabel('Success Percentage')
-        plt.title('Success vs. Gaze Behavior')
+        plt.xlabel('Average Gaze Percentage',fontsize=16)
+        plt.ylabel('Success Percentage',fontsize=16)
+        plt.title('Gaze Behavior vs. Success',fontsize=17)
         plt.text(0.05, 0.95, f'$R^2$ = {r_value**2:.3f}', transform=plt.gca().transAxes,
-                 fontsize=12, verticalalignment='top')
-        plt.legend()
+                 fontsize=15, verticalalignment='top')
+        plt.xticks(fontsize = 15)
+        plt.yticks(fontsize=15) 
+        #plt.legend()
         plt.grid(True)
         plt.tight_layout()
         plt.show()
@@ -9300,7 +9326,7 @@ totFramesList = [15000, 15000]
 initialNanList = [0.15, 0.12]
 '''
 
-'''
+
 arr = getFiltered()
 
 #arr = trainingCoopData()
@@ -9315,7 +9341,7 @@ fpsList = arr[3]
 totFramesList = arr[4]
 initialNanList = arr[5]
 #fiberPhoto = arr[6]
-'''
+
 
 
 '''
@@ -9341,7 +9367,9 @@ initialNanList = [0.3]
 '''
 
 #print("Start MultiFileGraphs Regular")
-#experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "", save=True)
+experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "", save=True)
+experiment.percentGazingvsSuccess()
+experiment.interactionVSSuccess()
 
 #experiment.expandedSynchronizationStrategyGraphs()
 #experiment.onlyOneRatWaitedGraphs()
