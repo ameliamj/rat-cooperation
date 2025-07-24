@@ -2148,9 +2148,9 @@ posFiles = [["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/B
 pairGraphs = MicePairGraphs(magFiles, levFiles, posFiles)'''
 
 
-#pairGraphs.lineGraphSuccessGazingInteractions()
+pairGraphs.lineGraphSuccessGazingInteractions()
 
-pairGraphs.lineGraphStrategies()
+#pairGraphs.lineGraphStrategies()
 #pairGraphs.lineGraphSuccess()
 #pairGraphs.lineGraphGazing()
 #pairGraphs.lineGraphInteractions()
