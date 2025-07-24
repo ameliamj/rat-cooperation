@@ -2181,8 +2181,8 @@ class multiFileGraphs:
         self.prefix = prefix
         self.save = save
         self.NUM_BINS = 30 # Number of time bins for trial chunking
-        self.labelSize = 13
-        self.titleSize = 15
+        self.labelSize = 17
+        self.titleSize = 18
         deleted_count = 0
         
         print("There are ", len(magFiles), " experiments in this data session. ")
@@ -4698,7 +4698,7 @@ class multiFileGraphs:
             print(f"Insufficient data to create scatterplot for {filename}")
             return
     
-        plt.figure(figsize=(8, 6))
+        plt.figure(figsize=(6.33, 4.3))
         
         if color_data is not None:
             # Use a colormap for gradient coloring based on color_data
@@ -5803,7 +5803,7 @@ class multiFileGraphs:
                         continue
                     elif(pos.returnRatLocationTime(0, frameStart) in levAreas and pos.returnRatLocationTime(1, frameStart) in levAreas):
                         print("both rats in lever areas")
-                        continue
+                        #continue
                     sumDistances += dist
                     sumNumConsidered += 1
                     sumTimeUntilPress += t_first_press - t_begin
@@ -5869,7 +5869,7 @@ class multiFileGraphs:
         
         
         if len(individual_trials_distance) >= 2 and len(individual_trials_timeUntilPress) >= 2:
-            plt.figure(figsize=(8, 6))
+            plt.figure(figsize=(6.33, 4.3))
             
             # Track if labels have been added to avoid duplicate legend entries
             success_label_added = False
@@ -5880,14 +5880,18 @@ class multiFileGraphs:
             time_success = []
             
             for dist, time, success in zip(individual_trials_distance, individual_trials_timeUntilPress, individual_trials_success):
-                if success == 1:
+                if (success != -1):
+                    plt.scatter(dist, time, color='gray', alpha=0.6)
+                    dist_success.append(dist)
+                    time_success.append(time)
+                elif success == 1:
                     plt.scatter(dist, time, color='green', alpha=0.6,
                                 label='Success' if not success_label_added else "")
                     success_label_added = True
                     dist_success.append(dist)
                     time_success.append(time)
                 elif success == 0:
-                    continue
+                    #continue
                     plt.scatter(dist, time, color='red', alpha=0.6,
                                 label='Failure' if not failure_label_added else "")
                     failure_label_added = True
@@ -5905,10 +5909,15 @@ class multiFileGraphs:
                 x_vals = np.linspace(min(dist_success), max(dist_success), 100)
                 plt.plot(x_vals, slope * x_vals + intercept, color='black', linestyle='--', label='Trendline')
                 plt.text(0.95, 0.84,
+                         f"R^2$ = {r_squared:.3f}",
+                         transform=plt.gca().transAxes,
+                         ha='right', va='bottom', fontsize=16,
+                         bbox=dict(facecolor='white', edgecolor='gray'))
+                '''plt.text(0.95, 0.84,
                          f"Slope = {slope:.3f}\n$R^2$ = {r_squared:.3f}\n p = {p_value:.3g}",
                          transform=plt.gca().transAxes,
                          ha='right', va='bottom', fontsize=12,
-                         bbox=dict(facecolor='white', edgecolor='gray'))
+                         bbox=dict(facecolor='white', edgecolor='gray'))'''
             '''
             if len(set(individual_trials_distance)) >= 2:
                 slope, intercept, r_value, p_value, std_err = linregress(individual_trials_distance, individual_trials_timeUntilPress)
@@ -5921,11 +5930,13 @@ class multiFileGraphs:
                  transform=plt.gca().transAxes,
                  ha='right', va='bottom', fontsize=12,
                  bbox=dict(facecolor='white', edgecolor='gray'))'''
-    
+            
             plt.xlabel('Average Distance from Lever', fontsize = self.labelSize)
             plt.ylabel('Average Time Until First Press (s)', fontsize = self.labelSize)
+            plt.xticks(fontsize = 15)
+            plt.yticks(fontsize=15) 
             plt.title('Lever Distance vs. Time Until First Press', fontsize=self.titleSize)
-            plt.legend()
+            #plt.legend()
             plt.grid(True)
             plt.tight_layout()
             if self.save:
@@ -5971,7 +5982,7 @@ class multiFileGraphs:
             ax = plt.gca()
             cbar = plt.colorbar(sm, ax=ax)
             cbar.set_label('Avg Distance from Lever (px)', fontsize=12)
-    
+            
             plt.ylabel('Avg Time Until Press (s)', fontsize=13)
             plt.title('Waiting Time by Trial Outcome', fontsize=15)
             plt.grid(axis='y', linestyle='--', alpha=0.5)
@@ -9392,7 +9403,7 @@ experiment.waitingStrategy()
 #experiment.stateTransitionModel()
 #experiment.cooperativeRegionStrategiesQuantification()
 #experiment.pcaAndGLMCoopSuccessPredictors()
-#experiment.trueCooperationTesting()
+experiment.trueCooperationTesting()
 #experiment.gazingOverTrial()
 
 #experiment.testMotivation()
