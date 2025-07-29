@@ -2206,7 +2206,6 @@ class MicePairGraphs:
             pair_labels = [f"Pair {idx}" for idx in levBiasGroup.keys()]
             session_counts_per_pair = []
             for pair_idx in levBiasGroup:
-                pair_labels.append(f"Pair {pair_idx}")
                 session_counts = levBiasGroup[pair_idx]
                 session_counts_per_pair.append(sum(session_counts.values()))
             
