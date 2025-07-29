@@ -2137,8 +2137,8 @@ def getGroupRatPairs():
     return [fe.getLevsDatapath(grouped = True), fe.getMagsDatapath(grouped = True), fe.getPosDatapath(grouped = True), fpsList, totFramesList]
 
 
-data = getGroupRatPairs()
-pairGraphs = MicePairGraphs(data[0], data[1], data[2], data[3], data[4])
+#data = getGroupRatPairs()
+#pairGraphs = MicePairGraphs(data[0], data[1], data[2], data[3], data[4])
 
 
 '''magFiles = [["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv"],
@@ -2154,7 +2154,7 @@ pairGraphs = MicePairGraphs(magFiles, levFiles, posFiles)'''
 #pairGraphs.lineGraphSuccessGazingInteractions()
 
 #pairGraphs.lineGraphStrategies()
-pairGraphs.lineGraphSuccess()
+#pairGraphs.lineGraphSuccess()
 #pairGraphs.lineGraphGazing()
 #pairGraphs.lineGraphInteractions()
 
@@ -8701,8 +8701,7 @@ class multiFileGraphs:
         if self.save: plt.savefig(f"{self.prefix}Gaze_Per_Event_SuccvsNonSucc.png")
         plt.show()
         plt.close()
-        
-        
+               
     def percentGazingvsSuccess(self):
         
         dataPointsSucc = []
@@ -9361,6 +9360,44 @@ class multiFileGraphs:
         plt.show()
         plt.close()
 
+    def first_press_bias(self, show_pie=True):
+        """
+        Aggregates across sessions how often the dominant (more frequent first-presser)
+        and submissive (less frequent) rats pressed first.
+        Optionally shows a pie chart of the totals.
+        """
+        dominantCount = 0
+        submissiveCount = 0
+    
+        for exp in self.experiments:
+            lev = exp.lev
+            firstPressIDs = lev.returnRatIDFirstPressTrial()
+            print("trialsNoPress: ", lev.returnListTrialsNoPress())
+    
+    
+            print("firstPressIDs: ", firstPressIDs[210:216])
+            count0 = sum(1 for rat_id in firstPressIDs if rat_id == 0)
+            count1 = sum(1 for rat_id in firstPressIDs if rat_id == 1)
+    
+            dominantCount += max(count0, count1)
+            submissiveCount += min(count0, count1)
+    
+        if show_pie:
+            labels = ['Dominant Rat', 'Submissive Rat']
+            sizes = [dominantCount, submissiveCount]
+            colors = ['#66b3ff', '#ff9999']
+            explode = (0.05, 0)  # Slightly separate the dominant slice
+    
+            plt.figure(figsize=(6, 6))
+            plt.pie(sizes, labels=labels, colors=colors, autopct='%1.1f%%',
+                    startangle=140, explode=explode, shadow=True)
+            plt.title('First Lever Press Bias Across Sessions')
+            plt.axis('equal')  # Ensures the pie is a circle
+            plt.show()
+    
+        return {"dominant": dominantCount, "submissive": submissiveCount}
+            
+        
 
 #Testing Multi File Graphs
 #
@@ -9425,7 +9462,7 @@ totFramesList = [15000, 15000]
 initialNanList = [0.15, 0.12]
 '''
 
-'''
+
 arr = getFiltered()
 
 #arr = trainingCoopData()
@@ -9440,18 +9477,18 @@ fpsList = arr[3]
 totFramesList = arr[4]
 initialNanList = arr[5]
 #fiberPhoto = arr[6]
-'''
 
 
-'''
-lev_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/4_nanerror_lev.csv"]
+
+
+'''lev_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/4_nanerror_lev.csv"]
 mag_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/4_nanerror_mag.csv"]
 pos_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/4_nanerror_test.h5"]
 fiberPhoto = [["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/090324_Cam1_TrNum14_Coop_KL002B-KL002Y_x405_TTLs.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/090324_Cam1_TrNum14_Coop_KL002B-KL002Y_x465_TTLs.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/090324_Cam1_TrNum14_Coop_KL002B-KL002Y_x560_TTLs.csv"]]
 fpsList = [29]
 totFramesList = [15000]
-initialNanList = [0.3]
-'''
+initialNanList = [0.3]'''
+
 
 #Missing Trial Nums
 '''
@@ -9466,7 +9503,8 @@ initialNanList = [0.3]
 '''
 
 #print("Start MultiFileGraphs Regular")
-#experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "", save=True)
+experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "", save=True)
+experiment.first_press_bias()
 #experiment.waitingStrategy()
 #experiment.percentGazingvsSuccess()
 #experiment.interactionVSSuccess()
