@@ -1205,7 +1205,7 @@ print("Done")
 
 
 class MicePairGraphs:       
-    def __init__(self, magGroups, levGroups, posGroups, fpsGroups, totFramesGroups, saveFile = True):
+    def __init__(self, magGroups, levGroups, posGroups, fpsGroups, totFramesGroups, rat1NamesGroups, rat2NamesGroups, saveFile = True):
         print("Initializing MicePairGraphs")
         assert len(magGroups) == len(levGroups) == len(posGroups), "Mismatched group lengths."
         self.experimentGroups = []
@@ -1213,15 +1213,15 @@ class MicePairGraphs:
         self.save = saveFile
         deleted_count = 0
 
-        for group_idx, (mag_list, lev_list, pos_list, fps_list, tot_frames_list) in enumerate(zip(magGroups, levGroups, posGroups, fpsGroups, totFramesGroups)):
+        for group_idx, (mag_list, lev_list, pos_list, fps_list, tot_frames_list, rat1_names, rat2_names) in enumerate(zip(magGroups, levGroups, posGroups, fpsGroups, totFramesGroups, rat1NamesGroups, rat2NamesGroups)):
             print(f"Creating group {group_idx + 1} for {len(mag_list)} files")
             group_exps = []
             
             print("lev_list: ", lev_list)
             print("tot_frames_list: ", tot_frames_list)
         
-            for mag_path, lev_path, pos_path, fps, totFrames in zip(mag_list, lev_list, pos_list, fps_list, tot_frames_list):
-                exp = singleExperiment(lev_path, mag_path, pos_path, fps=fps, endFrame=totFrames)        
+            for mag_path, lev_path, pos_path, fps, totFrames, rat1, rat2 in zip(mag_list, lev_list, pos_list, fps_list, tot_frames_list, rat1_names, rat2_names):
+                exp = singleExperiment(lev_path, mag_path, pos_path, fps=fps, endFrame=totFrames, rat1=rat1, rat2=rat2)        
                 mag_missing = [col for col in exp.mag.categories if col not in exp.mag.data.columns]
                 lev_missing = [col for col in exp.lev.categories if col not in exp.lev.data.columns]
         
@@ -2169,6 +2169,77 @@ class MicePairGraphs:
             plt.savefig(f'{self.prefix}LeverBiasbyExperimentIndex.png')
         plt.show()
         plt.close()
+        
+    def leverBiasConsistency(self, show_graph=True):
+        levBiasGroup = {}
+        dominance_percentages = []
+    
+        for group_idx, group in enumerate(self.experimentGroups):
+            if len(group) < 5:
+                continue
+            levBiasGroup[group_idx] = {}
+            levBiasGroup[group_idx][group[0].rat1] = 0
+            levBiasGroup[group_idx][group[0].rat2] = 0
+    
+            for exp in group:
+                lev = exp.lev
+                firstPressIDs = lev.returnRatIDFirstPressTrial()
+                count1 = sum(1 for rat_id in firstPressIDs if rat_id == 0)
+                count2 = sum(1 for rat_id in firstPressIDs if rat_id == 1)
+    
+                rat1 = exp.rat1
+                rat2 = exp.rat2
+    
+                if count1 > count2:
+                    levBiasGroup[group_idx][rat1] += 1
+                else:
+                    levBiasGroup[group_idx][rat2] += 1
+    
+            # Calculate percentage of sessions the more dominant rat was dominant
+            session_counts = levBiasGroup[group_idx]
+            total_sessions = sum(session_counts.values())
+            dominant_sessions = max(session_counts.values())
+            dominance_percentages.append(dominant_sessions / total_sessions * 100)
+    
+        if show_graph:
+            # === 1. BAR GRAPH ===
+            pair_labels = [f"Pair {idx}" for idx in levBiasGroup.keys()]
+    
+            plt.figure(figsize=(10, 5))
+            plt.bar(pair_labels, dominance_percentages, color='#66b3ff')
+            plt.ylim(0, 100)
+            plt.ylabel("Percent of Sessions Same Rat Dominant")
+            plt.title("Dominance Consistency per Rat Pair")
+            plt.xticks(rotation=45)
+            plt.tight_layout()
+            plt.show()
+            plt.savefig("barGraphLevBiasAcrossRatPairs.png")
+            plt.close()
+    
+            # === 2. PIE CHART ===
+            avg_same_dominant = sum(dominance_percentages) / len(dominance_percentages)
+            avg_switching = 100 - avg_same_dominant
+    
+            plt.figure(figsize=(6, 6))
+            plt.pie(
+                [avg_same_dominant, avg_switching],
+                labels=['Same Rat Dominant', 'Switched Rats'],
+                colors=['#66b3ff', '#ff9999'],
+                autopct='%1.1f%%',
+                startangle=140,
+                explode=(0.05, 0),
+                shadow=True
+            )
+            plt.title("Average Dominance Consistency Across Rat Pairs")
+            plt.axis('equal')
+            plt.show()
+            plt.savefig("pieChartLevBiasAcrossRatPairs.png")
+            plt.close()
+    
+        return levBiasGroup
+                
+                
+  
 
 groupRatPairs = "/gpfs/radev/project/saxena/drb83/rat-cooperation/David/Behavioral_Quantification/Sorted_Data_Files/group_rat_pairs_corrected.csv"
 
@@ -2176,13 +2247,16 @@ def getGroupRatPairs():
     fe = fileExtractor(groupRatPairs)
     #fe.data = fe.deleteBadNaN()
     fpsList, totFramesList = fe.returnFPSandTotFrames(grouped = True)
+    rat1names = fe.returnRat1(grouped = True)
+    print("rat1names: ", rat1names)
+    rat2names = fe.returnNaNPercentage(grouped = True)
     
     print("fpsList: ", fpsList)
-    return [fe.getLevsDatapath(grouped = True), fe.getMagsDatapath(grouped = True), fe.getPosDatapath(grouped = True), fpsList, totFramesList]
+    return [fe.getLevsDatapath(grouped = True), fe.getMagsDatapath(grouped = True), fe.getPosDatapath(grouped = True), fpsList, totFramesList, rat1names, rat2names]
 
 
 data = getGroupRatPairs()
-pairGraphs = MicePairGraphs(data[0], data[1], data[2], data[3], data[4])
+pairGraphs = MicePairGraphs(data[0], data[1], data[2], data[3], data[4], data[5], data[6])
 
 
 '''magFiles = [["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv"],
@@ -2194,7 +2268,8 @@ posFiles = [["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/B
 
 pairGraphs = MicePairGraphs(magFiles, levFiles, posFiles)'''
 
-pairGraphs.lineGraphLeverBias()
+print(pairGraphs.leverBiasConsistency())
+#pairGraphs.lineGraphLeverBias()
 
 #pairGraphs.lineGraphSuccessGazingInteractions()
 
@@ -9509,7 +9584,7 @@ totFramesList = [15000, 15000]
 initialNanList = [0.15, 0.12]
 '''
 
-
+'''
 arr = getFiltered()
 
 #arr = trainingCoopData()
@@ -9524,7 +9599,7 @@ fpsList = arr[3]
 totFramesList = arr[4]
 initialNanList = arr[5]
 #fiberPhoto = arr[6]
-
+'''
 
 
 
@@ -9550,8 +9625,8 @@ initialNanList = [0.3]
 '''
 
 #print("Start MultiFileGraphs Regular")
-experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "", save=True)
-experiment.first_press_bias()
+#experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "", save=True)
+#experiment.first_press_bias()
 #experiment.waitingStrategy()
 #experiment.percentGazingvsSuccess()
 #experiment.interactionVSSuccess()

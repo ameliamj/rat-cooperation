@@ -484,6 +484,67 @@ class fileExtractor:
     
         return grouped
     
+    def returnRat1(self, grouped = False):
+        def getRat1(row):
+            vid = row['vid']
+            category = row['test/train']
+            # Step 1: Extract the full 13-character ID
+            if category == 'test':
+                full_pair = vid[-13:]
+            elif category == 'train':
+                full_pair = vid[:-8][-13:]
+            else:
+                return "UNKNOWN"
+            
+            rat1 = full_pair[:6]
+            return rat1
+        
+        if not grouped:
+            return [
+                getRat1(row)
+                for _, row in self.data.iterrows()
+            ]
+        else:
+            grouped_rows = self.sortByMicePairs()
+            grouped_rat1s = []
+            for group in grouped_rows:
+                group_rat1s = []
+                for _, row in group.iterrows():
+                    group_rat1s.append(getRat1(row))
+                grouped_rat1s.append(group_rat1s)
+            return grouped_rat1s
+        
+    def returnRat2(self, grouped = False):
+        def getRat2(row):
+            vid = row['vid']
+            category = row['test/train']
+            # Step 1: Extract the full 13-character ID
+            if category == 'test':
+                full_pair = vid[-13:]
+            elif category == 'train':
+                full_pair = vid[:-8][-13:]
+            else:
+                return "UNKNOWN"
+            
+            rat2 = full_pair[-6:]
+            return rat2
+        
+        if not grouped:
+            return [
+                getRat2(row)
+                for _, row in self.data.iterrows()
+            ]
+        else:
+            grouped_rows = self.sortByMicePairs()
+            grouped_rat2s = []
+            for group in grouped_rows:
+                group_rat2s = []
+                for _, row in group.iterrows():
+                    group_rat2s.append(getRat2(row))
+                grouped_rat2s.append(group_rat2s)
+            return grouped_rat2s
+        
+
     def getCorrectFileNames(self):
         def correct_name(row):
             if row['test/train'] == 'test':
