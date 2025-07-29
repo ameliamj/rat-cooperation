@@ -1624,8 +1624,7 @@ class MicePairGraphs:
             plt.savefig(filename)
             plt.show()
             plt.close()
-    
-    
+        
     def plot_by_exp_idx(self, success_counts, trial_counts, session_counts, label, color, ax=None, multiplyBy100=True):
         print("data_y_count: ", success_counts)
         print("data_y_division: ", trial_counts)
@@ -2126,6 +2125,51 @@ class MicePairGraphs:
         plt.show()
         plt.close()
 
+    def lineGraphLeverBias(self):
+        dom_counts = {}
+        total_counts = {}
+        session_counts = {}
+        
+        for group_idx, group in enumerate(self.experimentGroups):
+            if (len(group) < 5):
+                continue
+            counter = 0
+            for exp_idx, exp in enumerate(group):
+                if (exp_idx not in dom_counts):
+                    dom_counts[exp_idx] = 0
+                    total_counts[exp_idx] = 0
+                    session_counts[exp_idx] = 0
+                
+                lev = exp.lev
+                
+                firstPressIDs = lev.returnRatIDFirstPressTrial()
+                
+                count0 = sum(1 for rat_id in firstPressIDs if rat_id == 0)
+                count1 = sum(1 for rat_id in firstPressIDs if rat_id == 1)
+       
+                dominantCount = max(count0, count1)
+                
+                dom_counts[exp_idx] += dominantCount
+                total_counts[exp_idx] += count0 + count1
+                session_counts[exp_idx] += 1
+         
+        # === Plot call ===
+        plt.figure(figsize=(10, 6))
+        self.plot_by_exp_idx(dom_counts, total_counts, session_counts, label="All", color="blue")
+        
+        plt.xlabel('Experiment Index', fontsize=16)
+        plt.ylabel('Dominant Rat Press Rate (%)', fontsize=16)
+        plt.title('Average Lever Bias Throughout Training', fontsize=17)
+        plt.grid(True, linestyle='--', alpha=0.6)
+        plt.xticks(fontsize = 14)
+        plt.yticks(fontsize=14) 
+        plt.legend(fontsize=10)
+        plt.tight_layout()
+        if self.save:
+            plt.savefig(f'{self.prefix}LeverBiasbyExperimentIndex.png')
+        plt.show()
+        plt.close()
+
 groupRatPairs = "/gpfs/radev/project/saxena/drb83/rat-cooperation/David/Behavioral_Quantification/Sorted_Data_Files/group_rat_pairs_corrected.csv"
 
 def getGroupRatPairs():
@@ -2137,8 +2181,8 @@ def getGroupRatPairs():
     return [fe.getLevsDatapath(grouped = True), fe.getMagsDatapath(grouped = True), fe.getPosDatapath(grouped = True), fpsList, totFramesList]
 
 
-#data = getGroupRatPairs()
-#pairGraphs = MicePairGraphs(data[0], data[1], data[2], data[3], data[4])
+data = getGroupRatPairs()
+pairGraphs = MicePairGraphs(data[0], data[1], data[2], data[3], data[4])
 
 
 '''magFiles = [["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv"],
@@ -2150,6 +2194,7 @@ posFiles = [["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/B
 
 pairGraphs = MicePairGraphs(magFiles, levFiles, posFiles)'''
 
+pairGraphs.lineGraphLeverBias()
 
 #pairGraphs.lineGraphSuccessGazingInteractions()
 
