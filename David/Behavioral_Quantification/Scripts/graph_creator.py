@@ -2204,13 +2204,32 @@ class MicePairGraphs:
         if show_graph:
             # === 1. BAR GRAPH ===
             pair_labels = [f"Pair {idx}" for idx in levBiasGroup.keys()]
-    
+            session_counts_per_pair = []
+            for pair_idx in levBiasGroup:
+                pair_labels.append(f"Pair {pair_idx}")
+                session_counts = levBiasGroup[pair_idx]
+                session_counts_per_pair.append(sum(session_counts.values()))
+            
             plt.figure(figsize=(10, 5))
-            plt.bar(pair_labels, dominance_percentages, color='#66b3ff')
+            bars = plt.bar(pair_labels, dominance_percentages, color='#66b3ff')
             plt.ylim(0, 100)
             plt.ylabel("Percent of Sessions Same Rat Dominant")
             plt.title("Dominance Consistency per Rat Pair")
             plt.xticks(rotation=45)
+            
+            # Add 'n=' labels above bars
+            for bar, n in zip(bars, session_counts_per_pair):
+                height = bar.get_height()
+                plt.text(
+                    bar.get_x() + bar.get_width() / 2,
+                    height + 1.5,
+                    f"n={n}",
+                    ha='center',
+                    va='bottom',
+                    fontsize=9,
+                    color='gray'
+                )
+            
             plt.tight_layout()
             plt.show()
             plt.savefig("barGraphLevBiasAcrossRatPairs.png")
@@ -2223,7 +2242,7 @@ class MicePairGraphs:
             plt.figure(figsize=(6, 6))
             plt.pie(
                 [avg_same_dominant, avg_switching],
-                labels=['Same Rat Dominant', 'Switched Rats'],
+                labels=['Consistent Dominant Rat', 'Switched Rats'],
                 colors=['#66b3ff', '#ff9999'],
                 autopct='%1.1f%%',
                 startangle=140,
