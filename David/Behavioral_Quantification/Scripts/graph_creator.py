@@ -2249,7 +2249,7 @@ def getGroupRatPairs():
     fpsList, totFramesList = fe.returnFPSandTotFrames(grouped = True)
     rat1names = fe.returnRat1(grouped = True)
     print("rat1names: ", rat1names)
-    rat2names = fe.returnNaNPercentage(grouped = True)
+    rat2names = fe.returnRat2(grouped = True)
     
     print("fpsList: ", fpsList)
     return [fe.getLevsDatapath(grouped = True), fe.getMagsDatapath(grouped = True), fe.getPosDatapath(grouped = True), fpsList, totFramesList, rat1names, rat2names]
