@@ -9394,6 +9394,8 @@ class multiFileGraphs:
             plt.title('First Lever Press Bias Across Sessions')
             plt.axis('equal')  # Ensures the pie is a circle
             plt.show()
+            plt.savefig("first_press_bias.png")
+            plt.close()
     
         return {"dominant": dominantCount, "submissive": submissiveCount}
             
