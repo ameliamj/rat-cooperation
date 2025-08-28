@@ -443,7 +443,7 @@ class allDataCSVsCreator:
     
             # Process each trial
             for trial_idx, start_time in enumerate(trial_starts):
-                if pd.isna(start_time) or pd.isna(trial_ends[trial_idx]):
+                if pd.isna(start_time) or pd.isna(trial_ends[trial_idx] or trial_idx >= 40):
                     continue
     
                 start_frame = int(start_time * fps)

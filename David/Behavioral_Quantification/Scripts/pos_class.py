@@ -276,7 +276,7 @@ class posLoader:
         #print("num_frames is: ", num_frames)
         result = np.zeros(num_frames, dtype=bool)
 
-        still_mask = self.returnIsStill(mouseID, alternateDef)
+        still_mask = self.returnIsStill(mouseID, alternateDef) #'still' aka gazing if the last 10 frames have intersected the other rat. However, 
         gaze_vector = self.returnGazeVector(mouseID)
         HB = self.data[mouseID, :, self.HB_INDEX, :]
         otherID = 1 - mouseID

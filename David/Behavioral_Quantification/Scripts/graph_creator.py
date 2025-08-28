@@ -4129,11 +4129,13 @@ class multiFileGraphs:
         
     def successVsAverageDistance(self):
         """
-        Creates a scatterplot of cooperative success probability vs. average inter-mouse distance
-        across all experiments. Includes a trendline and R² value.
+        Creates a scatterplot of cooperative success probability vs. average inter-rat distance
+        across all experiments. Includes linear and quadratic fits with R² and p-values.
         """
+        
         success_rates = []
         avg_distances = []
+        metadata = []  # store LevFile, RatPair, etc.
     
         for exp in self.experiments:
             # Calculate success rate
@@ -4157,31 +4159,69 @@ class multiFileGraphs:
                 #continue
             success_rates.append(success_rate)
             avg_distances.append(avg_distance)
+            
+            # Save metadata for later printing
+            metadata.append({
+                "LevFile": exp.lev_file,
+                "RatPair": exp.ratPair,
+                "AvgDistance": avg_distance,
+                "SuccessRate": success_rate
+            })
     
         # Check for sufficient data
-        if len(success_rates) < 2 or len(avg_distances) < 2:
+        N = len(success_rates)
+        if N < 2:
             print("Insufficient data to create scatterplot.")
             return
+
     
         # Create scatterplot
         plt.figure(figsize=(8, 6))
         plt.scatter(avg_distances, success_rates, alpha=0.7, color='blue', label='Experiments')
     
-        # Add trendline and R²
-        if len(set(avg_distances)) >= 2:  # Ensure enough variation for regression
-            slope, intercept, r_value, _, _ = linregress(avg_distances, success_rates)
-            r_squared = r_value ** 2
-            x_vals = np.linspace(min(avg_distances), max(avg_distances), 100)
-            plt.plot(x_vals, slope * x_vals + intercept, color='red', linestyle='--', label='Trendline')
-            plt.text(0.95, 0.05, f"$R^2$ = {r_squared:.3f}", transform=plt.gca().transAxes,
-                     ha='right', va='bottom', fontsize=12, bbox=dict(facecolor='white', edgecolor='gray'))
-        else:
-            print("Insufficient variation in distances for trendline.")
+        # ----- Linear Fit -----
+        slope, intercept, r_value, p_value, _ = linregress(avg_distances, success_rates)
+        r_squared_linear = r_value ** 2
+        x_vals = np.linspace(min(avg_distances), max(avg_distances), 200)
+        plt.plot(x_vals, slope * x_vals + intercept, color='red', linestyle='--', label='Linear Fit')
+    
+        print("\n--- Linear Fit Statistics ---")
+        print(f"N = {N}")
+        print(f"R² = {r_squared_linear:.3f}")
+        print(f"p-value = {p_value:.4g}")
+    
+        # Annotate R² on plot
+        plt.text(0.95, 0.15, f"Linear $R^2$ = {r_squared_linear:.3f}", transform=plt.gca().transAxes,
+                 ha='right', va='bottom', fontsize=11, bbox=dict(facecolor='white', edgecolor='gray'))
+    
+        # ----- Quadratic (Curved) Fit -----
+        coeffs = np.polyfit(avg_distances, success_rates, 2)  # quadratic fit
+        poly = np.poly1d(coeffs)
+        y_pred = poly(avg_distances)
+    
+        # Calculate R² manually
+        ss_res = np.sum((np.array(success_rates) - y_pred) ** 2)
+        ss_tot = np.sum((np.array(success_rates) - np.mean(success_rates)) ** 2)
+        r_squared_quad = 1 - (ss_res / ss_tot)
+    
+        # Approximate p-value for quadratic term using linear regression trick
+        slope_q, intercept_q, r_value_q, p_value_quad, _ = linregress(y_pred, success_rates)
+    
+        plt.plot(x_vals, poly(x_vals), color='green', linestyle='-', label='Quadratic Fit')
+    
+        print("\n--- Quadratic Fit Statistics ---")
+        print(f"N = {N}")
+        print(f"R² = {r_squared_quad:.3f}")
+        print(f"p-value (approx) = {p_value_quad:.4g}")
+    
+        # Annotate quadratic R² on plot
+        plt.text(0.95, 0.08, f"Quad $R^2$ = {r_squared_quad:.3f}", transform=plt.gca().transAxes,
+                 ha='right', va='bottom', fontsize=11, bbox=dict(facecolor='white', edgecolor='gray'))
     
         # Plot formatting
-        plt.xlabel('Average Inter-Mouse Distance (pixels)')
+        plt.xlabel('Average Inter-Rat Distance (pixels)')
         plt.ylabel('Cooperative Success Rate')
-        plt.title('Success Probability vs. Average Inter-Mouse Distance')
+        plt.title('Success Probability vs. Average Inter-Rat Distance')
         plt.legend()
         plt.grid(True)
         plt.tight_layout()
@@ -4192,13 +4232,11 @@ class multiFileGraphs:
         plt.show()
         plt.close()
         
-        self._plot_scatter_curved(
-            x_data=avg_distances,
-            y_data=success_rates,
-            filename="Success_vs_AvgDistance_CurvedFit.png",
-            title="Success Probability vs. Average Inter-Mouse Distance",
-            x_label="Average Inter-Mouse Distance (pixels)"
-        )
+        # Print full datapoint table
+        print("\n--- Data Points ---")
+        for entry in metadata:
+            print(f"LevFile: {entry['LevFile']}, RatPair: {entry['RatPair']}, "
+                  f"AvgDistance: {entry['AvgDistance']:.2f}, SuccessRate: {entry['SuccessRate']:.3f}")
 
     def _calculate_trial_metrics(self, experiment):
         """
@@ -9602,7 +9640,7 @@ totFramesList = [15000, 15000]
 initialNanList = [0.15, 0.12]
 '''
 
-'''
+
 arr = getFiltered()
 
 #arr = trainingCoopData()
@@ -9617,7 +9655,7 @@ fpsList = arr[3]
 totFramesList = arr[4]
 initialNanList = arr[5]
 #fiberPhoto = arr[6]
-'''
+
 
 
 
@@ -9643,7 +9681,8 @@ initialNanList = [0.3]
 '''
 
 #print("Start MultiFileGraphs Regular")
-#experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "", save=True)
+experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "", save=True)
+experiment.successVsAverageDistance()
 #experiment.first_press_bias()
 #experiment.waitingStrategy()
 #experiment.percentGazingvsSuccess()
