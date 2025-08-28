@@ -4235,7 +4235,7 @@ class multiFileGraphs:
         # Print full datapoint table
         print("\n--- Data Points ---")
         for entry in metadata:
-            print(f"LevFile: {entry['LevFile']}, RatPair: {entry['RatPair']}, "
+            print(f"LevFile: {entry['LevFile'][-48:11]}"
                   f"AvgDistance: {entry['AvgDistance']:.2f}, SuccessRate: {entry['SuccessRate']:.3f}")
 
     def _calculate_trial_metrics(self, experiment):
