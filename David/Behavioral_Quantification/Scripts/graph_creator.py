@@ -4918,7 +4918,13 @@ class multiFileGraphs:
                     print(f"Exponential fit failed for {filename}, falling back to scatter without fit")
             else:
                 # Linear regression for non-colored case
-                slope, intercept, r_value, _, _ = linregress(x_data, y_data)
+                slope, intercept, r_value, p_value, _ = linregress(x_data, y_data)
+                N = len(set(x_data))
+                r_squared_linear = r_value ** 2
+                print("\n--- Linear Fit Statistics ---")
+                print(f"N = {N}")
+                print(f"R² = {r_squared_linear:.3f}")
+                print(f"p-value = {p_value:.4g}")
                 x_vals = np.linspace(min(x_data), max(x_data), 100)
                 plt.plot(x_vals, slope * x_vals + intercept, color='red', linestyle='--', label='Trendline')
                 plt.text(0.95, 0.05, f"$R^2$ = {r_value**2:.3f}", transform=plt.gca().transAxes,
@@ -9683,7 +9689,8 @@ initialNanList = [0.3]
 
 #print("Start MultiFileGraphs Regular")
 experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "", save=True)
-experiment.successVsAverageDistance()
+experiment.interactionVSSuccess()
+#experiment.successVsAverageDistance()
 #experiment.first_press_bias()
 #experiment.waitingStrategy()
 #experiment.percentGazingvsSuccess()
