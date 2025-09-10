@@ -303,6 +303,97 @@ class posLoader:
         return result
     
     
+    
+    #Gazing at Lev or Mag Code
+    def _gaze_intersects_rect(self, gaze_origin, gaze_vector, rectBL, rectTR, useMinDist=True, minDist=150):
+        """
+        Check if a gaze vector intersects a rectangle (lever or magazine).
+        
+        Parameters:
+            gaze_origin (np.ndarray): (2,), origin of the gaze vector
+            gaze_vector (np.ndarray): (2,), direction of the gaze
+            rectBL (tuple): bottom-left (x, y) corner of rectangle
+            rectTR (tuple): top-right (x, y) corner of rectangle
+            useMinDist (bool): if True, apply minDist offset to gaze origin
+            minDist (float): distance offset for gaze start
+        """
+        gaze_length = self.vectorLength
+    
+        # Rectangle polygon
+        x1, y1 = rectBL
+        x2, y2 = rectTR
+        rect_poly = Polygon([(x1, y1), (x1, y2), (x2, y2), (x2, y1)])
+    
+        # Normalize gaze direction
+        gaze_dir = gaze_vector / (np.linalg.norm(gaze_vector) + 1e-8)
+    
+        # Offset start
+        offset = minDist if useMinDist else 0
+        p1 = gaze_origin + offset * gaze_dir
+        p2 = gaze_origin + gaze_length * gaze_dir
+        gaze_line = LineString([tuple(p1), tuple(p2)])
+    
+        return gaze_line.intersects(rect_poly)
+    
+    def returnIsLookingAtObjects(self, ratID, target="lever", useMinDist=True, returnToporBottom=True):
+        """
+        Return boolean arrays indicating whether mouseID is gazing/interacting 
+        with each lever or magazine across frames.
+    
+        Parameters:
+            mouseID (int): which mouse (0 or 1)
+            target (str): "lever" or "mag"
+            useMinDist (bool): if True, check gazing (with threshold); 
+                               if False, check interacting (no threshold)
+    
+        Returns:
+            (bool arrays): 4 arrays (per object), each shape (num_frames,)
+        """
+    
+        num_frames = self.data.shape[-1]
+        gaze_vector = self.returnGazeVector(ratID)
+        HB = self.data[ratID, :, self.HB_INDEX, :]  # (2, num_frames)
+    
+        # Lever/mag positions
+        lever_rects = [((100, 240), (160, 180)),  # Top lever
+                       ((100, 415), (160, 475))]  # Bottom lever
+        mag_rects = [((1240, 245), (1300, 185)),  # Top mag
+                     ((1240, 415), (1300, 475))]  # Bottom mag
+    
+        rects = lever_rects if target == "lever" else mag_rects
+    
+        # Track intersections frame-by-frame
+        top_hits = np.zeros(num_frames, dtype=bool)
+        bot_hits = np.zeros(num_frames, dtype=bool)
+    
+        for t in range(num_frames):
+            gvec = gaze_vector[:, t]
+            gorigin = HB[:, t]
+    
+            # Top rectangle
+            if self._gaze_intersects_rect(gorigin, gvec, rects[0][0], rects[0][1], useMinDist):
+                top_hits[t] = True
+    
+            # Bottom rectangle
+            if self._gaze_intersects_rect(gorigin, gvec, rects[1][0], rects[1][1], useMinDist):
+                bot_hits[t] = True
+    
+        # Enforce self.minFramesStill consecutive hits
+        res1 = np.zeros(num_frames, dtype=bool)
+        res2 = np.zeros(num_frames, dtype=bool)
+    
+        for t in range(self.minFramesStill, num_frames):
+            if np.all(top_hits[t - self.minFramesStill:t]):
+                res1[t] = True
+            if np.all(bot_hits[t - self.minFramesStill:t]):
+                res2[t] = True
+        
+        if (returnToporBottom):
+            res = np.logical_or(res1, res2)
+            return res
+        else:
+            return res1, res2
+        
     #Graph Stuff
     
     def returnMouseLocation(self, ratID):
@@ -889,22 +980,22 @@ def visualize_gaze_overlay(
         #Dimensions – 1392 x 640
         
         #Lever Gazing
-        levBL = (20, 70) #Top
-        levTR = (40, 50)
-        cv2.line(frame, levBL, levTR, (0, 0, 255), 3)
+        levBL = (100, 240) #Top
+        levTR = (160, 180)
+        cv2.rectangle(frame, levBL, levTR, (50, 50, 200), 3)
         
-        levBL2 = (20, 550) #Bottom
-        levTR2 = (40, 530)
-        cv2.line(frame, levBL, levTR, (0, 0, 255), 3)
+        levBL2 = (100, 415) #Bottom
+        levTR2 = (160, 475)
+        cv2.rectangle(frame, levBL2, levTR2, (0, 0, 255), 3)
         
         #Mag Gazing
-        magBL = (1350, 70) #Top
-        magTR = (1370, 50)
-        cv2.line(frame, magBL, magTR, (0, 0, 255), 3)
+        magBL = (1240, 245) #Top
+        magTR = (1300, 185)
+        cv2.rectangle(frame, magBL, magTR, (50, 50, 200), 3)
         
-        magBL2 = (1350, 550) #Bottom
-        magTR2 = (1370, 530)
-        cv2.line(frame, magBL2, magTR2, (0, 0, 255), 3)
+        magBL2 = (1240, 415) #Bottom
+        magTR2 = (1300, 475)
+        cv2.rectangle(frame, magBL2, magTR2, (0, 0, 255), 3)
         
         
         #Draw Sub-Zones: 
@@ -1222,8 +1313,8 @@ video_file = "/Users/david/Downloads/4%_nan_test.mp4"
 #h5_file = "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G.predictions.h5"
 #video_file = "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G.mp4"    
 
-
-'''loader = posLoader(h5_file)
+'''
+loader = posLoader(h5_file)
 lev = levLoader(lev_file)
 mag = magLoader(mag_file)
 visualize_gaze_overlay(video_file, loader, lev, mag, mouseID=0, save_path = "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Graphs/Videos/testingLevandMagGazing.mp4")

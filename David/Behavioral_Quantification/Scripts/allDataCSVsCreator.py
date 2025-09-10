@@ -501,6 +501,17 @@ class allDataCSVsCreator:
                 interaction_frames = np.sum(pos.returnIsInteracting()[start_frame:end_frame])
                 percent_interacting = (interaction_frames / total_frames) * 100 if total_frames > 0 else 0
     
+                # Lev and Mag Gazing and Interaction Percentage:
+                lev_gazing_frames = np.sum(pos.returnIsLookingAtObjects(0)[start_frame:end_frame]) + np.sum(pos.returnIsLookingAtObjects(1)[start_frame:end_frame])
+                mag_gazing_frames = np.sum(pos.returnIsLookingAtObjects(0, target="mag")[start_frame:end_frame]) + np.sum(pos.returnIsLookingAtObjects(1, target="mag")[start_frame:end_frame])
+                lev_interacting_frames = np.sum(pos.returnIsLookingAtObjects(0, useMinDist=False)[start_frame:end_frame]) + np.sum(pos.returnIsLookingAtObjects(1, useMinDist=False)[start_frame:end_frame])
+                mag_interacting_frames = np.sum(pos.returnIsLookingAtObjects(0, target="mag", useMinDist = False)[start_frame:end_frame]) + np.sum(pos.returnIsLookingAtObjects(1, target="mag")[start_frame:end_frame])
+                
+                percent_gazing_lev = lev_gazing_frames / (2 * total_frames)
+                percent_gazing_mag = mag_gazing_frames / (2 * total_frames)
+                percent_interacting_lev = lev_interacting_frames / (2 * total_frames)
+                percent_interacting_mag = mag_interacting_frames / (2 * total_frames)
+            
                 # Time wait before cue
                 rat0_locations = pos.returnMouseLocation(0)
                 rat1_locations = pos.returnMouseLocation(1)
@@ -565,6 +576,10 @@ class allDataCSVsCreator:
                     'lever_press_exists': lever_press_exists,
                     'percent_gazing': percent_gazing,
                     'percent_interacting': percent_interacting,
+                    'percent_gazing_lev': percent_gazing_lev,
+                    'percent_gazing_mag': percent_gazing_mag,
+                    'percent_interacting_lev': percent_interacting_lev,
+                    'percent_interacting_mag': percent_interacting_mag,
                     'wait_before_cue_both': time_wait_before_cue,
                     'distance_vs_wait_valid': distance_vs_wait_valid,
                     'time_wait_to_press_one': time_wait_to_press_one,
