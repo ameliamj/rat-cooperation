@@ -7175,13 +7175,14 @@ class multiFileGraphs:
                     sequence = []
             
             sessionCountsStandardized.append(countInteractionMoment / countValidFrames * 100)
+            percentFramesInteraction = countInteractionMomentFrames / countValidFrames * 100
             percentFramesInteracted.append(countInteractionMomentFrames / countValidFrames * 100)
             
             metadata.append({
                 "SessionID": exp.sessionID,
                 "Date": exp.date,
                 "RatPair": exp.ratPair,
-                "PercentFramesInteracted": percentFramesInteracted,
+                "PercentFramesInteracted": percentFramesInteraction,
                 "SuccessRate": successRate
             })
         
