@@ -44,6 +44,8 @@ class allDataCSVsCreator:
         posFiles = fe.getPosDatapath()
         dates = fe.getDatesList()
         sessions = fe.getSessionIDList()
+        dates = dates.tolist()
+        sessions = sessions.tolist()
         print("dates: ", dates)
         familiarity = fe.getFamiliarityList()
         transparency = fe.getBarrierTransparencyList()
