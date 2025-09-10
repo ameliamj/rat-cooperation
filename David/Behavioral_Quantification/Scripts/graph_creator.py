@@ -7136,8 +7136,8 @@ class multiFileGraphs:
             countInteractionMomentFrames = 0
             countValidFrames = 0
             
-            
-            successRates.append(lev.returnSuccessPercentage())
+            successRate = lev.returnSuccessPercentage()
+            successRates.append(successRate)
             
             count = -1
             sequence = []
@@ -7162,20 +7162,6 @@ class multiFileGraphs:
                         
                         # Framewise: add every (loc0, loc1)
                         framewise_counter.update(sequence)
-                        
-                        
-            metadata.append({
-                "SessionID": exp.sessionID,
-                "Date": exp.date,
-                "RatPair": exp.ratPair,
-                "SuccessRate": successRate,
-                "PercentFramesInteracted": percentFramesInteracted,
-                "NumInteractionEvents": countInteractionMoment,
-                "AvgInteractionLength": avgInteractionLength
-            })
-        df = pd.DataFrame(metadata)
-        csv_path = f"Raw_Data_SocialInteractions_vs_Success.csv"
-        df.to_csv(csv_path, index=False)
     
                         # Eventwise: add mode
                         try:
@@ -7190,6 +7176,14 @@ class multiFileGraphs:
             
             sessionCountsStandardized.append(countInteractionMoment / countValidFrames * 100)
             percentFramesInteracted.append(countInteractionMomentFrames / countValidFrames * 100)
+            
+            metadata.append({
+                "SessionID": exp.sessionID,
+                "Date": exp.date,
+                "RatPair": exp.ratPair,
+                "PercentFramesInteracted": percentFramesInteracted,
+                "SuccessRate": successRate
+            })
         
         # Plot
         x = np.array(percentFramesInteracted)
@@ -7214,6 +7208,10 @@ class multiFileGraphs:
         plt.show()
         plt.savefig(f"{self.prefix}PercentInteractingvsSuccessScatterplot_corrected.png")
         plt.close()
+        
+        df = pd.DataFrame(metadata)
+        csv_path = f"Raw_Data_SocialInteractions_vs_Success.csv"
+        df.to_csv(csv_path, index=False)
         
         self._plot_scatter(sessionCountsStandardized, successRates, "numberOfInteractionsvsSuccessScatterplot", "Frequency of Interactions vs. Success", "Interaction Frequency")
         self._plot_scatter(percentFramesInteracted, successRates, "PercentInteractingvsSuccessScatterplot", "Percent of Frames Interacting vs. Success", "Interaction Percentage")
