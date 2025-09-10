@@ -429,6 +429,7 @@ class allDataCSVsCreator:
             successes_unfiltered = lev.returnSuccessTrials()
             successes = lev.returnSuccessTrialsFiltered()
             first_presses = lev.returnFirstPressAbsTimes()  
+            coop_or_last_presses = lev.returnCoopTimeorLastPressTime()
             first_mag_entries = self.returnMagStartAbsTimes(lev, mag)  
             list_trials_no_press = lev.returnListTrialsNoPress()
             trialCounter = 1
@@ -462,21 +463,28 @@ class allDataCSVsCreator:
                     print("Trial Number No Press: ", trial_number)
                     trial_data.append({
                         'session_id': sessionID,                                 #Session ID from lev & mag files
+                        'trial_number': trial_number,                            #Which trial # in session data refers to
                         'date': date,                                            #Date of session
                         'rat_pair': rat_pair,                                    #'RatID1-RatID2'
                         'familiarity': familiarity,                              #Either 'Training Partner' or 'Unfamiliar'
                         'barrier_transparency': barrier_transparency,            #Either 'transparent', 'translucent', or 'opaque'
-                        'trial_number': trial_number,                            #Which trial # in session data refers to
                         'time_begin': None,                                      #Abs of Time of Session at Trial Start
                         'time_first_press': None,                                #Abs Time at First Press
+                        'time_coop_or_last_press': None,                         #Abs Time at the press that makes the trial cooperative if a cooperative trial and if not, the time of the last press.
                         'time_first_mag_entry': None,                            #Abs Time at first Magazine Entry if it exists
+                        'all_time_sections_valid': False,
                         'successes_in_row': None,                                #Number of successful trials in a row previously
                         'success': 0,                                            #Whether the trial succeeded
                         'total_frames': total_frames,                            #Total Frames in the Trial
                         'lever_press_exists': False,                             #Whether there's a lever press in the trial
                         'percent_gazing': None,                                  #Percent Gazing for the Trial
                         'percent_interacting': None,                             #Percent Interacting for the Trial
+                        'percent_gazing_lev': None,                              
+                        'percent_gazing_mag': None,
+                        'percent_interacting_lev': None,
+                        'percent_interacting_mag': None,                         
                         'time_wait_before_cue_both': None,                       #How long both rats were in the lever area before pressing
+                        'distance_vs_wait_valid': False,                         #True if at least one rat wasn't at lever at the time of the sound cue
                         'time_wait_to_press_one': None,                          #How long after start of trial it took for the first lever press
                         'dist_furthest_from_lever': None,                        #The distance of the furthest rat from the lever at the start of the trial
                         'avg_horizontal_distance': None,                         #Average Horizontal-Distance of the rats throughout the trial
@@ -487,7 +495,11 @@ class allDataCSVsCreator:
                 
                 time_begin = start_time
                 time_first_press = first_presses[trial_idx] if trial_idx < len(first_presses) and pd.notna(first_presses[trial_idx]) else None
+                time_coop_or_last_press = coop_or_last_presses[trial_idx] if trial_idx < len(coop_or_last_presses) and pd.notna(coop_or_last_presses[trial_idx]) else None
                 time_first_mag_entry = first_mag_entries[trial_idx] if trial_idx < len(first_mag_entries) and pd.notna(first_mag_entries[trial_idx]) else None
+                all_time_sections_valid = False
+                if (time_first_press and time_coop_or_last_press and time_first_mag_entry):
+                    all_time_sections_valid = True
                 successes_in_row = success_counts[trial_idx]
                 success = successes[trial_idx]
                 lever_press_exists = True
@@ -562,14 +574,16 @@ class allDataCSVsCreator:
     
                 trial_data.append({
                     'session_id': sessionID,
+                    'trial_number': trial_number,
                     'date': date,
                     'rat_pair': rat_pair,
                     'familiarity': familiarity,
                     'barrier_transparency': barrier_transparency,
-                    'trial_number': trial_number,
                     'time_begin': time_begin,
                     'time_first_press': time_first_press,
+                    'time_coop_or_last_press': time_coop_or_last_press,
                     'time_first_mag_entry': time_first_mag_entry,
+                    'all_time_sections_valid': all_time_sections_valid,
                     'successes_in_row': successes_in_row,
                     'success': success,
                     'trial_frames': total_frames,
@@ -776,5 +790,5 @@ metadata_path = "/gpfs/radev/project/saxena/drb83/rat-cooperation/David/Behavior
 metadata_smol = "/gpfs/radev/project/saxena/drb83/rat-cooperation/David/Behavioral_Quantification/Sorted_Data_Files/only_opaque_sessions_filtered_onlyFirst.csv"
 metadata_filtered = "/gpfs/radev/project/saxena/drb83/rat-cooperation/David/Behavioral_Quantification/Sorted_Data_Files/Filtered.csv"
 
-creator = allDataCSVsCreator(metadata_smol, post="")
+creator = allDataCSVsCreator(metadata_filtered, post="")
 creator.createTrialCSVStandard()
