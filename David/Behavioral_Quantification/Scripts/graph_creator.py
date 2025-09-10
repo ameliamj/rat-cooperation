@@ -2319,7 +2319,7 @@ pairGraphs.boxplot_IPI_last_to_success()'''
 
 
 class multiFileGraphs:
-    def __init__(self, magFiles: List[str], levFiles: List[str], posFiles: List[str], fpsList: List[int], totFramesList: List[int], initialNanList: List[int], fiberFiles = None, prefix = "", save = True):
+    def __init__(self, magFiles: List[str], levFiles: List[str], posFiles: List[str], fpsList: List[int], totFramesList: List[int], initialNanList: List[int], dates: List[int], sessions: List[int], ratPairs: List[int], fiberFiles = None, prefix = "", save = True):
         self.experiments = []
         self.prefix = prefix
         self.save = save
@@ -2350,7 +2350,7 @@ class multiFileGraphs:
             if (fiberFiles is not None and fiberFiles[i] is not None):
                 exp = singleExperiment(magFiles[i], levFiles[i], posFiles[i], fpsList[i], totFramesList[i], initialNanList[i], fp_files=fiberFiles[i])
             else:
-                exp = singleExperiment(magFiles[i], levFiles[i], posFiles[i], fpsList[i], totFramesList[i], initialNanList[i])
+                exp = singleExperiment(magFiles[i], levFiles[i], posFiles[i], fpsList[i], totFramesList[i], initialNanList[i], date = dates[i], sessionID = sessions[i], ratPair=ratPairs[i])
             mag_missing = [col for col in exp.mag.categories if col not in exp.mag.data.columns]
             lev_missing = [col for col in exp.lev.categories if col not in exp.lev.data.columns]
             
@@ -9611,8 +9611,13 @@ def getFiltered():
     fe.data = fe.deleteBadNaN()
     fpsList, totFramesList = fe.returnFPSandTotFrames()
     initial_nan_list = fe.returnNaNPercentage()
+    dates = fe.getDatesList()
+    sessions = fe.getSessionIDList()
+    dates = dates.tolist()
+    sessions = sessions.tolist()
+    ratPairs = fe.getRatPairList()
     #print("initial_nan_list: ", initial_nan_list)
-    return [fe.getLevsDatapath(), fe.getMagsDatapath(), fe.getPosDatapath(), fpsList, totFramesList, initial_nan_list]
+    return [fe.getLevsDatapath(), fe.getMagsDatapath(), fe.getPosDatapath(), fpsList, totFramesList, initial_nan_list, dates, sessions, ratPairs]
 
 
 def trainingCoopData():
@@ -9679,6 +9684,9 @@ pos_files = arr[2]
 fpsList = arr[3]
 totFramesList = arr[4]
 initialNanList = arr[5]
+dates = arr[6]
+sessions = arr[7]
+ratPairs = arr[8]
 #fiberPhoto = arr[6]
 
 
