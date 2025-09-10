@@ -4162,7 +4162,8 @@ class multiFileGraphs:
             
             # Save metadata for later printing
             metadata.append({
-                "LevFile": exp.lev_file,
+                "SessionID": exp.sessionID,
+                "Date": exp.date,
                 "RatPair": exp.ratPair,
                 "AvgDistance": avg_distance,
                 "SuccessRate": success_rate
@@ -4221,7 +4222,7 @@ class multiFileGraphs:
         # Plot formatting
         plt.xlabel('Average Inter-Rat Distance (pixels)')
         plt.ylabel('Cooperative Success Rate')
-        plt.title('Success Probability vs. Average Inter-Rat Distance')
+        plt.title('Average Inter-Rat Distance vs. Success Probability')
         plt.legend()
         plt.grid(True)
         plt.tight_layout()
@@ -4232,12 +4233,15 @@ class multiFileGraphs:
         plt.show()
         plt.close()
         
+        df = pd.DataFrame(metadata)
+        csv_path = f"Raw_Data_AvgDistance_vs_Success.csv"
+        df.to_csv(csv_path, index=False)
+        
         # Print full datapoint table
         print("\n--- Data Points ---")
         for entry in metadata:
             print(f"AvgDistance: {entry['AvgDistance']:.2f}, SuccessRate: {entry['SuccessRate']:.3f}")
-            #print(f"LevFile: {entry['LevFile'][-48:-11]}"
-                  #f"AvgDistance: {entry['AvgDistance']:.2f}, SuccessRate: {entry['SuccessRate']:.3f}")
+
 
     def _calculate_trial_metrics(self, experiment):
         """
@@ -7115,6 +7119,8 @@ class multiFileGraphs:
         percentFramesInteracted = []
         successRates = []
         
+        metadata = []
+        
         # Count of interaction type combinations
         framewise_counter = Counter()  # Every frame
         eventwise_counter = Counter()  # Once per interaction event
@@ -7156,6 +7162,20 @@ class multiFileGraphs:
                         
                         # Framewise: add every (loc0, loc1)
                         framewise_counter.update(sequence)
+                        
+                        
+            metadata.append({
+                "SessionID": exp.sessionID,
+                "Date": exp.date,
+                "RatPair": exp.ratPair,
+                "SuccessRate": successRate,
+                "PercentFramesInteracted": percentFramesInteracted,
+                "NumInteractionEvents": countInteractionMoment,
+                "AvgInteractionLength": avgInteractionLength
+            })
+        df = pd.DataFrame(metadata)
+        csv_path = f"Raw_Data_SocialInteractions_vs_Success.csv"
+        df.to_csv(csv_path, index=False)
     
                         # Eventwise: add mode
                         try:
@@ -9690,7 +9710,7 @@ initialNanList = [0.3]
 #print("Start MultiFileGraphs Regular")
 experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, prefix = "", save=True)
 experiment.interactionVSSuccess()
-#experiment.successVsAverageDistance()
+experiment.successVsAverageDistance()
 #experiment.first_press_bias()
 #experiment.waitingStrategy()
 #experiment.percentGazingvsSuccess()
