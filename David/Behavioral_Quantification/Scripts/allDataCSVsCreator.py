@@ -68,6 +68,14 @@ class allDataCSVsCreator:
         
         
         for i in range(len(magFiles)):
+            print("Types/indices check:")
+            print(type(familiarity), getattr(familiarity, "index", None))
+            print(type(transparency), getattr(transparency, "index", None))
+            print(type(dates), getattr(dates, "index", None))
+            print(type(sessions), getattr(sessions, "index", None))
+            print(type(ratPairs), getattr(ratPairs, "index", None))
+            print(type(numSessionsBeforeList), getattr(numSessionsBeforeList, "index", None))
+            
             exp = singleExperiment(magFiles[i], levFiles[i], posFiles[i], fpsList[i], totFramesList[i], initialNanList[i], trainingPartner=familiarity[i], transparency=transparency[i], date = dates[i], sessionID = sessions[i], ratPair=ratPairs[i], numSessionsBefore=numSessionsBeforeList[i])
             mag_missing = [col for col in exp.mag.categories if col not in exp.mag.data.columns]
             lev_missing = [col for col in exp.lev.categories if col not in exp.lev.data.columns]
