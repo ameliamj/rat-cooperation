@@ -50,7 +50,7 @@ class posLoader:
         self.HB_INDEX = 3 #head base index
         self.TB_INDEX = 4 #tail base index
         
-        self.vectorLength = 250
+        self.vectorLength = 425
         
         #Frame Dimensions
         self.width = 1392
@@ -136,27 +136,25 @@ class posLoader:
     def return_TBLocs(self):
         return self.data[:, :, 4, :]
     
-    def returnGazeVector(self, mouseID):
+    def returnGazeVector(self, mouseID, minDist=150):
         """
-        Return a normalized and scaled gaze vector (from head base to nose) 
-        for all frames for the specified mouse.
+        Return a normalized gaze vector (head base → nose) scaled between minDist and vectorLength.
         
-        Parameters:
-            mouseID (int): 0 or 1, indicating which mouse to analyze
-            length (float): the desired magnitude of the returned gaze vector
-            
-        Returns:
-            np.ndarray: array of shape (2, num_frames) with extended-length gaze vectors
+        The vector represents the line segment along which we check gaze, starting at minDist away 
+        from the head base and extending out to vectorLength.
         """
-        length = self.vectorLength
-        
-        HB = self.data[mouseID, :, self.HB_INDEX, :]  # shape (2, num_frames)
+        length = self.vectorLength  # e.g. 400
+    
+        HB = self.data[mouseID, :, self.HB_INDEX, :]   # (2, num_frames)
         nose = self.data[mouseID, :, self.NOSE_INDEX, :]
         raw_vec = nose - HB
-        norms = np.linalg.norm(raw_vec, axis=0) + 1e-8  # Avoid divide-by-zero
-        normalized = raw_vec / norms
-        scaled = normalized * length
-        return scaled  # shape (2, num_frames)
+        norms = np.linalg.norm(raw_vec, axis=0) + 1e-9
+        normalized = raw_vec / norms  # direction only
+    
+        # Scale to full length
+        scaled = normalized * length   # end point direction
+    
+        return scaled
         
     
     def _point_to_segment_distance(self, point, seg_start, seg_end):
@@ -171,38 +169,36 @@ class posLoader:
         closest = seg_start + proj * line_vec
         return np.linalg.norm(point - closest)
     
-    def _gaze_intersects_body(self, gaze_origin, gaze_vector, target_body):
+    def _gaze_intersects_body(self, gaze_origin, gaze_vector, target_body, minDist=150):
         """
-        Check if the gaze vector intersects the polygonal region defined by:
-        left ear → nose → right ear → tail base → left ear.
+        Check if gaze vector intersects target body polygon, starting minDist away 
+        from gaze_origin and extending to vectorLength.
         
         Parameters:
             gaze_origin (np.ndarray): shape (2,), origin of the gaze vector.
             gaze_vector (np.ndarray): shape (2,), direction of the gaze.
             target_body (np.ndarray): shape (2, 5), [x,y] coordinates of 5 body parts.
             gaze_length (float): length to extend the gaze line.
-        
-        Returns:
-            bool: True if gaze vector intersects the body polygon, else False.
+            minDist: offset distance away to separate interactions and gazing. 
         """
         gaze_length = self.vectorLength
-        
-        # Indices for relevant parts
+    
+        # Polygon for the body
         earL = target_body[:, self.earL_INDEX]
         nose = target_body[:, self.NOSE_INDEX]
         earR = target_body[:, self.earR_INDEX]
         tail = target_body[:, self.TB_INDEX]
-        
-        # Construct polygon path
         polygon_points = [tuple(earL), tuple(nose), tuple(earR), tuple(tail), tuple(earL)]
         body_poly = Polygon(polygon_points)
     
-        # Extend the gaze vector in both directions
+        # Normalize gaze direction
         gaze_dir = gaze_vector / (np.linalg.norm(gaze_vector) + 1e-8)
-        p1 = gaze_origin - gaze_length * gaze_dir
+    
+        # Offset start point by minDist
+        p1 = gaze_origin + minDist * gaze_dir
         p2 = gaze_origin + gaze_length * gaze_dir
         gaze_line = LineString([tuple(p1), tuple(p2)])
-    
+
         return gaze_line.intersects(body_poly)
     
     def returnIsStill(self, mouseID, alternateDef = True):
@@ -748,8 +744,9 @@ def visualize_gaze_overlay(
     mouseID=0,
     save_path="output.mp4",
     start_frame=0,
-    max_frames=300,
-    gaze_length=250
+    max_frames=100,
+    gaze_length=425, 
+    minDist = 150
 ):
     '''
     Visual Representation of Gaze Events
@@ -818,13 +815,18 @@ def visualize_gaze_overlay(
         gaze_origin = HB[:, frame_idx]
         target = other_body[:, :, frame_idx]
 
+        # Normalize gaze direction
         gaze_dir = gaze_vec / (np.linalg.norm(gaze_vec) + 1e-8)
-        gaze_tip = gaze_origin + gaze_length * gaze_dir
+    
+        # Apply 75px offset for start, 400px for end
+        p1 = gaze_origin + minDist * gaze_dir
+        p2 = gaze_origin + gaze_length * gaze_dir
+    
+        p1 = tuple(np.round(p1).astype(int))
+        p2 = tuple(np.round(p2).astype(int))
 
-        p1 = tuple(np.round(gaze_origin).astype(int))
-        p2 = tuple(np.round(gaze_tip).astype(int))
 
-        intersect = loader._gaze_intersects_body(gaze_origin, gaze_vec, target)
+        intersect = loader._gaze_intersects_body(gaze_origin, gaze_dir, target)
         still = is_still[frame_idx]
         gazing = intersect and still
 
@@ -873,7 +875,7 @@ def visualize_gaze_overlay(
         # Draw wall boundaries
         cv2.line(frame, (0, loader.topWall), (width, loader.topWall), (0, 255, 255), 2)     # Yellow line for topWall
         cv2.line(frame, (0, loader.bottomWall), (width, loader.bottomWall), (0, 165, 255), 2) # Orange line for bottomWall
-
+        
         cv2.putText(frame, "Top Wall", (10, loader.topWall - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 255), 2)
         cv2.putText(frame, "Bottom Wall", (10, loader.bottomWall + 20), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 165, 255), 2)
         
@@ -883,6 +885,27 @@ def visualize_gaze_overlay(
         
         cv2.putText(frame, f"Rat{mouseID}: {region_self}", (10, 120), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
         cv2.putText(frame, f"Rat{1 - mouseID}: {region_other}", (10, 150), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
+        
+        #Dimensions – 1392 x 640
+        
+        #Lever Gazing
+        levBL = (20, 70) #Top
+        levTR = (40, 50)
+        cv2.line(frame, levBL, levTR, (0, 0, 255), 3)
+        
+        levBL2 = (20, 550) #Bottom
+        levTR2 = (40, 530)
+        cv2.line(frame, levBL, levTR, (0, 0, 255), 3)
+        
+        #Mag Gazing
+        magBL = (1350, 70) #Top
+        magTR = (1370, 50)
+        cv2.line(frame, magBL, magTR, (0, 0, 255), 3)
+        
+        magBL2 = (1350, 550) #Bottom
+        magTR2 = (1370, 530)
+        cv2.line(frame, magBL2, magTR2, (0, 0, 255), 3)
+        
         
         #Draw Sub-Zones: 
         zone_color = (255, 255, 255)  # White color for rectangles
@@ -987,7 +1010,7 @@ def visualize_gaze_overlay2(
     save_path="output.mp4",
     start_frame=0,
     max_frames=1000,
-    gaze_length=250
+    gaze_length=400
 ):
     '''
     Visual Representation of Gaze Events
@@ -1200,11 +1223,11 @@ video_file = "/Users/david/Downloads/4%_nan_test.mp4"
 #video_file = "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G.mp4"    
 
 
-'''loader = posLoader(h5_file)
+loader = posLoader(h5_file)
 lev = levLoader(lev_file)
 mag = magLoader(mag_file)
-visualize_gaze_overlay(video_file, loader, lev, mag, mouseID=0, save_path = "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Graphs/Videos/exampleCageVideo.mp4")
-'''
+visualize_gaze_overlay(video_file, loader, lev, mag, mouseID=0, save_path = "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Graphs/Videos/testingLevandMagGazing.mp4")
+
   
     
     

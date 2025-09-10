@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+ #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
 Created on Tue Jul 22 22:41:09 2025
@@ -42,6 +42,9 @@ class allDataCSVsCreator:
         levFiles = fe.getLevsDatapath()
         magFiles = fe.getMagsDatapath()
         posFiles = fe.getPosDatapath()
+        dates = fe.getDatesList()
+        sessions = fe.getSessionIDList()
+        print("dates: ", dates)
         familiarity = fe.getFamiliarityList()
         transparency = fe.getBarrierTransparencyList()
         ratPairs = fe.getRatPairList()
@@ -53,8 +56,8 @@ class allDataCSVsCreator:
         print("There are ", len(magFiles), " experiments in this data session. ")
         print("")
         
-        if (len(magFiles) != len(levFiles) or len(magFiles) != len(posFiles) or len(magFiles) != len(transparency) or len(magFiles) != len(familiarity) or len(magFiles) != len(ratPairs) or len(magFiles) != len(numSessionsBeforeList)):
-            raise ValueError("Different number of mag, lev, and pos files")
+        if (len(magFiles) != len(levFiles) or len(magFiles) != len(posFiles) or len(magFiles) != len(transparency) or len(magFiles) != len(familiarity) or len(magFiles) != len(ratPairs) or len(magFiles) != len(numSessionsBeforeList) or len(magFiles) != len(dates) or len(magFiles) != len(sessions)):
+            raise ValueError("Mismatch in length of info.")
             
         if ((len(magFiles) != len(fpsList)) or (len(magFiles) != len(totFramesList)) or len(magFiles) != len(initialNanList)):
             print("lenDataFiles: ", len(magFiles))
@@ -65,7 +68,7 @@ class allDataCSVsCreator:
         
         
         for i in range(len(magFiles)):
-            exp = singleExperiment(magFiles[i], levFiles[i], posFiles[i], fpsList[i], totFramesList[i], initialNanList[i], trainingPartner=familiarity[i], transparency=transparency[i], ratPair=ratPairs[i], numSessionsBefore=numSessionsBeforeList[i])
+            exp = singleExperiment(magFiles[i], levFiles[i], posFiles[i], fpsList[i], totFramesList[i], initialNanList[i], trainingPartner=familiarity[i], transparency=transparency[i], date = dates[i], sessionID = sessions[i], ratPair=ratPairs[i], numSessionsBefore=numSessionsBeforeList[i])
             mag_missing = [col for col in exp.mag.categories if col not in exp.mag.data.columns]
             lev_missing = [col for col in exp.lev.categories if col not in exp.lev.data.columns]
             
@@ -397,7 +400,7 @@ class allDataCSVsCreator:
         df = pd.DataFrame(session_data)
         df.to_csv(f'session_metrics{self.post}.csv', index=False)
         
-    def createTrialCSV(self):
+    def createTrialCSVStandard(self):
         """
         Creates a CSV file containing per-trial metrics for all experiments.
         Metrics include session info, trial timing, success metrics, gaze, interaction, and spatial metrics.
@@ -414,11 +417,13 @@ class allDataCSVsCreator:
             total_frames_session = pos.returnNumFrames()
     
             # Extract session-level data
+            sessionID = exp.sessionID
+            date = exp.date
             rat_pair = exp.ratPair
             familiarity = exp.familiarity  
             barrier_transparency = exp.transparency  
     
-            # Get trial data
+            # Get trial section data
             trial_starts = lev.returnTimeStartTrials()
             trial_ends = lev.returnTimeEndTrials()
             successes_unfiltered = lev.returnSuccessTrials()
@@ -429,9 +434,10 @@ class allDataCSVsCreator:
             trialCounter = 1
     
             # Compute successes in a row
+            #
             successes_in_row = 0
             success_counts = []
-    
+
             for succ in successes_unfiltered:
                 if succ == 1:
                     successes_in_row += 1
@@ -455,25 +461,26 @@ class allDataCSVsCreator:
                 if (trial_number in list_trials_no_press):
                     print("Trial Number No Press: ", trial_number)
                     trial_data.append({
-                        'session_id': session_id,
-                        'rat_pair': rat_pair,
-                        'familiarity': familiarity,
-                        'barrier_transparency': barrier_transparency,
-                        'trial_number': trial_number,
-                        'time_begin': None,
-                        'time_first_press': None,
-                        'time_first_mag_entry': None,
-                        'successes_in_row': None,
-                        'success': 0,
-                        'total_frames': total_frames,
-                        'lever_press_exists': False,
-                        'percent_gazing': None,
-                        'percent_interacting': None,
-                        'time_wait_before_cue': None,
-                        'time_wait_to_press_one': None,
-                        'dist_furthest_from_lever': None,
-                        'avg_horizontal_distance': None,
-                        'avg_distance': None
+                        'session_id': sessionID,                                 #Session ID from lev & mag files
+                        'date': date,                                            #Date of session
+                        'rat_pair': rat_pair,                                    #'RatID1-RatID2'
+                        'familiarity': familiarity,                              #Either 'Training Partner' or 'Unfamiliar'
+                        'barrier_transparency': barrier_transparency,            #Either 'transparent', 'translucent', or 'opaque'
+                        'trial_number': trial_number,                            #Which trial # in session data refers to
+                        'time_begin': None,                                      #Abs of Time of Session at Trial Start
+                        'time_first_press': None,                                #Abs Time at First Press
+                        'time_first_mag_entry': None,                            #Abs Time at first Magazine Entry if it exists
+                        'successes_in_row': None,                                #Number of successful trials in a row previously
+                        'success': 0,                                            #Whether the trial succeeded
+                        'total_frames': total_frames,                            #Total Frames in the Trial
+                        'lever_press_exists': False,                             #Whether there's a lever press in the trial
+                        'percent_gazing': None,                                  #Percent Gazing for the Trial
+                        'percent_interacting': None,                             #Percent Interacting for the Trial
+                        'time_wait_before_cue_both': None,                       #How long both rats were in the lever area before pressing
+                        'time_wait_to_press_one': None,                          #How long after start of trial it took for the first lever press
+                        'dist_furthest_from_lever': None,                        #The distance of the furthest rat from the lever at the start of the trial
+                        'avg_horizontal_distance': None,                         #Average Horizontal-Distance of the rats throughout the trial
+                        'avg_distance': None                                     #Average Distance of the Rats throughout the Trial
                     })
                     trial_number += 1
                     trialCounter += 1
@@ -543,7 +550,185 @@ class allDataCSVsCreator:
                 avg_distance = np.nanmean(distances) if len(distances) > 0 else 0
     
                 trial_data.append({
-                    'session_id': session_id,
+                    'session_id': sessionID,
+                    'date': date,
+                    'rat_pair': rat_pair,
+                    'familiarity': familiarity,
+                    'barrier_transparency': barrier_transparency,
+                    'trial_number': trial_number,
+                    'time_begin': time_begin,
+                    'time_first_press': time_first_press,
+                    'time_first_mag_entry': time_first_mag_entry,
+                    'successes_in_row': successes_in_row,
+                    'success': success,
+                    'trial_frames': total_frames,
+                    'lever_press_exists': lever_press_exists,
+                    'percent_gazing': percent_gazing,
+                    'percent_interacting': percent_interacting,
+                    'wait_before_cue_both': time_wait_before_cue,
+                    'distance_vs_wait_valid': distance_vs_wait_valid,
+                    'time_wait_to_press_one': time_wait_to_press_one,
+                    'dist_furthest_from_lever': dist_furthest_from_lever,
+                    'avg_horizontal_distance': avg_horizontal_distance,
+                    'avg_distance': avg_distance
+                })
+    
+        df = pd.DataFrame(trial_data)
+        df.to_csv(f'trial_metrics_standard{self.post}.csv', index=False)
+        
+    def createTrialCSVExpanded(self):
+        """
+        Creates a CSV file containing per-trial metrics for all experiments.
+        Metrics include session info, trial timing, success metrics, gaze, interaction, and spatial metrics.
+        Saves the output to 'trial_metrics.csv'.
+        Specifically this includes all the subtrial section metrics. 
+        """
+        trial_data = []
+    
+        for idx, exp in enumerate(self.experiments):
+            session_id = f"exp_{idx:03d}"
+            pos = exp.pos
+            mag = exp.mag
+            lev = exp.lev
+            fps = exp.fps
+            total_frames_session = pos.returnNumFrames()
+    
+            # Extract session-level data
+            sessionID = exp.sessionID
+            date = exp.date
+            rat_pair = exp.ratPair
+            familiarity = exp.familiarity  
+            barrier_transparency = exp.transparency  
+    
+            # Get trial section data
+            trial_starts = lev.returnTimeStartTrials()
+            trial_ends = lev.returnTimeEndTrials()
+            successes_unfiltered = lev.returnSuccessTrials()
+            successes = lev.returnSuccessTrialsFiltered()
+            first_presses = lev.returnFirstPressAbsTimes()  
+            first_mag_entries = self.returnMagStartAbsTimes(lev, mag)  
+            list_trials_no_press = lev.returnListTrialsNoPress()
+            trialCounter = 1
+    
+            # Compute successes in a row
+            #
+            successes_in_row = 0
+            success_counts = []
+
+            for succ in successes_unfiltered:
+                if succ == 1:
+                    successes_in_row += 1
+                else:
+                    successes_in_row = 0
+                    
+                if (succ != -1):
+                    success_counts.append(successes_in_row)
+    
+            # Process each trial
+            for trial_idx, start_time in enumerate(trial_starts):
+                if pd.isna(start_time) or pd.isna(trial_ends[trial_idx] or trial_idx >= 40):
+                    continue
+    
+                start_frame = int(start_time * fps)
+                end_frame = int(trial_ends[trial_idx] * fps)
+                total_frames = end_frame - start_frame if end_frame > start_frame else 0
+    
+                # Trial metrics
+                trial_number = trial_idx + trialCounter
+                if (trial_number in list_trials_no_press):
+                    print("Trial Number No Press: ", trial_number)
+                    trial_data.append({
+                        'session_id': sessionID,                                 #Session ID from lev & mag files
+                        'date': date,                                            #Date of session
+                        'rat_pair': rat_pair,                                    #'RatID1-RatID2'
+                        'familiarity': familiarity,                              #Either 'Training Partner' or 'Unfamiliar'
+                        'barrier_transparency': barrier_transparency,            #Either 'transparent', 'translucent', or 'opaque'
+                        'trial_number': trial_number,                            #Which trial # in session data refers to
+                        'time_begin': None,                                      #Abs of Time of Session at Trial Start
+                        'time_first_press': None,                                #Abs Time at First Press
+                        'time_first_mag_entry': None,                            #Abs Time at first Magazine Entry if it exists
+                        'successes_in_row': None,                                #Number of successful trials in a row previously
+                        'success': 0,                                            #Whether the trial succeeded
+                        'total_frames': total_frames,                            #Total Frames in the Trial
+                        'lever_press_exists': False,                             #Whether there's a lever press in the trial
+                        'percent_gazing': None,                                  #Percent Gazing for the Trial
+                        'percent_interacting': None,                             #Percent Interacting for the Trial
+                        'time_wait_before_cue_both': None,                       #How long both rats were in the lever area before pressing
+                        'time_wait_to_press_one': None,                          #How long after start of trial it took for the first lever press
+                        'dist_furthest_from_lever': None,                        #The distance of the furthest rat from the lever at the start of the trial
+                        'avg_horizontal_distance': None,                         #Average Horizontal-Distance of the rats throughout the trial
+                        'avg_distance': None                                     #Average Distance of the Rats throughout the Trial
+                    })
+                    trial_number += 1
+                    trialCounter += 1
+                
+                time_begin = start_time
+                time_first_press = first_presses[trial_idx] if trial_idx < len(first_presses) and pd.notna(first_presses[trial_idx]) else None
+                time_first_mag_entry = first_mag_entries[trial_idx] if trial_idx < len(first_mag_entries) and pd.notna(first_mag_entries[trial_idx]) else None
+                successes_in_row = success_counts[trial_idx]
+                success = successes[trial_idx]
+                lever_press_exists = True
+    
+                # Gazing percentage
+                gaze_frames_rat0 = np.sum(pos.returnIsGazing(0)[start_frame:end_frame])
+                gaze_frames_rat1 = np.sum(pos.returnIsGazing(1)[start_frame:end_frame])
+                percent_gazing = ((gaze_frames_rat0 + gaze_frames_rat1) / (2 * total_frames)) * 100 if total_frames > 0 else 0
+    
+                # Interaction percentage
+                interaction_frames = np.sum(pos.returnIsInteracting()[start_frame:end_frame])
+                percent_interacting = (interaction_frames / total_frames) * 100 if total_frames > 0 else 0
+    
+                # Time wait before cue
+                rat0_locations = pos.returnMouseLocation(0)
+                rat1_locations = pos.returnMouseLocation(1)
+                t = start_frame - 1
+                rat0_waiting = 0
+                rat1_waiting = 0
+                rat0_active = True
+                rat1_active = True
+                while t >= 0 and t < len(rat0_locations) and t < len(rat1_locations) and (rat0_active or rat1_active):
+                    if rat0_locations[t] in ['lev_top', 'lev_bottom'] and rat0_active:
+                        rat0_waiting += 1
+                    else:
+                        rat0_active = False
+                    if rat1_locations[t] in ['lev_top', 'lev_bottom'] and rat1_active:
+                        rat1_waiting += 1
+                    else:
+                        rat1_active = False
+                    t -= 1
+                time_wait_before_cue = min(rat0_waiting, rat1_waiting) / fps if fps > 0 else 0
+                
+                if (max(rat0_waiting, rat1_waiting) > 0):
+                    distance_vs_wait_valid = True
+                else:
+                    distance_vs_wait_valid = False
+    
+                # Time waited to press lever if one rat at lever initially
+                time_wait_to_press_one = None
+                if rat0_locations[start_frame] in ['lev_top', 'lev_bottom'] or rat1_locations[start_frame] in ['lev_top', 'lev_bottom']:
+                    if time_first_press is not None:
+                        time_wait_to_press_one = time_first_press - start_time if time_first_press >= start_time else 0
+    
+                # Distance of furthest rat from lever
+                dist_rat0 = pos.distanceFromLever(0, start_frame)  # Assumed method
+                dist_rat1 = pos.distanceFromLever(1, start_frame)
+                dist_furthest_from_lever = max(dist_rat0, dist_rat1) if dist_rat0 is not None and dist_rat1 is not None else 0
+    
+                # Average horizontal distance
+                rat1_xlocations = pos.data[0, 0, pos.HB_INDEX, start_frame:end_frame]
+                rat2_xlocations = pos.data[1, 0, pos.HB_INDEX, start_frame:end_frame]
+                if len(rat1_xlocations) > 0 and len(rat2_xlocations) > 0:
+                    avg_horizontal_distance = np.mean([abs(a - b) for a, b in zip(rat1_xlocations, rat2_xlocations)])
+                else:
+                    avg_horizontal_distance = 0
+    
+                # Average distance
+                distances = pos.returnInterMouseDistance()[start_frame:end_frame]
+                avg_distance = np.nanmean(distances) if len(distances) > 0 else 0
+    
+                trial_data.append({
+                    'session_id': sessionID,
+                    'date': date,
                     'rat_pair': rat_pair,
                     'familiarity': familiarity,
                     'barrier_transparency': barrier_transparency,
@@ -567,7 +752,7 @@ class allDataCSVsCreator:
     
         df = pd.DataFrame(trial_data)
         df.to_csv(f'trial_metrics{self.post}.csv', index=False)
-        
+    
     def createFrameCSV(self):
         a = 1
         
@@ -576,6 +761,5 @@ metadata_path = "/gpfs/radev/project/saxena/drb83/rat-cooperation/David/Behavior
 metadata_smol = "/gpfs/radev/project/saxena/drb83/rat-cooperation/David/Behavioral_Quantification/Sorted_Data_Files/only_opaque_sessions_filtered_onlyFirst.csv"
 metadata_filtered = "/gpfs/radev/project/saxena/drb83/rat-cooperation/David/Behavioral_Quantification/Sorted_Data_Files/Filtered.csv"
 
-creator = allDataCSVsCreator(metadata_path, post="")
-creator.createSessionCSV()
-#creator.createTrialCSV()
+creator = allDataCSVsCreator(metadata_smol, post="")
+creator.createTrialCSVStandard()

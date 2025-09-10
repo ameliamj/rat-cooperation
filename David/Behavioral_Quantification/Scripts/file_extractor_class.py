@@ -786,6 +786,22 @@ class fileExtractor:
         
         return [extract_rat_pair(row) for _, row in self.data.iterrows()]
     
+    def getDatesList(self):
+        def extract_date(vid):
+            date_str = vid[:6]
+            try:
+                return datetime.strptime(date_str, "%m%d%y")
+            except ValueError:
+                return datetime.max  # Push invalid dates to the end
+        
+        df = self.data.copy()
+        df['date'] = df['vid'].apply(extract_date)
+        
+        return df['date']
+    
+    def getSessionIDList(self):
+        return self.data['session']
+    
     def getNumSessionsBefore(self):
         """
         Returns a list of the number of experimental sessions conducted for each rat pair

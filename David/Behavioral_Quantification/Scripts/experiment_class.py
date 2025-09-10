@@ -14,7 +14,7 @@ from pos_class import posLoader
 from fiberPhotoClass import fiberPhotoLoader
 
 class singleExperiment:
-    def __init__(self, mag_file, lev_file, pos_file, fps = 30, endFrame = 25182, initialNan = 0.1, fp_files = None, trainingPartner = "Training Partner", transparency = "Transparent", ratPair = "", numSessionsBefore = 0, rat1 = "rat1", rat2 = "rat2"):
+    def __init__(self, mag_file, lev_file, pos_file, fps = 30, endFrame = 25182, initialNan = 0.1, fp_files = None, trainingPartner = "Training Partner", transparency = "Transparent", ratPair = "", numSessionsBefore = 0, sessionID = "BLANK", rat1 = "rat1", rat2 = "rat2", date = "01/01/2000"):
         self.mag_file = mag_file
         self.lev_file = lev_file
         self.pos_file = pos_file
@@ -24,6 +24,8 @@ class singleExperiment:
         self.transparency = transparency
         self.ratPair = ratPair
         self.numSessionsBefore = numSessionsBefore
+        self.date = date
+        self.sessionID = sessionID
         
         self.pos = posLoader(pos_file, endFrame)
         self.endFrame = self.pos.returnNumFrames()
