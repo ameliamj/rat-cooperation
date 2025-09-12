@@ -487,6 +487,7 @@ class allDataCSVsCreator:
                         'success': 0,                                            #Whether the trial succeeded
                         'total_frames': total_frames,                            #Total Frames in the Trial
                         'lever_press_exists': False,                             #Whether there's a lever press in the trial
+                        'percent_gazing_original': None,
                         'percent_gazing': None,                                  #Percent Gazing for the Trial
                         'percent_interacting': None,                             #Percent Interacting for the Trial
                         'percent_gazing_lev': None,                              
@@ -518,6 +519,11 @@ class allDataCSVsCreator:
                 gaze_frames_rat0 = np.sum(pos.returnIsGazing(0)[start_frame:end_frame])
                 gaze_frames_rat1 = np.sum(pos.returnIsGazing(1)[start_frame:end_frame])
                 percent_gazing = ((gaze_frames_rat0 + gaze_frames_rat1) / (2 * total_frames)) * 100 if total_frames > 0 else 0
+    
+                #Gazing Percentage Original
+                gaze_frames_rat0_og = np.sum(pos.returnIsGazing(0, minDist=0)[start_frame:end_frame])
+                gaze_frames_rat1_og = np.sum(pos.returnIsGazing(1, minDist=0)[start_frame:end_frame])
+                percent_gazing_original = ((gaze_frames_rat0_og + gaze_frames_rat1_og) / (2 * total_frames)) * 100 if total_frames > 0 else 0
     
                 # Interaction percentage
                 interaction_frames = np.sum(pos.returnIsInteracting()[start_frame:end_frame])
@@ -598,6 +604,7 @@ class allDataCSVsCreator:
                     'success': success,
                     'trial_frames': total_frames,
                     'lever_press_exists': lever_press_exists,
+                    'percent_gazing_original': percent_gazing_original,
                     'percent_gazing': percent_gazing,
                     'percent_interacting': percent_interacting,
                     'percent_gazing_lev': percent_gazing_lev,
@@ -712,7 +719,9 @@ class allDataCSVsCreator:
                 gaze_frames_rat0 = np.sum(pos.returnIsGazing(0)[start_frame:end_frame])
                 gaze_frames_rat1 = np.sum(pos.returnIsGazing(1)[start_frame:end_frame])
                 percent_gazing = ((gaze_frames_rat0 + gaze_frames_rat1) / (2 * total_frames)) * 100 if total_frames > 0 else 0
-    
+                
+            
+                
                 # Interaction percentage
                 interaction_frames = np.sum(pos.returnIsInteracting()[start_frame:end_frame])
                 percent_interacting = (interaction_frames / total_frames) * 100 if total_frames > 0 else 0

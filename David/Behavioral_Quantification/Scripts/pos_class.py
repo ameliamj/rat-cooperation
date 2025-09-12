@@ -202,7 +202,7 @@ class posLoader:
 
         return gaze_line.intersects(body_poly)
     
-    def returnIsStill(self, mouseID, alternateDef = True):
+    def returnIsStill(self, mouseID, alternateDef = True, minDist = 150):
         #Determines whether a mouse has been still for self.minFramesStill frames where stillness is quantified by each body part being within a circle of radius self.stillnessRange for the entire frameCount
         
         if (alternateDef == False):
@@ -252,7 +252,7 @@ class posLoader:
                     target_body = self.data[other_mouse, :, :, tau]               # shape (2, 5)
     
                     # Check for intersection
-                    if not self._gaze_intersects_body(gaze_origin, gaze_vector, target_body):
+                    if not self._gaze_intersects_body(gaze_origin, gaze_vector, target_body, minDist=minDist):
                         intersected_all = False
                         break
     
@@ -262,7 +262,7 @@ class posLoader:
             return still_mask
     
     
-    def returnIsGazing(self, mouseID, test = False, alternateDef = True):
+    def returnIsGazing(self, mouseID, test = False, alternateDef = True, minDist=150):
         #determine whether mouse mouseID is gazing at the other mouse where a gaze is defined by a mouse standingStill for the self.minFramesStill and the gazeVector passing through the body of the other mouse (estimate of the body using the 5 body parts tracked)  
         """
         Return boolean array where True means that mouseID is still and gazing at the other mouse.
@@ -273,7 +273,7 @@ class posLoader:
         #print("num_frames is: ", num_frames)
         result = np.zeros(num_frames, dtype=bool)
 
-        still_mask = self.returnIsStill(mouseID, alternateDef) #'still' aka gazing if the last 10 frames have intersected the other rat. However, 
+        still_mask = self.returnIsStill(mouseID, alternateDef, minDist=minDist) #'still' aka gazing if the last 10 frames have intersected the other rat. However, 
         gaze_vector = self.returnGazeVector(mouseID)
         HB = self.data[mouseID, :, self.HB_INDEX, :]
         otherID = 1 - mouseID
@@ -288,7 +288,7 @@ class posLoader:
             gaze_vec = gaze_vector[:, t]
             gaze_origin = HB[:, t]
             target = other_body[:, :, t]  # shape (2, 5)
-            if self._gaze_intersects_body(gaze_origin, gaze_vec, target):
+            if self._gaze_intersects_body(gaze_origin, gaze_vec, target, minDist=minDist):
                 result[t] = True
         
         isInteraction = self.returnIsInteracting()
