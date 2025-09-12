@@ -823,7 +823,7 @@ class posLoader:
                 
         return isInteracting
     
-    def plot_rat_heatmap(self, savepath="rat_heatmap.png", bodypart=0, bins=100):
+    def plot_rat_heatmap(self, savepath="rat_heatmap.png", bodypart=0, bins=100, sigma = 2):
         """
         Create a heatmap of Rat0 (red) vs Rat1 (blue) positions.
         
@@ -831,12 +831,13 @@ class posLoader:
             savepath (str): Path to save the heatmap image.
             bodypart (int): Index of body part to plot (default: 0 = headbase).
             bins (int): Resolution of the heatmap bins.
-            gamma (float): Gamma correction (<1 = more contrast in low values).
-            clip_percent (float): Percentile for clipping (e.g. 99 = clip top 1%).
+            sigma (float): Gaussian smoothing parameter.
         """
+        from scipy.ndimage import gaussian_filter
+
         #Vars 
-        clip_percent=97
-        gamma = 0.1
+        clip_percent=97  #clip_percent (float): Percentile for clipping (e.g. 99 = clip top 1%).
+        gamma = 0.2 #Gamma): Gamma correction (<1 = more contrast in low values).
         
         # Extract x, y for each rat
         rat0_x = self.data[0, 0, bodypart, :]
@@ -855,10 +856,19 @@ class posLoader:
         all_y = np.concatenate([rat0_y, rat1_y])
         xedges = np.linspace(all_x.min(), all_x.max(), bins)
         yedges = np.linspace(all_y.min(), all_y.max(), bins)
+        
+        # Aspect ratio of the arena
+        arena_width = all_x.max() - all_x.min()
+        arena_height = all_y.max() - all_y.min()
+        aspect_ratio = arena_width / arena_height
     
         # Compute 2D histograms
         H0, _, _ = np.histogram2d(rat0_x, rat0_y, bins=[xedges, yedges])
         H1, _, _ = np.histogram2d(rat1_x, rat1_y, bins=[xedges, yedges])
+    
+        # Smooth with Gaussian filter
+        H0 = gaussian_filter(H0, sigma=sigma)
+        H1 = gaussian_filter(H1, sigma=sigma)
     
         # Clip extreme values to increase contrast
         vmax0 = np.percentile(H0, clip_percent)
@@ -870,12 +880,12 @@ class posLoader:
         H0 = H0 / H0.max() if H0.max() > 0 else H0
         H1 = H1 / H1.max() if H1.max() > 0 else H1
     
-        # Apply gamma correction (boosts contrast)
+        # Apply gamma correction to boost contrast
         H0 = H0 ** gamma
         H1 = H1 ** gamma
     
         # Create RGB heatmap
-        heatmap_rgb = np.zeros((H0.shape[0], H0.shape[1], 3))
+        '''heatmap_rgb = np.zeros((H0.shape[0], H0.shape[1], 3))
         heatmap_rgb[:, :, 0] = H0  # Red = rat0
         heatmap_rgb[:, :, 2] = H1  # Blue = rat1
     
@@ -889,10 +899,64 @@ class posLoader:
         )
         plt.xlabel("X position (px)")
         plt.ylabel("Y position (px)")
-        plt.title(f"Rat0 (Red) vs Rat1 (Blue) Heatmap")
+        plt.title(f"Rat0 (Red) vs Rat1 (Blue) Heatmap")'''
+        
+        # Plot with colormaps
+        fig, axes = plt.subplots(1, 2, figsize=(12, 6))
+    
+        im0 = axes[0].imshow(
+            np.flipud(H0),
+            extent=[xedges.min(), xedges.max(), yedges.min(), yedges.max()],
+            origin="lower",
+            aspect="auto",
+            cmap="hot"
+        )
+        axes[0].set_title("Rat0 Heatmap")
+        fig.colorbar(im0, ax=axes[0])
+    
+        im1 = axes[1].imshow(
+            np.flipud(H1),
+            extent=[xedges.min(), xedges.max(), yedges.min(), yedges.max()],
+            origin="lower",
+            aspect="auto",
+            cmap="hot"
+        )
+        axes[1].set_title("Rat1 Heatmap")
+        fig.colorbar(im1, ax=axes[1])
+    
+        for ax in axes:
+            ax.set_xlabel("X position (px)")
+            ax.set_ylabel("Y position (px)")
+
+        plt.tight_layout()
         plt.savefig(savepath, dpi=300)
         plt.show()
         plt.close()
+        
+        # Function to plot & save with correct proportions
+        def save_heatmap(H, title, filename):
+            fig_width = 6  # base size in inches
+            fig_height = fig_width / aspect_ratio
+            plt.figure(figsize=(fig_width, fig_height))
+    
+            im = plt.imshow(
+                np.flipud(H),
+                extent=[xedges.min(), xedges.max(), yedges.min(), yedges.max()],
+                origin="lower",
+                aspect="auto",
+                cmap="hot"
+            )
+            plt.colorbar(im, label="Density")
+            plt.xlabel("X position (px)")
+            plt.ylabel("Y position (px)")
+            plt.title(title)
+            plt.savefig(filename, dpi=300, bbox_inches="tight")
+            plt.show()
+            plt.close()
+    
+        # Save Rat0 and Rat1 heatmaps
+        save_heatmap(H0, "Rat0 Heatmap", savepath.replace(".png", "_rat0.png"))
+        save_heatmap(H1, "Rat1 Heatmap", savepath.replace(".png", "_rat1.png"))
 
 
 def visualize_gaze_overlay(
@@ -1381,12 +1445,12 @@ video_file = "/Users/david/Downloads/4%_nan_test.mp4"
 #h5_file = "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G.predictions.h5"
 #video_file = "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G.mp4"    
 
-'''
+
 loader = posLoader(h5_file)
 lev = levLoader(lev_file)
 mag = magLoader(mag_file)
 loader.plot_rat_heatmap()
-'''
+
 #visualize_gaze_overlay(video_file, loader, lev, mag, mouseID=0, save_path = "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Graphs/Videos/testingLevandMagGazing.mp4")
 
   

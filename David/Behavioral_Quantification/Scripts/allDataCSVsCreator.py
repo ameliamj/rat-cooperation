@@ -495,6 +495,8 @@ class allDataCSVsCreator:
                         'percent_interacting_lev': None,
                         'percent_interacting_mag': None,                         
                         'time_wait_before_cue_both': None,                       #How long both rats were in the lever area before pressing
+                        'time_wait_before_cue_rat0': None,
+                        'time_wait_before_cue_rat1': None,
                         'distance_vs_wait_valid': False,                         #True if at least one rat wasn't at lever at the time of the sound cue
                         'time_wait_to_press_one': None,                          #How long after start of trial it took for the first lever press
                         'dist_furthest_from_lever': None,                        #The distance of the furthest rat from the lever at the start of the trial
@@ -612,6 +614,8 @@ class allDataCSVsCreator:
                     'percent_interacting_lev': percent_interacting_lev,
                     'percent_interacting_mag': percent_interacting_mag,
                     'wait_before_cue_both': time_wait_before_cue,
+                    'time_wait_before_cue_rat0': rat0_waiting,
+                    'time_wait_before_cue_rat1': rat1_waiting,
                     'distance_vs_wait_valid': distance_vs_wait_valid,
                     'wait_to_press_one': time_wait_to_press_one,
                     'dist_furthest_from_lever': dist_furthest_from_lever,
