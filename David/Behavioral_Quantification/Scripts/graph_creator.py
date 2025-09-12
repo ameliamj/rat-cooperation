@@ -4234,7 +4234,7 @@ class multiFileGraphs:
         plt.close()
         
         df = pd.DataFrame(metadata)
-        csv_path = f"Raw_Data_AvgDistance_vs_Success.csv"
+        csv_path = f"{self.prefix}Raw_Data_AvgDistance_vs_Success.csv"
         df.to_csv(csv_path, index=False)
         
         # Print full datapoint table
@@ -8906,6 +8906,7 @@ class multiFileGraphs:
                
     def percentGazingvsSuccess(self):
         
+        metadata = []
         dataPointsSucc = []
         dataPointsGaze = []
         
@@ -8913,12 +8914,20 @@ class multiFileGraphs:
             lev = exp.lev
             pos = exp.pos
             
-            succPercentage = lev.returnSuccessPercentage() * 100
+            succPercentage = lev.returnSuccessPercentage() *  100
             gazePercentage = (pos.returnTotalFramesGazing(0) + pos.returnTotalFramesGazing(1)) / 2
             gazePercentage = gazePercentage * 100 / pos.returnNumFrames()
             
             dataPointsSucc.append(succPercentage)
             dataPointsGaze.append(gazePercentage)
+            
+            metadata.append({
+                "SessionID": exp.sessionID,
+                "Date": exp.date,
+                "RatPair": exp.ratPair,
+                "PercentGazing": gazePercentage,
+                "SuccessRate": succPercentage
+            })
             
         # Convert to numpy arrays
         x = np.array(dataPointsGaze)
@@ -8945,6 +8954,10 @@ class multiFileGraphs:
         plt.show()
         plt.savefig(f"{self.prefix}gazePercentage_vs_Success.png")
         plt.close()
+        
+        df = pd.DataFrame(metadata)
+        csv_path = f"{self.prefix}Raw_Data_Gazing_vs_Success.csv"
+        df.to_csv(csv_path, index=False)
 
     def onlyOneRatWaitedGraphs(self): 
         '''
@@ -9724,9 +9737,11 @@ initialNanList = [0.3]
 '''
 
 #print("Start MultiFileGraphs Regular")
-#experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, dates, sessions, ratPairs, prefix = "unfamiliar", save=True)
-#experiment.interactionVSSuccess()
-#experiment.successVsAverageDistance()
+experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, dates, sessions, ratPairs, prefix = "Unfamiliar_", save=True)
+experiment.interactionVSSuccess()
+experiment.successVsAverageDistance()
+experiment.percentGazingvsSuccess()
+
 #experiment.first_press_bias()
 #experiment.waitingStrategy()
 #experiment.percentGazingvsSuccess()
