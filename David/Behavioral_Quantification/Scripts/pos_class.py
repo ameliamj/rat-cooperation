@@ -14,6 +14,7 @@ import cv2
 import shutil
 import subprocess
 from pathlib import Path
+import matplotlib.pyplot as plt
 from shapely.geometry import LineString, Polygon
 from mag_class import magLoader
 from lev_class import levLoader
@@ -36,7 +37,7 @@ class posLoader:
             nan_percentage = 100 * nan_count / total_values
             #print(f"[{filename}] Missing data: {nan_count} NaNs out of {total_values} values " f"({nan_percentage:.2f}%) before interpolation")
     
-            self.data = self._fill_missing_data(raw_data) #Shape: (2, 2, 5, x) --> (mouse0/1, x/y, which_body_part, which_frame)
+            self.data = self._fill_missing_data(raw_data) #Shape: (2, 2, 5, x) --> (rat0/1, x/y, which_body_part, which_frame)
         
         self.totalFrames = totalFrames
         
@@ -822,9 +823,76 @@ class posLoader:
                 
         return isInteracting
     
-    #Format of self.data: Shape: (2, 2, 5, x) --> (mouse0/1, x/y, which_body_part, which_frame)
-    #I want to modify this function to for each frame determine the minimum distance from  one of the rats noses to thec losest body part tracked in the other rat and return a list of that for each frame
+    def plot_rat_heatmap(self, savepath="rat_heatmap.png", bodypart=0, bins=100):
+        """
+        Create a heatmap of Rat0 (red) vs Rat1 (blue) positions.
+        
+        Parameters:
+            savepath (str): Path to save the heatmap image.
+            bodypart (int): Index of body part to plot (default: 0 = headbase).
+            bins (int): Resolution of the heatmap bins.
+            gamma (float): Gamma correction (<1 = more contrast in low values).
+            clip_percent (float): Percentile for clipping (e.g. 99 = clip top 1%).
+        """
+        #Vars 
+        clip_percent=97
+        gamma = 0.1
+        
+        # Extract x, y for each rat
+        rat0_x = self.data[0, 0, bodypart, :]
+        rat0_y = self.data[0, 1, bodypart, :]
+        rat1_x = self.data[1, 0, bodypart, :]
+        rat1_y = self.data[1, 1, bodypart, :]
     
+        # Remove NaNs
+        mask0 = ~np.isnan(rat0_x) & ~np.isnan(rat0_y)
+        mask1 = ~np.isnan(rat1_x) & ~np.isnan(rat1_y)
+        rat0_x, rat0_y = rat0_x[mask0], rat0_y[mask0]
+        rat1_x, rat1_y = rat1_x[mask1], rat1_y[mask1]
+    
+        # Define bin ranges (shared across both rats)
+        all_x = np.concatenate([rat0_x, rat1_x])
+        all_y = np.concatenate([rat0_y, rat1_y])
+        xedges = np.linspace(all_x.min(), all_x.max(), bins)
+        yedges = np.linspace(all_y.min(), all_y.max(), bins)
+    
+        # Compute 2D histograms
+        H0, _, _ = np.histogram2d(rat0_x, rat0_y, bins=[xedges, yedges])
+        H1, _, _ = np.histogram2d(rat1_x, rat1_y, bins=[xedges, yedges])
+    
+        # Clip extreme values to increase contrast
+        vmax0 = np.percentile(H0, clip_percent)
+        vmax1 = np.percentile(H1, clip_percent)
+        H0 = np.clip(H0, 0, vmax0)
+        H1 = np.clip(H1, 0, vmax1)
+    
+        # Normalize to [0,1]
+        H0 = H0 / H0.max() if H0.max() > 0 else H0
+        H1 = H1 / H1.max() if H1.max() > 0 else H1
+    
+        # Apply gamma correction (boosts contrast)
+        H0 = H0 ** gamma
+        H1 = H1 ** gamma
+    
+        # Create RGB heatmap
+        heatmap_rgb = np.zeros((H0.shape[0], H0.shape[1], 3))
+        heatmap_rgb[:, :, 0] = H0  # Red = rat0
+        heatmap_rgb[:, :, 2] = H1  # Blue = rat1
+    
+        # Plot
+        plt.figure(figsize=(8, 6))
+        plt.imshow(
+            np.flipud(heatmap_rgb),
+            extent=[xedges.min(), xedges.max(), yedges.min(), yedges.max()],
+            origin="lower",
+            aspect="auto"
+        )
+        plt.xlabel("X position (px)")
+        plt.ylabel("Y position (px)")
+        plt.title(f"Rat0 (Red) vs Rat1 (Blue) Heatmap")
+        plt.savefig(savepath, dpi=300)
+        plt.show()
+        plt.close()
 
 
 def visualize_gaze_overlay(
@@ -1313,12 +1381,13 @@ video_file = "/Users/david/Downloads/4%_nan_test.mp4"
 #h5_file = "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G.predictions.h5"
 #video_file = "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G.mp4"    
 
-'''
+
 loader = posLoader(h5_file)
 lev = levLoader(lev_file)
 mag = magLoader(mag_file)
-visualize_gaze_overlay(video_file, loader, lev, mag, mouseID=0, save_path = "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Graphs/Videos/testingLevandMagGazing.mp4")
-'''
+loader.plot_rat_heatmap()
+#visualize_gaze_overlay(video_file, loader, lev, mag, mouseID=0, save_path = "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Graphs/Videos/testingLevandMagGazing.mp4")
+
   
     
     

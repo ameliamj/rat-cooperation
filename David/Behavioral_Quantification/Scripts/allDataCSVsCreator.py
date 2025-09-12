@@ -606,7 +606,7 @@ class allDataCSVsCreator:
                     'percent_interacting_mag': percent_interacting_mag,
                     'wait_before_cue_both': time_wait_before_cue,
                     'distance_vs_wait_valid': distance_vs_wait_valid,
-                    'time_wait_to_press_one': time_wait_to_press_one,
+                    'wait_to_press_one': time_wait_to_press_one,
                     'dist_furthest_from_lever': dist_furthest_from_lever,
                     'avg_horizontal_distance': avg_horizontal_distance,
                     'avg_distance': avg_distance
@@ -688,7 +688,7 @@ class allDataCSVsCreator:
                         'time_first_mag_entry': None,                            #Abs Time at first Magazine Entry if it exists
                         'successes_in_row': None,                                #Number of successful trials in a row previously
                         'success': 0,                                            #Whether the trial succeeded
-                        'total_frames': total_frames,                            #Total Frames in the Trial
+                        'trial_frames': total_frames,                            #Total Frames in the Trial
                         'lever_press_exists': False,                             #Whether there's a lever press in the trial
                         'percent_gazing': None,                                  #Percent Gazing for the Trial
                         'percent_interacting': None,                             #Percent Interacting for the Trial
@@ -783,7 +783,7 @@ class allDataCSVsCreator:
                     'percent_interacting': percent_interacting,
                     'wait_before_cue_both': time_wait_before_cue,
                     'distance_vs_wait_valid': distance_vs_wait_valid,
-                    'time_wait_to_press_one': time_wait_to_press_one,
+                    'wait_to_press_one': time_wait_to_press_one,
                     'dist_furthest_from_lever': dist_furthest_from_lever,
                     'avg_horizontal_distance': avg_horizontal_distance,
                     'avg_distance': avg_distance
