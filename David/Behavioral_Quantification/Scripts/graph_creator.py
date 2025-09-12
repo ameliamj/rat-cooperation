@@ -7211,7 +7211,7 @@ class multiFileGraphs:
         plt.close()
         
         df = pd.DataFrame(metadata)
-        csv_path = f"Raw_Data_SocialInteractions_vs_Success.csv"
+        csv_path = f"{self.prefix}Raw_Data_SocialInteractions_vs_Success.csv"
         df.to_csv(csv_path, index=False)
         
         self._plot_scatter(sessionCountsStandardized, successRates, "numberOfInteractionsvsSuccessScatterplot", "Frequency of Interactions vs. Success", "Interaction Frequency")
@@ -9646,7 +9646,14 @@ def getUnfamiliar():
     #fe.getFirstSessionPerMicePair()
     fpsList, totFramesList = fe.returnFPSandTotFrames()
     initial_nan_list = fe.returnNaNPercentage()
-    return [fe.getLevsDatapath(), fe.getMagsDatapath(), fe.getPosDatapath(), fpsList, totFramesList, initial_nan_list]
+    dates = fe.getDatesList()
+    sessions = fe.getSessionIDList()
+    dates = dates.tolist()
+    sessions = sessions.tolist()
+    ratPairs = fe.getRatPairList()
+    familiarity = fe.getFamiliarityList()
+    transparency = fe.getBarrierTransparencyList()
+    return [fe.getLevsDatapath(), fe.getMagsDatapath(), fe.getPosDatapath(), fpsList, totFramesList, initial_nan_list, dates, sessions, ratPairs, familiarity, transparency]
 
 
 fiberPhoto = "/gpfs/radev/home/drb83/project/rat-cooperation/David/Behavioral_Quantification/Sorted_Data_Files/fiber_photo.csv"
@@ -9674,11 +9681,11 @@ initialNanList = [0.15, 0.12]
 '''
 
 
-arr = getFiltered()
+#arr = getFiltered()
 
 #arr = trainingCoopData()
 #arr = trainingCoopDataThresh1()
-#arr = getUnfamiliar()
+arr = getUnfamiliar()
 #arr = getAllTrainingCoop()
 #arr = getFiberPhoto()
 lev_files = arr[0]
@@ -9717,7 +9724,7 @@ initialNanList = [0.3]
 '''
 
 #print("Start MultiFileGraphs Regular")
-experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, dates, sessions, ratPairs, prefix = "", save=True)
+experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, dates, sessions, ratPairs, prefix = "unfamiliar", save=True)
 experiment.interactionVSSuccess()
 experiment.successVsAverageDistance()
 #experiment.first_press_bias()
