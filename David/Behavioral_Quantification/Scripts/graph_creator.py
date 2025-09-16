@@ -9628,7 +9628,7 @@ def getFiltered():
     dates = fe.getDatesList()
     sessions = fe.getSessionIDList()
     dates = dates.tolist()
-    sessions = sessions.tolist()
+    #sessions = sessions.tolist()
     ratPairs = fe.getRatPairList()
     familiarity = fe.getFamiliarityList()
     transparency = fe.getBarrierTransparencyList()
