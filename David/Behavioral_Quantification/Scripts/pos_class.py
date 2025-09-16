@@ -1468,8 +1468,8 @@ h5_file1 = "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Beh
 h5_file2 = "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041624_Cam3_TrNum9_Coop_KL002B-KL002Y.predictions.h5"
 
 
-loader = posLoader(h5_file1)
-loader.plot_rat_heatmap()
+#loader = posLoader(h5_file1)
+#loader.plot_rat_heatmap()
 #lev = levLoader(lev_file)
 #mag = magLoader(mag_file)
 
