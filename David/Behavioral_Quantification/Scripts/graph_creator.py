@@ -8904,7 +8904,7 @@ class multiFileGraphs:
         plt.show()
         plt.close()
                
-    def percentGazingvsSuccess(self):
+    def percentGazingvsSuccess(self, minDist = 150, endWord=""):
         
         metadata = []
         dataPointsSucc = []
@@ -8915,7 +8915,7 @@ class multiFileGraphs:
             pos = exp.pos
             
             succPercentage = lev.returnSuccessPercentage() *  100
-            gazePercentage = (pos.returnTotalFramesGazing(0) + pos.returnTotalFramesGazing(1)) / 2
+            gazePercentage = (pos.returnTotalFramesGazing(0, minDist=minDist) + pos.returnTotalFramesGazing(1, minDist=minDist)) / 2
             gazePercentage = gazePercentage * 100 / pos.returnNumFrames()
             
             dataPointsSucc.append(succPercentage)
@@ -8952,11 +8952,11 @@ class multiFileGraphs:
         plt.grid(True)
         plt.tight_layout()
         plt.show()
-        plt.savefig(f"{self.prefix}gazePercentage_vs_Success.png")
+        plt.savefig(f"{self.prefix}gazePercentage_vs_Success_minDist{minDist}.png")
         plt.close()
         
         df = pd.DataFrame(metadata)
-        csv_path = f"{self.prefix}Raw_Data_Gazing_vs_Success.csv"
+        csv_path = f"{self.prefix}Raw_Data_Gazing_vs_Success_minDist{minDist}.csv"
         df.to_csv(csv_path, index=False)
 
     def onlyOneRatWaitedGraphs(self): 
@@ -9737,11 +9737,11 @@ initialNanList = [0.3]
 '''
 
 #print("Start MultiFileGraphs Regular")
-'''experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, dates, sessions, ratPairs, prefix = "Unfamiliar_", save=True)
+experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, dates, sessions, ratPairs, prefix = "Unfamiliar_", save=True)
 experiment.interactionVSSuccess()
 experiment.successVsAverageDistance()
 experiment.percentGazingvsSuccess()
-'''
+
 
 #experiment.first_press_bias()
 #experiment.waitingStrategy()
@@ -9750,7 +9750,8 @@ experiment.percentGazingvsSuccess()
 
 #experiment.expandedSynchronizationStrategyGraphs()
 #experiment.onlyOneRatWaitedGraphs()
-#experiment.percentGazingvsSuccess()
+experiment.percentGazingvsSuccess()
+experiment.percentGazingvsSuccess(minDist=0)
 #experiment.moreGazeComparisons()
 #experiment.successVsAverageDistance()
 #experiment.stateTransitionModel()

@@ -518,8 +518,8 @@ class posLoader:
                 
         return numGazeEvents
     
-    def returnTotalFramesGazing(self, mouseID, alternateDef = True):
-        g0 = self.returnIsGazing(mouseID, alternateDef = alternateDef)
+    def returnTotalFramesGazing(self, mouseID, alternateDef = True, minDist = 150):
+        g0 = self.returnIsGazing(mouseID, alternateDef = alternateDef, minDist=minDist)
         #print("isGazingArr: ", g0)
         totalFramesGazing = np.sum(g0)
         return totalFramesGazing
@@ -839,11 +839,29 @@ class posLoader:
         clip_percent=97  #clip_percent (float): Percentile for clipping (e.g. 99 = clip top 1%).
         gamma = 0.2 #Gamma): Gamma correction (<1 = more contrast in low values).
         
+        # Aspect ratio of the arena
+        arena_width = 1392
+        arena_height = 640
+        aspect_ratio = arena_width / arena_height
+        
         # Extract x, y for each rat
         rat0_x = self.data[0, 0, bodypart, :]
         rat0_y = self.data[0, 1, bodypart, :]
         rat1_x = self.data[1, 0, bodypart, :]
         rat1_y = self.data[1, 1, bodypart, :]
+        
+        # Build DataFrame
+        df = pd.DataFrame({
+            "rat0_x": rat0_x,
+            "rat0_y": rat0_y,
+            "rat1_x": rat1_x,
+            "rat1_y": rat1_y
+        })
+        
+        # Save to CSV
+        csv_path = savepath.replace(".png", "_positions.csv")
+        df.to_csv(csv_path, index=False)
+        print("Saved Positions CSV")
     
         # Remove NaNs
         mask0 = ~np.isnan(rat0_x) & ~np.isnan(rat0_y)
@@ -854,13 +872,13 @@ class posLoader:
         # Define bin ranges (shared across both rats)
         all_x = np.concatenate([rat0_x, rat1_x])
         all_y = np.concatenate([rat0_y, rat1_y])
-        xedges = np.linspace(all_x.min(), all_x.max(), bins)
-        yedges = np.linspace(all_y.min(), all_y.max(), bins)
+        xedges = np.linspace(0, 1392, bins)
+        yedges = np.linspace(0, 640, bins)
         
-        # Aspect ratio of the arena
-        arena_width = all_x.max() - all_x.min()
-        arena_height = all_y.max() - all_y.min()
-        aspect_ratio = arena_width / arena_height
+        print("all_x.max(): ", all_x.max())
+        print("all_y.max(): ", all_y.max())
+        print("all_x.min(): ", all_x.min())
+        print("all_y.min(): ", all_y.min())
     
         # Compute 2D histograms
         H0, _, _ = np.histogram2d(rat0_x, rat0_y, bins=[xedges, yedges])
@@ -906,7 +924,7 @@ class posLoader:
     
         im0 = axes[0].imshow(
             np.flipud(H0),
-            extent=[xedges.min(), xedges.max(), yedges.min(), yedges.max()],
+            extent=[0, 1392, 0, 640],
             origin="lower",
             aspect="auto",
             cmap="hot"
@@ -916,7 +934,7 @@ class posLoader:
     
         im1 = axes[1].imshow(
             np.flipud(H1),
-            extent=[xedges.min(), xedges.max(), yedges.min(), yedges.max()],
+            extent=[0, 1392, 0, 640],
             origin="lower",
             aspect="auto",
             cmap="hot"
@@ -941,7 +959,7 @@ class posLoader:
     
             im = plt.imshow(
                 np.flipud(H),
-                extent=[xedges.min(), xedges.max(), yedges.min(), yedges.max()],
+                extent=[0, 1392, 0, 640],
                 origin="lower",
                 aspect="auto",
                 cmap="hot"
@@ -1445,12 +1463,15 @@ video_file = "/Users/david/Downloads/4%_nan_test.mp4"
 #h5_file = "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G.predictions.h5"
 #video_file = "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G.mp4"    
 
-'''
-loader = posLoader(h5_file)
-lev = levLoader(lev_file)
-mag = magLoader(mag_file)
+
+h5_file1 = "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041624_Cam3_TrNum7_Coop_KL002B-KL002Y.predictions.h5"
+h5_file2 = "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041624_Cam3_TrNum9_Coop_KL002B-KL002Y.predictions.h5"
+
+
+loader = posLoader(h5_file1)
 loader.plot_rat_heatmap()
-'''
+#lev = levLoader(lev_file)
+#mag = magLoader(mag_file)
 
 #visualize_gaze_overlay(video_file, loader, lev, mag, mouseID=0, save_path = "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Graphs/Videos/testingLevandMagGazing.mp4")
 

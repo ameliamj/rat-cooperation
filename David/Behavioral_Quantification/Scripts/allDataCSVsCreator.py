@@ -813,5 +813,5 @@ metadata_path = "/gpfs/radev/project/saxena/drb83/rat-cooperation/David/Behavior
 metadata_smol = "/gpfs/radev/project/saxena/drb83/rat-cooperation/David/Behavioral_Quantification/Sorted_Data_Files/only_opaque_sessions_filtered_onlyFirst.csv"
 metadata_filtered = "/gpfs/radev/project/saxena/drb83/rat-cooperation/David/Behavioral_Quantification/Sorted_Data_Files/Filtered.csv"
 
-creator = allDataCSVsCreator(metadata_filtered, post="")
+creator = allDataCSVsCreator(metadata_path, post="")
 creator.createTrialCSVStandard()

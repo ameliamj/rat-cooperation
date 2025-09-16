@@ -800,7 +800,19 @@ class fileExtractor:
         return df['date']
     
     def getSessionIDList(self):
-        return self.data['session']
+        results = []
+        for _, row in self.data.iterrows():
+            session = row['session']
+            vid = row['vid']
+            
+            # Try to extract number after "TrNum" or "Camera"
+            match = re.search(r"(?:TrNum|Camera)(\d+)", vid)
+            if match:
+                num = match.group(1)
+                results.append(f"{session}_TrNum{num}")
+            else:
+                results.append(f"{session}_TrNumNA")  # fallback if neither found
+        return results
     
     def getNumSessionsBefore(self):
         """
