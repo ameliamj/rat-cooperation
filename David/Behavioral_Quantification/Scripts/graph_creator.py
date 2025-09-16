@@ -9694,11 +9694,11 @@ initialNanList = [0.15, 0.12]
 '''
 
 
-#arr = getFiltered()
+arr = getFiltered()
 
 #arr = trainingCoopData()
 #arr = trainingCoopDataThresh1()
-arr = getUnfamiliar()
+#arr = getUnfamiliar()
 #arr = getAllTrainingCoop()
 #arr = getFiberPhoto()
 lev_files = arr[0]
