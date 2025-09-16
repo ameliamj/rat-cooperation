@@ -2320,7 +2320,7 @@ def getGroupRatPairs():
     
     #print("fpsList: ", fpsList)
     sessionIDs = fe.getSessionIDList(grouped = True)
-    dates = fe.getgetDatesList(grouped = True)
+    dates = fe.getDatesList(grouped = True)
     ratPairs = fe.getRatPairList(grouped = True)
     
     return [fe.getLevsDatapath(grouped = True), fe.getMagsDatapath(grouped = True), fe.getPosDatapath(grouped = True), fpsList, totFramesList, rat1names, rat2names, sessionIDs, dates, ratPairs]
