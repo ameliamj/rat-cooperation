@@ -1916,7 +1916,7 @@ class MicePairGraphs:
     
     def lineGraphStrategies(self):
         '''
-        Plots average percent interactions throughout training
+        Plots average waiting strategies throughout training
         '''
         
         print("\nStarting Line Graph Interactions")

@@ -45,7 +45,7 @@ class allDataCSVsCreator:
         dates = fe.getDatesList()
         sessions = fe.getSessionIDList()
         dates = dates.tolist()
-        sessions = sessions.tolist()
+        #sessions = sessions.tolist()
         print("dates: ", dates)
         familiarity = fe.getFamiliarityList()
         transparency = fe.getBarrierTransparencyList()
