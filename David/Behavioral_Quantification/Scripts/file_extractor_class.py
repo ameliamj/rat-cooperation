@@ -767,7 +767,7 @@ class fileExtractor:
         transparency_map = {'transparent': 'transparent', 'translucent': 'translucent', 'opaque': 'opaque'}
         return [transparency_map.get(row['dividers'], 0) for _, row in self.data.iterrows()]
     
-    def getRatPairList(self):
+    def getRatPairList(self, grouped = False):
         """
         Returns a list of rat pairs for each session in self.data.
         Rat pairs are extracted from the 'vid' column, ordered alphabetically (e.g., 'KL007Y-KL007G').
@@ -784,9 +784,26 @@ class fileExtractor:
             mouse1, mouse2 = full_pair[:6], full_pair[-6:]
             return f"{mouse1}-{mouse2}" if mouse1 <= mouse2 else f"{mouse2}-{mouse1}"
         
-        return [extract_rat_pair(row) for _, row in self.data.iterrows()]
+        if not grouped:
+            return [extract_rat_pair(row) for _, row in self.data.iterrows()]
+        else:
+            grouped_rows = self.sortByMicePairs()
+            grouped_pairs = []
+            for group in grouped_rows:
+                group_pairs = []
+                for _, row in group.iterrows():
+                    group_pairs.append(extract_rat_pair(row))
+                grouped_pairs.append(group_pairs)
+            return grouped_pairs
     
-    def getDatesList(self):
+    def getDatesList(self, grouped = False):
+        """
+        Returns a list of dates parsed from the 'vid' column.
+    
+        - If grouped=False: return a flat list.
+        - If grouped=True: use sortByMicePairs to return a nested list where
+          each sublist corresponds to all dates for a given mice pair.
+        """
         def extract_date(vid):
             date_str = vid[:6]
             try:
@@ -794,25 +811,49 @@ class fileExtractor:
             except ValueError:
                 return datetime.max  # Push invalid dates to the end
         
-        df = self.data.copy()
-        df['date'] = df['vid'].apply(extract_date)
+        if not grouped:
+            return [extract_date(row['vid']) for _, row in self.data.iterrows()]
+        else:
+            grouped_rows = self.sortByMicePairs()
+            grouped_dates = []
+            for group in grouped_rows:
+                group_dates = []
+                for _, row in group.iterrows():
+                    group_dates.append(extract_date(row['vid']))
+                grouped_dates.append(group_dates)
+            return grouped_dates
         
-        return df['date']
+    def getSessionIDList(self, grouped = False):
+        """
+        Returns a list of session IDs for each row in self.data.
     
-    def getSessionIDList(self):
-        results = []
-        for _, row in self.data.iterrows():
+        - If grouped=False: return a flat list.
+        - If grouped=True: use sortByMicePairs to return a nested list where
+          each sublist corresponds to all session IDs for a given mice pair.
+    
+        Session IDs are of the form {session}_TrNum{number}, with "NA" as fallback.
+        """
+        def extract_session_id(row):
             session = row['session']
             vid = row['vid']
-            
-            # Try to extract number after "TrNum" or "Camera"
             match = re.search(r"(?:TrNum|Camera)(\d+)", vid)
             if match:
                 num = match.group(1)
-                results.append(f"{session}_TrNum{num}")
+                return f"{session}_TrNum{num}"
             else:
-                results.append(f"{session}_TrNumNA")  # fallback if neither found
-        return results
+                return f"{session}_TrNumNA"
+    
+        if not grouped:
+            return [extract_session_id(row) for _, row in self.data.iterrows()]
+        else:
+            grouped_rows = self.sortByMicePairs()
+            grouped_ids = []
+            for group in grouped_rows:
+                group_ids = []
+                for _, row in group.iterrows():
+                    group_ids.append(extract_session_id(row))
+                grouped_ids.append(group_ids)
+            return grouped_ids
     
     def getNumSessionsBefore(self):
         """

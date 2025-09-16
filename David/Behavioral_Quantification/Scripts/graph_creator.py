@@ -1205,7 +1205,7 @@ print("Done")
 
 
 class MicePairGraphs:       
-    def __init__(self, magGroups, levGroups, posGroups, fpsGroups, totFramesGroups, rat1NamesGroups, rat2NamesGroups, saveFile = True):
+    def __init__(self, magGroups, levGroups, posGroups, fpsGroups, totFramesGroups, rat1NamesGroups, rat2NamesGroups, sessionIDGroups, dateGroups, ratPairGroups, saveFile = True):
         print("Initializing MicePairGraphs")
         assert len(magGroups) == len(levGroups) == len(posGroups), "Mismatched group lengths."
         self.experimentGroups = []
@@ -1213,15 +1213,15 @@ class MicePairGraphs:
         self.save = saveFile
         deleted_count = 0
 
-        for group_idx, (mag_list, lev_list, pos_list, fps_list, tot_frames_list, rat1_names, rat2_names) in enumerate(zip(magGroups, levGroups, posGroups, fpsGroups, totFramesGroups, rat1NamesGroups, rat2NamesGroups)):
+        for group_idx, (mag_list, lev_list, pos_list, fps_list, tot_frames_list, rat1_names, rat2_names, sessionIDs, dates, ratPairs) in enumerate(zip(magGroups, levGroups, posGroups, fpsGroups, totFramesGroups, rat1NamesGroups, rat2NamesGroups, sessionIDGroups, dateGroups, ratPairGroups)):
             print(f"Creating group {group_idx + 1} for {len(mag_list)} files")
             group_exps = []
             
             print("lev_list: ", lev_list)
             print("tot_frames_list: ", tot_frames_list)
         
-            for mag_path, lev_path, pos_path, fps, totFrames, rat1, rat2 in zip(mag_list, lev_list, pos_list, fps_list, tot_frames_list, rat1_names, rat2_names):
-                exp = singleExperiment(lev_path, mag_path, pos_path, fps=fps, endFrame=totFrames, rat1=rat1, rat2=rat2)        
+            for mag_path, lev_path, pos_path, fps, totFrames, rat1, rat2, sessionID, date, ratPair in zip(mag_list, lev_list, pos_list, fps_list, tot_frames_list, rat1_names, rat2_names, sessionIDs, dates, ratPairs):
+                exp = singleExperiment(lev_path, mag_path, pos_path, fps=fps, endFrame=totFrames, rat1=rat1, rat2=rat2, sessionID=sessionID, ratPair=ratPair, date=date)        
                 mag_missing = [col for col in exp.mag.categories if col not in exp.mag.data.columns]
                 lev_missing = [col for col in exp.lev.categories if col not in exp.lev.data.columns]
         
@@ -2060,6 +2060,8 @@ class MicePairGraphs:
         frame_counts = {}
         session_counts = {}
         
+        fullMetadata = []
+        
         for group_idx, group in enumerate(self.experimentGroups):
             if (len(group) < 19):
                 continue
@@ -2087,7 +2089,44 @@ class MicePairGraphs:
                 session_counts[exp_idx] += 1
                 success_counts[exp_idx] += (numSuccess)
                 trial_counts[exp_idx] += (totTrials)
-
+                
+                gazePercentage = numGazeFrames / totFrames
+                succPercentage = numSuccess / totTrials
+                
+                fullMetadata.append({
+                    "SessionID": exp.sessionID,
+                    "Date": exp.date,
+                    "ExpIdx": exp_idx,
+                    "RatPair": exp.ratPair,
+                    "PercentGazing": gazePercentage,
+                    "SuccessRate": succPercentage,
+                    "TotalFrames": totFrames,
+                    "TotalTrials": totTrials
+                    
+                })
+                
+                
+        graphMetadata = []
+        for exp_idx in success_counts.keys():
+            # Compute percentages
+            success_rate = (success_counts[exp_idx] / trial_counts[exp_idx]) * 100 if trial_counts[exp_idx] > 0 else 0
+            gaze_percentage = (gaze_counts[exp_idx] / frame_counts[exp_idx]) * 100 if frame_counts[exp_idx] > 0 else 0
+            interaction_percentage = (interaction_counts[exp_idx] / frame_counts[exp_idx]) * 100 if frame_counts[exp_idx] > 0 else 0
+        
+            graphMetadata.append({
+                "ExperimentIndex": exp_idx,
+                "NumSessions": session_counts[exp_idx],
+                "NumTrials": trial_counts[exp_idx],
+                "NumSuccess": success_counts[exp_idx],
+                "SuccessRate": success_rate,
+                "TotalFrames": frame_counts[exp_idx],
+                "GazeFrames": gaze_counts[exp_idx],
+                "InteractionFrames": interaction_counts[exp_idx],
+                "PercentGazing": gaze_percentage,
+                "PercentInteracting": interaction_percentage,
+            })
+        
+        
         # === Plot call ===
         plt.figure(figsize=(6.33, 4.3))
         self.plot_by_exp_idx(success_counts, trial_counts, session_counts, label="Percent Success", color="green")
@@ -2124,6 +2163,16 @@ class MicePairGraphs:
             plt.savefig(f'{self.prefix}Gazing_Interacting_Success_ThroughoutTraining_figalt_olddef.png')
         plt.show()
         plt.close()
+        
+        # Save as CSV
+        df = pd.DataFrame(graphMetadata)
+        csv_path = f"{self.prefix}Graph_Raw_Data_Gazing_Interacting_Success.csv"
+        df.to_csv(csv_path, index=False)
+        
+        df2 = pd.DataFrame(fullMetadata)
+        csv_path = f"{self.prefix}Session_Raw_Data_Gazing_Interacting_Success.csv"
+        df2.to_csv(csv_path, index=False)
+        
 
     def lineGraphLeverBias(self):
         dom_counts = {}
@@ -2269,12 +2318,17 @@ def getGroupRatPairs():
     print("rat1names: ", rat1names)
     rat2names = fe.returnRat2(grouped = True)
     
-    print("fpsList: ", fpsList)
-    return [fe.getLevsDatapath(grouped = True), fe.getMagsDatapath(grouped = True), fe.getPosDatapath(grouped = True), fpsList, totFramesList, rat1names, rat2names]
+    #print("fpsList: ", fpsList)
+    sessionIDs = fe.getSessionIDList(grouped = True)
+    dates = fe.getgetDatesList(grouped = True)
+    ratPairs = fe.getRatPairList(grouped = True)
+    
+    return [fe.getLevsDatapath(grouped = True), fe.getMagsDatapath(grouped = True), fe.getPosDatapath(grouped = True), fpsList, totFramesList, rat1names, rat2names, sessionIDs, dates, ratPairs]
 
 
-#data = getGroupRatPairs()
-#pairGraphs = MicePairGraphs(data[0], data[1], data[2], data[3], data[4], data[5], data[6])
+data = getGroupRatPairs()
+pairGraphs = MicePairGraphs(data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7], data[8], data[9])
+pairGraphs.lineGraphSuccessGazingInteractions()
 
 
 '''magFiles = [["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv"],
@@ -2284,7 +2338,7 @@ levFiles = [["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/B
 posFiles = [["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.predictions.h5"], 
             ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.predictions.h5"]]
 
-pairGraphs = MicePairGraphs(magFiles, levFiles, posFiles)'''
+pairGraphs = MicePairGraphs(magFiles, levFiles, posFiles, )'''
 
 #print(pairGraphs.leverBiasConsistency())
 #pairGraphs.lineGraphLeverBias()
@@ -9662,7 +9716,7 @@ def getUnfamiliar():
     dates = fe.getDatesList()
     sessions = fe.getSessionIDList()
     dates = dates.tolist()
-    sessions = sessions.tolist()
+    #sessions = sessions.tolist()
     ratPairs = fe.getRatPairList()
     familiarity = fe.getFamiliarityList()
     transparency = fe.getBarrierTransparencyList()
@@ -9737,10 +9791,10 @@ initialNanList = [0.3]
 '''
 
 #print("Start MultiFileGraphs Regular")
-experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, dates, sessions, ratPairs, prefix = "Unfamiliar_", save=True)
-experiment.interactionVSSuccess()
-experiment.successVsAverageDistance()
-experiment.percentGazingvsSuccess()
+#experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, dates, sessions, ratPairs, prefix = "", save=True)
+#experiment.interactionVSSuccess()
+#experiment.successVsAverageDistance()
+#experiment.percentGazingvsSuccess()
 
 
 #experiment.first_press_bias()
@@ -9750,8 +9804,8 @@ experiment.percentGazingvsSuccess()
 
 #experiment.expandedSynchronizationStrategyGraphs()
 #experiment.onlyOneRatWaitedGraphs()
-experiment.percentGazingvsSuccess()
-experiment.percentGazingvsSuccess(minDist=0)
+#experiment.percentGazingvsSuccess()
+#experiment.percentGazingvsSuccess(minDist=0)
 #experiment.moreGazeComparisons()
 #experiment.successVsAverageDistance()
 #experiment.stateTransitionModel()
