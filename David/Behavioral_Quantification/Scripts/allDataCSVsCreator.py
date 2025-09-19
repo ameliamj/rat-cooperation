@@ -482,6 +482,7 @@ class allDataCSVsCreator:
                         'time_first_press': None,                                #Abs Time at First Press
                         'time_coop_or_last_press': None,                         #Abs Time at the press that makes the trial cooperative if a cooperative trial and if not, the time of the last press.
                         'time_first_mag_entry': None,                            #Abs Time at first Magazine Entry if it exists
+                        'time_trial_end': None,
                         'all_time_sections_valid': False,
                         'successes_in_row': None,                                #Number of successful trials in a row previously
                         'success': 0,                                            #Whether the trial succeeded
@@ -601,6 +602,7 @@ class allDataCSVsCreator:
                     'time_first_press': time_first_press,
                     'time_coop_or_last_press': time_coop_or_last_press,
                     'time_first_mag_entry': time_first_mag_entry,
+                    'time_trial_end': None,
                     'all_time_sections_valid': all_time_sections_valid,
                     'successes_in_row': successes_in_row,
                     'success': success,
@@ -623,6 +625,9 @@ class allDataCSVsCreator:
                     'avg_distance': avg_distance
                 })
     
+        
+        
+        
         df = pd.DataFrame(trial_data)
         df.to_csv(f'trial_metrics_standard{self.post}.csv', index=False)
         

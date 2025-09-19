@@ -9681,7 +9681,7 @@ def getFiltered():
     initial_nan_list = fe.returnNaNPercentage()
     dates = fe.getDatesList()
     sessions = fe.getSessionIDList()
-    dates = dates.tolist()
+    #dates = dates.tolist()
     #sessions = sessions.tolist()
     ratPairs = fe.getRatPairList()
     familiarity = fe.getFamiliarityList()
