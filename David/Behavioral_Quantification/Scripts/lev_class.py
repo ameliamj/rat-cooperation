@@ -346,12 +346,13 @@ class levLoader:
         
         return first_presses.tolist()
     
-    def returnMostPressesByLever(self, ratID):
+    def returnMostPressesByLever(self, ratID, firstLeverPressPerTrialOnly=True):
         """
         Returns the number of presses by the specified rat on Lever 1 and Lever 2.
         
         Args:
             ratID (int): The ID of the rat to filter presses for.
+            firstLeverPressPerTrialOnly (bool): If True, only counts the first lever press in each trial.
         
         Returns:
             max(num_lever1_presses, num_lever2_presses)
@@ -359,23 +360,40 @@ class levLoader:
         if self.data is None:
             raise ValueError("No data loaded.")
         
-        if 'RatID' not in self.data.columns or 'LeverNum' not in self.data.columns:
-            raise ValueError("Required columns 'RatID' or 'LeverNum' are missing from data.")
+        if 'RatID' not in self.data.columns or 'LeverNum' not in self.data.columns or 'TrialNum' not in self.data.columns:
+            raise ValueError("Required columns 'RatID', 'LeverNum', or 'TrialNum' are missing from data.")
         
         rat_data = self.data[self.data['RatID'] == ratID]
+        
+        if firstLeverPressPerTrialOnly:
+            rat_data = rat_data.groupby('TrialNum', as_index=False).first()
         
         lever1_count = (rat_data['LeverNum'] == 1).sum()
         lever2_count = (rat_data['LeverNum'] == 2).sum()
         return max(lever1_count, lever2_count)
     
-    def returnMinPressesByLever(self, ratID):
+    
+    def returnMinPressesByLever(self, ratID, firstLeverPressPerTrialOnly=True):
+        """
+        Returns the number of presses by the specified rat on Lever 1 and Lever 2 (minimum count).
+        
+        Args:
+            ratID (int): The ID of the rat to filter presses for.
+            firstLeverPressPerTrialOnly (bool): If True, only counts the first lever press in each trial.
+        
+        Returns:
+            min(num_lever1_presses, num_lever2_presses)
+        """
         if self.data is None:
             raise ValueError("No data loaded.")
         
-        if 'RatID' not in self.data.columns or 'LeverNum' not in self.data.columns:
-            raise ValueError("Required columns 'RatID' or 'LeverNum' are missing from data.")
+        if 'RatID' not in self.data.columns or 'LeverNum' not in self.data.columns or 'TrialNum' not in self.data.columns:
+            raise ValueError("Required columns 'RatID', 'LeverNum', or 'TrialNum' are missing from data.")
         
         rat_data = self.data[self.data['RatID'] == ratID]
+        
+        if firstLeverPressPerTrialOnly:
+            rat_data = rat_data.groupby('TrialNum', as_index=False).first()
         
         lever1_count = (rat_data['LeverNum'] == 1).sum()
         lever2_count = (rat_data['LeverNum'] == 2).sum()

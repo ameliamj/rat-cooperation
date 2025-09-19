@@ -1285,116 +1285,68 @@ def visualize_gaze_overlay2(
     # Temp directory to store images
     temp_dir = Path("temp_gaze_frames")
     temp_dir.mkdir(exist_ok=True)
-
-    gaze_vector = loader.returnGazeVector(mouseID)
+    
+    #print("self_intersecting_rat1: ", self_intersecting_rat1)
     HB = loader.data[mouseID, :, loader.HB_INDEX, :]
     other_body = loader.data[1 - mouseID]  # shape (2, 5, num_frames)
-    is_still = loader.returnIsStill(mouseID)
-    mouse_region = loader.returnMouseLocation(mouseID)
-    other_region = loader.returnMouseLocation(1 - mouseID)
-    
-    # State-related data
-    state_names = ["idle", "approaching lever", "approaching reward", "waiting", "pressed", "reward taken", "exploring", "false mag"]
-    pos_data = loader.getHeadBodyTrajectory(mouseID).T  # Shape: (num_frames, 2)
-    velocities = loader.computeVelocity(mouseID)
-    lever_zone = loader.getLeverZone(mouseID)
-    reward_zone = loader.getRewardZone(mouseID)
-    press_frames = lev.getLeverPressFrames(mouseID)
-    reward_frames = mag.getRewardReceivedFrames(mouseID)
-    false_mag_entry = mag.getEnteredMagFrames(mouseID)
-    distances = loader.returnInteractionDistance()
-    print("Reward_Frames: ", reward_frames)
-    
-    self_intersecting_rat1 = loader.checkSelfIntersection(1)
-    #print("self_intersecting_rat1: ", self_intersecting_rat1)
+    body = loader.data[mouseID]
     
     frame_idx = start_frame
     frame_count = 0
+    INTERACTION_RADIUS = 90
     
     while cap.isOpened() and frame_idx < num_frames and frame_count < max_frames:
         ret, frame = cap.read()
         if not ret or frame_idx >= loader.data.shape[-1]:
             break
-
-        gaze_vec = gaze_vector[:, frame_idx]
-        gaze_origin = HB[:, frame_idx]
+        
+        #print("Frame: ", frame_idx)
         target = other_body[:, :, frame_idx]
-        #cv2.putText(frame, f"InterMouseDistance: {distances[frame_idx]}", (10, 70), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
+        notTarget = body[:, :, frame_idx]
         
-        gaze_dir = gaze_vec / (np.linalg.norm(gaze_vec) + 1e-8)
-        gaze_tip = gaze_origin + gaze_length * gaze_dir
+        # --- Get rat 0 and rat 1 body part coords at this frame ---
+        # Shape: (5, 2) → [[x, y], ...]
+        rat0_parts = loader.data[0, :, :, frame_idx].T.reshape(-1, 2)
+        rat1_parts = loader.data[1, :, :, frame_idx].T.reshape(-1, 2)
+        
+        #print("rat0parts: ", rat0_parts)
+        
+        
+        # --- Create blank masks for interaction regions ---
+        mask0 = np.zeros_like(frame, dtype=np.uint8)  # for rat 0
+        mask1 = np.zeros_like(frame, dtype=np.uint8)  # for rat 1
+        
+        #print("h")
+        
+        # --- Draw filled circles around each body part ---
+        for pt in rat0_parts:
+            x, y = float(pt[0]), float(pt[1])
+            if np.isfinite(x) and np.isfinite(y):  # skip NaNs/infs
+                cv2.circle(mask0, (int(round(x)), int(round(y))),
+                           INTERACTION_RADIUS, (0, 0, 255), -1)  # Red
+        
+        for pt in rat1_parts:
+            x, y = float(pt[0]), float(pt[1])
+            if np.isfinite(x) and np.isfinite(y):
+                cv2.circle(mask1, (int(round(x)), int(round(y))),
+                           INTERACTION_RADIUS, (255, 0, 0), -1)  # Blue
+    
+    
+        # Combine masks: overlap = purple
+        overlap_mask = cv2.bitwise_and(mask0, mask1)
+        only0_mask = cv2.subtract(mask0, overlap_mask)
+        only1_mask = cv2.subtract(mask1, overlap_mask)
+    
+        overlay = np.zeros_like(frame, dtype=np.uint8)
+        overlay = cv2.add(overlay, only0_mask)   # red
+        overlay = cv2.add(overlay, only1_mask)   # blue
+        overlay = cv2.add(overlay, overlap_mask) # purple (auto from red+blue)
+    
+        # Blend overlay with the original frame (transparent effect)
+        alpha = 0.3  # transparency factor
+        frame = cv2.addWeighted(overlay, alpha, frame, 1 - alpha, 0)
 
-        p1 = tuple(np.round(gaze_origin).astype(int))
-        p2 = tuple(np.round(gaze_tip).astype(int))
 
-        intersect = loader._gaze_intersects_body(gaze_origin, gaze_vec, target)
-        still = is_still[frame_idx]
-        gazing = intersect and still
-
-        # Set line color based on state
-        if gazing:
-            color = (0, 0, 255)  # Red
-        elif still:
-            color = (255, 0, 0)  # Blue
-        else:
-            color = (0, 255, 0)  # Green
-
-        # Draw the gaze vector
-        cv2.line(frame, p1, p2, color, 2)
-        
-        # Draw zone boundaries
-        cv2.line(frame, (loader.levBoundary, 0), (loader.levBoundary, height), (255, 255, 0), 2)   # Cyan line for levBoundary
-        cv2.line(frame, (loader.magBoundary, 0), (loader.magBoundary, height), (255, 0, 255), 2)   # Magenta line for magBoundary
-
-        # Optional: label the zones
-        #cv2.putText(frame, "Lev", (loader.levBoundary//2 - 30, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255,255,0), 2)
-        cv2.putText(frame, "Mid", (width//2 - 30, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (200,200,200), 2)
-        #cv2.putText(frame, "Mag", (loader.magBoundary + (width - loader.magBoundary)//2 - 30, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255,0,255), 2)        
-        
-        #Mouse Region
-        region_self = mouse_region[frame_idx]
-        region_other = other_region[frame_idx]
-        
-        #cv2.putText(frame, f"Rat{mouseID}: {region_self}", (10, 120), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
-        #cv2.putText(frame, f"Rat{1 - mouseID}: {region_other}", (10, 150), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
-        
-        #Draw Sub-Zones: 
-        zone_color = (255, 255, 255)  # White color for rectangles
-        thickness = 2
-        
-        # Convert corner definitions to top-left and bottom-right for OpenCV
-        zones = [
-            ("Top Lever", loader.levTopTR, loader.levTopBL),
-            ("Bottom Lever", loader.levBotTR, loader.levBotBL),
-            ("Top Mag", loader.magTopTR, loader.magTopBL),
-            ("Bottom Mag", loader.magBotTR, loader.magBotBL)
-        ]
-        
-        for label, tr, bl in zones:
-            top_left = (bl[0], tr[1])     # x from BL, y from TR
-            bottom_right = (tr[0], bl[1]) # x from TR, y from BL
-        
-            # Draw zone rectangle
-            cv2.rectangle(frame, top_left, bottom_right, zone_color, thickness)
-        
-            # === Add text with background ===
-            text_x = top_left[0] + 5
-            text_y = top_left[1] + 25
-        
-            # Get text size
-            (text_width, text_height), _ = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.6, 2)
-        
-            # Define rectangle for background (with some padding)
-            rect_top_left = (text_x - 2, text_y - text_height - 4)
-            rect_bottom_right = (text_x + text_width + 2, text_y + 4)
-        
-            # Draw light gray rectangle background
-            cv2.rectangle(frame, rect_top_left, rect_bottom_right, (200, 200, 200), thickness=-1)
-        
-            # Draw the text over the background
-            cv2.putText(frame, label, (text_x, text_y), cv2.FONT_HERSHEY_SIMPLEX, 0.6, zone_color, 2)
-        
-        
         # Draw body polygon
         polygon_indices = [
             loader.earL_INDEX,
@@ -1407,21 +1359,6 @@ def visualize_gaze_overlay2(
 
         for j in range(len(polygon_points) - 1):
             cv2.line(frame, polygon_points[j], polygon_points[j+1], (128, 128, 128), 1)
-            
-        
-        # Compute and display state
-        if np.any(np.isnan(pos_data[frame_idx])):
-            state = 6  # exploring (NaN case)
-        else:
-            x, y = pos_data[frame_idx]
-            vel = velocities[frame_idx]
-            if (frame_idx>2):
-                vel_before = np.mean(velocities[frame_idx - 2:frame_idx])
-            else:
-                vel_before = 0
-            
-        
-            #cv2.putText(frame, f"Vel: {vel}", (10, height - 60), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
 
         frame_filename = temp_dir / f"frame_{frame_count:05d}.png"
         cv2.imwrite(str(frame_filename), frame)
@@ -1468,12 +1405,12 @@ h5_file1 = "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Beh
 h5_file2 = "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041624_Cam3_TrNum9_Coop_KL002B-KL002Y.predictions.h5"
 
 
-#loader = posLoader(h5_file1)
+loader = posLoader(h5_file)
 #loader.plot_rat_heatmap()
-#lev = levLoader(lev_file)
-#mag = magLoader(mag_file)
+lev = levLoader(lev_file)
+mag = magLoader(mag_file)
 
-#visualize_gaze_overlay(video_file, loader, lev, mag, mouseID=0, save_path = "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Graphs/Videos/testingLevandMagGazing.mp4")
+visualize_gaze_overlay2(video_file, loader, lev, mag, mouseID=0, save_path = "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Graphs/Videos/exampleInteraction.mp4")
 
   
     
