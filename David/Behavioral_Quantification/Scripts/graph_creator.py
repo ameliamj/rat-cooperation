@@ -2305,7 +2305,6 @@ class MicePairGraphs:
     
         return levBiasGroup
                 
-                
   
 
 groupRatPairs = "/gpfs/radev/project/saxena/drb83/rat-cooperation/David/Behavioral_Quantification/Sorted_Data_Files/group_rat_pairs_corrected.csv"
@@ -2326,9 +2325,11 @@ def getGroupRatPairs():
     return [fe.getLevsDatapath(grouped = True), fe.getMagsDatapath(grouped = True), fe.getPosDatapath(grouped = True), fpsList, totFramesList, rat1names, rat2names, sessionIDs, dates, ratPairs]
 
 
-data = getGroupRatPairs()
-pairGraphs = MicePairGraphs(data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7], data[8], data[9])
-pairGraphs.lineGraphSuccessGazingInteractions()
+#data = getGroupRatPairs()
+#pairGraphs = MicePairGraphs(data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7], data[8], data[9])
+
+
+#pairGraphs.lineGraphSuccessGazingInteractions()
 
 
 '''magFiles = [["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv"],
