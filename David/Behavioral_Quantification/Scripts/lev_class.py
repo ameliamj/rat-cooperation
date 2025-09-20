@@ -346,7 +346,7 @@ class levLoader:
         
         return first_presses.tolist()
     
-    def returnMostPressesByLever(self, ratID, firstLeverPressPerTrialOnly=True):
+    def returnMostPressesByLever(self, ratID, firstLeverPressPerTrialOnly=False):
         """
         Returns the number of presses by the specified rat on Lever 1 and Lever 2.
         
@@ -373,7 +373,7 @@ class levLoader:
         return max(lever1_count, lever2_count)
     
     
-    def returnMinPressesByLever(self, ratID, firstLeverPressPerTrialOnly=True):
+    def returnMinPressesByLever(self, ratID, firstLeverPressPerTrialOnly=False):
         """
         Returns the number of presses by the specified rat on Lever 1 and Lever 2 (minimum count).
         

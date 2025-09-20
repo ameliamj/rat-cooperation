@@ -9668,7 +9668,11 @@ class multiFileGraphs:
     
         return {"dominant": dominantCount, "submissive": submissiveCount}
             
+    def analyzeRatPressing(self):
+        a = 1
+        print(a)        
         
+
 
 #Testing Multi File Graphs
 #
@@ -9792,7 +9796,8 @@ initialNanList = [0.3]
 
 #print("Start MultiFileGraphs Regular")
 experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, dates, sessions, ratPairs, prefix = "", save=True)
-experiment.crossingOverQuantification()
+experiment.first_press_bias()
+#experiment.crossingOverQuantification()
 
 #experiment.interactionVSSuccess()
 #experiment.successVsAverageDistance()
