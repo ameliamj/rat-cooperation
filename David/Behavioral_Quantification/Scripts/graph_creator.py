@@ -1677,9 +1677,10 @@ class MicePairGraphs:
             ax = plt.gca()
         
         # Plot
-        ax.plot(x, y_smooth, marker='o', color=color, label=label)
-        #plt.fill_between(x, y - yerr, y + yerr, color=color, alpha=0.2)
-        ax.plot(x, regline, linestyle='--', color=color)#,
+        ax.plot(x, y_smooth, marker='o', color=color,
+                label=f"{label} (ρ={rho:.2f}, p={p_rho:.3f})")
+        ax.plot(x, regline, linestyle='--', color=color,
+                label=f"Fit: slope={slope:.2f}, $R^2$={r_val**2:.2f}, p={p_lin:.3f}")#,
                  #label=f"{label} Fit: slope={slope:.2f}, $R^2$={r_val**2:.2f}, ρ={rho:.2f}, p={p_rho:.3f}")
     
     def lineGraphSuccess(self):
