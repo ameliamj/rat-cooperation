@@ -9675,6 +9675,91 @@ class multiFileGraphs:
         a = 1
         print(a)        
         
+    def analyzeHeatmapDifferences(self, bins=100, sigma=2, savepath="left_vs_right_difference_heatmap.png"):
+        """
+        Analyze multiple experiments and classify rats by left/right preference.
+        Average heatmaps across all experiments into two groups:
+        - Left-preferring rats (red channel)
+        - Right-preferring rats (blue channel)
+        """
+        
+        # Arena dimensions
+        arena_width = 1392
+        arena_height = 640
+        midline = arena_width / 2.0  # x-position dividing left/right
+    
+        # Heatmap accumulator arrays
+        left_group = []
+        right_group = []
+    
+        # Define bins
+        xedges = np.linspace(0, arena_width, bins)
+        yedges = np.linspace(0, arena_height, bins)
+    
+        for exp in self.experiments:
+            pos = exp.pos  # the `pos` object with .data
+    
+            for rat_idx in [0, 1]:
+                # Extract positions for this rat
+                rat_x = pos.data[rat_idx, 0, 0, :]  # x for bodypart 0
+                rat_y = pos.data[rat_idx, 1, 0, :]  # y for bodypart 0
+    
+                # Remove NaNs
+                mask = ~np.isnan(rat_x) & ~np.isnan(rat_y)
+                rat_x, rat_y = rat_x[mask], rat_y[mask]
+    
+                if len(rat_x) == 0:
+                    continue  # skip empty
+    
+                # Classify left vs right by time spent
+                left_time = np.sum(rat_x < midline)
+                right_time = np.sum(rat_x >= midline)
+    
+                side = "left" if left_time > right_time else "right"
+    
+                # Build histogram
+                H, _, _ = np.histogram2d(rat_x, rat_y, bins=[xedges, yedges])
+                H = gaussian_filter(H, sigma=sigma)
+    
+                # Normalize heatmap (so we can average fairly)
+                H = H / H.max() if H.max() > 0 else H
+    
+                # Append to correct group
+                if side == "left":
+                    left_group.append(H)
+                else:
+                    right_group.append(H)
+    
+        # Average heatmaps across all rats in each group
+        H_left = np.mean(left_group, axis=0) if len(left_group) > 0 else np.zeros((bins-1, bins-1))
+        H_right = np.mean(right_group, axis=0) if len(right_group) > 0 else np.zeros((bins-1, bins-1))
+    
+        # Normalize again (0-1 scaling)
+        H_left = H_left / H_left.max() if H_left.max() > 0 else H_left
+        H_right = H_right / H_right.max() if H_right.max() > 0 else H_right
+    
+        # Build RGB composite heatmap
+        heatmap_rgb = np.zeros((H_left.shape[0], H_left.shape[1], 3))
+        heatmap_rgb[:, :, 0] = H_left  # Red = left-preferring rats
+        heatmap_rgb[:, :, 2] = H_right # Blue = right-preferring rats
+    
+        # Plot final result
+        plt.figure(figsize=(10, 6))
+        plt.imshow(
+            np.flipud(heatmap_rgb),
+            extent=[0, arena_width, 0, arena_height],
+            origin="lower",
+            aspect="auto"
+        )
+        plt.xlabel("X position (px)")
+        plt.ylabel("Y position (px)")
+        plt.title("Group Heatmap: Left-preferring (Red) vs Right-preferring (Blue)")
+        plt.savefig(savepath, dpi=300)
+        plt.show()
+        plt.close()
+            
+            
+
 
 
 #Testing Multi File Graphs
