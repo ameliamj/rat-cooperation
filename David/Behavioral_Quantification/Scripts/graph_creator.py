@@ -9700,12 +9700,11 @@ class multiFileGraphs:
         yedges = np.linspace(0, arena_height, bins)
     
         # Iterate over experiments
-        for exp in self.experiments:
-            n_rats = exp.shape[0]
-    
-            for r in range(n_rats):
-                x = exp[r, 0, 0, :]  # bodypart=0 for head
-                y = exp[r, 1, 0, :]
+        for exp in self.experiments:    
+            pos = exp.pos
+            for r in range(2):
+                x = pos.data[r, 0, 3, :]  # bodypart=3 for headbase
+                y = pos.data[r, 1, 3, :]
     
                 # Remove NaNs
                 mask = ~np.isnan(x) & ~np.isnan(y)
@@ -9713,7 +9712,10 @@ class multiFileGraphs:
     
                 if len(x) == 0:
                     continue
-    
+                
+                print("x: ", x)
+                print("midline: ", np.mean(x < midline))
+                
                 # Classify by left vs right preference
                 if np.mean(x < midline) > 0.5:
                     left_x.append(x)
