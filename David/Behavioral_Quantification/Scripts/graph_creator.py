@@ -9720,23 +9720,27 @@ class multiFileGraphs:
                 # Build histogram
                 H, _, _ = np.histogram2d(rat_x, rat_y, bins=[xedges, yedges])
                 H = gaussian_filter(H, sigma=sigma)
-    
-                # Normalize heatmap (so we can average fairly)
-                H = H / H.max() if H.max() > 0 else H
-    
-                # Append to correct group
+                
+                # ❌ DON'T normalize here
+                # H = H / H.max() if H.max() > 0 else H
+                
+                # Append raw smoothed hist
                 if side == "left":
                     left_group.append(H)
                 else:
                     right_group.append(H)
     
-        # Average heatmaps across all rats in each group
+        # Average across rats
         H_left = np.mean(left_group, axis=0) if len(left_group) > 0 else np.zeros((bins-1, bins-1))
         H_right = np.mean(right_group, axis=0) if len(right_group) > 0 else np.zeros((bins-1, bins-1))
-    
-        # Normalize again (0-1 scaling)
-        H_left = H_left / H_left.max() if H_left.max() > 0 else H_left
-        H_right = H_right / H_right.max() if H_right.max() > 0 else H_right
+        
+        # ✅ Normalize AFTER averaging
+        max_val = max(H_left.max(), H_right.max())
+        if max_val > 0:
+            H_left = np.log1p(H_left)
+            H_right = np.log1p(H_right)
+            H_left /= max_val
+            H_right /= max_val
     
         # Build RGB composite heatmap
         heatmap_rgb = np.zeros((H_left.shape[0], H_left.shape[1], 3))
