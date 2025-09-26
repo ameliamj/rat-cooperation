@@ -30,6 +30,8 @@ from scipy.optimize import curve_fit
 from scipy.stats import spearmanr
 from scipy.stats import ttest_ind
 from mpl_toolkits.mplot3d import Axes3D
+from datetime import datetime
+
 
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
@@ -1477,13 +1479,13 @@ class MicePairGraphs:
         print("data_y_division: ", trial_counts)
         print("session_counts: ", session_counts)
         
-        MIN_SESSIONS = 3
+        MIN_SESSIONS = 1
         
-        # Filter to include only exp_idx with > 10 sessions
+        # Filter to include only exp_idx with > MIN_SESSIONS sessions
         filtered_indices = [i for i in success_counts if session_counts[i] > MIN_SESSIONS and trial_counts[i] > 0]
     
         if not filtered_indices:
-            print(f"No data for {label} with > 3 sessions.")
+            print(f"No data for {label} with > {MIN_SESSIONS} sessions.")
             return
         
         if (multiplyBy100):
@@ -2038,6 +2040,7 @@ class MicePairGraphs:
         per_ratPair_counts = {}
         
         for group_idx, group in enumerate(self.experimentGroups):
+            print("len(group): ", len(group))
             if (len(group) < 5):
                 continue
             counter = 0
@@ -2070,10 +2073,11 @@ class MicePairGraphs:
                 
                 per_ratPair_counts[ratPair][exp_idx][0] += dominantCount
                 per_ratPair_counts[ratPair][exp_idx][1] += count0 + count1
-         
+        
+        print("session_counts: ", session_counts)
         # === Plot call ===
         plt.figure(figsize=(10, 6))
-        self.plot_by_exp_idx(dom_counts, total_counts, session_counts, label="All", color="blue")
+        self.plot_by_exp_idx(dom_counts, total_counts, session_counts, label="All", color="blue", per_ratPair_counts=per_ratPair_counts)
         
         plt.xlabel('Experiment Index', fontsize=16)
         plt.ylabel('Dominant Rat Press Rate (%)', fontsize=16)
@@ -2211,8 +2215,16 @@ levFiles = [["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/B
 posFiles = [["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.predictions.h5"], 
             ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.predictions.h5"]]
 
-pairGraphs = MicePairGraphs(magFiles, levFiles, posFiles, [])'''
-
+#Dimensions, 2x6
+fpsList = [[30, 30, 30, 30, 30, 30], [30, 30, 30, 30, 30, 30]]
+totFramesList = [[1500, 1500, 1500, 1500, 1500, 1500], [1500, 1500, 1500, 1500, 1500, 1500]]
+rat1names = [['a', 'a', 'a', 'a', 'a', 'a'], ['a2', 'a2', 'a2', 'a2', 'a2', 'a2']]
+rat2names = [['b', 'b', 'b', 'b', 'b', 'b'], ['b2', 'b2', 'b2', 'b2', 'b2', 'b2']]
+sessionIDs = [['1', '2', '3', '4', '5', '6'], ['7', '8', '9', '10', '11', '12']]
+dates = [[datetime(2024, 4, 16, 0, 0), datetime(2024, 4, 16, 0, 0), datetime(2024, 4, 16, 0, 0), datetime(2024, 4, 16, 0, 0), datetime(2024, 4, 16, 0, 0), datetime(2024, 4, 16, 0, 0)], [datetime(2024, 4, 16, 0, 0), datetime(2024, 4, 16, 0, 0), datetime(2024, 4, 16, 0, 0), datetime(2024, 4, 16, 0, 0), datetime(2024, 4, 16, 0, 0), datetime(2024, 4, 16, 0, 0)]]
+ratPairs = [['a-b', 'a-b', 'a-b', 'a-b', 'a-b', 'a-b'], ['a2-b2', 'a2-b2', 'a2-b2', 'a2-b2', 'a2-b2', 'a2-b2']]
+pairGraphs = MicePairGraphs(magFiles, levFiles, posFiles, fpsList, totFramesList, rat1names, rat2names, sessionIDs, dates, ratPairs)
+'''
 #print(pairGraphs.leverBiasConsistency())
 #pairGraphs.lineGraphLeverBias()
 
