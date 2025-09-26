@@ -2326,9 +2326,9 @@ def getGroupRatPairs():
     return [fe.getLevsDatapath(grouped = True), fe.getMagsDatapath(grouped = True), fe.getPosDatapath(grouped = True), fpsList, totFramesList, rat1names, rat2names, sessionIDs, dates, ratPairs]
 
 
-data = getGroupRatPairs()
-pairGraphs = MicePairGraphs(data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7], data[8], data[9])
-pairGraphs.lineGraphLeverBias()
+#data = getGroupRatPairs()
+#pairGraphs = MicePairGraphs(data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7], data[8], data[9])
+#pairGraphs.lineGraphLeverBias()
 
 
 #pairGraphs.lineGraphSuccessGazingInteractions()
@@ -9684,7 +9684,9 @@ class multiFileGraphs:
     
         Produces *separate* heatmaps for each group.
         """
-    
+        
+        print("Entering Heatmap Differences")
+        
         # Arena dimensions
         arena_width = 1392
         arena_height = 640
@@ -9700,7 +9702,8 @@ class multiFileGraphs:
         yedges = np.linspace(0, arena_height, bins)
     
         # Iterate over experiments
-        for exp in self.experiments:    
+        for i, exp in enumerate(self.experiments):    
+            print("Entering Experiment #", i)
             pos = exp.pos
             for r in range(2):
                 x = pos.data[r, 0, 3, :]  # bodypart=3 for headbase
