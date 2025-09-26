@@ -1264,159 +1264,6 @@ class MicePairGraphs:
         plt.savefig(f"{self.prefix}{filename}_hist.png")
         plt.show()
         plt.close()
-
-    def boxplot_avg_gaze_length(self):
-        print("\n\nGenerating average gaze length boxplot")
-        all_vals = []
-        for group in self.experimentGroups:
-            pair_vals = []
-            for exp in group:
-                l0 = exp.pos.returnAverageGazeLength(0)
-                l1 = exp.pos.returnAverageGazeLength(1)
-                print(f"Gaze lengths: {l0}, {l1}")
-                if l0 is not None and l1 is not None:
-                    pair_vals.append((l0 + l1) / 2)
-            if pair_vals:
-                all_vals.append(np.mean(pair_vals))
-        print(f"All values: {all_vals}")
-        self._make_boxplot(all_vals, "Frames per Gaze Event", "Avg Gaze Length per Pair", "Box_Gaze_Length")
-        self._make_histogram(all_vals, "Frames per Gaze Event", "Gaze Length Distribution", "Hist_Gaze_Length")
-
-    def boxplot_lever_presses_per_trial(self):
-        print("\n\nGenerating lever presses per trial boxplot")
-        vals = []
-        for group in self.experimentGroups:
-            pair_rates = []
-            for exp in group:
-                trials = exp.lev.returnNumTotalTrials()
-                presses = exp.lev.returnTotalLeverPresses()
-                print(f"Trials: {trials}, Presses: {presses}")
-                if trials > 0:
-                    pair_rates.append(presses / trials)
-            if pair_rates:
-                vals.append(np.mean(pair_rates))
-        print(f"All values: {vals}")
-        self._make_boxplot(vals, "Presses / Trial", "Lever Presses per Trial", "Box_LeverPerTrial")
-        self._make_histogram(vals, "Presses / Trial", "Lever Press Distribution", "Hist_LeverPerTrial")
-
-    def boxplot_mag_events_per_trial(self):
-        print("\n\nGenerating mag events per trial boxplot")
-        vals = []
-        for group in self.experimentGroups:
-            pair_rates = []
-            for exp in group:
-                trials = exp.lev.returnNumTotalTrials()
-                mags = exp.mag.getTotalMagEvents()
-                print(f"Trials: {trials}, Mag Events: {mags}")
-                if trials > 0:
-                    pair_rates.append(mags / trials)
-            if pair_rates:
-                vals.append(np.mean(pair_rates))
-        print(f"All values: {vals}")
-        self._make_boxplot(vals, "Mag Events / Trial", "Mag Events per Trial", "Box_MagPerTrial")
-        self._make_histogram(vals, "Mag Events / Trial", "Mag Event Distribution", "Hist_MagPerTrial")
-
-    def boxplot_avg_IPI(self):
-        print("\n\nRunning boxplot_avg_IPI...")
-        vals = []
-        for group in self.experimentGroups:
-            sum_weighted_ipi = 0.0
-            sum_presses = 0
-            for exp in group:
-                mean_ipi = exp.lev.returnAvgIPI()
-                n_presses = exp.lev.returnTotalLeverPresses()
-                print(f"Avg IPI: {mean_ipi}, Presses: {n_presses}")
-                if mean_ipi and n_presses > 0:
-                    sum_weighted_ipi += mean_ipi * n_presses
-                    sum_presses += n_presses
-            print(f"Sum Weighted IPI: {sum_weighted_ipi}, Total Presses: {sum_presses}")
-            if sum_presses > 0:
-                vals.append(sum_weighted_ipi / sum_presses)
-        print(f"Avg IPI per group: {vals}\n")
-        self._make_boxplot(vals, "IPI (s)", "Avg Inter-Press Interval", "Box_IPI")
-        self._make_histogram(vals, "IPI (s)", "IPI Distribution", "Hist_IPI")
-
-    def boxplot_IPI_first_to_success(self):
-        print("\n\nRunning boxplot_IPI_first_to_success...")
-        vals = []
-        for group in self.experimentGroups:
-            sum_weighted = 0.0
-            sum_success = 0
-            for exp in group:
-                v = exp.lev.returnAvgIPI_FirsttoSuccess()
-                n_succ = exp.lev.returnNumSuccessfulTrials()
-                print(f"First→Success IPI: {v}, Successes: {n_succ}")
-                if v is not None and n_succ > 0:
-                    sum_weighted += v * n_succ
-                    sum_success += n_succ
-            if sum_success > 0:
-                vals.append(sum_weighted / sum_success)
-        print(f"First→Success IPI per group: {vals}\n")
-        self._make_boxplot(vals, "Time (s)", "IPI: First→Success", "Box_IPI_First")
-        self._make_histogram(vals, "Time (s)", "First→Success Distribution", "Hist_IPI_First")
-
-    def boxplot_IPI_last_to_success(self):
-        print("\n\nRunning boxplot_IPI_last_to_success...")
-        vals = []
-        for group in self.experimentGroups:
-            sum_weighted = 0.0
-            sum_success = 0
-            for exp in group:
-                v = exp.lev.returnAvgIPI_LasttoSuccess()
-                n_succ = exp.lev.returnNumSuccessfulTrials()
-                print(f"Last→Success IPI: {v}, Successes: {n_succ}")
-                if v is not None and n_succ > 0:
-                    sum_weighted += v * n_succ
-                    sum_success += n_succ
-            if sum_success > 0:
-                vals.append(sum_weighted / sum_success)
-        print(f"Last→Success IPI per group: {vals}\n")
-        self._make_boxplot(vals, "Time (s)", "IPI: Last→Success", "Box_IPI_Last")
-        self._make_histogram(vals, "Time (s)", "Last→Success Distribution", "Hist_IPI_Last")
-        
-    def boxplot_gaze_events_per_minute(self): 
-        print("\n\nRunning boxplot_gaze_events_per_minute...")
-        FRAME_WINDOW = 1800
-        vals = []
-        for group in self.experimentGroups:
-            sumEvents = 0
-            sumFrames = 0
-            for exp in group:
-                countEvents0 = exp.pos.returnNumGazeEvents(0)
-                countEvents1 = exp.pos.returnNumGazeEvents(1)
-                numFrames = exp.pos.returnNumFrames()
-                print(f"Gaze0: {countEvents0}, Gaze1: {countEvents1}, Frames: {numFrames}")
-                if countEvents0 is not None and countEvents1 is not None and numFrames is not None:
-                    sumEvents += countEvents0 + countEvents1
-                    sumFrames += numFrames
-            if sumFrames > 0:
-                rate = sumEvents / sumFrames * FRAME_WINDOW
-                print(f"Gaze Rate: {rate}")
-                vals.append(rate)
-        print(f"Gaze per minute values: {vals}\n")
-        self._make_boxplot(vals, "Gaze Events / Min", "Gaze Rate per Pair", "Box_GazePerMin")
-        self._make_histogram(vals, "Gaze Events / Min", "Gaze Rate Distribution", "Hist_GazePerMin")
-     
-    def boxplot_percent_successful_trials(self):
-        print("\n\nRunning boxplot_percent_successful_trials...")
-        vals = []
-        for group in self.experimentGroups:
-            sum_tot = 0
-            sum_success = 0
-            for exp in group:
-                tot = exp.lev.returnNumTotalTrials()
-                n_succ = exp.lev.returnNumSuccessfulTrials()
-                print(f"Total Trials: {tot}, Successful Trials: {n_succ}")
-                if n_succ is not None and tot > 0:
-                    sum_tot += tot
-                    sum_success += n_succ
-            if sum_tot > 0:
-                ratio = sum_success / sum_tot
-                print(f"Success Rate: {ratio}")
-                vals.append(ratio)
-        print(f"Success rates: {vals}\n")
-        self._make_boxplot(vals, "% Success", "Success Rate per Pair", "Box_Success")
-        self._make_histogram(vals, "% Success", "Success Rate Distribution", "Hist_Success")
         
     def difference_last_vs_first(self):
         print("\n\n Running difference_last_vs_first...")
@@ -1625,7 +1472,7 @@ class MicePairGraphs:
             plt.show()
             plt.close()
         
-    def plot_by_exp_idx(self, success_counts, trial_counts, session_counts, label, color, ax=None, multiplyBy100=True):
+    def plot_by_exp_idx(self, success_counts, trial_counts, session_counts, label, color, ax=None, multiplyBy100=True, per_ratPair_counts=None):
         print("data_y_count: ", success_counts)
         print("data_y_division: ", trial_counts)
         print("session_counts: ", session_counts)
@@ -1682,6 +1529,14 @@ class MicePairGraphs:
         ax.plot(x, regline, linestyle='--', color=color,
                 label=f"Fit: slope={slope:.2f}, $R^2$={r_val**2:.2f}, p={p_lin:.3f}")#,
                  #label=f"{label} Fit: slope={slope:.2f}, $R^2$={r_val**2:.2f}, ρ={rho:.2f}, p={p_rho:.3f}")
+        if per_ratPair_counts is not None:
+            for ratPair, rat_data in per_ratPair_counts.items():
+                xs = sorted([i for i in rat_data if trial_counts.get(i, 0) > 0])
+                if not xs:
+                    continue
+                ys = [(rat_data[i][0] / rat_data[i][1]) * (100 if multiplyBy100 else 1)
+                      for i in xs]
+                ax.plot(xs, ys, color="gray", alpha=0.4, linewidth=1)
     
     def lineGraphSuccess(self):
        '''
@@ -2180,11 +2035,15 @@ class MicePairGraphs:
         total_counts = {}
         session_counts = {}
         
+        per_ratPair_counts = {}
+        
         for group_idx, group in enumerate(self.experimentGroups):
             if (len(group) < 5):
                 continue
             counter = 0
             for exp_idx, exp in enumerate(group):
+                if (exp_idx > 13):
+                    continue
                 if (exp_idx not in dom_counts):
                     dom_counts[exp_idx] = 0
                     total_counts[exp_idx] = 0
@@ -2202,6 +2061,15 @@ class MicePairGraphs:
                 dom_counts[exp_idx] += dominantCount
                 total_counts[exp_idx] += count0 + count1
                 session_counts[exp_idx] += 1
+                
+                ratPair = exp.ratPair
+                if ratPair not in per_ratPair_counts:
+                    per_ratPair_counts[ratPair] = {}
+                if exp_idx not in per_ratPair_counts[ratPair]:
+                    per_ratPair_counts[ratPair][exp_idx] = [0, 0]  # [success, total]
+                
+                per_ratPair_counts[ratPair][exp_idx][0] += dominantCount
+                per_ratPair_counts[ratPair][exp_idx][1] += count0 + count1
          
         # === Plot call ===
         plt.figure(figsize=(10, 6))
@@ -2307,6 +2175,8 @@ class MicePairGraphs:
         return levBiasGroup
                 
   
+    
+  
 
 groupRatPairs = "/gpfs/radev/project/saxena/drb83/rat-cooperation/David/Behavioral_Quantification/Sorted_Data_Files/group_rat_pairs_corrected.csv"
 
@@ -2326,22 +2196,22 @@ def getGroupRatPairs():
     return [fe.getLevsDatapath(grouped = True), fe.getMagsDatapath(grouped = True), fe.getPosDatapath(grouped = True), fpsList, totFramesList, rat1names, rat2names, sessionIDs, dates, ratPairs]
 
 
-#data = getGroupRatPairs()
-#pairGraphs = MicePairGraphs(data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7], data[8], data[9])
-#pairGraphs.lineGraphLeverBias()
+data = getGroupRatPairs()
+pairGraphs = MicePairGraphs(data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7], data[8], data[9])
+pairGraphs.lineGraphLeverBias()
 
 
 #pairGraphs.lineGraphSuccessGazingInteractions()
 
-
-'''magFiles = [["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv"],
+'''
+magFiles = [["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv"],
             ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv"]]
 levFiles = [["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_mag.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_mag.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_mag.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_mag.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_mag.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_mag.csv"], 
             ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_mag.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_mag.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_mag.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_mag.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_mag.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_mag.csv"]]
 posFiles = [["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.predictions.h5"], 
             ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.predictions.h5", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G.predictions.h5"]]
 
-pairGraphs = MicePairGraphs(magFiles, levFiles, posFiles, )'''
+pairGraphs = MicePairGraphs(magFiles, levFiles, posFiles, [])'''
 
 #print(pairGraphs.leverBiasConsistency())
 #pairGraphs.lineGraphLeverBias()
@@ -9860,7 +9730,7 @@ def getFiberPhoto():
     return [fe.getLevsDatapath(), fe.getMagsDatapath(), fe.getPosDatapath(), fpsList, totFramesList, initial_nan_list, fiberFiles]
 
 
-'''
+
 lev_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv"]
 
 mag_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_mag.csv", "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_mag.csv"] 
@@ -9870,9 +9740,11 @@ pos_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/B
 fpsList = [30, 30]
 totFramesList = [15000, 15000]
 initialNanList = [0.15, 0.12]
+#dates = [datetime(2024, 4, 16, 0, 0), datetime(2024, 4, 18, 0, 0)] # 
+#sessions = ['id1', 'id2'] #
+#ratPairs = [] #
+
 '''
-
-
 arr = getFiltered()
 
 #arr = trainingCoopData()
@@ -9891,7 +9763,7 @@ sessions = arr[7]
 ratPairs = arr[8]
 #fiberPhoto = arr[6]
 
-
+'''
 
 
 '''lev_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/4_nanerror_lev.csv"]
@@ -9916,8 +9788,8 @@ initialNanList = [0.3]
 '''
 
 #print("Start MultiFileGraphs Regular")
-experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, dates, sessions, ratPairs, prefix = "", save=True)
-experiment.analyzeHeatmapDifferences()
+#experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, dates, sessions, ratPairs, prefix = "", save=True)
+#experiment.analyzeHeatmapDifferences()
 #experiment.first_press_bias()
 #experiment.crossingOverQuantification()
 
