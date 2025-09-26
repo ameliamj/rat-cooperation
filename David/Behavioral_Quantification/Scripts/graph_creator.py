@@ -9734,11 +9734,15 @@ class multiFileGraphs:
         right_y = np.concatenate(right_y) if right_y else np.array([])
     
         # Save CSV of all positions
+        max_len = max(len(left_x), len(left_y), len(right_x), len(right_y))
+        def pad(arr, length):
+            return np.pad(arr, (0, length - len(arr)), constant_values=np.nan)
+        
         df = pd.DataFrame({
-            "left_x": left_x,
-            "left_y": left_y,
-            "right_x": right_x,
-            "right_y": right_y
+            "left_x": pad(left_x, max_len),
+            "left_y": pad(left_y, max_len),
+            "right_x": pad(right_x, max_len),
+            "right_y": pad(right_y, max_len)
         })
         csv_path = savepath.replace(".png", "_positions.csv")
         df.to_csv(csv_path, index=False)
