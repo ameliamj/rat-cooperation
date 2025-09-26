@@ -9734,11 +9734,15 @@ class multiFileGraphs:
         H_left = np.mean(left_group, axis=0) if len(left_group) > 0 else np.zeros((bins-1, bins-1))
         H_right = np.mean(right_group, axis=0) if len(right_group) > 0 else np.zeros((bins-1, bins-1))
         
-        # ✅ Normalize AFTER averaging
+        print("HLeft: ", H_left)
+        print("HRight: ", H_right)
+        
+        gamma = 0.3  # <1 boosts low intensities
+        H_left = H_left ** gamma
+        H_right = H_right ** gamma
+        
         max_val = max(H_left.max(), H_right.max())
         if max_val > 0:
-            H_left = np.log1p(H_left)
-            H_right = np.log1p(H_right)
             H_left /= max_val
             H_right /= max_val
     
