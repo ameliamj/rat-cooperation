@@ -9884,7 +9884,8 @@ initialNanList = [0.3]
 
 #print("Start MultiFileGraphs Regular")
 experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, dates, sessions, ratPairs, prefix = "", save=True)
-experiment.first_press_bias()
+experiment.analyzeHeatmapDifferences()
+#experiment.first_press_bias()
 #experiment.crossingOverQuantification()
 
 #experiment.interactionVSSuccess()
