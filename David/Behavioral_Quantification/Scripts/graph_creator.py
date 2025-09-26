@@ -9679,92 +9679,108 @@ class multiFileGraphs:
         """
         Analyze multiple experiments and classify rats by left/right preference.
         Average heatmaps across all experiments into two groups:
-        - Left-preferring rats (red channel)
-        - Right-preferring rats (blue channel)
+        - Left-preferring rats (Group A)
+        - Right-preferring rats (Group B)
+    
+        Produces *separate* heatmaps for each group.
         """
-        
+    
         # Arena dimensions
         arena_width = 1392
         arena_height = 640
         midline = arena_width / 2.0  # x-position dividing left/right
+        aspect_ratio = arena_width / arena_height
     
         # Heatmap accumulator arrays
-        left_group = []
-        right_group = []
+        left_x, left_y = [], []
+        right_x, right_y = [], []
     
         # Define bins
         xedges = np.linspace(0, arena_width, bins)
         yedges = np.linspace(0, arena_height, bins)
     
+        # Iterate over experiments
         for exp in self.experiments:
-            pos = exp.pos  # the `pos` object with .data
+            n_rats = exp.shape[0]
     
-            for rat_idx in [0, 1]:
-                # Extract positions for this rat
-                rat_x = pos.data[rat_idx, 0, 0, :]  # x for bodypart 0
-                rat_y = pos.data[rat_idx, 1, 0, :]  # y for bodypart 0
+            for r in range(n_rats):
+                x = exp[r, 0, 0, :]  # bodypart=0 for head
+                y = exp[r, 1, 0, :]
     
                 # Remove NaNs
-                mask = ~np.isnan(rat_x) & ~np.isnan(rat_y)
-                rat_x, rat_y = rat_x[mask], rat_y[mask]
+                mask = ~np.isnan(x) & ~np.isnan(y)
+                x, y = x[mask], y[mask]
     
-                if len(rat_x) == 0:
-                    continue  # skip empty
+                if len(x) == 0:
+                    continue
     
-                # Classify left vs right by time spent
-                left_time = np.sum(rat_x < midline)
-                right_time = np.sum(rat_x >= midline)
-    
-                side = "left" if left_time > right_time else "right"
-    
-                # Build histogram
-                H, _, _ = np.histogram2d(rat_x, rat_y, bins=[xedges, yedges])
-                H = gaussian_filter(H, sigma=sigma)
-                
-                # ❌ DON'T normalize here
-                # H = H / H.max() if H.max() > 0 else H
-                
-                # Append raw smoothed hist
-                if side == "left":
-                    left_group.append(H)
+                # Classify by left vs right preference
+                if np.mean(x < midline) > 0.5:
+                    left_x.append(x)
+                    left_y.append(y)
                 else:
-                    right_group.append(H)
+                    right_x.append(x)
+                    right_y.append(y)
     
-        # Average across rats
-        H_left = np.mean(left_group, axis=0) if len(left_group) > 0 else np.zeros((bins-1, bins-1))
-        H_right = np.mean(right_group, axis=0) if len(right_group) > 0 else np.zeros((bins-1, bins-1))
-        
-        print("HLeft: ", H_left)
-        print("HRight: ", H_right)
-        
-        gamma = 0.3  # <1 boosts low intensities
-        H_left = H_left ** gamma
-        H_right = H_right ** gamma
-        
-        max_val = max(H_left.max(), H_right.max())
-        if max_val > 0:
-            H_left /= max_val
-            H_right /= max_val
+        # Concatenate positions for both groups
+        left_x = np.concatenate(left_x) if left_x else np.array([])
+        left_y = np.concatenate(left_y) if left_y else np.array([])
+        right_x = np.concatenate(right_x) if right_x else np.array([])
+        right_y = np.concatenate(right_y) if right_y else np.array([])
     
-        # Build RGB composite heatmap
-        heatmap_rgb = np.zeros((H_left.shape[0], H_left.shape[1], 3))
-        heatmap_rgb[:, :, 0] = H_left  # Red = left-preferring rats
-        heatmap_rgb[:, :, 2] = H_right # Blue = right-preferring rats
+        # Save CSV of all positions
+        df = pd.DataFrame({
+            "left_x": left_x,
+            "left_y": left_y,
+            "right_x": right_x,
+            "right_y": right_y
+        })
+        csv_path = savepath.replace(".png", "_positions.csv")
+        df.to_csv(csv_path, index=False)
+        print(f"Saved positions to {csv_path}")
     
-        # Plot final result
-        plt.figure(figsize=(10, 6))
-        plt.imshow(
-            np.flipud(heatmap_rgb),
-            extent=[0, arena_width, 0, arena_height],
-            origin="lower",
-            aspect="auto"
-        )
-        plt.xlabel("X position (px)")
-        plt.ylabel("Y position (px)")
-        plt.title("Group Heatmap: Left-preferring (Red) vs Right-preferring (Blue)")
-        plt.savefig(savepath, dpi=300)
-        plt.show()
-        plt.close()
+        # Helper: build processed heatmap
+        def make_heatmap(x, y, sigma=2, clip_percent=97, gamma=0.2):
+            if len(x) == 0:
+                return None
+            H, _, _ = np.histogram2d(x, y, bins=[xedges, yedges])
+            H = gaussian_filter(H, sigma=sigma)
+            vmax = np.percentile(H, clip_percent)
+            H = np.clip(H, 0, vmax)
+            H = H / H.max() if H.max() > 0 else H
+            H = H ** gamma
+            return H
+    
+        H_left = make_heatmap(left_x, left_y, sigma=sigma)
+        H_right = make_heatmap(right_x, right_y, sigma=sigma)
+    
+        # Helper: save figure
+        def save_heatmap(H, title, filename):
+            if H is None:
+                print(f"Skipping {title}, no data")
+                return
+            fig_width = 6
+            fig_height = fig_width / aspect_ratio
+            plt.figure(figsize=(fig_width, fig_height))
+            im = plt.imshow(
+                np.flipud(H),
+                extent=[0, arena_width, 0, arena_height],
+                origin="lower",
+                aspect="auto",
+                cmap="hot"
+            )
+            plt.colorbar(im, label="Density")
+            plt.xlabel("X position (px)")
+            plt.ylabel("Y position (px)")
+            plt.title(title)
+            plt.savefig(filename, dpi=300, bbox_inches="tight")
+            plt.show()
+            plt.close()
+    
+        # Save left and right heatmaps
+        save_heatmap(H_left, "Left-preferring Group Heatmap", savepath.replace(".png", "_left.png"))
+        save_heatmap(H_right, "Right-preferring Group Heatmap", savepath.replace(".png", "_right.png"))
+
             
             
 
