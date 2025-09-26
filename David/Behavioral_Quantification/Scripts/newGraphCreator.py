@@ -247,7 +247,7 @@ class createGraphs:
         fig_height = fig_width / self.aspect_ratio
         plt.figure(figsize=(fig_width, fig_height))
         im = plt.imshow(
-            H,
+            np.flipud(H),
             extent=[0, self.arena_width, 0, self.arena_height],
             origin="upper",
             aspect="auto",
@@ -313,7 +313,8 @@ pos_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/B
 h5_file1 = "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041624_Cam3_TrNum7_Coop_KL002B-KL002Y.predictions.h5"
 h5_file2 = "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041624_Cam3_TrNum9_Coop_KL002B-KL002Y.predictions.h5"
 h5_file = "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/4_nanerror_test.h5"
-pos_files = [h5_file]
+#pos_files = [h5_file]
+pos_files = [h5_file, h5_file1]
 
 fpsList = [30, 30]
 totFramesList = [15000, 15000]
@@ -321,8 +322,8 @@ initialNanList = [0.15, 0.12]
 dates = [datetime(2024, 4, 16, 0, 0), datetime(2024, 4, 18, 0, 0)] # 
 sessions = ['000000_TrNum1', '000000_TrNum2'] #
 ratPairs = ['KL001Y-KL001G', 'KL007Y-KL007G'] #
-
 '''
+
 
 #Generate Graphs
 #
