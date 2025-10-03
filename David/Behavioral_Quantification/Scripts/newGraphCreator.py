@@ -517,6 +517,11 @@ class createGraphs:
         plt.close()
         
     def plot_scatter(self, x, y, *, xlabel="", ylabel="", filename="", title=""):
+        ticksFontSize = 13
+        legendsFontSize = 13
+        labelFontSize = 15
+        titleFontSize = 17
+        
         # Convert to numpy arrays
         x = np.array(x)
         y = np.array(y)
@@ -534,9 +539,9 @@ class createGraphs:
         plt.plot(x_fit, y_fit, color="red", label="Best fit line")
         
         # Labels & title
-        plt.xlabel(xlabel)
-        plt.ylabel(ylabel)
-        plt.title(title)
+        plt.xlabel(xlabel, fontsize=labelFontSize)
+        plt.ylabel(ylabel, fontsize=labelFontSize)
+        plt.title(title, fontsize=titleFontSize, weight="bold")
         
         # Annotation with formula, R², p-value, N
         eqn = f"y = {slope:.3f}x + {intercept:.3f}"
@@ -544,7 +549,9 @@ class createGraphs:
         plt.text(0.05, 0.95, stats_text, transform=plt.gca().transAxes,
                  fontsize=10, verticalalignment="top", bbox=dict(boxstyle="round", fc="w"))
         
-        plt.legend()
+        plt.legend(fontsize=legendsFontSize)
+        plt.xticks(fontsize=ticksFontSize)
+        plt.yticks(fontsize=ticksFontSize)
         plt.tight_layout()
         plt.savefig(filename)
         plt.show()
