@@ -1526,7 +1526,34 @@ class MicePairGraphs:
         if ax is None:
             ax = plt.gca()
         
+        
+        # === Plot main line (no markers, no trendline, thick line) ===
+        ax.plot(
+           x, y_smooth,
+           color=color,
+           linewidth=3,
+           marker=None,
+           label=None  # Remove label since no legend should show trend info
+        )
+       
+        # === Optional per-rat lines (light gray, thin) ===
+        if per_ratPair_counts is not None:
+           for ratPair, rat_data in per_ratPair_counts.items():
+               xs = sorted([i for i in rat_data if trial_counts.get(i, 0) > 0])
+               if not xs:
+                   continue
+               ys = [(rat_data[i][0] / rat_data[i][1]) * (100 if multiplyBy100 else 1)
+                     for i in xs]
+               ax.plot(xs, ys, color="gray", alpha=0.4, linewidth=1)
+    
+        # === Styling handled at parent level (lineGraphX) ===
+        yrange = max(y) - min(y)
+        offset = 0.05 * yrange
+        print("offset: ", offset)
+        
+        
         # Plot
+        '''
         ax.plot(x, y_smooth, marker='o', color=color,
                 label=f"{label} (ρ={rho:.2f}, p={p_rho:.3f})")
         ax.plot(x, regline, linestyle='--', color=color,
@@ -1544,13 +1571,13 @@ class MicePairGraphs:
         yrange = max(y) - min(y)
         offset = 0.05 * yrange
         print("offset: ", offset)
-        
+        '''
         # === Annotate session counts ===
-        for idx, (xi, yi) in enumerate(zip(x, y)):
+        '''for idx, (xi, yi) in enumerate(zip(x, y)):
             if idx % 2 == 0:  # every 2nd point
                 n_sessions = session_counts[xi]
                 ax.text(xi, yi + offset, f"n={n_sessions}",
-                        ha='center', va='bottom', fontsize=13, color="black")
+                        ha='center', va='bottom', fontsize=13, color="black")'''
     
     def lineGraphSuccess(self):
        '''
