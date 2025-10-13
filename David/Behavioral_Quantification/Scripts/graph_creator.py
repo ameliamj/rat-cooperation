@@ -1695,19 +1695,69 @@ class MicePairGraphs:
                     session_counts_KL[exp_idx] += 1
     
         # === Plot call ===
-        plt.figure(figsize=(10, 6))
-        self.plot_by_exp_idx(gaze_counts, frame_counts, session_counts, label="All", color="blue")
-        #self.plot_by_exp_idx(gaze_counts_KL, frame_counts_KL, session_counts_KL, label="KL", color="purple")
-        #self.plot_by_exp_idx(gaze_counts_EB, frame_counts_EB, session_counts_EB, label="EB", color="green")
-    
-        plt.xlabel('Experiment Index', fontsize=13)
-        plt.ylabel('Percent Gazing', fontsize=13)
-        plt.title('Average Gazing Throughout Training', fontsize=15)
-        plt.grid(True, linestyle='--', alpha=0.6)
-        plt.legend(fontsize=10)
+        # --- Global style updates ---
+        plt.rcParams.update({
+            'font.size': 14,          # General font size
+            'axes.titlesize': 16,     # Title font size
+            'axes.labelsize': 14,     # X/Y label font size
+            'xtick.labelsize': 12,    # X tick label size
+            'ytick.labelsize': 12,    # Y tick label size
+            'legend.fontsize': 12,    # Legend font size
+            'axes.linewidth': 1.5     # Border (spine) line width
+        })
+        
+        # === Gazing Plot ===
+        plt.figure(figsize=(8, 6))
+        ax = plt.gca()
+        
+        # Custom colors for consistency
+        colors = ['#377EB8', '#984EA3', '#4DAF4A']
+        
+        # Plot “All” line
+        self.plot_by_exp_idx(gaze_counts, frame_counts, session_counts,
+                             label="All", color=colors[0], ax=ax)
+        
+        # Uncomment these two if you later want to include per-animal plots
+        # self.plot_by_exp_idx(gaze_counts_KL, frame_counts_KL, session_counts_KL,
+        #                      label="KL", color=colors[1], ax=ax)
+        # self.plot_by_exp_idx(gaze_counts_EB, frame_counts_EB, session_counts_EB,
+        #                      label="EB", color=colors[2], ax=ax)
+        
+        # Style adjustments
+        ax.set_xlabel('Experiment Index')
+        ax.set_ylabel('Percent Gazing')
+        ax.set_ylim(0, 100)
+        ax.grid(False)
+        
+        # Thicken lines and remove markers
+        for line in ax.get_lines():
+            line.set_linewidth(3)
+            line.set_marker(None)
+        
+        # Legend
+        handles, labels = ax.get_legend_handles_labels()
+        legend = ax.legend(handles, labels,
+                           frameon=True,
+                           facecolor='white',
+                           edgecolor='black',
+                           framealpha=1.0,
+                           ncol=3,
+                           loc='upper right')
+        legend.set_zorder(999)
+        
+        # Remove top/right spines & thicken borders
+        for spine in ax.spines.values():
+            spine.set_linewidth(2)
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+        
+        plt.title('Average Gazing Throughout Training')
         plt.tight_layout()
+        
+        # Save and show
         if self.save:
-            plt.savefig(f'{self.prefix}GazingByExperimentIndex_onlyAll.png')
+            plt.savefig(f'{self.prefix}GazingByExperimentIndex_onlyAll.png', dpi=300, bbox_inches='tight')
+        
         plt.show()
         plt.close()
         
@@ -1877,46 +1927,158 @@ class MicePairGraphs:
                 
                 
         # === Plot call ===
-        plt.figure(figsize=(6.33, 4.3))
-
-        # First axis
+        # --- Global style updates ---
+        plt.rcParams.update({
+            'font.size': 14,          # General font size
+            'axes.titlesize': 16,     # Title font size
+            'axes.labelsize': 14,     # X/Y label font size
+            'xtick.labelsize': 12,    # X tick label size
+            'ytick.labelsize': 12,    # Y tick label size
+            'legend.fontsize': 12,    # Legend font size
+            'axes.linewidth': 1.5     # Border (spine) line width
+        })
+        
+        # =========================
+        # 1️⃣ Combined Graph (waiting + x-distance)
+        # =========================
+        plt.figure(figsize=(8, 6))
         ax1 = plt.gca()
-        self.plot_by_exp_idx(waiting0_counts, trial_counts, session_counts, label="0 Waiting", color="blue", ax=ax1)
-        self.plot_by_exp_idx(waiting1_counts, trial_counts, session_counts, label="1 Waiting", color="purple", ax=ax1)
-        self.plot_by_exp_idx(waiting2_counts, trial_counts, session_counts, label="2 Waiting", color="green", ax=ax1)
         
-        ax1.set_xlabel('Experiment Index', fontsize=15)
-        ax1.set_ylabel('Percent Waiting', fontsize=15)
-        ax1.grid(True, linestyle='--', alpha=0.6)
+        colors = ['#377EB8', '#984EA3', '#4DAF4A']  # blue, purple, green
         
-        # Second axis
-        ax2 = ax1.twinx()
-        self.plot_by_exp_idx(horizontalDistanceCounts, frameCounts, session_counts, label="x-dist", color="red", ax=ax2, multiplyBy100=False)
-        ax2.set_ylabel('Avg Horizontal Distance', fontsize=15)
+        # Waiting variability lines
+        self.plot_by_exp_idx(waiting0_counts, trial_counts, session_counts,
+                             label="0 Waiting", color=colors[0], ax=ax1)
+        self.plot_by_exp_idx(waiting1_counts, trial_counts, session_counts,
+                             label="1 Waiting", color=colors[1], ax=ax1)
+        self.plot_by_exp_idx(waiting2_counts, trial_counts, session_counts,
+                             label="2 Waiting", color=colors[2], ax=ax1)
         
-        # Combine legends from both axes
-        lines_1, labels_1 = ax1.get_legend_handles_labels()
-        lines_2, labels_2 = ax2.get_legend_handles_labels()
-        legend = ax1.legend(
-            lines_1 + lines_2,
-            labels_1 + labels_2,
-            fontsize=11,
-            frameon=True,          # show the legend box
-            facecolor='white',     # white background
-            edgecolor='black',     # black border
-            framealpha=1.0,
-            ncol = 2
-        )
-        legend.set_zorder(999)
-        ax1.add_artist(legend)
-        ax1.tick_params(axis='x', labelsize=13)     # bottom x-axis
-        ax1.tick_params(axis='y', labelsize=13)     # left y-axis
+        # Remove grid
+        ax1.grid(False)
+        ax1.set_xlabel('Experiment Index')
+        ax1.set_ylabel('Percent Waiting')
         ax1.set_ylim(0, 100)
-        ax2.tick_params(axis='y', labelsize=13)     # right y-axis
-        plt.title('Strategy Variability Throughout Training', fontsize=16)
+        
+        # Thicken lines & remove markers
+        for line in ax1.get_lines():
+            line.set_linewidth(3)
+            line.set_marker(None)
+        
+        # Add sync (horizontal distance)
+        ax2 = ax1.twinx()
+        self.plot_by_exp_idx(horizontalDistanceCounts, frameCounts, session_counts,
+                             label=None, color='red', ax=ax2, multiplyBy100=False)
+        
+        for line in ax2.get_lines():
+            line.set_linewidth(3)
+            line.set_marker(None)
+        
+        ax2.set_ylabel('Avg Horizontal Distance')
+        
+        # Legend only for waiting strategies
+        handles, labels = ax1.get_legend_handles_labels()
+        legend = ax1.legend(handles, labels,
+                            frameon=True,
+                            facecolor='white',
+                            edgecolor='black',
+                            framealpha=1.0,
+                            ncol=3,
+                            loc='upper right')
+        legend.set_zorder(999)
+        
+        # Remove top/right spines & thicken borders
+        for ax in [ax1, ax2]:
+            for spine in ax.spines.values():
+                spine.set_linewidth(2)
+            ax.spines['top'].set_visible(False)
+            ax.spines['right'].set_visible(False)
+        
+        plt.title('Strategy Variability Throughout Training')
         plt.tight_layout()
         if self.save:
-            plt.savefig(f'{self.prefix}StrategyVariabilityByExperimentIndex.png')
+            plt.savefig(f'{self.prefix}StrategyVariabilityByExperimentIndex.png', dpi=300, bbox_inches='tight')
+        plt.show()
+        plt.close()
+        
+        # =========================
+        # 2️⃣ Waiting Variability Only
+        # =========================
+        plt.figure(figsize=(8, 6))
+        ax = plt.gca()
+        
+        self.plot_by_exp_idx(waiting0_counts, trial_counts, session_counts,
+                             label="0 Waiting", color=colors[0], ax=ax)
+        self.plot_by_exp_idx(waiting1_counts, trial_counts, session_counts,
+                             label="1 Waiting", color=colors[1], ax=ax)
+        self.plot_by_exp_idx(waiting2_counts, trial_counts, session_counts,
+                             label="2 Waiting", color=colors[2], ax=ax)
+        
+        ax.set_xlabel('Experiment Index')
+        ax.set_ylabel('Percent Waiting')
+        ax.set_ylim(0, 100)
+        ax.grid(False)
+        
+        # Thicken lines & remove markers
+        for line in ax.get_lines():
+            line.set_linewidth(3)
+            line.set_marker(None)
+        
+        # Legend (waiting only)
+        handles, labels = ax.get_legend_handles_labels()
+        legend = ax.legend(handles, labels,
+                           frameon=True,
+                           facecolor='white',
+                           edgecolor='black',
+                           framealpha=1.0,
+                           ncol=3,
+                           loc='upper right')
+        legend.set_zorder(999)
+        
+        # Remove top/right spines & thicken borders
+        for spine in ax.spines.values():
+            spine.set_linewidth(2)
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+        
+        plt.title('Waiting Variability Throughout Training')
+        plt.tight_layout()
+        if self.save:
+            plt.savefig(f'{self.prefix}WaitingVariabilityOnly.png', dpi=300, bbox_inches='tight')
+        plt.show()
+        plt.close()
+        
+        # =========================
+        # 3️⃣ X-Distance (Synchronization) Only
+        # =========================
+        plt.figure(figsize=(8, 6))
+        ax = plt.gca()
+        
+        self.plot_by_exp_idx(horizontalDistanceCounts, frameCounts, session_counts,
+                             label=None, color='red', ax=ax, multiplyBy100=False)
+        
+        for line in ax.get_lines():
+            line.set_linewidth(3)
+            line.set_marker(None)
+        
+        ax.set_xlabel('Experiment Index')
+        ax.set_ylabel('Avg Horizontal Distance')
+        ax.grid(False)
+        
+        # Remove legend (no need)
+        if ax.get_legend():
+            ax.get_legend().remove()
+        
+        # Remove top/right spines & thicken borders
+        for spine in ax.spines.values():
+            spine.set_linewidth(2)
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+        
+        plt.title('Average Horizontal Distance Throughout Training')
+        plt.tight_layout()
+        if self.save:
+            plt.savefig(f'{self.prefix}XDistanceThroughoutTraining.png', dpi=300, bbox_inches='tight')
         plt.show()
         plt.close()
             
@@ -2189,7 +2351,9 @@ class MicePairGraphs:
     
         return levBiasGroup
                 
-  
+    '''def doesEarlyGazingResultinLaterSuccess(self):
+        for group_idx, group in enumerate(self.experimentGroups):
+            for '''
     
   
 
@@ -2213,7 +2377,10 @@ def getGroupRatPairs():
 
 data = getGroupRatPairs()
 pairGraphs = MicePairGraphs(data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7], data[8], data[9])
-pairGraphs.lineGraphLeverBias()
+pairGraphs.lineGraphStrategies()
+pairGraphs.lineGraphGazing()
+
+#pairGraphs.lineGraphLeverBias()
 
 
 #pairGraphs.lineGraphSuccessGazingInteractions()
@@ -2955,7 +3122,7 @@ class multiFileGraphs:
         It performs two major analyses:
         
         1. **Max vs. Min Lever Presses Pie Chart**:
-            - Calculates the total number of lever presses made by the most active lever per trial (Max).
+            - Calculates the total number of lever presses made by the most active lever per trial per rat (Max).
             - Compares this against the number of presses made by the less active lever (Min).
             - Produces a pie chart showing the proportion of Max vs. Min lever usage across all trials.
     
@@ -2967,8 +3134,102 @@ class multiFileGraphs:
                 - "Mag w/ Unknown RatID": Reward collected, but unable to identify which rat collected it.
             - Separate pie charts are generated for successful and failed trials to highlight behavioral patterns
               in different trial outcomes.
-         
+            
+        4. Crossover Behavior Across Trials
+            - Saves the data into a CSV
+            - Finds the proportion of the trials in which the rats go to the same lever and press as they did in the previous trial/how often they go to both/how often they don't press
+        
         """
+        
+        
+        '''
+        Crossover Behavior Across Trials
+            - Saves the data into a CSV
+            - Finds the proportion of the trials in which the rats go to the same lever and press as they did in the previous trial/how often they go to both/how often they don't press
+        '''
+        # Data accumulators
+        total_same, total_diff, total_none, total_trials = 0, 0, 0, 0
+        all_same_percentages = []  # stores same-lever % for each trial index across sessions
+
+        # Iterate through experiments
+        for exp in experiments:
+            lev = exp.lev
+            same, diff, none = 0, 0, 0
+
+            # Get first lever per trial for both rats
+            rat0 = lev.leverPreferenceFirstPressPerTrial(0)
+            rat1 = lev.leverPreferenceFirstPressPerTrial(1)
+            num_trials = min(len(rat0), len(rat1))
+
+            same_list = []  # track if same lever per trial for rat0+rat1
+            for rat_data in [rat0, rat1]:
+                for i in range(1, num_trials):
+                    if rat_data[i] == -1:
+                        none += 1
+                        same_list.append(0)
+                    elif rat_data[i] == rat_data[i - 1]:
+                        same += 1
+                        same_list.append(1)
+                    else:
+                        diff += 1
+                        same_list.append(0)
+                    total_trials += 1
+
+            # Update totals
+            total_same += same
+            total_diff += diff
+            total_none += none
+
+            # Store same lever behavior over trials for line graph averaging
+            all_same_percentages.append(same_list)
+
+        # Compute overall proportions
+        total_valid = total_same + total_diff + total_none
+        same_prop = total_same / total_valid * 100
+        diff_prop = total_diff / total_valid * 100
+        none_prop = total_none / total_valid * 100
+
+        # Save CSV summary
+        '''with open(save_path, "w", newline="") as csvfile:
+            writer = csv.writer(csvfile)
+            writer.writerow(["Category", "Count", "Percentage"])
+            writer.writerow(["Same Lever", total_same, same_prop])
+            writer.writerow(["Different Lever", total_diff, diff_prop])
+            writer.writerow(["No Lever", total_none, none_prop])
+
+        print(f"Results saved to {save_path}")'''
+
+        # ---- PIE CHART ----
+        labels = ["Same Lever", "Different Lever", "No Lever"]
+        sizes = [same_prop, diff_prop, none_prop]
+        plt.figure(figsize=(6, 6))
+        plt.pie(sizes, labels=labels, autopct='%1.1f%%', startangle=90)
+        plt.title("Lever Press Behavior Proportions")
+        plt.tight_layout()
+        plt.show()
+
+        # ---- LINE GRAPH (Chunked averages across sessions) ----
+        # Pad shorter sessions with NaNs and average across them
+        max_len = max(len(x) for x in all_same_percentages)
+        same_matrix = np.array([np.pad(x, (0, max_len - len(x)), constant_values=np.nan) for x in all_same_percentages])
+        avg_same_per_trial = np.nanmean(same_matrix, axis=0) * 100  # % same per trial
+
+        # Chunk averaging (1–5, 6–10, etc.)
+        chunk_indices = range(0, len(avg_same_per_trial), chunk_size)
+        chunk_means = [np.nanmean(avg_same_per_trial[i:i + chunk_size]) for i in chunk_indices]
+        chunk_labels = [f"{i+1}-{i+chunk_size}" for i in chunk_indices]
+
+        plt.figure(figsize=(8, 5))
+        plt.plot(chunk_labels, chunk_means, marker='o', linestyle='-', linewidth=2)
+        plt.xlabel(f"Trial Chunks (size={chunk_size})")
+        plt.ylabel("% Same Lever Press")
+        plt.title("Average Same-Lever Behavior Across Sessions")
+        plt.grid(True)
+        plt.tight_layout()
+        plt.show()
+                
+        print("\n\nEND OF NEW ANALYSIS\n\n")
+        
         
         #Max vs. Min Lever Preference
         numMaxCount = 0
@@ -6750,7 +7011,7 @@ class multiFileGraphs:
                         print("dist: ", dist, ";    time_waited: ", time_waited)
                 
                 
-                #Waiting Before Queue Analysis
+                #Waiting Before Cue Analysis
                 t = f_begin - 1
                 rat0_waiting = 0
                 rat1_waiting = 0
