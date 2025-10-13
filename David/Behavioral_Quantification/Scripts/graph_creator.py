@@ -1533,7 +1533,17 @@ class MicePairGraphs:
            color=color,
            linewidth=3,
            marker=None,
-           label=None  # Remove label since no legend should show trend info
+           label=label  # Remove label since no legend should show trend info
+        )
+        
+        # === Plot dashed trendline ===
+        ax.plot(
+            x, regline,
+            color=color,
+            linestyle='--',
+            linewidth=3,
+            marker=None,
+            label=None  # keep out of legend
         )
        
         # === Optional per-rat lines (light gray, thin) ===
