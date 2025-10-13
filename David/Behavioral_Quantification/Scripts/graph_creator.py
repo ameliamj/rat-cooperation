@@ -32,7 +32,8 @@ from scipy.stats import ttest_ind
 from mpl_toolkits.mplot3d import Axes3D
 from datetime import datetime
 
-
+import csv
+import os
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
 
@@ -1694,6 +1695,48 @@ class MicePairGraphs:
                     frame_counts_KL[exp_idx] += totFrames
                     session_counts_KL[exp_idx] += 1
     
+        csv_filename = f"{self.prefix}GazingData.csv"
+
+        # Create the CSV file and write headers + data
+        with open(csv_filename, mode='w', newline='') as csvfile:
+            fieldnames = [
+                'exp_idx',
+                'gaze_counts_all',
+                'frame_counts_all',
+                'session_counts_all',
+                'gaze_counts_KL',
+                'frame_counts_KL',
+                'session_counts_KL',
+                'gaze_counts_EB',
+                'frame_counts_EB',
+                'session_counts_EB'
+            ]
+            writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+            writer.writeheader()
+        
+            # Use all experiment indices observed (union of all keys)
+            all_exp_indices = sorted(set(
+                list(gaze_counts.keys()) +
+                list(gaze_counts_KL.keys()) +
+                list(gaze_counts_EB.keys())
+            ))
+        
+            for exp_idx in all_exp_indices:
+                writer.writerow({
+                    'exp_idx': exp_idx,
+                    'gaze_counts_all': gaze_counts.get(exp_idx, 0),
+                    'frame_counts_all': frame_counts.get(exp_idx, 0),
+                    'session_counts_all': session_counts.get(exp_idx, 0),
+                    'gaze_counts_KL': gaze_counts_KL.get(exp_idx, 0),
+                    'frame_counts_KL': frame_counts_KL.get(exp_idx, 0),
+                    'session_counts_KL': session_counts_KL.get(exp_idx, 0),
+                    'gaze_counts_EB': gaze_counts_EB.get(exp_idx, 0),
+                    'frame_counts_EB': frame_counts_EB.get(exp_idx, 0),
+                    'session_counts_EB': session_counts_EB.get(exp_idx, 0)
+                })
+        
+        print(f"\nSaved gazing data to CSV file: {os.path.abspath(csv_filename)}")    
+    
         # === Plot call ===
         # --- Global style updates ---
         plt.rcParams.update({
@@ -1925,7 +1968,40 @@ class MicePairGraphs:
                 waiting2_counts[exp_idx] += tempWait2
                 session_counts[exp_idx] += 1
                 
-                
+        
+        # Combine all data into one table for export
+        csv_filename = f"{self.prefix}StrategyVariabilityData.csv"
+        
+        # Create the CSV file and write headers + data
+        with open(csv_filename, mode='w', newline='') as csvfile:
+            fieldnames = [
+                'exp_idx', 
+                'waiting0_counts', 
+                'waiting1_counts', 
+                'waiting2_counts', 
+                'trial_counts', 
+                'session_counts', 
+                'horizontalDistanceCounts', 
+                'frameCounts'
+            ]
+            writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+            writer.writeheader()
+            
+            # Iterate over all exp indices found in trial_counts (base reference)
+            for exp_idx in sorted(trial_counts.keys()):
+                writer.writerow({
+                    'exp_idx': exp_idx,
+                    'waiting0_counts': waiting0_counts.get(exp_idx, 0),
+                    'waiting1_counts': waiting1_counts.get(exp_idx, 0),
+                    'waiting2_counts': waiting2_counts.get(exp_idx, 0),
+                    'trial_counts': trial_counts.get(exp_idx, 0),
+                    'session_counts': session_counts.get(exp_idx, 0),
+                    'horizontalDistanceCounts': horizontalDistanceCounts.get(exp_idx, 0),
+                    'frameCounts': frameCounts.get(exp_idx, 0),
+                })
+        
+        print(f"\nSaved data for graph to CSV file: {os.path.abspath(csv_filename)}")
+        
         # === Plot call ===
         # --- Global style updates ---
         plt.rcParams.update({
@@ -2378,7 +2454,7 @@ def getGroupRatPairs():
 data = getGroupRatPairs()
 pairGraphs = MicePairGraphs(data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7], data[8], data[9])
 pairGraphs.lineGraphStrategies()
-pairGraphs.lineGraphGazing()
+#pairGraphs.lineGraphGazing()
 
 #pairGraphs.lineGraphLeverBias()
 
