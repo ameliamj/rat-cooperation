@@ -2081,7 +2081,7 @@ class MicePairGraphs:
         # Add sync (horizontal distance)
         ax2 = ax1.twinx()
         self.plot_by_exp_idx(horizontalDistanceCounts, frameCounts, session_counts,
-                             label=None, color='red', ax=ax2, multiplyBy100=False)
+                             label="x-dist", color='red', ax=ax2, multiplyBy100=False)
         
         for line in ax2.get_lines():
             line.set_linewidth(3)
