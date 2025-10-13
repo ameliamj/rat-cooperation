@@ -2160,6 +2160,7 @@ class MicePairGraphs:
             plt.savefig(f'{self.prefix}WaitingVariabilityOnly.png', dpi=300, bbox_inches='tight')
         plt.show()
         plt.close()
+        print("test")
         
         # =========================
         # 3️⃣ X-Distance (Synchronization) Only
