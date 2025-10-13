@@ -1732,7 +1732,7 @@ class MicePairGraphs:
         # Thicken lines and remove markers
         for line in ax.get_lines():
             line.set_linewidth(3)
-            line.set_marker(None)
+            line.set_marker("None")
         
         # Legend
         handles, labels = ax.get_legend_handles_labels()
@@ -1963,7 +1963,7 @@ class MicePairGraphs:
         # Thicken lines & remove markers
         for line in ax1.get_lines():
             line.set_linewidth(3)
-            line.set_marker(None)
+            line.set_marker("None")
         
         # Add sync (horizontal distance)
         ax2 = ax1.twinx()
@@ -1972,7 +1972,7 @@ class MicePairGraphs:
         
         for line in ax2.get_lines():
             line.set_linewidth(3)
-            line.set_marker(None)
+            line.set_marker("None")
         
         ax2.set_ylabel('Avg Horizontal Distance')
         
@@ -2022,7 +2022,7 @@ class MicePairGraphs:
         # Thicken lines & remove markers
         for line in ax.get_lines():
             line.set_linewidth(3)
-            line.set_marker(None)
+            line.set_marker("None")
         
         # Legend (waiting only)
         handles, labels = ax.get_legend_handles_labels()
@@ -2059,7 +2059,7 @@ class MicePairGraphs:
         
         for line in ax.get_lines():
             line.set_linewidth(3)
-            line.set_marker(None)
+            line.set_marker("None")
         
         ax.set_xlabel('Experiment Index')
         ax.set_ylabel('Avg Horizontal Distance')
