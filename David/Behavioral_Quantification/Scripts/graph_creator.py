@@ -2069,7 +2069,6 @@ class MicePairGraphs:
         
         # Remove grid
         ax1.grid(False)
-        ax1.set_xlabel('Experiment Index')
         ax1.set_ylabel('Percent Waiting')
         ax1.set_ylim(0, 100)
         
@@ -2089,6 +2088,7 @@ class MicePairGraphs:
         
         ax2.set_ylabel('Avg Horizontal Distance')
         
+        
         # Legend only for waiting strategies
         handles, labels = ax1.get_legend_handles_labels()
         legend = ax1.legend(handles, labels,
@@ -2099,6 +2099,8 @@ class MicePairGraphs:
                             ncol=3,
                             loc='upper right')
         legend.set_zorder(999)
+        
+        ax1.set_xlabel('Experiment Index')
         
         # Remove top/right spines & thicken borders
         for ax in [ax1, ax2]:
@@ -2129,7 +2131,7 @@ class MicePairGraphs:
         
         ax.set_xlabel('Experiment Index')
         ax.set_ylabel('Percent Waiting')
-        ax.set_ylim(0, 100)
+        ax.set_ylim(0, 80)
         ax.grid(False)
         
         # Thicken lines & remove markers
@@ -2491,8 +2493,8 @@ def getGroupRatPairs():
 
 data = getGroupRatPairs()
 pairGraphs = MicePairGraphs(data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7], data[8], data[9])
-#pairGraphs.lineGraphStrategies()
-pairGraphs.lineGraphGazing()
+pairGraphs.lineGraphStrategies()
+#pairGraphs.lineGraphGazing()
 
 #pairGraphs.lineGraphLeverBias()
 
