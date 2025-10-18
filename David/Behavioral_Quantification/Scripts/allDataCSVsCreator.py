@@ -1007,7 +1007,13 @@ class allDataCSVsCreator:
         # === Final Step: Save Data ===
         if trial_data:
             df = pd.DataFrame(trial_data)
+            
+            # Sort by SessionID (alphabetically) and AbsTime (numerically)
+            df = df.sort_values(by=["SessionID", "AbsTime"], ascending=[True, True])
+        
+            # Save to CSV
             df.to_csv(f'event_metrics_standard{self.post}.csv', index=False)
+            print(f"[INFO] Event CSV successfully created: event_metrics_standard{self.post}.csv")
         else:
             print("[WARNING] No event data found — CSV not created.")
     
