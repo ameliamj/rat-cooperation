@@ -1007,7 +1007,7 @@ class allDataCSVsCreator:
         # === Final Step: Save Data ===
         if trial_data:
             df = pd.DataFrame(trial_data)
-            df.to_csv(f'trial_metrics_standard{self.post}.csv', index=False)
+            df.to_csv(f'event_metrics_standard{self.post}.csv', index=False)
         else:
             print("[WARNING] No event data found — CSV not created.")
     
