@@ -1007,9 +1007,7 @@ class allDataCSVsCreator:
         # === Final Step: Save Data ===
         if trial_data:
             df = pd.DataFrame(trial_data)
-            output_path = os.path.join(self.output_dir, "EventData_AllSessions.csv")
-            df.to_csv(output_path, index=False)
-            print(f"[INFO] Event CSV successfully created at: {output_path}")
+            df.to_csv(f'trial_metrics_standard{self.post}.csv', index=False)
         else:
             print("[WARNING] No event data found — CSV not created.")
     
