@@ -45,9 +45,9 @@ class allDataCSVsCreator:
         posFiles = fe.getPosDatapath()
         dates = fe.getDatesList()
         sessions = fe.getSessionIDList()
-        dates = dates.tolist()
+        #dates = dates.tolist()
         #sessions = sessions.tolist()
-        print("dates: ", dates)
+        #print("dates: ", dates)
         familiarity = fe.getFamiliarityList()
         transparency = fe.getBarrierTransparencyList()
         ratPairs = fe.getRatPairList()
@@ -1022,5 +1022,5 @@ metadata_smol = "/gpfs/radev/project/saxena/drb83/rat-cooperation/David/Behavior
 metadata_filtered = "/gpfs/radev/project/saxena/drb83/rat-cooperation/David/Behavioral_Quantification/Sorted_Data_Files/Filtered.csv"
 
 creator = allDataCSVsCreator(metadata_smol, post="")
-creator.createTrialCSVStandard()
-#creator.createEventCSVStandard()
+#creator.createTrialCSVStandard()
+creator.createEventCSVStandard()
