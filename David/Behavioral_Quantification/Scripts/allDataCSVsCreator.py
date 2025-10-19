@@ -982,38 +982,38 @@ class allDataCSVsCreator:
                 
                 # Handle case where interaction continues until the final frame
                 if in_event and startFrame is not None:
-                endFrame = len(isInteracting) - 1
-                absTime = startFrame / fps
-                duration_frames = endFrame - startFrame + 1
+                    endFrame = len(isInteracting) - 1
+                    absTime = startFrame / fps
+                    duration_frames = endFrame - startFrame + 1
+                    
+                    event_dict = {
+                        "SessionID": sessionID,
+                        "Date": date,
+                        "RatPair": rat_pair,
+                        "Familiarity": familiarity,
+                        "BarrierTransparency": barrier_transparency,
+                        "FPS": fps,
+                        "EventType": "interaction",
+                        "AbsTime": absTime,
+                        "TrialTime": np.nan,
+                        "Length_frames": duration_frames,
+                        "RatID": np.nan,
+                        "Location_Rat0": pos.returnRatLocationTime(0, startFrame),
+                        "Location_Rat1": pos.returnRatLocationTime(1, startFrame),
+                        "X_Coord_Rat0": pos.returnRatHBPosition(0, startFrame)[0],
+                        "Y_Coord_Rat0": pos.returnRatHBPosition(0, startFrame)[1],
+                        "X_Coord_Rat1": pos.returnRatHBPosition(1, startFrame)[0],
+                        "Y_Coord_Rat1": pos.returnRatHBPosition(1, startFrame)[1],
+                    }
                 
-                event_dict = {
-                    "SessionID": sessionID,
-                    "Date": date,
-                    "RatPair": rat_pair,
-                    "Familiarity": familiarity,
-                    "BarrierTransparency": barrier_transparency,
-                    "FPS": fps,
-                    "EventType": "interaction",
-                    "AbsTime": absTime,
-                    "TrialTime": np.nan,
-                    "Length_frames": duration_frames,
-                    "RatID": np.nan,
-                    "Location_Rat0": pos.returnRatLocationTime(0, startFrame),
-                    "Location_Rat1": pos.returnRatLocationTime(1, startFrame),
-                    "X_Coord_Rat0": pos.returnRatHBPosition(0, startFrame)[0],
-                    "Y_Coord_Rat0": pos.returnRatHBPosition(0, startFrame)[1],
-                    "X_Coord_Rat1": pos.returnRatHBPosition(1, startFrame)[0],
-                    "Y_Coord_Rat1": pos.returnRatHBPosition(1, startFrame)[1],
-                }
-            
-                dx = event_dict["X_Coord_Rat0"] - event_dict["X_Coord_Rat1"]
-                dy = event_dict["Y_Coord_Rat0"] - event_dict["Y_Coord_Rat1"]
-                event_dict["Avg_InterRat_Distance"] = np.sqrt(dx**2 + dy**2)
-            
-                event_dict[f"Avg_Gazing_±{gazingBeforeAfter}s"] = np.nan
-                event_dict[f"Avg_Interactions_±{gazingBeforeAfter}s"] = np.nan
+                    dx = event_dict["X_Coord_Rat0"] - event_dict["X_Coord_Rat1"]
+                    dy = event_dict["Y_Coord_Rat0"] - event_dict["Y_Coord_Rat1"]
+                    event_dict["Avg_InterRat_Distance"] = np.sqrt(dx**2 + dy**2)
                 
-                trial_data.append(event_dict)
+                    event_dict[f"Avg_Gazing_±{gazingBeforeAfter}s"] = np.nan
+                    event_dict[f"Avg_Interactions_±{gazingBeforeAfter}s"] = np.nan
+                    
+                    trial_data.append(event_dict)
     
         # === Final Step: Save Data ===
         if trial_data:
