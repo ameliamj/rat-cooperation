@@ -1037,5 +1037,5 @@ metadata_smol = "/gpfs/radev/project/saxena/drb83/rat-cooperation/David/Behavior
 metadata_filtered = "/gpfs/radev/project/saxena/drb83/rat-cooperation/David/Behavioral_Quantification/Sorted_Data_Files/Filtered.csv"
 
 creator = allDataCSVsCreator(metadata_filtered, post="")
-#creator.createTrialCSVStandard()
-creator.createEventCSVStandard()
+creator.createTrialCSVStandard()
+#creator.createEventCSVStandard()
