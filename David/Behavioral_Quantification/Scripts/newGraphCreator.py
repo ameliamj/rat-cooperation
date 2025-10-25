@@ -620,6 +620,7 @@ def minRequirements():
     fe = fileExtractor(minReq)
     fe.data = fe.deleteBadNaN()
     fe.deleteOnlyFullyInvalid()
+    fe.filterOutBadNums()
     fpsList, totFramesList = fe.returnFPSandTotFrames()
     initial_nan_list = fe.returnNaNPercentage()
     dates = fe.getDatesList()

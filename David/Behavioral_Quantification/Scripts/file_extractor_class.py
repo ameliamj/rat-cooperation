@@ -92,6 +92,10 @@ class fileExtractor:
         """
         return list(self.data.columns)
     
+    def filterOutBadNums(self):
+        badNum = "041624"
+        self.data = self.data[self.data['vid'].str[:6] != badNum]
+    
     def deleteBadNaN(self):
         self.data = self.data[self.data['initial nan'] <= 0.2]
         
