@@ -550,14 +550,16 @@ class fileExtractor:
             if row['test/train'] == 'test':
                 return row['vid']
             elif row['test/train'] == 'train':
-                original = row['vid']
+                return row['vid']
+                
+                '''original = row['vid']
                 if len(original) < 41:
                     return original  # fallback for malformed or short vids
                 # First 7 chars
                 part1 = original[:7]
                 # Skip 21 characters (from index 7 to 28), take next 13 (index 28 to 41)
                 part2 = original[28:41]
-                return part1 + part2
+                return part1 + part2'''
             else:
                 return None  # or raise an error/log
 
