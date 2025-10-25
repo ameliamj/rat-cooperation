@@ -1039,6 +1039,6 @@ metadata_filtered = "/gpfs/radev/project/saxena/drb83/rat-cooperation/David/Beha
 minReqs = "/gpfs/radev/project/saxena/drb83/rat-cooperation/David/Behavioral_Quantification/Sorted_Data_Files/dyed_preds_min_requirements_valid.csv"
 
 
-creator = allDataCSVsCreator(minReqs, post="")
+creator = allDataCSVsCreator(fiberphoto_path, post="_fiberPhoto")
 #creator.createTrialCSVStandard()
 creator.createEventCSVStandard()
