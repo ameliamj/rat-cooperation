@@ -698,7 +698,7 @@ class fileExtractor:
             videoName = row["vid"] + ".mp4"
             #zero = "" if row["test/train"] == "test" else "0" 
             zero = ""
-            videos = "" if row["test/train"] == "train" else "Videos/"
+            videos = "Videos/" if row["test/train"] == "train" else "Videos/"
             return f"{base_path}/{folder}/{zero}{row['session']}/{videos}{videoName}" if pd.isna(row["vid"]) == False and pd.isna(row["session"]) == False else None
         
         def getFPSandTotFrames(videoPath):
