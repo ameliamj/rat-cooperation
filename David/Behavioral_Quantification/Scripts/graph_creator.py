@@ -2468,6 +2468,153 @@ class MicePairGraphs:
     
         return levBiasGroup
                 
+    
+    def lineGraphGazingObjects(self):
+        '''
+        Plots average gazing at objects throughout training
+        '''
+        
+        gazingLevCounts = {}    
+        gazingMagCounts = {}    
+        gazingOtherCounts = {}
+        frame_counts = {}
+        session_counts = {}
+    
+        for group_idx, group in enumerate(self.experimentGroups):
+            if (len(group) < 5):
+                continue
+            for exp_idx, exp in enumerate(group):
+                lev = exp.lev
+                pos = exp.pos
+                fps = exp.fps
+    
+                totFrames = pos.returnNumFrames()
+                
+                levGazingFrames0 = np.sum(pos.returnIsLookingAtObjects(0))
+                magGazingFrames0 = np.sum(pos.returnIsLookingAtObjects(0, target="mag"))
+                otherGazingFrames0 = np.sum(pos.returnIsGazing(0))
+                
+                levGazingFrames1 = np.sum(pos.returnIsLookingAtObjects(1))
+                magGazingFrames1 = np.sum(pos.returnIsLookingAtObjects(1, target="mag"))
+                otherGazingFrames1 = np.sum(pos.returnIsGazing(1))
+                
+                tempGazeLev = (levGazingFrames0 + levGazingFrames1)/2
+                tempGazeMag = (magGazingFrames0 + magGazingFrames1)/2
+                tempGazeOther = (otherGazingFrames0 + otherGazingFrames1)/2
+                
+                # Initialize all dicts
+                for d in [frame_counts, gazingLevCounts, gazingMagCounts, gazingOtherCounts, session_counts]:
+                    if exp_idx not in d:
+                        d[exp_idx] = 0                
+                    
+                
+                #Waiting Strategy
+                frame_counts[exp_idx] += totFrames
+                gazingLevCounts[exp_idx] += tempGazeLev
+                gazingMagCounts[exp_idx] += tempGazeMag
+                gazingOtherCounts[exp_idx] += tempGazeOther
+                session_counts[exp_idx] += 1
+                
+        
+        # Combine all data into one table for export
+        '''csv_filename = f"{self.prefix}GazingVariabilityData.csv"
+        
+        # Create the CSV file and write headers + data
+        with open(csv_filename, mode='w', newline='') as csvfile:
+            fieldnames = [
+                'exp_idx', 
+                'waiting0_counts', 
+                'waiting1_counts', 
+                'waiting2_counts', 
+                'trial_counts', 
+                'session_counts', 
+                'horizontalDistanceCounts', 
+                'frameCounts'
+            ]
+            writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+            writer.writeheader()
+            
+            # Iterate over all exp indices found in trial_counts (base reference)
+            for exp_idx in sorted(trial_counts.keys()):
+                writer.writerow({
+                    'exp_idx': exp_idx,
+                    'waiting0_counts': waiting0_counts.get(exp_idx, 0),
+                    'waiting1_counts': waiting1_counts.get(exp_idx, 0),
+                    'waiting2_counts': waiting2_counts.get(exp_idx, 0),
+                    'trial_counts': trial_counts.get(exp_idx, 0),
+                    'session_counts': session_counts.get(exp_idx, 0),
+                    'horizontalDistanceCounts': horizontalDistanceCounts.get(exp_idx, 0),
+                    'frameCounts': frameCounts.get(exp_idx, 0),
+                })
+        
+        print(f"\nSaved data for graph to CSV file: {os.path.abspath(csv_filename)}")'''
+        
+        # === Plot call ===
+        # --- Global style updates ---
+        plt.rcParams.update({
+            'font.size': 14,          # General font size
+            'axes.titlesize': 16,     # Title font size
+            'axes.labelsize': 14,     # X/Y label font size
+            'xtick.labelsize': 12,    # X tick label size
+            'ytick.labelsize': 12,    # Y tick label size
+            'legend.fontsize': 12,    # Legend font size
+            'axes.linewidth': 1.5     # Border (spine) line width
+        })
+        
+        # =========================
+        # 1️⃣ Combined Graph (waiting + x-distance)
+        # =========================
+        plt.figure(figsize=(8, 6))
+        ax1 = plt.gca()
+        
+        colors = ['#377EB8', '#984EA3', '#4DAF4A']  # blue, purple, green
+        
+        # Waiting variability lines
+        self.plot_by_exp_idx(gazingLevCounts, frame_counts, session_counts,
+                             label="Lever", color=colors[0], ax=ax1)
+        self.plot_by_exp_idx(gazingMagCounts, frame_counts, session_counts,
+                             label="Magazine", color=colors[1], ax=ax1)
+        self.plot_by_exp_idx(gazingOtherCounts, frame_counts, session_counts,
+                             label="Other Rat", color=colors[2], ax=ax1)
+        
+        # Remove grid
+        ax1.grid(False)
+        ax1.set_ylabel('Percent Gazing')
+        ax1.set_ylim(0, 100)
+        
+        # Thicken lines & remove markers
+        for line in ax1.get_lines():
+            line.set_linewidth(3)
+            line.set_marker("None")
+        
+        # Legend only for waiting strategies
+        handles, labels = ax1.get_legend_handles_labels()
+        legend = ax1.legend(handles, labels,
+                            frameon=True,
+                            facecolor='white',
+                            edgecolor='black',
+                            framealpha=1.0,
+                            ncol=3,
+                            loc='upper right')
+        legend.set_zorder(999)
+        
+        ax1.xaxis.set_label_position('bottom')
+        ax1.set_xlabel('Experiment Index')
+        
+        # Remove top/right spines & thicken borders
+        for spine in ax1.spines.values():
+            spine.set_linewidth(2)
+            ax1.spines['top'].set_visible(False)
+            ax1.spines['right'].set_visible(False)
+        
+        plt.title('Gazing Variability Throughout Training')
+        plt.tight_layout()
+        if self.save:
+            plt.savefig(f'{self.prefix}GazingVariabilityObjectsByExperimentIndex.png', dpi=300, bbox_inches='tight')
+        plt.show()
+        plt.close()
+    
+    
     '''def doesEarlyGazingResultinLaterSuccess(self):
         for group_idx, group in enumerate(self.experimentGroups):
             for '''
@@ -2494,7 +2641,8 @@ def getGroupRatPairs():
 
 data = getGroupRatPairs()
 pairGraphs = MicePairGraphs(data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7], data[8], data[9])
-pairGraphs.lineGraphStrategies()
+pairGraphs.lineGraphGazingObjects()
+#pairGraphs.lineGraphStrategies()
 #pairGraphs.lineGraphGazing()
 
 #pairGraphs.lineGraphLeverBias()
