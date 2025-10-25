@@ -384,10 +384,13 @@ class dataAnalysisRegular:
         otherGazingPerSession = []
         levGazingPerSession = []
         magGazingPerSession = []
+        numFramesPerSession = []
         
         for exp in self.experiments:
             pos = exp.pos
             lev = exp.lev
+            
+            numFrames = exp.endFrame
             
             levGazingFrames0 = np.sum(pos.returnIsLookingAtObjects(0))
             magGazingFrames0 = np.sum(pos.returnIsLookingAtObjects(0, target="mag"))
@@ -396,8 +399,18 @@ class dataAnalysisRegular:
             levGazingFrames1 = np.sum(pos.returnIsLookingAtObjects(1))
             magGazingFrames1 = np.sum(pos.returnIsLookingAtObjects(1, target="mag"))
             otherGazingFrames1 = np.sum(pos.returnIsGazing(1))
+            
+            
+            otherGazingPerSession.append(levGazingFrames0)
+            otherGazingPerSession.append(levGazingFrames1)
+            levGazingPerSession.append(levGazingFrames0)
+            levGazingPerSession.append(levGazingFrames1)
+            magGazingPerSession.append(magGazingFrames0)
+            magGazingPerSession.append(magGazingFrames1)
+            numFramesPerSession.append(numFrames)
+            numFramesPerSession.append(numFrames)
         
-        
+        return otherGazingPerSession, levGazingPerSession, magGazingPerSession, numFramesPerSession
     
         
 
@@ -644,7 +657,34 @@ data = dataAnalysisRegular(mag_files, lev_files, pos_files, fpsList, totFramesLi
 # Create the graph object
 graphs = createGraphs()
 
-# Pie chart: Proportion of trials where the rat at lever first pressed it first
+
+
+#
+# gazing At Other vs. Lever vs. Magazine Across Sessions
+#
+
+# Extract data from your function
+otherGazingPerSession, levGazingPerSession, magGazingPerSession, numFramesPerSession = data.gazingAtOtherVsLevVsMag()
+
+# Convert to percentages for each session
+percentGazingOther = [o / n * 100 for o, n in zip(otherGazingPerSession, numFramesPerSession)]
+percentGazingLev   = [l / n * 100 for l, n in zip(levGazingPerSession, numFramesPerSession)]
+percentGazingMag   = [m / n * 100 for m, n in zip(magGazingPerSession, numFramesPerSession)]
+
+# Labels and title
+labels = ["Other", "Lever", "Magazine"]
+data_list = [percentGazingOther, percentGazingLev, percentGazingMag]
+
+ylabel = "Percent of Time Gazing (%)"
+title = "Comparison of Gazing Behavior Across Sessions"
+filename = "percent_gazing_objects_vs_rat_comparison.png"
+
+# Call your plotting function
+graphs.plot_bar(data_list, labels, ylabel, title, filename)
+
+
+
+'''# Pie chart: Proportion of trials where the rat at lever first pressed it first
 matching, total = data.percentOfTimeARatWasAtLeverFirstandPresseditFirst(onlyTrialsWithOneRatatCue=False)
 if total > 0:
     data_pie = [matching, total - matching]
@@ -673,7 +713,7 @@ graphs.plot_scatter(
     ylabel="Success Rate",
     filename="scatter_waitFirstDisp_vs_SuccessRate",
     title="Wait First Disparity vs. Success Rate"
-)
+)'''
   
 
 
