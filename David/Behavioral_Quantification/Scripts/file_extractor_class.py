@@ -131,7 +131,8 @@ class fileExtractor:
         self.data = self.data[
             (self.data['trial type'] == 'coop') &
             (self.data['levers'] == True) &
-            (self.data['mags'] == True)
+            (self.data['mags'] == True) &
+            (self.data['pred'] == True)
         ]
         
         self.data = self.deleteBadNaN()
@@ -987,8 +988,8 @@ def saveAllCSVs():
 #saveAllCSVs()
 
 
-#fe = fileExtractor(fixedExpanded)
-#fe.deleteOnlyFullyInvalid(saveFile=True)
+fe = fileExtractor(fixedExpanded)
+fe.deleteOnlyFullyInvalid(saveFile=True)
 
 
 
