@@ -1039,5 +1039,5 @@ minReqs = "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Beha
 
 
 creator = allDataCSVsCreator(minReqs, post="")
-#creator.createTrialCSVStandard()
-creator.createEventCSVStandard()
+creator.createTrialCSVStandard()
+#creator.createEventCSVStandard()
