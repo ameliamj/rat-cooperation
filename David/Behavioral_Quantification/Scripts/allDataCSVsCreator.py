@@ -1032,6 +1032,7 @@ class allDataCSVsCreator:
         a = 1
         
     
+fiberphoto_path = "/gpfs/radev/project/saxena/drb83/rat-cooperation/David/Behavioral_Quantification/Sorted_Data_Files/fiber_photo.csv"
 metadata_path = "/gpfs/radev/project/saxena/drb83/rat-cooperation/David/Behavioral_Quantification/Sorted_Data_Files/dyed_preds_fixed_expanded.csv"
 metadata_smol = "/gpfs/radev/project/saxena/drb83/rat-cooperation/David/Behavioral_Quantification/Sorted_Data_Files/only_opaque_sessions_filtered_onlyFirst.csv"
 metadata_filtered = "/gpfs/radev/project/saxena/drb83/rat-cooperation/David/Behavioral_Quantification/Sorted_Data_Files/Filtered.csv"
@@ -1039,5 +1040,5 @@ minReqs = "/gpfs/radev/project/saxena/drb83/rat-cooperation/David/Behavioral_Qua
 
 
 creator = allDataCSVsCreator(minReqs, post="")
-creator.createTrialCSVStandard()
-#creator.createEventCSVStandard()
+#creator.createTrialCSVStandard()
+creator.createEventCSVStandard()
