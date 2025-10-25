@@ -580,7 +580,7 @@ class fileExtractor:
         
         def construct_path(row):
             folder = "PairedTestingSessions" if row["test/train"] == "test" else "Training_COOPERATION"
-            processed = "/processed" if row["test/train"] == "test" else ""
+            processed = "/processed" if row["test/train"] == "test" else "/processed"
             #zero = "" if row["test/train"] == "test" else "0"
             zero = ""
             return f"{base_path}/{folder}/{zero}{row['session']}/Behavioral{processed}/mag/{row['correct_name']}_mag.csv" if pd.isna(row["vid"]) == False and pd.isna(row["session"]) == False else None
@@ -617,7 +617,7 @@ class fileExtractor:
         
         def construct_path(row):
             folder = "PairedTestingSessions" if row["test/train"] == "test" else "Training_COOPERATION"
-            processed = "/processed" if row["test/train"] == "test" else ""
+            processed = "/processed" if row["test/train"] == "test" else "/processed"
             #zero = "" if row["test/train"] == "test" else "0"
             zero = ""
             return f"{base_path}/{folder}/{zero}{row['session']}/Behavioral{processed}/lever/{row['correct_name']}_lever.csv" if pd.isna(row["vid"]) == False and pd.isna(row["session"]) == False else None
