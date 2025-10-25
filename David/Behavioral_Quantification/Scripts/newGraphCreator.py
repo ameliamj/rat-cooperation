@@ -647,6 +647,7 @@ dates = arr[6]
 sessions = arr[7]
 ratPairs = arr[8]        
 
+#hi
 
 #Test
 '''
