@@ -596,6 +596,9 @@ class createGraphs:
 #Real
 
 filtered = "/gpfs/radev/project/saxena/drb83/rat-cooperation/David/Behavioral_Quantification/Sorted_Data_Files/Filtered.csv"
+minReq = "/gpfs/radev/project/saxena/drb83/rat-cooperation/David/Behavioral_Quantification/Sorted_Data_Files/dyed_preds_min_requirements_valid.csv"
+
+
 def getFiltered():
     fe = fileExtractor(filtered)
     fe.data = fe.deleteBadNaN()
@@ -612,7 +615,28 @@ def getFiltered():
     transparency = fe.getBarrierTransparencyList()
     #print("initial_nan_list: ", initial_nan_list)
     return [fe.getLevsDatapath(), fe.getMagsDatapath(), fe.getPosDatapath(), fpsList, totFramesList, initial_nan_list, dates, sessions, ratPairs, familiarity, transparency]
-arr = getFiltered()
+
+def minRequirements():
+    fe = fileExtractor(minReq)
+    fe.data = fe.deleteBadNaN()
+    fe.deleteOnlyFullyInvalid()
+    fpsList, totFramesList = fe.returnFPSandTotFrames()
+    initial_nan_list = fe.returnNaNPercentage()
+    dates = fe.getDatesList()
+    print("dates: ", dates)
+    sessions = fe.getSessionIDList()
+    print("sessions: ", sessions)
+    #dates = dates.tolist()
+    #sessions = sessions.tolist()
+    ratPairs = fe.getRatPairList()
+    familiarity = fe.getFamiliarityList()
+    transparency = fe.getBarrierTransparencyList()
+    #print("initial_nan_list: ", initial_nan_list)
+    return [fe.getLevsDatapath(), fe.getMagsDatapath(), fe.getPosDatapath(), fpsList, totFramesList, initial_nan_list, dates, sessions, ratPairs, familiarity, transparency]
+
+#arr = getFiltered()
+arr = minRequirements()
+
 lev_files = arr[0]
 mag_files = arr[1]
 pos_files = arr[2]
@@ -658,7 +682,6 @@ data = dataAnalysisRegular(mag_files, lev_files, pos_files, fpsList, totFramesLi
 graphs = createGraphs()
 
 
-
 #
 # gazing At Other vs. Lever vs. Magazine Across Sessions
 #
@@ -670,6 +693,10 @@ otherGazingPerSession, levGazingPerSession, magGazingPerSession, numFramesPerSes
 percentGazingOther = [o / n * 100 for o, n in zip(otherGazingPerSession, numFramesPerSession)]
 percentGazingLev   = [l / n * 100 for l, n in zip(levGazingPerSession, numFramesPerSession)]
 percentGazingMag   = [m / n * 100 for m, n in zip(magGazingPerSession, numFramesPerSession)]
+
+print("percentGazingOther: ", percentGazingOther)
+print("percentGazingLev: ", percentGazingLev)
+print("percentGazingMag: ", percentGazingMag)
 
 # Labels and title
 labels = ["Other", "Lever", "Magazine"]
