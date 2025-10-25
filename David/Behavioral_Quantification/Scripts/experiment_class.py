@@ -82,3 +82,11 @@ class singleExperiment:
 #test = singleExperiment(mag, lev, pos)
 
 #test.unitTest()
+
+
+
+
+
+
+
+

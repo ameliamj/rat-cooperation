@@ -326,6 +326,47 @@ class levLoader:
         
         return leverNums
     
+    def leverPreferenceFirstPressPerTrial(self, ratID, negOnesForMissTrials = True):
+        '''
+        Returns a list (or Series) of the LeverNum for the given ratID,
+        representing the lever that the rat pressed first in each trial 
+        where it pressed at least once.
+        If the rat did not press any lever in a trial, returns -1 for that trial.
+        '''
+        if self.data is None:
+            raise ValueError("No data loaded.")
+        
+        required_cols = {'TrialNum', 'RatID', 'LeverNum', 'AbsTime'}
+        if not required_cols.issubset(self.data.columns):
+            raise ValueError(f"Required columns {required_cols} are missing from data.")
+        
+        # Filter for the specified rat
+        rat_data = self.data[self.data['RatID'] == ratID]
+    
+        if rat_data.empty:
+            raise ValueError(f"No data found for RatID {ratID}.")
+        
+        # Sort by trial and time to ensure the first press is the earliest
+        sorted_data = rat_data.sort_values(['TrialNum', 'AbsTime'], ascending=[True, True])
+        
+        # Get all trial numbers in the dataset
+        all_trials = sorted_data['TrialNum'].unique()
+        
+        # Get the first lever pressed in each trial
+        first_levers = sorted_data.groupby('TrialNum')['LeverNum'].first()
+        print("first_levers: ", first_levers)
+        
+        if (negOnesForMissTrials):
+            # Create a dictionary with -1 as default for missing trials
+            lever_dict = {trial: first_levers.get(trial, -1) for trial in all_trials}
+            returnList = [lever_dict[trial] for trial in all_trials]
+            print("lever_dict: ", returnList)
+            
+            # Return in order of trial number
+            return returnList
+        
+        return first_levers
+    
     def returnFirstPressAbsTimes(self):
         """
         Returns a list of absolute times (in seconds) for the first press in each trial.

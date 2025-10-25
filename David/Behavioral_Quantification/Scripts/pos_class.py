@@ -1301,13 +1301,18 @@ def visualize_gaze_overlay2(
             break
         
         #print("Frame: ", frame_idx)
-        target = other_body[:, :, frame_idx]
-        notTarget = body[:, :, frame_idx]
+        target = other_body[:, :, frame_idx] #rat1
+        notTarget = body[:, :, frame_idx] #rat0
         
         # --- Get rat 0 and rat 1 body part coords at this frame ---
         # Shape: (5, 2) → [[x, y], ...]
         rat0_parts = loader.data[0, :, :, frame_idx].T.reshape(-1, 2)
         rat1_parts = loader.data[1, :, :, frame_idx].T.reshape(-1, 2)
+        
+        print("rat0_parts: ", rat0_parts)
+        print("rat1_parts: ", rat1_parts)
+        cv2.putText(frame, f"Rat0_Parts: {rat0_parts}", (width//2 - 30, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (200,200,200), 2)
+        cv2.putText(frame, f"Rat1_Parts: {rat1_parts}", (width//2 - 30, 60), cv2.FONT_HERSHEY_SIMPLEX, 1, (200,200,200), 2)
         
         #print("rat0parts: ", rat0_parts)
         
@@ -1345,7 +1350,7 @@ def visualize_gaze_overlay2(
         # Blend overlay with the original frame (transparent effect)
         alpha = 0.3  # transparency factor
         frame = cv2.addWeighted(overlay, alpha, frame, 1 - alpha, 0)
-
+        
 
         # Draw body polygon
         polygon_indices = [
@@ -1368,7 +1373,7 @@ def visualize_gaze_overlay2(
         frame_count += 1
 
     cap.release()
-
+    
     # Build the video using ffmpeg
     print(f"Saving video to {save_path} using ffmpeg...")
     ffmpeg_cmd = [
@@ -1405,12 +1410,17 @@ h5_file1 = "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Beh
 h5_file2 = "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041624_Cam3_TrNum9_Coop_KL002B-KL002Y.predictions.h5"
 
 
-'''loader = posLoader(h5_file)
+h5_file = "/Users/david/Downloads/041824_Cam3_TrNum5_Coop_KL007Y-KL007G.predictions (1).h5"
+lev_file = "/Users/david/Downloads/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever (1).csv"
+video_file = "/Users/david/Downloads/041824_Cam3_TrNum5_Coop_KL007Y-KL007G.mp4"
+
+'''
+loader = posLoader(h5_file)
 #loader.plot_rat_heatmap()
 lev = levLoader(lev_file)
 mag = magLoader(mag_file)
 
-visualize_gaze_overlay2(video_file, loader, lev, mag, mouseID=0, save_path = "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Graphs/Videos/exampleInteraction.mp4")
+visualize_gaze_overlay(video_file, loader, lev, mag, mouseID=0, max_frames=3000 , save_path = "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Graphs/Videos/ratPartsTest.mp4")
 '''
   
     

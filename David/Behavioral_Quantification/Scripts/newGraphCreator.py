@@ -380,8 +380,26 @@ class dataAnalysisRegular:
         
         return successRatePerSession
         
+    def gazingAtOtherVsLevVsMag(self):
+        otherGazingPerSession = []
+        levGazingPerSession = []
+        magGazingPerSession = []
+        
+        for exp in self.experiments:
+            pos = exp.pos
+            lev = exp.lev
+            
+            levGazingFrames0 = np.sum(pos.returnIsLookingAtObjects(0))
+            magGazingFrames0 = np.sum(pos.returnIsLookingAtObjects(0, target="mag"))
+            otherGazingFrames0 = np.sum(pos.returnIsGazing(0))
+            
+            levGazingFrames1 = np.sum(pos.returnIsLookingAtObjects(1))
+            magGazingFrames1 = np.sum(pos.returnIsLookingAtObjects(1, target="mag"))
+            otherGazingFrames1 = np.sum(pos.returnIsGazing(1))
+        
+        
     
-    
+        
 
 class createGraphs:
     def __init__(self, arena_width=1392, arena_height=640):
@@ -556,8 +574,8 @@ class createGraphs:
         plt.savefig(filename)
         plt.show()
         plt.close()
-    
         
+    
 #DATA ANALYSIS GENERATION
 #
 #
