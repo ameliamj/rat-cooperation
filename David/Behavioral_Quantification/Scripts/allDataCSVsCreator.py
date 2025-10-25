@@ -1039,5 +1039,5 @@ minReqs = "/gpfs/radev/project/saxena/drb83/rat-cooperation/David/Behavioral_Qua
 
 
 creator = allDataCSVsCreator(minReqs, post="")
-#creator.createTrialCSVStandard()
-creator.createEventCSVStandard()
+creator.createTrialCSVStandard()
+#creator.createEventCSVStandard()

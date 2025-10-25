@@ -704,6 +704,7 @@ class fileExtractor:
         def getFPSandTotFrames(videoPath):
             cap = cv2.VideoCapture(videoPath)
             if not cap.isOpened():
+                print("Trying to open:", path)
                 raise IOError("Could not open video file.")
 
             fps = cap.get(cv2.CAP_PROP_FPS)
