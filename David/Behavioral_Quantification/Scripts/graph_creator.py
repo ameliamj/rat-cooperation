@@ -2580,7 +2580,7 @@ class MicePairGraphs:
         # Remove grid
         ax1.grid(False)
         ax1.set_ylabel('Percent Gazing')
-        ax1.set_ylim(0, 100)
+        ax1.set_ylim(0, 4)
         
         # Thicken lines & remove markers
         for line in ax1.get_lines():
