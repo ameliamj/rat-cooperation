@@ -401,8 +401,8 @@ class dataAnalysisRegular:
             otherGazingFrames1 = np.sum(pos.returnIsGazing(1))
             
             
-            otherGazingPerSession.append(levGazingFrames0)
-            otherGazingPerSession.append(levGazingFrames1)
+            otherGazingPerSession.append(otherGazingFrames0)
+            otherGazingPerSession.append(otherGazingFrames0)
             levGazingPerSession.append(levGazingFrames0)
             levGazingPerSession.append(levGazingFrames1)
             magGazingPerSession.append(magGazingFrames0)
