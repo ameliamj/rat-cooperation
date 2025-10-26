@@ -507,7 +507,7 @@ class createGraphs:
             p_text = f'p = {p_value:.3f}'
         elif len(data_list) > 2:
             f_stat, p_value = f_oneway(*data_list)
-            p_text = f'ANOVA p = {p_value:.3f}'
+            p_text = f'p = {p_value:.3f}'
         else:
             p_text = ''
         
