@@ -684,7 +684,7 @@ def minRequirementsIneq():
 #arr = minRequirements()
 
 
-arr = minRequirementsComp()
+arr = minRequirementsIneq()
 lev_files = arr[0]
 mag_files = arr[1]
 pos_files = arr[2]
