@@ -2624,7 +2624,7 @@ class MicePairGraphs:
         plt.title('Gazing Variability Throughout Training')
         plt.tight_layout()
         if self.save:
-            plt.savefig(f'{self.prefix}GazingVariabilityObjectsByExperimentIndex.png', dpi=300, bbox_inches='tight')
+            plt.savefig(f'comp_GazingVariabilityObjectsByExperimentIndex.png', dpi=300, bbox_inches='tight')
         plt.show()
         plt.close()
     
