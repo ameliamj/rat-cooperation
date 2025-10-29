@@ -989,8 +989,8 @@ def saveAllCSVs():
 #saveAllCSVs()
 
 
-fe = fileExtractor(fixedExpanded)
-fe.deleteOnlyFullyInvalid(saveFile=True)
+#fe = fileExtractor(fixedExpanded)
+#fe.deleteOnlyFullyInvalid(saveFile=True)
 
 
 
