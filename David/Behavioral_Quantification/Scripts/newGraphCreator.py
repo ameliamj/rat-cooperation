@@ -38,7 +38,7 @@ class dataAnalysisRegular:
         self.titleSize = 18
         deleted_count = 0
         
-        print("There are ", len(magFiles), " experiments in this data session. ")
+        print("There are ", len(posFiles), " experiments in this data session. ")
         print("")
         
         if (magFiles != None and levFiles != None):
