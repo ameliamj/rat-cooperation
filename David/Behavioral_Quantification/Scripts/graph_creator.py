@@ -2499,7 +2499,6 @@ class MicePairGraphs:
             if (len(group) < 5):
                 continue
             for exp_idx, exp in enumerate(group):
-                lev = exp.lev
                 pos = exp.pos
                 fps = exp.fps
     
