@@ -659,7 +659,7 @@ def minRequirementsComp():
     familiarity = fe.getFamiliarityList()
     transparency = fe.getBarrierTransparencyList()
     #print("initial_nan_list: ", initial_nan_list)
-    return [fe.getLevsDatapath(), fe.getMagsDatapath(), fe.getPosDatapath(), fpsList, totFramesList, initial_nan_list, dates, sessions, ratPairs, familiarity, transparency]
+    return [None, None, fe.getPosDatapath(), fpsList, totFramesList, initial_nan_list, dates, sessions, ratPairs, familiarity, transparency]
 
 def minRequirementsIneq():
     fe = fileExtractor(minReqIneq)
