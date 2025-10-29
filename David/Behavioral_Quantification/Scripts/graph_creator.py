@@ -1210,40 +1210,55 @@ print("Done")
 class MicePairGraphs:       
     def __init__(self, magGroups, levGroups, posGroups, fpsGroups, totFramesGroups, rat1NamesGroups, rat2NamesGroups, sessionIDGroups, dateGroups, ratPairGroups, saveFile = True):
         print("Initializing MicePairGraphs")
-        assert len(magGroups) == len(levGroups) == len(posGroups), "Mismatched group lengths."
         self.experimentGroups = []
         self.prefix = "filtered_"
         self.save = saveFile
-        deleted_count = 0
-
-        for group_idx, (mag_list, lev_list, pos_list, fps_list, tot_frames_list, rat1_names, rat2_names, sessionIDs, dates, ratPairs) in enumerate(zip(magGroups, levGroups, posGroups, fpsGroups, totFramesGroups, rat1NamesGroups, rat2NamesGroups, sessionIDGroups, dateGroups, ratPairGroups)):
-            print(f"Creating group {group_idx + 1} for {len(mag_list)} files")
-            group_exps = []
+        
+        if (magGroups != None and levGroups != None):
+            assert len(magGroups) == len(levGroups) == len(posGroups), "Mismatched group lengths."
+            deleted_count = 0
+    
+            for group_idx, (mag_list, lev_list, pos_list, fps_list, tot_frames_list, rat1_names, rat2_names, sessionIDs, dates, ratPairs) in enumerate(zip(magGroups, levGroups, posGroups, fpsGroups, totFramesGroups, rat1NamesGroups, rat2NamesGroups, sessionIDGroups, dateGroups, ratPairGroups)):
+                print(f"Creating group {group_idx + 1} for {len(mag_list)} files")
+                group_exps = []
+                
+                print("lev_list: ", lev_list)
+                print("tot_frames_list: ", tot_frames_list)
             
-            print("lev_list: ", lev_list)
-            print("tot_frames_list: ", tot_frames_list)
-        
-            for mag_path, lev_path, pos_path, fps, totFrames, rat1, rat2, sessionID, date, ratPair in zip(mag_list, lev_list, pos_list, fps_list, tot_frames_list, rat1_names, rat2_names, sessionIDs, dates, ratPairs):
-                exp = singleExperiment(lev_path, mag_path, pos_path, fps=fps, endFrame=totFrames, rat1=rat1, rat2=rat2, sessionID=sessionID, ratPair=ratPair, date=date)        
-                mag_missing = [col for col in exp.mag.categories if col not in exp.mag.data.columns]
-                lev_missing = [col for col in exp.lev.categories if col not in exp.lev.data.columns]
-        
-                if mag_missing or lev_missing:
-                    deleted_count += 1
-                    print("Skipping experiment due to missing categories:")
-                    if mag_missing:
-                        print(f"  MagFile missing: {mag_missing}")
-                        print(f"  Mag File: {mag_path}")
-                    if lev_missing:
-                        print(f"  LevFile missing: {lev_missing}")
-                        print(f"  Lev File: {lev_path}")
-                    continue
-        
-                group_exps.append(exp)
-        
-            self.experimentGroups.append(group_exps)
-
-        print(f"Deleted {deleted_count} experiment(s) due to missing categories.")
+                for mag_path, lev_path, pos_path, fps, totFrames, rat1, rat2, sessionID, date, ratPair in zip(mag_list, lev_list, pos_list, fps_list, tot_frames_list, rat1_names, rat2_names, sessionIDs, dates, ratPairs):
+                    exp = singleExperiment(lev_path, mag_path, pos_path, fps=fps, endFrame=totFrames, rat1=rat1, rat2=rat2, sessionID=sessionID, ratPair=ratPair, date=date)        
+                    mag_missing = [col for col in exp.mag.categories if col not in exp.mag.data.columns]
+                    lev_missing = [col for col in exp.lev.categories if col not in exp.lev.data.columns]
+            
+                    if mag_missing or lev_missing:
+                        deleted_count += 1
+                        print("Skipping experiment due to missing categories:")
+                        if mag_missing:
+                            print(f"  MagFile missing: {mag_missing}")
+                            print(f"  Mag File: {mag_path}")
+                        if lev_missing:
+                            print(f"  LevFile missing: {lev_missing}")
+                            print(f"  Lev File: {lev_path}")
+                        continue
+            
+                    group_exps.append(exp)
+            
+                self.experimentGroups.append(group_exps)
+    
+            print(f"Deleted {deleted_count} experiment(s) due to missing categories.")
+        else:
+            for group_idx, (pos_list, fps_list, tot_frames_list, rat1_names, rat2_names, sessionIDs, dates, ratPairs) in enumerate(zip(posGroups, fpsGroups, totFramesGroups, rat1NamesGroups, rat2NamesGroups, sessionIDGroups, dateGroups, ratPairGroups)):
+                print(f"Creating group {group_idx + 1} for {len(pos_list)} files")
+                group_exps = []
+                
+                print("tot_frames_list: ", tot_frames_list)
+            
+                for pos_path, fps, totFrames, rat1, rat2, sessionID, date, ratPair in zip(pos_list, fps_list, tot_frames_list, rat1_names, rat2_names, sessionIDs, dates, ratPairs):
+                    exp = singleExperiment(None, None, pos_path, fps=fps, endFrame=totFrames, rat1=rat1, rat2=rat2, sessionID=sessionID, ratPair=ratPair, date=date)        
+                    group_exps.append(exp)
+            
+                self.experimentGroups.append(group_exps)
+    
 
     def _make_boxplot(self, data, ylabel, title, filename):
         print(f"Creating boxplot: {title}")
@@ -2622,6 +2637,8 @@ class MicePairGraphs:
   
 
 groupRatPairs = "/gpfs/radev/project/saxena/drb83/rat-cooperation/David/Behavioral_Quantification/Sorted_Data_Files/group_rat_pairs_corrected.csv"
+ineq = "/gpfs/radev/project/saxena/drb83/rat-cooperation/David/Behavioral_Quantification/Sorted_Data_Files/ineq_minReq_valid.csv"
+comp = "/gpfs/radev/project/saxena/drb83/rat-cooperation/David/Behavioral_Quantification/Sorted_Data_Files/comp_minReq_valid.csv"
 
 def getGroupRatPairs():
     fe = fileExtractor(groupRatPairs)
@@ -2638,8 +2655,22 @@ def getGroupRatPairs():
     
     return [fe.getLevsDatapath(grouped = True), fe.getMagsDatapath(grouped = True), fe.getPosDatapath(grouped = True), fpsList, totFramesList, rat1names, rat2names, sessionIDs, dates, ratPairs]
 
+def getGroupRatPairsIneqComp():
+    fe = fileExtractor(ineq)
+    #fe.data = fe.deleteBadNaN()
+    fpsList, totFramesList = fe.returnFPSandTotFrames(grouped = True)
+    rat1names = fe.returnRat1(grouped = True)
+    print("rat1names: ", rat1names)
+    rat2names = fe.returnRat2(grouped = True)
+    
+    #print("fpsList: ", fpsList)
+    sessionIDs = fe.getSessionIDList(grouped = True)
+    dates = fe.getDatesList(grouped = True)
+    ratPairs = fe.getRatPairList(grouped = True)
+    
+    return [None, None, fe.getPosDatapath(grouped = True), fpsList, totFramesList, rat1names, rat2names, sessionIDs, dates, ratPairs]
 
-data = getGroupRatPairs()
+data = getGroupRatPairsIneqComp()
 pairGraphs = MicePairGraphs(data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7], data[8], data[9])
 pairGraphs.lineGraphGazingObjects()
 #pairGraphs.lineGraphStrategies()
