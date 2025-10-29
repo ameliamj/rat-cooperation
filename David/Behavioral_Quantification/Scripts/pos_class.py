@@ -44,6 +44,10 @@ class posLoader:
         self.minFramesStill = 10
         self.stillnessRange = 10
         
+        #FrameSize
+        #width:  1392
+        #height:  640
+        
         #List of body parts tracked
         self.NOSE_INDEX = 0
         self.earL_INDEX = 1
@@ -823,6 +827,77 @@ class posLoader:
                 
         return isInteracting
     
+    
+    def returnBodyArea(self, ratID):
+        """
+        Return the area of the target mouse's body polygon (earL → nose → earR → tail),
+        per frame.
+    
+        Parameters:
+            mouseID (int): which mouse (0 or 1)
+        """
+        num_frames = self.data.shape[-1]
+        body = self.data[ratID]  # (2, 5, num_frames)
+    
+        areas = np.zeros(num_frames)
+        numValid = 0
+        
+        WIDTH = 1392
+        HEIGHT = 640
+    
+        for t in range(num_frames):
+            # Get body part coordinates for this frame
+            earL = tuple(body[:, self.earL_INDEX, t])
+            nose = tuple(body[:, self.NOSE_INDEX, t])
+            earR = tuple(body[:, self.earR_INDEX, t])
+            tail = tuple(body[:, self.TB_INDEX, t])
+
+    
+            polygon_points = [earL, nose, earR, tail, earL]
+            poly = Polygon(polygon_points)
+            
+            # Check polygon validity AND bounds
+            points_within_bounds = all(
+                0 <= x <= WIDTH and 0 <= y <= HEIGHT for x, y in polygon_points
+            )
+    
+            if poly.is_valid and points_within_bounds:
+                area = poly.area
+                if (area < 20000):
+                    areas[t] = area
+                    numValid += 1
+                else: 
+                    print("t: ", t)
+            else:
+                areas[t] = 0.0
+                print("t: ", t)
+    
+        percentValid = numValid / num_frames
+        
+        '''t = 7624
+        points = [
+            tuple(body[:, self.earL_INDEX, t]),
+            tuple(body[:, self.NOSE_INDEX, t]),
+            tuple(body[:, self.earR_INDEX, t]),
+            tuple(body[:, self.TB_INDEX, t])
+        ]
+        
+        print("points: ", points)
+        
+        poly = Polygon(points)
+        xs, ys = zip(*(points + [points[0]]))
+        
+        plt.figure()
+        plt.title(f"Frame {t} Body Polygon")
+        plt.plot(xs, ys, marker='o')
+        plt.gca().invert_yaxis()  # if top-left origin
+        plt.show()
+        
+        print("Area:", poly.area)'''
+        print("percentValid: ", percentValid)
+        
+        return areas
+    
     def plot_rat_heatmap(self, savepath="rat_heatmap.png", bodypart=0, bins=100, sigma = 2):
         """
         Create a heatmap of Rat0 (red) vs Rat1 (blue) positions.
@@ -1394,6 +1469,76 @@ def visualize_gaze_overlay2(
     print(f"Video saved to {save_path}")
     
  
+def plot_single_frame(video_path, loader, frame_idx=7624, mouseID=0, INTERACTION_RADIUS=90):
+    """
+    Show a single frame with:
+        - the entire video frame
+        - the body polygon of the other mouse
+        - optional interaction masks (circles around body parts)
+    """
+    cap = cv2.VideoCapture(video_path)
+    if not cap.isOpened():
+        raise IOError("Could not open video file.")
+
+    cap.set(cv2.CAP_PROP_POS_FRAMES, frame_idx)
+    ret, frame = cap.read()
+    if not ret:
+        raise ValueError(f"Could not read frame {frame_idx}")
+
+    num_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+    width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+    height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+    print(f"Frame {frame_idx} of {num_frames}, size: {width}x{height}")
+
+    # --- Get body parts for both mice ---
+    body_self = loader.data[mouseID, :, :, frame_idx]  # (2,5)
+    body_other = loader.data[1 - mouseID, :, :, frame_idx]
+
+    # Draw interaction masks
+    mask_self = np.zeros_like(frame, dtype=np.uint8)
+    mask_other = np.zeros_like(frame, dtype=np.uint8)
+
+    for pt in body_self.T:  # shape (5,2)
+        x, y = int(round(pt[0])), int(round(pt[1]))
+        cv2.circle(mask_self, (x, y), INTERACTION_RADIUS, (0,0,255), -1)  # red
+
+    for pt in body_other.T:
+        x, y = int(round(pt[0])), int(round(pt[1]))
+        cv2.circle(mask_other, (x, y), INTERACTION_RADIUS, (255,0,0), -1)  # blue
+
+    # Overlap
+    overlap_mask = cv2.bitwise_and(mask_self, mask_other)
+    only_self = cv2.subtract(mask_self, overlap_mask)
+    only_other = cv2.subtract(mask_other, overlap_mask)
+
+    overlay = cv2.add(cv2.add(only_self, only_other), overlap_mask)
+    alpha = 0.3
+    frame_overlay = cv2.addWeighted(overlay, alpha, frame, 1-alpha, 0)
+
+    # Draw body polygon of the other mouse
+    polygon_indices = [
+        loader.earL_INDEX,
+        loader.NOSE_INDEX,
+        loader.earR_INDEX,
+        loader.TB_INDEX
+    ]
+    polygon_points = [tuple(np.round(body_other[:, idx]).astype(int)) for idx in polygon_indices]
+    polygon_points.append(polygon_points[0])  # close loop
+
+    for j in range(len(polygon_points)-1):
+        cv2.line(frame_overlay, polygon_points[j], polygon_points[j+1], (128,128,128), 2)
+        
+    output_path = "/Users/david/Desktop/frame_7624.png"  # change path as needed
+    cv2.imwrite(output_path, frame_overlay)
+    print(f"Saved frame to {output_path}")
+        
+    # Show the frame
+    cv2.imshow(f"Frame {frame_idx} - Mouse {mouseID}", frame_overlay)
+    cv2.waitKey(0)  # wait until a key is pressed
+    cv2.destroyAllWindows()
+
+    cap.release()   
+ 
 h5_file = "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/4_nanerror_test.h5"
 lev_file = "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/4_nanerror_lev.csv"
 mag_file = "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/4_nanerror_mag.csv"
@@ -1406,22 +1551,32 @@ video_file = "/Users/david/Downloads/4%_nan_test.mp4"
 #video_file = "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G.mp4"    
 
 
-h5_file1 = "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041624_Cam3_TrNum7_Coop_KL002B-KL002Y.predictions.h5"
-h5_file2 = "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041624_Cam3_TrNum9_Coop_KL002B-KL002Y.predictions.h5"
+#h5_file1 = "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041624_Cam3_TrNum7_Coop_KL002B-KL002Y.predictions.h5"
+#h5_file2 = "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041624_Cam3_TrNum9_Coop_KL002B-KL002Y.predictions.h5"
 
 
 h5_file = "/Users/david/Downloads/041824_Cam3_TrNum5_Coop_KL007Y-KL007G.predictions (1).h5"
 lev_file = "/Users/david/Downloads/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever (1).csv"
 video_file = "/Users/david/Downloads/041824_Cam3_TrNum5_Coop_KL007Y-KL007G.mp4"
 
-'''
+
 loader = posLoader(h5_file)
+arr = loader.returnBodyArea(1)
+print("arr: ", arr)
+print("max(arr): ", max(arr))
+print("averageSize = ", np.mean(arr))
+#print("percentValid = ", percent)
+
 #loader.plot_rat_heatmap()
 lev = levLoader(lev_file)
 mag = magLoader(mag_file)
 
-visualize_gaze_overlay(video_file, loader, lev, mag, mouseID=0, max_frames=3000 , save_path = "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Graphs/Videos/ratPartsTest.mp4")
-'''
+
+#plot_single_frame(video_file, loader, frame_idx=12512, mouseID=0)
+
+
+#visualize_gaze_overlay(video_file, loader, lev, mag, mouseID=0, max_frames=3000 , save_path = "/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Graphs/Videos/testing.mp4")
+
   
     
     

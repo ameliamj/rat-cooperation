@@ -41,44 +41,53 @@ class dataAnalysisRegular:
         print("There are ", len(magFiles), " experiments in this data session. ")
         print("")
         
-        if (len(magFiles) != len(levFiles) or len(magFiles) != len(posFiles)):
-            raise ValueError("Different number of mag, lev, and pos files")
+        if (magFiles != None and levFiles != None):
+            if (len(magFiles) != len(levFiles) or len(magFiles) != len(posFiles)):
+                raise ValueError("Different number of mag, lev, and pos files")
+                
+            if ((len(magFiles) != len(fpsList)) or (len(magFiles) != len(totFramesList)) or len(magFiles) != len(initialNanList)):
+                print("lenDataFiles: ", len(magFiles))
+                print("len(fpsList)", len(fpsList))
+                print("len(totFramesList)", len(totFramesList))
+                print("len(initialNanList)", len(initialNanList))
+                raise ValueError("Different number of fpsList, totFramesList, or initialNanList values")
             
-        if ((len(magFiles) != len(fpsList)) or (len(magFiles) != len(totFramesList)) or len(magFiles) != len(initialNanList)):
-            print("lenDataFiles: ", len(magFiles))
-            print("len(fpsList)", len(fpsList))
-            print("len(totFramesList)", len(totFramesList))
-            print("len(initialNanList)", len(initialNanList))
-            raise ValueError("Different number of fpsList, totFramesList, or initialNanList values")
-        
-        if (fiberFiles is not None and len(magFiles) != len(fiberFiles)):
-            print("len(fiber Files): ", len(fiberFiles))
-            raise ValueError("Diff Length of fiberFiles")
-        
-        
-        for i in range(len(magFiles)):
-            if (fiberFiles is not None and fiberFiles[i] is not None):
-                exp = singleExperiment(magFiles[i], levFiles[i], posFiles[i], fpsList[i], totFramesList[i], initialNanList[i], fp_files=fiberFiles[i])
-            else:
-                exp = singleExperiment(magFiles[i], levFiles[i], posFiles[i], fpsList[i], totFramesList[i], initialNanList[i], date = dates[i], sessionID = sessions[i], ratPair=ratPairs[i])
-            mag_missing = [col for col in exp.mag.categories if col not in exp.mag.data.columns]
-            lev_missing = [col for col in exp.lev.categories if col not in exp.lev.data.columns]
+            if (fiberFiles is not None and len(magFiles) != len(fiberFiles)):
+                print("len(fiber Files): ", len(fiberFiles))
+                raise ValueError("Diff Length of fiberFiles")
             
             
-            if mag_missing or lev_missing:
-                deleted_count += 1
-                print("Skipping experiment due to missing categories:")
-                if mag_missing:
-                    print(f"  MagFile missing: {mag_missing}")
-                    print(f"  Mag File: {magFiles[i]}")
-                if lev_missing:
-                    print(f"  LevFile missing: {lev_missing}")
-                    print(f"  Lev File: {levFiles[i]}")
-                continue
+            for i in range(len(magFiles)):
+                if (fiberFiles is not None and fiberFiles[i] is not None):
+                    exp = singleExperiment(magFiles[i], levFiles[i], posFiles[i], fpsList[i], totFramesList[i], initialNanList[i], fp_files=fiberFiles[i])
+                else:
+                    exp = singleExperiment(magFiles[i], levFiles[i], posFiles[i], fpsList[i], totFramesList[i], initialNanList[i], date = dates[i], sessionID = sessions[i], ratPair=ratPairs[i])
+                mag_missing = [col for col in exp.mag.categories if col not in exp.mag.data.columns]
+                lev_missing = [col for col in exp.lev.categories if col not in exp.lev.data.columns]
+                
+                
+                if mag_missing or lev_missing:
+                    deleted_count += 1
+                    print("Skipping experiment due to missing categories:")
+                    if mag_missing:
+                        print(f"  MagFile missing: {mag_missing}")
+                        print(f"  Mag File: {magFiles[i]}")
+                    if lev_missing:
+                        print(f"  LevFile missing: {lev_missing}")
+                        print(f"  Lev File: {levFiles[i]}")
+                    continue
+                
+                self.experiments.append(exp)
             
-            self.experiments.append(exp)
-        
-        print(f"Deleted {deleted_count} experiment(s) due to missing categories.")
+            print(f"Deleted {deleted_count} experiment(s) due to missing categories.")
+            
+        else:
+            if ((len(posFiles) != len(fpsList)) or (len(posFiles) != len(totFramesList)) or len(posFiles) != len(initialNanList)):
+                raise ValueError("Different number of posFiles, fpsList, totFramesList, or initialNanList values")
+            for i in range(len(posFiles)):
+                exp = singleExperiment(None, None, posFiles[i], fpsList[i], totFramesList[i], initialNanList[i], date = dates[i], sessionID = sessions[i], ratPair=ratPairs[i])
+                self.experiments.append(exp)
+            
         
     def _filterToLeverPressTrials(self, original_list, lev):
         """
@@ -387,9 +396,7 @@ class dataAnalysisRegular:
         numFramesPerSession = []
         
         for exp in self.experiments:
-            pos = exp.pos
-            lev = exp.lev
-            
+            pos = exp.pos            
             numFrames = exp.endFrame
             
             levGazingFrames0 = np.sum(pos.returnIsLookingAtObjects(0))
@@ -597,6 +604,8 @@ class createGraphs:
 
 filtered = "/gpfs/radev/project/saxena/drb83/rat-cooperation/David/Behavioral_Quantification/Sorted_Data_Files/Filtered.csv"
 minReq = "/gpfs/radev/project/saxena/drb83/rat-cooperation/David/Behavioral_Quantification/Sorted_Data_Files/dyed_preds_min_requirements_valid.csv"
+minReqComp = "/gpfs/radev/project/saxena/drb83/rat-cooperation/David/Behavioral_Quantification/Sorted_Data_Files/comp_minReq_valid.csv"
+minReqIneq = "/gpfs/radev/project/saxena/drb83/rat-cooperation/David/Behavioral_Quantification/Sorted_Data_Files/ineq_minReq_valid.csv"
 
 
 def getFiltered():
@@ -635,9 +644,47 @@ def minRequirements():
     #print("initial_nan_list: ", initial_nan_list)
     return [fe.getLevsDatapath(), fe.getMagsDatapath(), fe.getPosDatapath(), fpsList, totFramesList, initial_nan_list, dates, sessions, ratPairs, familiarity, transparency]
 
-#arr = getFiltered()
-arr = minRequirements()
+def minRequirementsComp():
+    fe = fileExtractor(minReqComp)
+    #fe.data = fe.deleteBadNaN()
+    #fe.deleteOnlyFullyInvalid()
+    #fe.filterOutBadNums()
+    fpsList, totFramesList = fe.returnFPSandTotFrames()
+    initial_nan_list = fe.returnNaNPercentage()
+    dates = fe.getDatesList()
+    sessions = fe.getSessionIDList()
+    #dates = dates.tolist()
+    #sessions = sessions.tolist()
+    ratPairs = fe.getRatPairList()
+    familiarity = fe.getFamiliarityList()
+    transparency = fe.getBarrierTransparencyList()
+    #print("initial_nan_list: ", initial_nan_list)
+    return [fe.getLevsDatapath(), fe.getMagsDatapath(), fe.getPosDatapath(), fpsList, totFramesList, initial_nan_list, dates, sessions, ratPairs, familiarity, transparency]
 
+def minRequirementsIneq():
+    fe = fileExtractor(minReqIneq)
+    #fe.data = fe.deleteBadNaN()
+    #fe.deleteOnlyFullyInvalid()
+    #fe.filterOutBadNums()
+    fpsList, totFramesList = fe.returnFPSandTotFrames()
+    initial_nan_list = fe.returnNaNPercentage()
+    dates = fe.getDatesList()
+    print("dates: ", dates)
+    sessions = fe.getSessionIDList()
+    print("sessions: ", sessions)
+    #dates = dates.tolist()
+    #sessions = sessions.tolist()
+    ratPairs = fe.getRatPairList()
+    familiarity = fe.getFamiliarityList()
+    transparency = fe.getBarrierTransparencyList()
+    #print("initial_nan_list: ", initial_nan_list)
+    return [None, None, fe.getPosDatapath(), fpsList, totFramesList, initial_nan_list, dates, sessions, ratPairs, familiarity, transparency]
+
+#arr = getFiltered()
+#arr = minRequirements()
+
+
+arr = minRequirementsComp()
 lev_files = arr[0]
 mag_files = arr[1]
 pos_files = arr[2]

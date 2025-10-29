@@ -139,7 +139,8 @@ class fileExtractor:
         
         df_copy = self.data.copy()
         if (saveFile):
-            df_copy.to_csv("dyed_preds_somewhat_valid.csv", index=False)
+            print("Saved File")
+            df_copy.to_csv("coop_minReq_valid.csv", index=False)
             
     def onlyFiberPhoto(self, saveFile = True):
         self.data = self.data[
@@ -988,8 +989,8 @@ def saveAllCSVs():
 #saveAllCSVs()
 
 
-#fe = fileExtractor(fixedExpanded)
-#fe.deleteOnlyFullyInvalid(saveFile=True)
+fe = fileExtractor(fixedExpanded)
+fe.deleteOnlyFullyInvalid(saveFile=True)
 
 
 

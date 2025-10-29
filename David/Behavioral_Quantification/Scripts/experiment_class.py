@@ -33,8 +33,9 @@ class singleExperiment:
         self.rat1 = rat1
         self.rat2 = rat2
         
-        self.mag = magLoader(mag_file, fps=fps)
-        self.lev = levLoader(lev_file, self.endFrame, fps)
+        if (mag_file != None and lev_file != None):
+            self.mag = magLoader(mag_file, fps=fps)
+            self.lev = levLoader(lev_file, self.endFrame, fps)
         if (not fp_files is None and len(fp_files) == 3):
             self.fp = fiberPhotoLoader(fp_files[0], fp_files[1], fp_files[2])
         
