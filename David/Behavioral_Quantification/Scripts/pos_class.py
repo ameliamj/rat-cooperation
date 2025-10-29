@@ -1559,7 +1559,7 @@ h5_file = "/Users/david/Downloads/041824_Cam3_TrNum5_Coop_KL007Y-KL007G.predicti
 lev_file = "/Users/david/Downloads/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever (1).csv"
 video_file = "/Users/david/Downloads/041824_Cam3_TrNum5_Coop_KL007Y-KL007G.mp4"
 
-
+'''
 loader = posLoader(h5_file)
 arr = loader.returnBodyArea(1)
 print("arr: ", arr)
@@ -1570,7 +1570,7 @@ print("averageSize = ", np.mean(arr))
 #loader.plot_rat_heatmap()
 lev = levLoader(lev_file)
 mag = magLoader(mag_file)
-
+'''
 
 #plot_single_frame(video_file, loader, frame_idx=12512, mouseID=0)
 
