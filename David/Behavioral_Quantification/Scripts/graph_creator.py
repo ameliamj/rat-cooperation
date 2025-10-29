@@ -2655,7 +2655,7 @@ def getGroupRatPairs():
     return [fe.getLevsDatapath(grouped = True), fe.getMagsDatapath(grouped = True), fe.getPosDatapath(grouped = True), fpsList, totFramesList, rat1names, rat2names, sessionIDs, dates, ratPairs]
 
 def getGroupRatPairsIneqComp():
-    fe = fileExtractor(ineq)
+    fe = fileExtractor(comp)
     #fe.data = fe.deleteBadNaN()
     fpsList, totFramesList = fe.returnFPSandTotFrames(grouped = True)
     rat1names = fe.returnRat1(grouped = True)
