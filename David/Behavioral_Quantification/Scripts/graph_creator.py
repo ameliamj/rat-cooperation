@@ -2629,9 +2629,80 @@ class MicePairGraphs:
         plt.close()
     
     
-    '''def doesEarlyGazingResultinLaterSuccess(self):
+    def doesEarlyGazingResultinLaterSuccess(self):
+        gazingFirst2Sessions = []
+        successLast2Sessions = []
+        
         for group_idx, group in enumerate(self.experimentGroups):
-            for '''
+            if (len(group) < 8):
+                continue
+            
+            averageGazing = 0
+            averageSuccess = 0
+            
+            for i in range(2):
+                exp = group[i]
+                pos = exp.pos
+                
+                otherGazingFrames0 = np.sum(pos.returnIsGazing(0))
+                otherGazingFrames1 = np.sum(pos.returnIsGazing(1))
+                
+                tempGazeOther = (otherGazingFrames0 + otherGazingFrames1)/2
+                averageGazing += tempGazeOther
+                
+                
+            for i in range(len(group) - 1, len(group) - 3, -1):
+                exp = group[i]
+                lev = exp.lev
+                
+                averageSuccess += lev.returnSuccessPercentage()
+            
+            
+            gazingFirst2Sessions.append(averageGazing / 2)
+            successLast2Sessions.append(averageSuccess / 2)
+            
+        # --- Global styling (matches your existing theme) ---
+        plt.rcParams.update({
+            'font.size': 14,
+            'axes.titlesize': 16,
+            'axes.labelsize': 14,
+            'xtick.labelsize': 12,
+            'ytick.labelsize': 12,
+            'legend.fontsize': 12,
+            'axes.linewidth': 1.5
+        })
+    
+        # === Scatter plot ===
+        plt.figure(figsize=(8, 6))
+        ax = plt.gca()
+    
+        # Scatter points (single data series)
+        ax.scatter(gazingFirst2Sessions, successLast2Sessions,
+                   marker='o', s=80, alpha=0.8)
+    
+        # Axis labels + formatting
+        ax.set_xlabel('Average Gazing (First 2 Sessions)')
+        ax.set_ylabel('Success Rate (Last 2 Sessions)')
+        ax.set_title('Does Early Gazing Predict Later Success?')
+    
+        # Remove grid
+        ax.grid(False)
+    
+        # Spine formatting (clean look)
+        for spine in ax.spines.values():
+            spine.set_linewidth(2)
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+    
+        plt.tight_layout()
+    
+        if self.save:
+            plt.savefig('EarlyGazing_vs_LaterSuccess.png',
+                        dpi=300, bbox_inches='tight')
+    
+        plt.show()
+        plt.close()
+            
     
   
 
@@ -2669,9 +2740,11 @@ def getGroupRatPairsIneqComp():
     
     return [None, None, fe.getPosDatapath(grouped = True), fpsList, totFramesList, rat1names, rat2names, sessionIDs, dates, ratPairs]
 
-data = getGroupRatPairsIneqComp()
+data = getGroupRatPairs()
 pairGraphs = MicePairGraphs(data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7], data[8], data[9])
-pairGraphs.lineGraphGazingObjects()
+pairGraphs.doesEarlyGazingResultinLaterSuccess()
+
+#pairGraphs.lineGraphGazingObjects()
 #pairGraphs.lineGraphStrategies()
 #pairGraphs.lineGraphGazing()
 
