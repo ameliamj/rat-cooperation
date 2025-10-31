@@ -2634,14 +2634,51 @@ class MicePairGraphs:
         gazingFirst2Sessions = []
         successLast2Sessions = []
         
+        gazingGroups = []
+        succGroups = []
+        
+        colorList = [
+            (31/255, 119/255, 180/255),  # Blue
+            (255/255, 127/255, 14/255),  # Orange
+            (44/255, 160/255, 44/255),   # Green
+            (214/255, 39/255, 40/255),   # Red
+            (148/255, 103/255, 189/255), # Purple
+            (140/255, 86/255, 75/255),   # Brown
+            (227/255, 119/255, 194/255), # Pink
+            (127/255, 127/255, 127/255), # Gray
+            (188/255, 189/255, 34/255),  # Yellow-green
+            (23/255, 190/255, 207/255),  # Cyan
+            (174/255, 199/255, 232/255), # Light blue
+            (255/255, 187/255, 120/255), # Light orange
+            (152/255, 223/255, 138/255), # Light green
+            (255/255, 152/255, 150/255), # Light red
+            (197/255, 176/255, 213/255)  # Light purple
+        ]
+        
         for group_idx, group in enumerate(self.experimentGroups):
-            if (len(group) < 8):
+            gazeRatPair = []
+            succRatPair = []
+            
+            if (len(group) < 5):
                 continue
             
             averageGazing = 0
             averageSuccess = 0
             
-            for i in range(2):
+            for i in range(len(group) - 1):
+                expGaze = group[i]
+                expSucc = group[i+1]
+                
+                gazePercentage = np.sum(expGaze.pos.returnIsGazing(0) + expGaze.pos.returnIsGazing(1)) / (2 * expGaze.pos.returnNumFrames())
+                succPercentage = expSucc.lev.returnSuccessPercentage()
+                
+                gazeRatPair.append(gazePercentage)
+                succRatPair.append(succPercentage)
+                
+            gazingGroups.append(gazeRatPair)
+            succGroups.append(succRatPair)
+            
+            '''for i in range(2):
                 exp = group[i]
                 pos = exp.pos
                 
@@ -2661,17 +2698,7 @@ class MicePairGraphs:
             
             
             gazingFirst2Sessions.append(averageGazing / 2)
-            successLast2Sessions.append(averageSuccess / 2)
-            
-        # Stats
-        x = np.array(gazingFirst2Sessions)
-        y = np.array(successLast2Sessions)
-        r_value, p_value = pearsonr(x, y)
-    
-        # Trendline
-        slope, intercept = np.polyfit(x, y, 1)
-        x_line = np.linspace(x.min(), x.max(), 100)
-        y_line = slope * x_line + intercept
+            successLast2Sessions.append(averageSuccess / 2)'''
         
         # --- Global styling (matches your existing theme) ---
         plt.rcParams.update({
@@ -2682,7 +2709,18 @@ class MicePairGraphs:
             'ytick.labelsize': 12,
             'legend.fontsize': 12,
             'axes.linewidth': 1.5
-        })
+        })    
+        
+        '''# Stats
+        x = np.array(gazingFirst2Sessions)
+        y = np.array(successLast2Sessions)
+        r_value, p_value = pearsonr(x, y)
+    
+        # Trendline
+        slope, intercept = np.polyfit(x, y, 1)
+        x_line = np.linspace(x.min(), x.max(), 100)
+        y_line = slope * x_line + intercept
+        
     
         # === Scatter plot ===
         plt.figure(figsize=(8, 6))
@@ -2723,7 +2761,71 @@ class MicePairGraphs:
                         dpi=300, bbox_inches='tight')
     
         plt.show()
+        plt.close()'''
+        
+        
+        # === Second Plot: Subgroup Scatter + Trendlines ===
+        plt.figure(figsize=(8, 6))
+        ax2 = plt.gca()
+        
+        # Collect ALL subgroup datapoints for global regression
+        allX = np.concatenate(gazingGroups)
+        allY = np.concatenate(succGroups)
+        
+        # Global trendline (black)
+        slope_g, intercept_g = np.polyfit(allX, allY, 1)
+        xg_line = np.linspace(allX.min(), allX.max(), 200)
+        yg_line = slope_g * xg_line + intercept_g
+        ax2.plot(xg_line, yg_line, linestyle='--', linewidth=2, color='black')
+        
+        # Plot each subgroup individually
+        for idx, (gx, gy) in enumerate(zip(gazingGroups, succGroups)):
+            gx = np.array(gx)
+            gy = np.array(gy)
+        
+            if len(gx) < 2:
+                continue  # Need at least 2 points for trendline
+        
+            # Colored scatter per group
+            ax2.scatter(gx, gy,
+                        s=70,
+                        alpha=0.8,
+                        color=colorList[idx],
+                        label=f"Group {idx+1}")
+        
+            # Faded subgroup trendline
+            slope_i, intercept_i = np.polyfit(gx, gy, 1)
+            xs = np.linspace(gx.min(), gx.max(), 50)
+            ys = slope_i * xs + intercept_i
+            ax2.plot(xs, ys,
+                     linewidth=1.5,
+                     alpha=0.35,
+                     color=colorList[idx])
+        
+        # Labeling + formatting
+        ax2.set_xlabel('Gazing %)')
+        ax2.set_ylabel('Next Session Success Rate')
+        ax2.set_title('Does Early Gazing Predict Later Success?')
+        
+        ax2.legend(loc="best", frameon=False, fontsize=10)
+        
+        # Clean look formatting
+        for spine in ax2.spines.values():
+            spine.set_linewidth(2)
+        ax2.spines['top'].set_visible(False)
+        ax2.spines['right'].set_visible(False)
+        ax2.grid(False)
+        
+        plt.tight_layout()
+        
+        if self.save:
+            plt.savefig('doesGazingImpactFutureSuccess.png',
+                        dpi=300, bbox_inches='tight')
+        
+        plt.show()
         plt.close()
+
+
             
     
   
@@ -3542,7 +3644,7 @@ class multiFileGraphs:
         all_same_percentages = []  # stores same-lever % for each trial index across sessions
 
         # Iterate through experiments
-        for exp in experiments:
+        for exp in self.experiments:
             lev = exp.lev
             same, diff, none = 0, 0, 0
 
