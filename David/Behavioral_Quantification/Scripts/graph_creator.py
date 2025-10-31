@@ -2644,11 +2644,12 @@ class MicePairGraphs:
                 exp = group[i]
                 pos = exp.pos
                 
+                numFrames = pos.returnNumFrames()
                 otherGazingFrames0 = np.sum(pos.returnIsGazing(0))
                 otherGazingFrames1 = np.sum(pos.returnIsGazing(1))
                 
                 tempGazeOther = (otherGazingFrames0 + otherGazingFrames1)/2
-                averageGazing += tempGazeOther
+                averageGazing += tempGazeOther / numFrames
                 
                 
             for i in range(len(group) - 1, len(group) - 3, -1):
@@ -2661,6 +2662,16 @@ class MicePairGraphs:
             gazingFirst2Sessions.append(averageGazing / 2)
             successLast2Sessions.append(averageSuccess / 2)
             
+        # Stats
+        x = np.array(gazingFirst2Sessions)
+        y = np.array(successLast2Sessions)
+        r_value, p_value = pearsonr(x, y)
+    
+        # Trendline
+        slope, intercept = np.polyfit(x, y, 1)
+        x_line = np.linspace(x.min(), x.max(), 100)
+        y_line = slope * x_line + intercept
+        
         # --- Global styling (matches your existing theme) ---
         plt.rcParams.update({
             'font.size': 14,
@@ -2676,14 +2687,24 @@ class MicePairGraphs:
         plt.figure(figsize=(8, 6))
         ax = plt.gca()
     
-        # Scatter points (single data series)
-        ax.scatter(gazingFirst2Sessions, successLast2Sessions,
+        ax.scatter(x, y,
                    marker='o', s=80, alpha=0.8)
+    
+        # Add trendline
+        ax.plot(x_line, y_line, linestyle='--')
     
         # Axis labels + formatting
         ax.set_xlabel('Average Gazing (First 2 Sessions)')
         ax.set_ylabel('Success Rate (Last 2 Sessions)')
         ax.set_title('Does Early Gazing Predict Later Success?')
+    
+        # Add p-value + r
+        stats_text = f"r = {r_value:.2f}\np = {p_value:.3f}"
+        ax.text(0.05, 0.95, stats_text,
+                transform=ax.transAxes,
+                fontsize=12,
+                verticalalignment='top',
+                bbox=dict(boxstyle='round', facecolor='white', alpha=0.8))
     
         # Remove grid
         ax.grid(False)
