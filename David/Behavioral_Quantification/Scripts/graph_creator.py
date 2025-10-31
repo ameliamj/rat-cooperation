@@ -31,6 +31,7 @@ from scipy.stats import spearmanr
 from scipy.stats import ttest_ind
 from mpl_toolkits.mplot3d import Axes3D
 from datetime import datetime
+from scipy.stats import pearsonr
 
 import csv
 import os
