@@ -1171,7 +1171,7 @@ categoryExperiments.printSummaryStats()
 
 #Transparent vs. Translucent vs. Opaque
 
-'''print("Running Transparency")
+print("Running Transparency")
 dataTransparent = getAllTransparent() #Transparent
 dataTranslucent = getAllTranslucent() #Translucent
 dataOpaque = getAllOpaque() #Opaque
@@ -1181,7 +1181,7 @@ magFiles = [dataTransparent[1], dataTranslucent[1], dataOpaque[1]]
 posFiles = [dataTransparent[2], dataTranslucent[2], dataOpaque[2]]
 categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["Transparent", "Translucent", "Opaque"])
 categoryExperiments.compareSuccesfulTrials()
-print("DONE WITH TRANSPARENCY")'''
+print("DONE WITH TRANSPARENCY")
 
 
 
@@ -2864,9 +2864,9 @@ def getGroupRatPairsIneqComp():
     
     return [None, None, fe.getPosDatapath(grouped = True), fpsList, totFramesList, rat1names, rat2names, sessionIDs, dates, ratPairs]
 
-data = getGroupRatPairs()
-pairGraphs = MicePairGraphs(data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7], data[8], data[9])
-pairGraphs.doesEarlyGazingResultinLaterSuccess()
+#data = getGroupRatPairs()
+#pairGraphs = MicePairGraphs(data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7], data[8], data[9])
+#pairGraphs.doesEarlyGazingResultinLaterSuccess()
 
 #pairGraphs.lineGraphGazingObjects()
 #pairGraphs.lineGraphStrategies()
