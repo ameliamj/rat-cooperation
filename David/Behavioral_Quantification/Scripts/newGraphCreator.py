@@ -271,16 +271,21 @@ class dataAnalysisRegular:
                     interaction_y.append(y0[j])
             
 
-        gazer_x = np.concatenate(gazer_x) if gazer_x else np.array([])
-        gazer_y = np.concatenate(gazer_y) if gazer_y else np.array([])
-        gazee_x = np.concatenate(gazee_x) if gazee_x else np.array([])
-        gazee_y = np.concatenate(gazee_y) if gazee_y else np.array([])
+        def safe_concat(arr_list):
+            # Convert elements to at least 1D arrays and ignore empties
+            valid = [np.atleast_1d(a) for a in arr_list if np.size(a) > 0]
+            return np.concatenate(valid) if len(valid) > 0 else np.array([])
         
-        interaction_x = np.concatenate(interaction_x) if interaction_x else np.array([])
-        interaction_y = np.concatenate(interaction_y) if interaction_y else np.array([])
+        gazer_x = safe_concat(gazer_x)
+        gazer_y = safe_concat(gazer_y)
+        gazee_x = safe_concat(gazee_x)
+        gazee_y = safe_concat(gazee_y)
         
-        freq_x = np.concatenate(freq_x) if freq_x else np.array([])
-        freq_y = np.concatenate(gazee_y) if freq_y else np.array([])
+        interaction_x = safe_concat(interaction_x)
+        interaction_y = safe_concat(interaction_y)
+        
+        freq_x = safe_concat(freq_x)
+        freq_y = safe_concat(freq_y)
 
         return gazer_x, gazer_y, gazee_x, gazee_y, interaction_x, interaction_y, freq_x, freq_y
 
