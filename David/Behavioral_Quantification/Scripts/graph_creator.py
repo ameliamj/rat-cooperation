@@ -495,14 +495,14 @@ class multiFileGraphsCategories:
                     #print("\n\nProb: ",  num_succ / num_total)
                     #print("Num Trials: ", num_total)
                     #print("Lev File: ", self.allFileGroupExperiments[i][j].lev_file)
-                    individual_datapoints[i].append(num_succ / num_total)
+                    individual_datapoints[i].append(num_succ_old / num_total_old)
                     
                     # Assign color based on threshold
                     if (animal_id == "EB"):
                         color = 'red'
-                        individual_datapointsEB[i].append(num_succ / num_total)
+                        individual_datapointsEB[i].append(num_succ_old / num_total_old)
                     else:
-                        individual_datapoints_nonEB[i].append(num_succ / num_total)
+                        individual_datapoints_nonEB[i].append(num_succ_old / num_total_old)
                         color = 'gray'
                         '''if thresh > 3:
                             color = 'red'
@@ -583,7 +583,7 @@ class multiFileGraphsCategories:
     
         # Formatting
         #plt.xlabel('Category')
-        plt.ylabel('Probability of Successful Trials')
+        plt.ylabel('Probability of Successful Trials Old')
         plt.title('Success Probability per Category')
         plt.xticks(bar_positions, self.categoryNames)
         plt.ylim(0, 1)
