@@ -30,6 +30,7 @@ class singleExperiment:
         
         #self.pos = posLoader(pos_file, endFrame)
         #self.endFrame = self.pos.returnNumFrames()
+        self.endFrame = endFrame
         self.rat1 = rat1
         self.rat2 = rat2
         
