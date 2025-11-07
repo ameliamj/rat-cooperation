@@ -2826,6 +2826,192 @@ class MicePairGraphs:
         plt.close()
 
 
+    def lineGraphOverTime(self, nestedYDataList, label="Metric Over Time", color="#1f77b4", multiplyBy100=True, ax=None):
+        #nestedYDataList = [[exp1_group1, exp2_group1, exp3_group1, ...], [exp1_group2, exp2_group2, exp3_group2, ...], ...]
+        
+        # Convert to array; ragged arrays become object type → handle manually
+        max_len = max(len(group) for group in nestedYDataList)
+        data_matrix = np.full((len(nestedYDataList), max_len), np.nan)
+        
+        for r, group in enumerate(nestedYDataList):
+            for c, val in enumerate(group):
+                if val is not None:
+                    data_matrix[r, c] = val * (100 if multiplyBy100 else 1)
+    
+        # Individual lines (per rat pair)
+        if ax is None:
+            ax = plt.gca()
+    
+        for r in range(data_matrix.shape[0]):
+            xs = np.arange(max_len)
+            ys = data_matrix[r, :]
+            valid = ~np.isnan(ys)
+            if np.any(valid):
+                ax.plot(xs[valid], ys[valid], color="gray", alpha=0.35, linewidth=1)
+    
+        # Mean line
+        y_mean = np.nanmean(data_matrix, axis=0)
+        xs = np.arange(max_len)
+        valid = ~np.isnan(y_mean)
+        x = xs[valid]
+        y = y_mean[valid]
+    
+        # Smoothing to match other graphs
+        y_smooth = uniform_filter1d(y, size=3)
+    
+        # Regression for dashed line
+        slope, intercept, r_val, p_val, _ = linregress(x, y)
+        regline = intercept + slope * x
+    
+        # Main smoothed line
+        ax.plot(
+            x, y_smooth,
+            color=color,
+            linewidth=3,
+            marker=None,
+            label=label
+        )
+    
+        # Dashed trendline
+        ax.plot(
+            x, regline,
+            linestyle='--',
+            color=color,
+            linewidth=3
+        )
+    
+        # Style (copied from plot_by_exp_idx)
+        ax.tick_params(axis='both', which='major', labelsize=18)
+        ax.set_xlabel("Session Index", fontsize=20)
+        ylabel = ("% Success" if multiplyBy100 else "Metric Value")
+        ax.set_ylabel(ylabel, fontsize=20)
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+    
+        return ax
+
+
+    def holdEventsOverTime(self):
+        '''
+        Hold event definition: 
+            Min Criteria – Only one rat in lever.
+            Success – No lever press in first 1.75 seconds
+        '''
+        
+        percentHoldEvents = []
+        
+        holdSuccessCounts = {}
+        holdTrialCounts = {}
+        holdSessionCounts = {}
+        
+        for group_idx, group in enumerate(self.experimentGroups):
+            percentHoldEventsPerRatPair = []
+            
+            for exp_idx, exp in enumerate(group): 
+                numHoldEvents = 0
+                numPotentialHoldEvents = 0
+                
+                lev = exp.lev
+                pos = exp.pos
+                fps = exp.fps
+                
+                trial_starts = lev.returnTimeStartTrials()  # List of trial start times
+                first_presses = lev.returnFirstPressAbsTimes()  # List of first press times
+                ids_first_press = lev.returnRatIDFirstPressTrial()
+                
+                if (len(trial_starts) != len(first_presses) or len(first_presses) != len(ids_first_press)):
+                    print("len(trial_starts): ", len(trial_starts))
+                    print("len(ids_first_press): ", len(ids_first_press))
+                    raise ValueError("Inequal Sizes")
+                    
+                for trial_idx, trialStart in enumerate(trial_starts):
+                    t_begin = trial_starts[trial_idx]
+                    t_first_press = first_presses[trial_idx]
+                    rat_first_press = ids_first_press[trial_idx]
+                    
+                    if (t_begin == None or t_first_press == None or rat_first_press == None):
+                        continue
+                    
+                    # Check for NaN in timings
+                    if any(np.isnan(t) for t in [t_begin, t_first_press, rat_first_press]):
+                        print(f"[Exp {exp_idx}, Trial {trial_idx}] Skipped: NaN in timings (begin={t_begin}, first_press={t_first_press}, rat_first_press={rat_first_press})")
+                        continue
+                                    
+                    frameStart = int(t_begin * fps)
+                    frameFirstPress = int(t_first_press * fps)
+                    
+                    levAreas = ['lev_top', 'lev_bottom']
+                    dist = 0
+                    if (pos.returnRatLocationTime(0, frameStart) in levAreas ^ pos.returnRatLocationTime(1, frameStart) in levAreas):
+                        dist = max(pos.distanceFromLever(0, frameStart), pos.distanceFromLever(1, frameStart))
+                        
+                        
+                        if (pos.returnRatLocationTime(0, frameStart) in levAreas and rat_first_press == 0):
+                            #Rat 0 at Lever
+                            numPotentialHoldEvents += 1
+                            if (t_first_press > t_begin + 1.75):
+                                numHoldEvents += 1
+                            
+                            
+                        elif (pos.returnRatLocationTime(1, frameStart) in levAreas and rat_first_press == 1):
+                            #Rat 1 at Lever
+                            numPotentialHoldEvents += 1
+                            if (t_first_press > t_begin + 1.75):
+                                numHoldEvents += 1
+                
+                percentHoldEventsPerRatPair.append(numHoldEvents/numPotentialHoldEvents)
+            
+            percentHoldEvents.append(percentHoldEventsPerRatPair)
+                                
+        #Graphing
+        # =========📊 PLOTTING BELOW ========= #
+
+        # --- Global Style ---
+        plt.rcParams.update({
+            'font.size': 14,
+            'axes.titlesize': 16,
+            'axes.labelsize': 14,
+            'xtick.labelsize': 12,
+            'ytick.labelsize': 12,
+            'legend.fontsize': 12,
+            'axes.linewidth': 1.5
+        })
+     
+        # Figure
+        plt.figure(figsize=(8, 6))
+        ax = plt.gca()
+     
+        # Plot call (main line + dashed + per-rat lines)
+        self.lineGraphOverTime(percentHoldEvents,
+                               label="Hold Success",
+                               color="#377EB8",
+                               ax=ax)
+     
+        ax.set_ylim(0, 100)
+        ax.set_ylabel("Percent Hold Success")
+        ax.set_xlabel("Session Index")
+     
+        # Format axes
+        ax.grid(False)
+        for spine in ax.spines.values():
+            spine.set_linewidth(2)
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+     
+        plt.title("Hold Event Success Throughout Training")
+        plt.tight_layout()
+     
+        if self.save:
+            plt.savefig(
+                "HoldEventsOverTime.png",
+                dpi=300,
+                bbox_inches="tight"
+            )
+     
+        plt.show()
+        plt.close()
+     
+        return percentHoldEvents
             
     
   
@@ -2864,8 +3050,10 @@ def getGroupRatPairsIneqComp():
     
     return [None, None, fe.getPosDatapath(grouped = True), fpsList, totFramesList, rat1names, rat2names, sessionIDs, dates, ratPairs]
 
-#data = getGroupRatPairs()
-#pairGraphs = MicePairGraphs(data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7], data[8], data[9])
+data = getGroupRatPairs()
+pairGraphs = MicePairGraphs(data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7], data[8], data[9])
+pairGraphs.holdEventsOverTime()
+
 #pairGraphs.doesEarlyGazingResultinLaterSuccess()
 
 #pairGraphs.lineGraphGazingObjects()
@@ -6695,7 +6883,7 @@ class multiFileGraphs:
                     dist = max(pos.distanceFromLever(0, frameStart), pos.distanceFromLever(1, frameStart))
                     if (dist == pos.distanceFromLever(0, frameStart) and rat_first_press != 0):
                         continue
-                    elif (pos.distanceFromLever(1, frameStart) and rat_first_press != 1):
+                    elif (dist == pos.distanceFromLever(1, frameStart) and rat_first_press != 1):
                         continue
                     elif(pos.returnRatLocationTime(0, frameStart) in levAreas and pos.returnRatLocationTime(1, frameStart) in levAreas):
                         print("both rats in lever areas")
