@@ -213,6 +213,77 @@ class dataAnalysisRegular:
 
         return up_x, up_y, down_x, down_y
     
+    def generateGazingAndInteractingHeatmapData(self, bodypart = 3):
+        """
+        Generate concatenated gaze and intearction location heatmap data.
+        """
+        gazer_x = [] #All the x positions of the rats doing the gazing
+        gazer_y = [] #All the y positions of the rats doing the gazing
+        gazee_x = [] #All the x positions of the rats being gazed at
+        gazee_y = [] #All the y positions of the rats being gazed at
+        
+        interaction_x = [] #Same thing but for interactions
+        interaction_y = []
+        
+        freq_x = [] #x-position of every single frame
+        freq_y = [] #y-position of every single frame
+
+        for i, exp in enumerate(self.experiments):
+            pos = exp.pos
+            
+            #Get both rats x and y data
+            x0 = pos.data[0, 0, bodypart, :]
+            x1 = pos.data[1, 0, bodypart, :]
+            y0 = pos.data[0, 1, bodypart, :]
+            y1 = pos.data[1, 1, bodypart, :]
+            
+            if (len(x0) != len(x1) or len(x0) != len(y0) or len(x0) != len(y1)):
+                print("MISMATCH IN LENGTHS")
+            
+            freq_x.append(x0)
+            freq_x.append(x1)
+            freq_y.append(y0)
+            freq_y.append(y1)
+            
+            rat0Gazing = pos.returnIsGazing(0)
+            rat1Gazing = pos.returnIsGazing(1)
+            interacting = pos.returnIsInteracting()
+            
+            for j, gazing in enumerate(rat0Gazing):
+                if (gazing):
+                    gazer_x.append(x0[j])
+                    gazer_y.append(y0[j])
+                    gazee_x.append(x1[j])
+                    gazee_y.append(y1[j])
+            
+            for j, gazing in enumerate(rat1Gazing):
+                if (gazing):
+                    gazer_x.append(x1[j])
+                    gazer_y.append(y1[j])
+                    gazee_x.append(x0[j])
+                    gazee_y.append(y0[j])
+            
+            for j, interacted in enumerate(interacting):
+                if (interacted):
+                    interaction_x.append(x1[j])
+                    interaction_y.append(y1[j])
+                    interaction_x.append(x0[j])
+                    interaction_y.append(y0[j])
+            
+
+        gazer_x = np.concatenate(gazer_x) if gazer_x else np.array([])
+        gazer_y = np.concatenate(gazer_y) if gazer_y else np.array([])
+        gazee_x = np.concatenate(gazee_x) if gazee_x else np.array([])
+        gazee_y = np.concatenate(gazee_y) if gazee_y else np.array([])
+        
+        interaction_x = np.concatenate(interaction_x) if interaction_x else np.array([])
+        interaction_y = np.concatenate(interaction_y) if interaction_y else np.array([])
+        
+        freq_x = np.concatenate(freq_x) if freq_x else np.array([])
+        freq_y = np.concatenate(gazee_y) if freq_y else np.array([])
+
+        return gazer_x, gazer_y, gazee_x, gazee_y, interaction_x, interaction_y, freq_x, freq_y
+
     def percentOfTimeARatWasAtLeverFirstandPresseditFirst(self, onlyTrialsWithOneRatatCue = False):
         '''
         For each session, this function generates the percentage of the trials where the rat that was at the lever first before 
@@ -454,6 +525,24 @@ class createGraphs:
         H = H / H.max() if H.max() > 0 else H
         H = H ** gamma
         return H
+    
+    def makeRelativeHeatmap(self, event_x, event_y, freq_x, freq_y,
+                        bins=150, sigma=2, clip_percent=97, gamma=0.3):
+        """Return heatmap weighted by how often they occupy each region."""
+        H_event = self.makeHeatmap(event_x, event_y, bins, sigma, clip_percent, gamma)
+        H_freq = self.makeHeatmap(freq_x, freq_y, bins, sigma, clip_percent, gamma)
+    
+        if H_event is None or H_freq is None:
+            return None
+    
+        # Avoid divide-by-zero: mask zeros
+        mask = H_freq == 0
+        H_rel = np.zeros_like(H_event)
+        H_rel[~mask] = H_event[~mask] / H_freq[~mask]
+    
+        # Normalize to [0,1]
+        H_rel = H_rel / H_rel.max() if H_rel.max() > 0 else H_rel
+        return H_rel    
 
     def saveHeatmap(self, H, title, filename):
         if H is None:
@@ -732,6 +821,37 @@ graphs = createGraphs()
 
 
 #
+# Gazing and Interaction Location Heatmaps
+#
+
+(gazer_x, gazer_y,
+ gazee_x, gazee_y,
+ interaction_x, interaction_y,
+ freq_x, freq_y) = data.generateGazingAndInteractingHeatmapData()
+
+# --- EVENT HEATMAPS ---
+H_gazer = graphs.makeHeatmap(gazer_x, gazer_y)
+H_gazee = graphs.makeHeatmap(gazee_x, gazee_y)
+H_interact = graphs.makeHeatmap(interaction_x, interaction_y)
+
+# Save them
+graphs.saveHeatmap(H_gazer, "Gazer Position Heatmap", "gazer_heatmap.png")
+graphs.saveHeatmap(H_gazee, "Gazee Position Heatmap", "gazee_heatmap.png")
+graphs.saveHeatmap(H_interact, "Interaction Location Heatmap", "interaction_heatmap.png")
+
+# --- RELATIVE EVENT HEATMAPS ---
+H_gazer_rel = graphs.makeRelativeHeatmap(gazer_x, gazer_y, freq_x, freq_y)
+H_gazee_rel = graphs.makeRelativeHeatmap(gazee_x, gazee_y, freq_x, freq_y)
+H_interact_rel = graphs.makeRelativeHeatmap(interaction_x, interaction_y, freq_x, freq_y)
+
+graphs.saveHeatmap(H_gazer_rel, "Relative Gazer Heatmap", "gazer_relative_heatmap.png")
+graphs.saveHeatmap(H_gazee_rel, "Relative Gazee Heatmap", "gazee_relative_heatmap.png")
+graphs.saveHeatmap(H_interact_rel, "Relative Interaction Heatmap", "interaction_relative_heatmap.png")
+
+
+
+'''
+#
 # gazing At Other vs. Lever vs. Magazine Across Sessions
 #
 
@@ -757,7 +877,7 @@ filename = "percent_gazing_objects_vs_rat_comparison.png"
 
 # Call your plotting function
 graphs.plot_bar(data_list, labels, ylabel, title, filename)
-
+'''
 
 
 '''# Pie chart: Proportion of trials where the rat at lever first pressed it first
