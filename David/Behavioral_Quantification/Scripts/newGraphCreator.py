@@ -778,7 +778,7 @@ def minRequirementsIneq():
 #arr = minRequirements()
 
 
-arr = minRequirementsComp()
+arr = minRequirementsIneq()
 lev_files = arr[0]
 mag_files = arr[1]
 pos_files = arr[2]
@@ -938,10 +938,10 @@ H_up = graphs.makeHeatmap(up_x, up_y)
 H_down = graphs.makeHeatmap(down_x, down_y)
 
 # Save heatmaps
-graphs.saveHeatmap(H_left, "Left-preferring Group Heatmap", "left_heatmap_comp.png")
-graphs.saveHeatmap(H_right, "Right-preferring Group Heatmap", "right_heatmap_comp.png")
-graphs.saveHeatmap(H_up, "Up-preferring Group Heatmap", "up_heatmap_comp.png")
-graphs.saveHeatmap(H_down, "Down-preferring Group Heatmap", "down_heatmap_comp.png")
+graphs.saveHeatmap(H_left, "Left-preferring Group Heatmap", "left_heatmap_ineq.png")
+graphs.saveHeatmap(H_right, "Right-preferring Group Heatmap", "right_heatmap_ineq.png")
+graphs.saveHeatmap(H_up, "Up-preferring Group Heatmap", "up_heatmap_ineq.png")
+graphs.saveHeatmap(H_down, "Down-preferring Group Heatmap", "down_heatmap_ineq.png")
 
         
         
