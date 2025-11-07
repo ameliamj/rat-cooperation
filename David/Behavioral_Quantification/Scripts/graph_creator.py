@@ -1171,7 +1171,7 @@ categoryExperiments.printSummaryStats()
 
 #Transparent vs. Translucent vs. Opaque
 
-print("Running Transparency")
+'''print("Running Transparency")
 dataTransparent = getAllTransparent() #Transparent
 dataTranslucent = getAllTranslucent() #Translucent
 dataOpaque = getAllOpaque() #Opaque
@@ -1181,7 +1181,7 @@ magFiles = [dataTransparent[1], dataTranslucent[1], dataOpaque[1]]
 posFiles = [dataTransparent[2], dataTranslucent[2], dataOpaque[2]]
 categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["Transparent", "Translucent", "Opaque"])
 categoryExperiments.compareSuccesfulTrials()
-print("DONE WITH TRANSPARENCY")
+print("DONE WITH TRANSPARENCY")'''
 
 
 
