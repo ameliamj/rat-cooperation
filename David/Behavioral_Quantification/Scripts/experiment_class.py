@@ -28,7 +28,7 @@ class singleExperiment:
         self.sessionID = sessionID
         self.fiberPhoto = fiberPhoto
         
-        self.pos = posLoader(pos_file, endFrame)
+        #self.pos = posLoader(pos_file, endFrame)
         self.endFrame = self.pos.returnNumFrames()
         self.rat1 = rat1
         self.rat2 = rat2
