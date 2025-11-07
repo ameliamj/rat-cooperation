@@ -2942,7 +2942,7 @@ class MicePairGraphs:
                     
                     levAreas = ['lev_top', 'lev_bottom']
                     dist = 0
-                    if (pos.returnRatLocationTime(0, frameStart) in levAreas ^ pos.returnRatLocationTime(1, frameStart) in levAreas):
+                    if ((pos.returnRatLocationTime(0, frameStart) in levAreas) ^ (pos.returnRatLocationTime(1, frameStart) in levAreas)):
                         dist = max(pos.distanceFromLever(0, frameStart), pos.distanceFromLever(1, frameStart))
                         
                         
