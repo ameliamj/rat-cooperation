@@ -778,7 +778,7 @@ def minRequirementsIneq():
 #arr = minRequirements()
 
 
-arr = getFiltered()
+arr = minRequirementsComp()
 lev_files = arr[0]
 mag_files = arr[1]
 pos_files = arr[2]
@@ -825,7 +825,7 @@ data = dataAnalysisRegular(mag_files, lev_files, pos_files, fpsList, totFramesLi
 graphs = createGraphs()
 
 
-
+'''
 #
 # Gazing and Interaction Location Heatmaps
 #
@@ -853,7 +853,7 @@ H_interact_rel = graphs.makeRelativeHeatmap(interaction_x, interaction_y, freq_x
 graphs.saveHeatmap(H_gazer_rel, "Relative Gazer Heatmap", "gazer_relative_heatmap.png")
 graphs.saveHeatmap(H_gazee_rel, "Relative Gazee Heatmap", "gazee_relative_heatmap.png")
 graphs.saveHeatmap(H_interact_rel, "Relative Interaction Heatmap", "interaction_relative_heatmap.png")
-
+'''
 
 
 '''
@@ -920,7 +920,7 @@ graphs.plot_scatter(
 
 
 
-'''
+
 # Generate left/right position data
 left_x, left_y, right_x, right_y = data.generateLeftRightHeatmapData()
 up_x, up_y, down_x, down_y = data.generateUpDownHeatmapData()
@@ -938,11 +938,11 @@ H_up = graphs.makeHeatmap(up_x, up_y)
 H_down = graphs.makeHeatmap(down_x, down_y)
 
 # Save heatmaps
-graphs.saveHeatmap(H_left, "Left-preferring Group Heatmap", "left_heatmap.png")
-graphs.saveHeatmap(H_right, "Right-preferring Group Heatmap", "right_heatmap.png")
-graphs.saveHeatmap(H_up, "Up-preferring Group Heatmap", "up_heatmap.png")
-graphs.saveHeatmap(H_down, "Down-preferring Group Heatmap", "down_heatmap.png")
-'''
+graphs.saveHeatmap(H_left, "Left-preferring Group Heatmap", "left_heatmap_comp.png")
+graphs.saveHeatmap(H_right, "Right-preferring Group Heatmap", "right_heatmap_comp.png")
+graphs.saveHeatmap(H_up, "Up-preferring Group Heatmap", "up_heatmap_comp.png")
+graphs.saveHeatmap(H_down, "Down-preferring Group Heatmap", "down_heatmap_comp.png")
+
         
         
 
