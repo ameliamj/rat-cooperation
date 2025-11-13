@@ -1256,7 +1256,7 @@ categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["
 
 
 #Unfamiliar vs. Training Partners
-print("Running UF vs TP")
+'''print("Running UF vs TP")
 dataUF = getOnlyUnfamiliar() #Unfamiliar
 dataTP = getOnlyTrainingPartners() #Training Partners
 
@@ -1267,7 +1267,7 @@ categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["
 #categoryExperiments.printSummaryStats()
 #categoryExperiments.compareSuccesfulTrials()
 
-categoryExperiments.plotGroupedGazingComparison()
+categoryExperiments.plotGroupedGazingComparison()'''
 
 #Transparent vs. Translucent vs. Opaque
 
@@ -10841,7 +10841,143 @@ class multiFileGraphs:
         save_heatmap(H_left, "Left-preferring Group Heatmap", savepath.replace(".png", "_left.png"))
         save_heatmap(H_right, "Right-preferring Group Heatmap", savepath.replace(".png", "_right.png"))
 
+    def howDoesTrackSwitchingImpactSuccess(self):
+        """
+        Analyze relationship between amount of track switching and success rate across experiments.
+        Each experiment contributes one point: (# of track switches, success percentage).
+        """
+        amountOfTrackSwitching = []
+        successPercentage = []
+        
+        for exp_idx, exp in enumerate(self.experiments):
+            pos = exp.pos
+            lev = exp.lev
             
+            try:
+                fps = exp.fps
+            except AttributeError:
+                fps = 30  # fallback if not defined
+            
+            numFrames = pos.returnNumFrames
+            
+            # --- Compute success percentage ---
+            success_rate = lev.returnSuccessPercentage()
+            successPercentage.append(success_rate)
+            
+            # --- Compute track switching ---
+            switches_per_rat = []
+            for rat_id in [0, 1]:
+                # Use headbase (index 3)
+                y_coords = pos.data[rat_id, 1, 3, :]
+            
+                # Ignore NaNs
+                y_coords = y_coords[~np.isnan(y_coords)]
+                if len(y_coords) < 2:
+                    switches_per_rat.append(np.nan)
+                    continue
+            
+                # Define thresholds
+                lower_threshold = 300
+                upper_threshold = 340
+                min_frames_between_switches = int(10 * fps)  # limit: one switch per 10 seconds
+            
+                switches = 0
+                last_switch_frame = -np.inf
+                prev_side = None  # 'up', 'down', or None
+            
+                for frame, y in enumerate(y_coords):
+                    # Determine which side the rat is on
+                    if y < lower_threshold:
+                        current_side = "up"
+                    elif y > upper_threshold:
+                        current_side = "down"
+                    else:
+                        current_side = prev_side  # ambiguous zone → stay on previous side
+            
+                    # Detect a valid switch
+                    if prev_side is not None and current_side != prev_side and current_side in ["up", "down"]:
+                        if frame - last_switch_frame >= min_frames_between_switches:
+                            switches += 1
+                            last_switch_frame = frame
+            
+                    prev_side = current_side
+            
+                switches_per_rat.append(switches)
+            
+            # Average across both rats
+            avg_switches = np.nanmean(switches_per_rat)
+            amountOfTrackSwitching.append(avg_switches / numFrames)
+        
+        # --- Convert to arrays ---
+        x = np.array(amountOfTrackSwitching)
+        y = np.array(successPercentage)
+        
+        # Remove NaNs
+        valid = ~np.isnan(x) & ~np.isnan(y)
+        x, y = x[valid], y[valid]
+        
+        # --- Global styling ---
+        plt.rcParams.update({
+            'font.size': 14,
+            'axes.titlesize': 16,
+            'axes.labelsize': 14,
+            'xtick.labelsize': 12,
+            'ytick.labelsize': 12,
+            'legend.fontsize': 12,
+            'axes.linewidth': 1.5
+        })
+        
+        # --- Stats (correlation + trendline) ---
+        if len(x) > 1:
+            r_value, p_value = pearsonr(x, y)
+            slope, intercept = np.polyfit(x, y, 1)
+            x_line = np.linspace(x.min(), x.max(), 100)
+            y_line = slope * x_line + intercept
+        else:
+            r_value, p_value = np.nan, np.nan
+            x_line, y_line = np.array([]), np.array([])
+        
+        # --- Plot ---
+        plt.figure(figsize=(8, 6))
+        ax = plt.gca()
+        colorList = plt.cm.tab10(np.arange(len(x)))
+        
+        for idx, (gx, gy) in enumerate(zip(x, y)):
+            color = colorList[idx % len(colorList)]
+            ax.scatter(gx, gy, s=100, color=color, label=f"Session {idx+1}")
+        
+        if len(x_line) > 0:
+            ax.plot(x_line, y_line, linestyle='--', color='black', linewidth=2)
+        
+        # Axes labels
+        ax.set_xlabel("Amount of Track Switching (crossings of horizontal midline)")
+        ax.set_ylabel("Success Rate (%)")
+        ax.set_title("Track Switching vs. Success Rate per Session")
+        
+        # Add stats text
+        if not np.isnan(r_value):
+            stats_text = f"r = {r_value:.2f}\np = {p_value:.3f}"
+            ax.text(0.05, 0.95, stats_text,
+                    transform=ax.transAxes,
+                    fontsize=12,
+                    verticalalignment='top',
+                    bbox=dict(boxstyle='round', facecolor='white', alpha=0.8))
+        
+        # Clean formatting
+        ax.legend(loc="best", frameon=False)
+        for spine in ax.spines.values():
+            spine.set_linewidth(2)
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+        ax.grid(False)
+        
+        plt.tight_layout()
+        
+        if getattr(self, "save", False):
+            plt.savefig("TrackSwitching_vs_SuccessRate.png", dpi=300, bbox_inches="tight")
+        
+        plt.show()
+        plt.close()
             
 
 
@@ -10925,7 +11061,7 @@ initialNanList = [0.15, 0.12]
 #sessions = ['id1', 'id2'] #
 #ratPairs = [] #
 
-'''
+
 arr = getFiltered()
 
 #arr = trainingCoopData()
@@ -10944,7 +11080,7 @@ sessions = arr[7]
 ratPairs = arr[8]
 #fiberPhoto = arr[6]
 
-'''
+
 
 
 '''lev_files = ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/4_nanerror_lev.csv"]
@@ -10969,7 +11105,9 @@ initialNanList = [0.3]
 '''
 
 #print("Start MultiFileGraphs Regular")
-#experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, dates, sessions, ratPairs, prefix = "", save=True)
+experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, dates, sessions, ratPairs, prefix = "", save=True)
+experiment.howDoesTrackSwitchingImpactSuccess()
+
 #experiment.analyzeHeatmapDifferences()
 #experiment.first_press_bias()
 #experiment.crossingOverQuantification()
