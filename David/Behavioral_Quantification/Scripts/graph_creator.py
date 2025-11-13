@@ -1128,12 +1128,12 @@ class multiFileGraphsCategories:
                 numFrames = exp.endFrame
 
                 # Rat 0
-                lev0 = np.sum(pos.returnIsLookingAtObjects(0, target="lev"))
+                lev0 = np.sum(pos.returnIsLookingAtObjects(0))
                 mag0 = np.sum(pos.returnIsLookingAtObjects(0, target="mag"))
                 other0 = np.sum(pos.returnIsGazing(0))
 
                 # Rat 1
-                lev1 = np.sum(pos.returnIsLookingAtObjects(1, target="lev"))
+                lev1 = np.sum(pos.returnIsLookingAtObjects(1))
                 mag1 = np.sum(pos.returnIsLookingAtObjects(1, target="mag"))
                 other1 = np.sum(pos.returnIsGazing(1))
                 
@@ -1256,7 +1256,7 @@ categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["
 
 
 #Unfamiliar vs. Training Partners
-'''print("Running UF vs TP")
+print("Running UF vs TP")
 dataUF = getOnlyUnfamiliar() #Unfamiliar
 dataTP = getOnlyTrainingPartners() #Training Partners
 
@@ -1267,7 +1267,7 @@ categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["
 #categoryExperiments.printSummaryStats()
 #categoryExperiments.compareSuccesfulTrials()
 
-categoryExperiments.plotGroupedGazingComparison()'''
+categoryExperiments.plotGroupedGazingComparison()
 
 #Transparent vs. Translucent vs. Opaque
 
@@ -11105,8 +11105,8 @@ initialNanList = [0.3]
 '''
 
 #print("Start MultiFileGraphs Regular")
-experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, dates, sessions, ratPairs, prefix = "", save=True)
-experiment.howDoesTrackSwitchingImpactSuccess()
+#experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, dates, sessions, ratPairs, prefix = "", save=True)
+#experiment.howDoesTrackSwitchingImpactSuccess()
 
 #experiment.analyzeHeatmapDifferences()
 #experiment.first_press_bias()
