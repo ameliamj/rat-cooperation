@@ -3133,11 +3133,22 @@ class MicePairGraphs:
             (255/255, 127/255, 14/255),  # Orange
             (44/255, 160/255, 44/255),   # Green
             (214/255, 39/255, 40/255),   # Red
+            (148/255, 103/255, 189/255), # Purple
+            (140/255, 86/255, 75/255),   # Brown
+            (227/255, 119/255, 194/255), # Pink
+            (127/255, 127/255, 127/255), # Gray
+            (188/255, 189/255, 34/255),  # Yellow-green
+            (23/255, 190/255, 207/255),  # Cyan
+            (174/255, 199/255, 232/255), # Light blue
+            (255/255, 187/255, 120/255), # Light orange
+            (152/255, 223/255, 138/255), # Light green
+            (255/255, 152/255, 150/255), # Light red
+            (197/255, 176/255, 213/255)  # Light purple
         ]
         
         # --- Collect data ---
         for group_idx, group in enumerate(self.experimentGroups):
-            if len(group) == 0:
+            if len(group) <=  5:
                 continue
             
             # Compute average gaze across all sessions in this group
@@ -3265,9 +3276,9 @@ def getGroupRatPairsIneqComp():
     
     return [None, None, fe.getPosDatapath(grouped = True), fpsList, totFramesList, rat1names, rat2names, sessionIDs, dates, ratPairs]
 
-#data = getGroupRatPairs()
-#pairGraphs = MicePairGraphs(data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7], data[8], data[9])
-#pairGraphs.compareGazeVsMaxSuccess()
+data = getGroupRatPairs()
+pairGraphs = MicePairGraphs(data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7], data[8], data[9])
+pairGraphs.compareGazeVsMaxSuccess()
 #pairGraphs.holdEventsOverTime()
 
 #pairGraphs.doesEarlyGazingResultinLaterSuccess()
@@ -11095,8 +11106,8 @@ initialNanList = [0.3]
 '''
 
 #print("Start MultiFileGraphs Regular")
-experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, dates, sessions, ratPairs, prefix = "", save=True)
-experiment.howDoesTrackSwitchingImpactSuccess()
+#experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, dates, sessions, ratPairs, prefix = "", save=True)
+#experiment.howDoesTrackSwitchingImpactSuccess()
 
 #experiment.analyzeHeatmapDifferences()
 #experiment.first_press_bias()
