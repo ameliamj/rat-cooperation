@@ -10858,7 +10858,7 @@ class multiFileGraphs:
             except AttributeError:
                 fps = 30  # fallback if not defined
             
-            numFrames = pos.returnNumFrames()
+            numFrames = pos.returnNumFrames()  # <-- fixed method call
             
             # --- Compute success percentage ---
             success_rate = lev.returnSuccessPercentage()
@@ -10867,44 +10867,36 @@ class multiFileGraphs:
             # --- Compute track switching ---
             switches_per_rat = []
             for rat_id in [0, 1]:
-                # Use headbase (index 3)
                 y_coords = pos.data[rat_id, 1, 3, :]
-            
-                # Ignore NaNs
                 y_coords = y_coords[~np.isnan(y_coords)]
                 if len(y_coords) < 2:
                     switches_per_rat.append(np.nan)
                     continue
-            
-                # Define thresholds
+                
                 lower_threshold = 300
                 upper_threshold = 340
-                min_frames_between_switches = int(10 * fps)  # limit: one switch per 10 seconds
-            
+                min_frames_between_switches = int(10 * fps)
+                
                 switches = 0
                 last_switch_frame = -np.inf
-                prev_side = None  # 'up', 'down', or None
-            
+                prev_side = None
+                
                 for frame, y in enumerate(y_coords):
-                    # Determine which side the rat is on
                     if y < lower_threshold:
                         current_side = "up"
                     elif y > upper_threshold:
                         current_side = "down"
                     else:
-                        current_side = prev_side  # ambiguous zone → stay on previous side
-            
-                    # Detect a valid switch
+                        current_side = prev_side
+                    
                     if prev_side is not None and current_side != prev_side and current_side in ["up", "down"]:
                         if frame - last_switch_frame >= min_frames_between_switches:
                             switches += 1
                             last_switch_frame = frame
-            
                     prev_side = current_side
-            
+                
                 switches_per_rat.append(switches)
             
-            # Average across both rats
             avg_switches = np.nanmean(switches_per_rat)
             amountOfTrackSwitching.append(avg_switches / numFrames)
         
@@ -10912,7 +10904,6 @@ class multiFileGraphs:
         x = np.array(amountOfTrackSwitching)
         y = np.array(successPercentage)
         
-        # Remove NaNs
         valid = ~np.isnan(x) & ~np.isnan(y)
         x, y = x[valid], y[valid]
         
@@ -10930,22 +10921,21 @@ class multiFileGraphs:
         # --- Stats (correlation + trendline) ---
         if len(x) > 1:
             r_value, p_value = pearsonr(x, y)
+            r_squared = r_value ** 2
             slope, intercept = np.polyfit(x, y, 1)
             x_line = np.linspace(x.min(), x.max(), 100)
             y_line = slope * x_line + intercept
         else:
-            r_value, p_value = np.nan, np.nan
+            r_value, p_value, r_squared = np.nan, np.nan, np.nan
             x_line, y_line = np.array([]), np.array([])
         
         # --- Plot ---
-        plt.figure(figsize=(8, 6))
-        ax = plt.gca()
-        colorList = plt.cm.tab10(np.arange(len(x)))
+        fig, ax = plt.subplots(figsize=(8, 6))
         
-        for idx, (gx, gy) in enumerate(zip(x, y)):
-            color = colorList[idx % len(colorList)]
-            ax.scatter(gx, gy, s=100, color=color, label=f"Session {idx+1}")
+        # Plot all points in black (no legend)
+        ax.scatter(x, y, s=100, color='black')
         
+        # Plot trendline in black dashed
         if len(x_line) > 0:
             ax.plot(x_line, y_line, linestyle='--', color='black', linewidth=2)
         
@@ -10954,9 +10944,9 @@ class multiFileGraphs:
         ax.set_ylabel("Success Rate (%)")
         ax.set_title("Track Switching vs. Success Rate per Session")
         
-        # Add stats text
+        # Add stats box with r, r², and p
         if not np.isnan(r_value):
-            stats_text = f"r = {r_value:.2f}\np = {p_value:.3f}"
+            stats_text = f"r = {r_value:.2f}\nR² = {r_squared:.2f}\np = {p_value:.3f}"
             ax.text(0.05, 0.95, stats_text,
                     transform=ax.transAxes,
                     fontsize=12,
@@ -10964,7 +10954,6 @@ class multiFileGraphs:
                     bbox=dict(boxstyle='round', facecolor='white', alpha=0.8))
         
         # Clean formatting
-        ax.legend(loc="best", frameon=False)
         for spine in ax.spines.values():
             spine.set_linewidth(2)
         ax.spines['top'].set_visible(False)
@@ -10973,11 +10962,12 @@ class multiFileGraphs:
         
         plt.tight_layout()
         
-        if getattr(self, "save", False):
+        if (self.save):
             plt.savefig("TrackSwitching_vs_SuccessRate.png", dpi=300, bbox_inches="tight")
         
         plt.show()
         plt.close()
+
             
 
 
