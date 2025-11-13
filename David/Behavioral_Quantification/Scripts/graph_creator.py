@@ -1256,7 +1256,7 @@ categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["
 
 
 #Unfamiliar vs. Training Partners
-print("Running UF vs TP")
+'''print("Running UF vs TP")
 dataUF = getOnlyUnfamiliar() #Unfamiliar
 dataTP = getOnlyTrainingPartners() #Training Partners
 
@@ -1267,7 +1267,7 @@ categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["
 #categoryExperiments.printSummaryStats()
 #categoryExperiments.compareSuccesfulTrials()
 
-categoryExperiments.plotGroupedGazingComparison()
+categoryExperiments.plotGroupedGazingComparison()'''
 
 #Transparent vs. Translucent vs. Opaque
 
@@ -10858,7 +10858,7 @@ class multiFileGraphs:
             except AttributeError:
                 fps = 30  # fallback if not defined
             
-            numFrames = pos.returnNumFrames
+            numFrames = pos.returnNumFrames()
             
             # --- Compute success percentage ---
             success_rate = lev.returnSuccessPercentage()
@@ -11105,8 +11105,8 @@ initialNanList = [0.3]
 '''
 
 #print("Start MultiFileGraphs Regular")
-#experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, dates, sessions, ratPairs, prefix = "", save=True)
-#experiment.howDoesTrackSwitchingImpactSuccess()
+experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, dates, sessions, ratPairs, prefix = "", save=True)
+experiment.howDoesTrackSwitchingImpactSuccess()
 
 #experiment.analyzeHeatmapDifferences()
 #experiment.first_press_bias()
