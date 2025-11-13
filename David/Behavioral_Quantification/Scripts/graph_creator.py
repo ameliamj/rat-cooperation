@@ -1109,6 +1109,101 @@ class multiFileGraphsCategories:
         plt.show()
         plt.close()
 
+    def gazingAtOtherVsLevVsMagCategories(self):
+        """
+        Calculates gaze frames directed at the lever, magazine, or the other rat
+        for each experiment category (e.g., Unfamiliar vs Training Partner).
+        """
+        otherGazingByCategory = []
+        levGazingByCategory = []
+        magGazingByCategory = []
+
+        for group_idx, group in enumerate(self.allFileGroupExperiments):
+            otherGazingPerGroup = []
+            levGazingPerGroup = []
+            magGazingPerGroup = []
+
+            for exp in group:
+                pos = exp.pos
+                numFrames = exp.endFrame
+
+                # Rat 0
+                lev0 = np.sum(pos.returnIsLookingAtObjects(0, target="lev"))
+                mag0 = np.sum(pos.returnIsLookingAtObjects(0, target="mag"))
+                other0 = np.sum(pos.returnIsGazing(0))
+
+                # Rat 1
+                lev1 = np.sum(pos.returnIsLookingAtObjects(1, target="lev"))
+                mag1 = np.sum(pos.returnIsLookingAtObjects(1, target="mag"))
+                other1 = np.sum(pos.returnIsGazing(1))
+
+                # Normalize by number of frames to get % of time spent gazing
+                if numFrames > 0:
+                    levGazingPerGroup.append((lev0 + lev1) / (2 * numFrames))
+                    magGazingPerGroup.append((mag0 + mag1) / (2 * numFrames))
+                    otherGazingPerGroup.append((other0 + other1) / (2 * numFrames))
+
+            # Append per-category data
+            otherGazingByCategory.append(otherGazingPerGroup)
+            levGazingByCategory.append(levGazingPerGroup)
+            magGazingByCategory.append(magGazingPerGroup)
+
+        return otherGazingByCategory, levGazingByCategory, magGazingByCategory
+
+    def plotGroupedGazingComparison(self):
+        """
+        Creates grouped bar chart comparing Unfamiliar vs Training Partner gazing
+        for each gaze target: Other Rat, Lever, Magazine.
+        """
+        otherGazing, levGazing, magGazing = self.gazingAtOtherVsLevVsMagCategories()
+
+        if len(self.categoryNames) != 2:
+            raise ValueError("This plot assumes exactly 2 categories.")
+
+        categories = ["Other Rat", "Lever", "Magazine"]
+        data_by_location = [otherGazing, levGazing, magGazing]
+
+        # Calculate mean & SEM per category for each gaze type
+        means = [[np.mean(cat[i]) for cat in data_by_location] for i in range(len(self.categoryNames))]
+        sems = [[sem(cat[i]) for cat in data_by_location] for i in range(len(self.categoryNames))]
+
+        # --- Plot setup ---
+        x = np.arange(len(categories))
+        width = 0.35
+        fig, ax = plt.subplots(figsize=(8, 6))
+
+        colors = ["#1f77b4", "#ff7f0e"]  # Blue for Unfamiliar, Orange for Training Partner
+
+        rects1 = ax.bar(x - width/2, means[0], width, yerr=sems[0], capsize=5, label=self.categoryNames[0], color=colors[0])
+        rects2 = ax.bar(x + width/2, means[1], width, yerr=sems[1], capsize=5, label=self.categoryNames[1], color=colors[1])
+
+        # Add text labels
+        for rects in [rects1, rects2]:
+            for rect in rects:
+                height = rect.get_height()
+                ax.text(rect.get_x() + rect.get_width()/2., height + 0.01,
+                        f'{height*100:.1f}%', ha='center', va='bottom', fontsize=10)
+
+        # Formatting
+        ax.set_ylabel("Fraction of Time Gazing (%)")
+        ax.set_title("Gazing Behavior by Category and Target")
+        ax.set_xticks(x)
+        ax.set_xticklabels(categories)
+        ax.legend()
+
+        # Clean styling
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+        ax.grid(False)
+
+        plt.tight_layout()
+
+        if self.save:
+            plt.savefig(f"{self.path}GazingComparison_{self.categoryNames[0]}_vs_{self.categoryNames[1]}.png",
+                        dpi=300, bbox_inches="tight")
+
+        plt.show()
+        plt.close()
 
 
 #magFiles = [["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever.csv"], ["/Users/david/Documents/Research/Saxena_Lab/rat-cooperation/David/Behavioral_Quantification/Example_Data_Files/041824_Cam3_TrNum11_Coop_KL007Y-KL007G_lever.csv"]]
@@ -1154,7 +1249,7 @@ categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["
 #categoryExperiments.compareSuccesfulTrials()
 '''
 
-'''
+
 #Unfamiliar vs. Training Partners
 print("Running UF vs TP")
 dataUF = getOnlyUnfamiliar() #Unfamiliar
@@ -1164,10 +1259,10 @@ levFiles = [dataUF[0], dataTP[0]]
 magFiles = [dataUF[1], dataTP[1]]
 posFiles = [dataUF[2], dataTP[2]]
 categoryExperiments = multiFileGraphsCategories(magFiles, levFiles, posFiles, ["Unfamiliar", "Training Partners"])
-categoryExperiments.printSummaryStats()
+#categoryExperiments.printSummaryStats()
 #categoryExperiments.compareSuccesfulTrials()
-'''
 
+categoryExperiments.plotGroupedGazingComparison()
 
 #Transparent vs. Translucent vs. Opaque
 
@@ -2970,7 +3065,7 @@ class MicePairGraphs:
             percentHoldEvents.append(percentHoldEventsPerRatPair)
                                 
         #Graphing
-        # =========📊 PLOTTING BELOW ========= #
+        # =========PLOTTING BELOW ========= #
 
         # --- Global Style ---
         plt.rcParams.update({
@@ -3165,9 +3260,9 @@ def getGroupRatPairsIneqComp():
     
     return [None, None, fe.getPosDatapath(grouped = True), fpsList, totFramesList, rat1names, rat2names, sessionIDs, dates, ratPairs]
 
-data = getGroupRatPairs()
-pairGraphs = MicePairGraphs(data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7], data[8], data[9])
-pairGraphs.compareGazeVsMaxSuccess()
+#data = getGroupRatPairs()
+#pairGraphs = MicePairGraphs(data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7], data[8], data[9])
+#pairGraphs.compareGazeVsMaxSuccess()
 #pairGraphs.holdEventsOverTime()
 
 #pairGraphs.doesEarlyGazingResultinLaterSuccess()
