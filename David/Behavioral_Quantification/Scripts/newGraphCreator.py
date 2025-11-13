@@ -495,6 +495,65 @@ class dataAnalysisRegular:
         
         return otherGazingPerSession, levGazingPerSession, magGazingPerSession, numFramesPerSession
     
+    def gazingAtOtherVsLevVsMag_SuccVSNonSucc(self):
+        """
+        Compare percent of time spent gazing at Lever, Magazine, or Other Rat
+        between successful vs unsuccessful trials, for each category of experiments.
+        """
+
+        results = {}  # {"Success": {"Lever": [], "Mag": [], "Other": []}, "Failure": {"Lever": [], "Mag": [], "Other": []}}
+
+
+        for exp_idx, exp in enumerate(self.experiments):
+            lev = exp.lev
+            pos = exp.pos
+            fps= exp.fps
+
+            # Get trial info
+            trial_starts = lev.returnTimeStartTrials()
+            succ_trials = lev.returnSuccessTrials()
+            succ_trials = self._filterToLeverPressTrials(succ_trials, lev)
+
+            if not (len(trial_starts) == len(succ_trials)):
+                print(f"[Warning] Mismatched trial counts in experiment {exp_idx}")
+                continue
+
+            for trial_idx, t_begin in enumerate(trial_starts):
+                if (trial_idx == len(trial_starts) - 1):
+                    continue
+                
+                succ = succ_trials[trial_idx]
+                t_end = trial_starts[trial_idx + 1]
+
+                if any(x is None or np.isnan(x) for x in [t_begin, t_end, succ]):
+                    continue
+
+                start_frame = int(t_begin * fps)
+                end_frame = int(t_end * fps)
+                if end_frame <= start_frame:
+                    continue
+
+                # Extract gazing booleans for both mice
+                for rat_id in [0, 1]:
+                    look_lev = np.sum(pos.returnIsLookingAtObjects(rat_id)[start_frame:end_frame])
+                    look_mag = np.sum(pos.returnIsLookingAtObjects(rat_id, target="mag")[start_frame:end_frame])
+                    look_other = np.sum(pos.returnIsGazing(rat_id)[start_frame:end_frame])
+                    num_frames = end_frame - start_frame
+
+                    if num_frames <= 0:
+                        continue
+
+                    # Convert to percent time gazing
+                    percent_lev = look_lev / num_frames * 100
+                    percent_mag = look_mag / num_frames * 100
+                    percent_other = look_other / num_frames * 100
+
+                    group_key = "Success" if succ == 1 else "Failure"
+                    results[group_key]["Lever"].append(percent_lev)
+                    results[group_key]["Mag"].append(percent_mag)
+                    results[group_key]["Other"].append(percent_other)
+
+        return results
         
 
 class createGraphs:
@@ -689,6 +748,74 @@ class createGraphs:
         plt.show()
         plt.close()
         
+    def plot_gazing_comparison(self, results, ylabel="Percent Time Gazing", title="Gazing Comparison: Success vs Failure", filename="gazing_comparison.png", colors=None, figsize=(8, 6)):
+        """
+        Create grouped bar plots comparing gaze behavior (Lever, Mag, Other) between
+        successful and unsuccessful trials.
+    
+        Args:
+            results (dict): Output from gazingAtOtherVsLevVsMag_SuccVSNonSucc().
+            ylabel (str): Label for the y-axis.
+            title (str): Plot title.
+            filename (str): File name to save the plot.
+            colors (list, optional): Custom colors for groups.
+            figsize (tuple): Figure size in inches.
+        """
+        # --- Validate input ---
+        if not results or any(k not in results for k in ["Success", "Failure"]):
+            print("Invalid results structure.")
+            return
+    
+        categories = ["Lever", "Mag", "Other"]
+        success_data = [results["Success"].get(cat, []) for cat in categories]
+        failure_data = [results["Failure"].get(cat, []) for cat in categories]
+    
+        # Filter out empty categories
+        valid_cats = [cat for cat, s, f in zip(categories, success_data, failure_data) if len(s) > 0 and len(f) > 0]
+        success_data = [s for s in success_data if len(s) > 0]
+        failure_data = [f for f in failure_data if len(f) > 0]
+    
+        if not valid_cats:
+            print("No valid data to plot.")
+            return
+    
+        if colors is None:
+            colors = plt.cm.Set2(np.arange(2))
+    
+        # --- Compute stats ---
+        success_means = [np.mean(data) for data in success_data]
+        failure_means = [np.mean(data) for data in failure_data]
+        success_sems = [sem(data) for data in success_data]
+        failure_sems = [sem(data) for data in failure_data]
+    
+        x = np.arange(len(valid_cats))
+        width = 0.35
+    
+        plt.figure(figsize=figsize)
+    
+        bars1 = plt.bar(x - width/2, success_means, width, yerr=success_sems, label="Success", color=colors[0], capsize=5)
+        bars2 = plt.bar(x + width/2, failure_means, width, yerr=failure_sems, label="Failure", color=colors[1], capsize=5)
+    
+        # --- Add numeric labels ---
+        for bars, means in zip([bars1, bars2], [success_means, failure_means]):
+            for bar, mean in zip(bars, means):
+                plt.text(bar.get_x() + bar.get_width()/2, bar.get_height() + 0.5, f"{mean:.1f}",
+                         ha='center', va='bottom', fontsize=9)
+    
+        # --- Add p-values ---
+        for i, (succ, fail) in enumerate(zip(success_data, failure_data)):
+            _, p = ttest_ind(succ, fail, equal_var=False)
+            plt.text(i, max(success_means[i], failure_means[i]) + 3, f"p={p:.3f}", ha="center", fontsize=9)
+    
+        plt.xticks(x, valid_cats)
+        plt.ylabel(ylabel)
+        plt.title(title)
+        plt.legend()
+        plt.tight_layout()
+        plt.savefig(filename, dpi=300, bbox_inches="tight")
+        plt.show()
+        plt.close()
+    
     
 #DATA ANALYSIS GENERATION
 #
@@ -778,7 +905,7 @@ def minRequirementsIneq():
 #arr = minRequirements()
 
 
-arr = minRequirementsIneq()
+arr = minRequirements()
 lev_files = arr[0]
 mag_files = arr[1]
 pos_files = arr[2]
@@ -789,7 +916,6 @@ dates = arr[6]
 sessions = arr[7]
 ratPairs = arr[8]        
 
-#hi
 
 #Test
 '''
@@ -824,6 +950,13 @@ data = dataAnalysisRegular(mag_files, lev_files, pos_files, fpsList, totFramesLi
 # Create the graph object
 graphs = createGraphs()
 
+
+#
+# Gazing at Locations: Succ vs Non-Succ
+#
+
+results = data.gazingAtOtherVsLevVsMag_SuccVSNonSucc()
+graphs.plot_gazing_comparison(results, title="Gazing: Success vs Failure", filename="gazing_success_vs_failure.png")()
 
 '''
 #
@@ -922,6 +1055,7 @@ graphs.plot_scatter(
 
 
 # Generate left/right position data
+'''
 left_x, left_y, right_x, right_y = data.generateLeftRightHeatmapData()
 up_x, up_y, down_x, down_y = data.generateUpDownHeatmapData()
 
@@ -938,12 +1072,11 @@ H_up = graphs.makeHeatmap(up_x, up_y)
 H_down = graphs.makeHeatmap(down_x, down_y)
 
 # Save heatmaps
-graphs.saveHeatmap(H_left, "Left-preferring Group Heatmap", "left_heatmap_ineq.png")
-graphs.saveHeatmap(H_right, "Right-preferring Group Heatmap", "right_heatmap_ineq.png")
-graphs.saveHeatmap(H_up, "Up-preferring Group Heatmap", "up_heatmap_ineq.png")
-graphs.saveHeatmap(H_down, "Down-preferring Group Heatmap", "down_heatmap_ineq.png")
-
-        
+graphs.saveHeatmap(H_left, "Left-preferring Group Heatmap", "left_heatmap.png")
+graphs.saveHeatmap(H_right, "Right-preferring Group Heatmap", "right_heatmap.png")
+graphs.saveHeatmap(H_up, "Up-preferring Group Heatmap", "up_heatmap.png")
+graphs.saveHeatmap(H_down, "Down-preferring Group Heatmap", "down_heatmap.png")
+'''
         
 
         
