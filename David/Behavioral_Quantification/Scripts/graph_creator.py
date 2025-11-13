@@ -1136,6 +1136,11 @@ class multiFileGraphsCategories:
                 lev1 = np.sum(pos.returnIsLookingAtObjects(1, target="lev"))
                 mag1 = np.sum(pos.returnIsLookingAtObjects(1, target="mag"))
                 other1 = np.sum(pos.returnIsGazing(1))
+                
+                print("lev0: ", lev0)
+                print("mag0: ", mag0)
+                print("lev1: ", lev1)
+                print("mag1: ", mag1)
 
                 # Normalize by number of frames to get % of time spent gazing
                 if numFrames > 0:
