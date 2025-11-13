@@ -501,7 +501,10 @@ class dataAnalysisRegular:
         between successful vs unsuccessful trials, for each category of experiments.
         """
 
-        results = {}  # {"Success": {"Lever": [], "Mag": [], "Other": []}, "Failure": {"Lever": [], "Mag": [], "Other": []}}
+        results = {
+            "Success": {"Lever": [], "Mag": [], "Other": []},
+            "Failure": {"Lever": [], "Mag": [], "Other": []}
+        }
 
 
         for exp_idx, exp in enumerate(self.experiments):
