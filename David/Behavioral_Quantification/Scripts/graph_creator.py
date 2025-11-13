@@ -1186,8 +1186,8 @@ class multiFileGraphsCategories:
         for rects in [rects1, rects2]:
             for rect in rects:
                 height = rect.get_height()
-                ax.text(rect.get_x() + rect.get_width()/2., height + 0.01,
-                        f'{height*100:.1f}%', ha='center', va='bottom', fontsize=10)
+                #ax.text(rect.get_x() + rect.get_width()/2., height + 0.01,
+                       #f'{height*100:.1f}%', ha='center', va='bottom', fontsize=10)
 
         # Formatting
         ax.set_ylabel("Fraction of Time Gazing (%)")
