@@ -112,7 +112,7 @@ class levLoader:
             Args:
                 column (str): The column name.
             
-            Returns:
+            Returns:z
                 int: The number of null entries in the column.
             
             Raises:
@@ -921,6 +921,7 @@ class levLoader:
     
     def numTotalFirst31(self): 
         return min(self.returnNumTotalTrials(), 31)
+    
         
 #Testing
 #
