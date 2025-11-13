@@ -2959,7 +2959,13 @@ class MicePairGraphs:
                             if (t_first_press > t_begin + 1.75):
                                 numHoldEvents += 1
                 
-                percentHoldEventsPerRatPair.append(numHoldEvents/numPotentialHoldEvents)
+                if numPotentialHoldEvents > 0:
+                    percent = numHoldEvents / numPotentialHoldEvents
+                else:
+                    print(f"[Group {group_idx}, Exp {exp_idx}] Warning: No potential hold events found. Setting percentHoldEvents to np.nan.")
+                    percent = np.nan
+                
+                percentHoldEventsPerRatPair.append(percent)
             
             percentHoldEvents.append(percentHoldEventsPerRatPair)
                                 
