@@ -819,6 +819,71 @@ class createGraphs:
         plt.show()
         plt.close()
     
+    def plot_bar_comparison(self, data_list1, data_list2, category_labels, group_labels,
+                            ylabel, title, filename, colors=None, figsize=(7, 5)):
+        """
+        Create a grouped bar chart comparing two datasets across multiple categories.
+
+        Args:
+            data_list1 (List[List[float]]): First dataset (e.g., Cooperative sessions), list of lists (one per category).
+            data_list2 (List[List[float]]): Second dataset (e.g., Non-Cooperative sessions), same shape as data_list1.
+            category_labels (List[str]): Names of the categories (e.g., ["Other Rat", "Lever", "Magazine"]).
+            group_labels (List[str]): Names of the two groups being compared (e.g., ["Coop", "NonCoop"]).
+            ylabel (str): Y-axis label.
+            title (str): Plot title.
+            filename (str): Path to save figure.
+            colors (List[str], optional): Colors for bars. Defaults to tab10 colors.
+            figsize (tuple): Figure size.
+        """
+        num_categories = len(category_labels)
+        if colors is None:
+            colors = plt.cm.tab10(np.arange(2))
+
+        # Compute means and SEMs
+        means1 = [np.mean(d) for d in data_list1]
+        means2 = [np.mean(d) for d in data_list2]
+        sems1 = [sem(d) for d in data_list1]
+        sems2 = [sem(d) for d in data_list2]
+
+        # Compute p-values for each category
+        p_values = []
+        for d1, d2 in zip(data_list1, data_list2):
+            if len(d1) > 1 and len(d2) > 1:
+                _, p = ttest_ind(d1, d2, equal_var=False)
+                p_values.append(p)
+            else:
+                p_values.append(np.nan)
+
+        # Bar positions
+        x = np.arange(num_categories)
+        width = 0.35
+
+        plt.figure(figsize=figsize)
+        bars1 = plt.bar(x - width/2, means1, width, yerr=sems1, capsize=5, color=colors[0], label=group_labels[0])
+        bars2 = plt.bar(x + width/2, means2, width, yerr=sems2, capsize=5, color=colors[1], label=group_labels[1])
+
+        # Add mean labels above bars
+        for bars, means in zip([bars1, bars2], [means1, means2]):
+            for bar, mean in zip(bars, means):
+                height = bar.get_height()
+                plt.text(bar.get_x() + bar.get_width()/2, height + max(sems1 + sems2)/3, f'{mean:.2f}',
+                         ha='center', va='bottom', fontsize=9)
+
+        # Add p-values above paired bars
+        for i, p in enumerate(p_values):
+            if not np.isnan(p):
+                plt.text(x[i], max(means1[i], means2[i]) + max(sems1[i], sems2[i]) * 2,
+                         f'p={p:.3f}', ha='center', va='bottom', fontsize=9,
+                         bbox=dict(boxstyle='round', facecolor='white', alpha=0.6))
+
+        plt.xticks(x, category_labels)
+        plt.ylabel(ylabel)
+        plt.title(title)
+        plt.legend()
+        plt.tight_layout()
+        plt.savefig(filename, dpi=300, bbox_inches="tight")
+        plt.show()
+        plt.close()
     
 #DATA ANALYSIS GENERATION
 #
@@ -830,7 +895,7 @@ filtered = "/gpfs/radev/project/saxena/drb83/rat-cooperation/David/Behavioral_Qu
 minReq = "/gpfs/radev/project/saxena/drb83/rat-cooperation/David/Behavioral_Quantification/Sorted_Data_Files/dyed_preds_min_requirements_valid.csv"
 minReqComp = "/gpfs/radev/project/saxena/drb83/rat-cooperation/David/Behavioral_Quantification/Sorted_Data_Files/comp_minReq_valid.csv"
 minReqIneq = "/gpfs/radev/project/saxena/drb83/rat-cooperation/David/Behavioral_Quantification/Sorted_Data_Files/ineq_minReq_valid.csv"
-
+minReqNonCoop = "/gpfs/radev/project/saxena/drb83/rat-cooperation/David/Behavioral_Quantification/Sorted_Data_Files/nonCoop_minReq_valid.csv"
 
 def getFiltered():
     fe = fileExtractor(filtered)
@@ -904,6 +969,27 @@ def minRequirementsIneq():
     #print("initial_nan_list: ", initial_nan_list)
     return [None, None, fe.getPosDatapath(), fpsList, totFramesList, initial_nan_list, dates, sessions, ratPairs, familiarity, transparency]
 
+def minRequirementsNonCoop():
+    fe = fileExtractor(minReqNonCoop)
+    #fe.data = fe.deleteBadNaN()
+    #fe.deleteOnlyFullyInvalid()
+    #fe.filterOutBadNums()
+    fpsList, totFramesList = fe.returnFPSandTotFrames()
+    initial_nan_list = fe.returnNaNPercentage()
+    dates = fe.getDatesList()
+    print("dates: ", dates)
+    sessions = fe.getSessionIDList()
+    print("sessions: ", sessions)
+    #dates = dates.tolist()
+    #sessions = sessions.tolist()
+    ratPairs = fe.getRatPairList()
+    familiarity = fe.getFamiliarityList()
+    transparency = fe.getBarrierTransparencyList()
+    #print("initial_nan_list: ", initial_nan_list)
+    return [None, None, fe.getPosDatapath(), fpsList, totFramesList, initial_nan_list, dates, sessions, ratPairs, familiarity, transparency]
+
+
+
 #arr = getFiltered()
 #arr = minRequirements()
 
@@ -917,7 +1003,18 @@ totFramesList = arr[4]
 initialNanList = arr[5]
 dates = arr[6]
 sessions = arr[7]
-ratPairs = arr[8]        
+ratPairs = arr[8]     
+
+arr = minRequirementsNonCoop()
+lev_files2 = arr[0]
+mag_files2 = arr[1]
+pos_files2 = arr[2]
+fpsList2 = arr[3]
+totFramesList2 = arr[4]
+initialNanList2 = arr[5]
+dates2 = arr[6]
+sessions2 = arr[7]
+ratPairs2 = arr[8]      
 
 
 #Test
@@ -949,17 +1046,38 @@ ratPairs = ['KL001Y-KL001G', 'KL007Y-KL007G'] #
 
 # Create the data generation object
 data = dataAnalysisRegular(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, dates, sessions, ratPairs, prefix = "", save=True)
+data2 = dataAnalysisRegular(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, dates, sessions, ratPairs, prefix = "", save=True)
+
 
 # Create the graph object
 graphs = createGraphs()
 
 
 #
+# Gazing at Locations: Coop vs Non-Coop
+#
+
+otherGazingPerSessionCoop, levGazingPerSessionCoop, magGazingPerSessionCoop, numFramesPerSessionCoop = data.gazingAtOtherVsLevVsMag()
+otherGazingPerSessionNonCoop, levGazingPerSessionNonCoop, magGazingPerSessionNonCoop, numFramesPerSessionNonCoop = data2.gazingAtOtherVsLevVsMag()
+graphs.plot_bar_comparison(
+    data_list1=[otherGazingPerSessionCoop, levGazingPerSessionCoop, magGazingPerSessionCoop],
+    data_list2=[otherGazingPerSessionNonCoop, levGazingPerSessionNonCoop, magGazingPerSessionNonCoop],
+    category_labels=["Other Rat", "Lever", "Magazine"],
+    group_labels=["Coop", "NonCoop"],
+    ylabel="Gazing Frames",
+    title="Gazing Comparison: Cooperative vs Non-Cooperative Sessions",
+    filename="gazing_comparison_barplot.png"
+)
+
+
+'''
+#
 # Gazing at Locations: Succ vs Non-Succ
 #
 
 results = data.gazingAtOtherVsLevVsMag_SuccVSNonSucc()
 graphs.plot_gazing_comparison(results, title="Gazing: Success vs Failure", filename="gazing_success_vs_failure.png")()
+'''
 
 '''
 #
