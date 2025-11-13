@@ -3018,9 +3018,118 @@ class MicePairGraphs:
         plt.close()
      
         return percentHoldEvents
+              
+    def compareGazeVsMaxSuccess(self):
+        """
+        Compare the average gaze across all sessions in each group
+        vs. the highest success percentage in that group.
+        """
+        
+        avgGazePerGroup = []
+        maxSuccessPerGroup = []
+        
+        colorList = [
+            (31/255, 119/255, 180/255),  # Blue
+            (255/255, 127/255, 14/255),  # Orange
+            (44/255, 160/255, 44/255),   # Green
+            (214/255, 39/255, 40/255),   # Red
+        ]
+        
+        # --- Collect data ---
+        for group_idx, group in enumerate(self.experimentGroups):
+            if len(group) == 0:
+                continue
             
-    
+            # Compute average gaze across all sessions in this group
+            gazeValues = []
+            successValues = []
+            
+            for exp in group:
+                gaze0 = exp.pos.returnIsGazing(0)
+                gaze1 = exp.pos.returnIsGazing(1)
+                numFrames = exp.pos.returnNumFrames()
+                
+                # Average gaze across both rats in this session
+                gazePercentage = np.sum(gaze0 + gaze1) / (2 * numFrames)
+                gazeValues.append(gazePercentage)
+                
+                # Success percentage for this session
+                succPercentage = exp.lev.returnSuccessPercentage()
+                successValues.append(succPercentage)
+            
+            # Group-level metrics
+            avgGaze = np.mean(gazeValues)
+            maxSuccess = np.max(successValues)
+            
+            avgGazePerGroup.append(avgGaze)
+            maxSuccessPerGroup.append(maxSuccess)
+        
+        # --- Convert to arrays ---
+        x = np.array(avgGazePerGroup)
+        y = np.array(maxSuccessPerGroup)
+        
+        # --- Global styling ---
+        plt.rcParams.update({
+            'font.size': 14,
+            'axes.titlesize': 16,
+            'axes.labelsize': 14,
+            'xtick.labelsize': 12,
+            'ytick.labelsize': 12,
+            'legend.fontsize': 12,
+            'axes.linewidth': 1.5
+        })  
+        
+        # --- Stats (correlation + trendline) ---
+        r_value, p_value = pearsonr(x, y)
+        slope, intercept = np.polyfit(x, y, 1)
+        x_line = np.linspace(x.min(), x.max(), 100)
+        y_line = slope * x_line + intercept
+        
+        # --- Plot ---
+        plt.figure(figsize=(8, 6))
+        ax = plt.gca()
+        
+        # One point per group
+        for idx, (gx, gy) in enumerate(zip(x, y)):
+            color = colorList[idx % len(colorList)]
+            ax.scatter(gx, gy, s=100, color=color, label=f"Group {idx+1}")
+        
+        # Trendline
+        ax.plot(x_line, y_line, linestyle='--', color='black', linewidth=2)
+        
+        # Axes labels
+        ax.set_xlabel("Average Gazing (%) Across All Sessions")
+        ax.set_ylabel("Max Success Rate (%) in Group")
+        ax.set_title("Average Gazing vs. Max Success per Group")
+        
+        # Add stats text
+        stats_text = f"r = {r_value:.2f}\np = {p_value:.3f}"
+        ax.text(0.05, 0.95, stats_text,
+                transform=ax.transAxes,
+                fontsize=12,
+                verticalalignment='top',
+                bbox=dict(boxstyle='round', facecolor='white', alpha=0.8))
+        
+        # Clean formatting
+        ax.legend(loc="best", frameon=False)
+        for spine in ax.spines.values():
+            spine.set_linewidth(2)
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+        ax.grid(False)
+        
+        plt.tight_layout()
+        
+        if self.save:
+            plt.savefig("AverageGaze_vs_MaxSuccess.png", dpi=300, bbox_inches="tight")
+        
+        plt.show()
+        plt.close()
+        
+        return avgGazePerGroup, maxSuccessPerGroup
+
   
+    
 
 groupRatPairs = "/gpfs/radev/project/saxena/drb83/rat-cooperation/David/Behavioral_Quantification/Sorted_Data_Files/group_rat_pairs_corrected.csv"
 ineq = "/gpfs/radev/project/saxena/drb83/rat-cooperation/David/Behavioral_Quantification/Sorted_Data_Files/ineq_minReq_valid.csv"
@@ -3058,7 +3167,8 @@ def getGroupRatPairsIneqComp():
 
 data = getGroupRatPairs()
 pairGraphs = MicePairGraphs(data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7], data[8], data[9])
-pairGraphs.holdEventsOverTime()
+pairGraphs.compareGazeVsMaxSuccess()
+#pairGraphs.holdEventsOverTime()
 
 #pairGraphs.doesEarlyGazingResultinLaterSuccess()
 
