@@ -660,6 +660,37 @@ class createGraphs:
         plt.show()
         plt.close()
         
+    def saveDifferenceHeatmap(self, H, title, filename):
+        if H is None:
+            print(f"Skipping {title}, no data")
+            return
+        
+        fig_width = 6
+        fig_height = fig_width / self.aspect_ratio
+    
+        plt.figure(figsize=(fig_width, fig_height))
+    
+        vmax = np.max(np.abs(H))      # symmetric range
+        im = plt.imshow(
+            np.flipud(H),
+            extent=[0, self.arena_width, 0, self.arena_height],
+            origin="upper",
+            aspect="auto",
+            cmap="bwr",               # diverging: blue→white→red
+            vmin=-vmax,
+            vmax=vmax
+        )
+    
+        plt.colorbar(im, label="Coop - NonCoop Density")
+        plt.xlabel("X position (px)")
+        plt.ylabel("Y position (px)")
+        plt.title(title)
+        plt.gca().invert_yaxis()
+        plt.savefig(filename, dpi=300, bbox_inches="tight")
+        plt.show()
+        plt.close()
+
+        
     def plot_bar(self, data_list, labels, ylabel, title, filename, colors=None, figsize=(6, 5)):
         """
         Create and save a bar plot comparing multiple datasets, including error bars, p-value, and mean values.
@@ -1069,6 +1100,10 @@ ratPairs = ['KL001Y-KL001G', 'KL007Y-KL007G'] #
 #
 #
 
+print("lev_files: ", lev_files)
+print("lev_files2: ", lev_files2)
+
+
 # Create the data generation object
 data = dataAnalysisRegular(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, dates, sessions, ratPairs, prefix = "", save=True)
 data2 = dataAnalysisRegular(mag_files2, lev_files2, pos_files2, fpsList2, totFramesList2, initialNanList2, dates2, sessions2, ratPairs2, prefix = "", save=True)
@@ -1099,7 +1134,11 @@ if H_coop is not None and H_nonCoop is not None:
 # Save heatmaps
 graphs.saveHeatmap(H_coop, "Cooperative Rat Heatmap", "cooperative_rat_heatmap.png")
 graphs.saveHeatmap(H_nonCoop, "Non-Cooperative Rat Heatmap", "non_cooperative_rat_heatmap.png")
-graphs.saveHeatmap(H_diff, "Difference Heatmap (Coop - NonCoop)", "difference_heatmap.png")
+graphs.saveDifferenceHeatmap(
+    H_diff,
+    "Difference Heatmap (Coop - NonCoop)",
+    "difference_heatmap.png"
+)
 
 
 print("Finished Saving Heatmaps")
