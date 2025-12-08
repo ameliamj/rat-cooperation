@@ -1061,7 +1061,7 @@ dates = arr[6]
 sessions = arr[7]
 ratPairs = arr[8]     
 
-arr = minRequirementsNonCoop()
+arr = minRequirementsComp()
 lev_files2 = arr[0]
 mag_files2 = arr[1]
 pos_files2 = arr[2]
