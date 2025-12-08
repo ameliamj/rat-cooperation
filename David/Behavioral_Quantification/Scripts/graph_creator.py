@@ -10983,72 +10983,116 @@ class multiFileGraphs:
 
     def switchingHistogram(self, smooth_sigma=3):
         """
-        For each session:
-        - Computes trial-by-trial switches (rat changes lever 1↔2).
-        - Computes trial-by-trial success (0/1).
-        - Smooths both using Gaussian filter (sigma adjustable).
-        - Produces TWO separate plots per session:
-            (1) Success rate (smoothed)
-            (2) Switches per trial (smoothed)
+        Produces TWO total plots across all sessions:
+        
+        (1) A line graph comparing switching vs. success (concatenated across sessions)
+        (2) A histogram: number of sessions with each number of switches using sliding window technique
         """
+        
+        all_switches = []
+        all_success = []
+        
+        # List to store the total number of switches for *each session*
+        session_total_switches = [] 
     
-        for session_idx, exp in enumerate(self.experiments):
+        for exp in self.experiments:
             lev = exp.lev
-    
+            
             # Trial-by-trial lever presses (list of [rat0_lever, rat1_lever])
             trialLeverLocations = lev.returnRatLeverLocationPerTrial()
-    
-            # 0/1 success list
-            successList = np.array(lev.returnSuccessList())
-    
+            
+            # NOTE: Assuming returnSuccessPercentage() returns a list/array of 0s and 1s 
+            # representing success on each trial, not just a single percentage value.
+            successList = np.array(lev.returnSuccessPercentage())
+            
             num_trials = len(trialLeverLocations)
+            
+            # ---- Compute switch count per trial and per session ----
+            switches_per_trial = []
+            session_switches_count = 0
+            
+            for t in range(num_trials):
+                # Check for switch starting from trial t=1
+                switches_on_trial = 0 
+                if t > 0:
+                    prev = trialLeverLocations[t - 1]
+                    curr = trialLeverLocations[t]
+            
+                    # Rat 0 switch? (Check that both levers were pressed and different)
+                    # Assuming 0 means no press.
+                    if prev[0] != 0 and curr[0] != 0 and prev[0] != curr[0]:
+                        switches_on_trial += 1
+                    # Rat 1 switch?
+                    if prev[1] != 0 and curr[1] != 0 and prev[1] != curr[1]:
+                        switches_on_trial += 1
+                
+                switches_per_trial.append(switches_on_trial)
+                session_switches_count += switches_on_trial
     
-            # ---- Compute switch count per trial ----
-            switches_per_trial = [0]  # trial 0 cannot be a switch
-    
-            for t in range(1, num_trials):
-                prev = trialLeverLocations[t - 1]
-                curr = trialLeverLocations[t]
-    
-                sw = 0
-                # Rat 0 switch?
-                if prev[0] != 0 and curr[0] != 0 and prev[0] != curr[0]:
-                    sw += 1
-                # Rat 1 switch?
-                if prev[1] != 0 and curr[1] != 0 and prev[1] != curr[1]:
-                    sw += 1
-    
-                switches_per_trial.append(sw)
-    
+            # Store the total number of switches for the session (for Plot 2)
+            session_total_switches.append(session_switches_count) 
+            
+            # Convert to numpy array for smoothing
             switches_per_trial = np.array(switches_per_trial)
-    
-            # ---- Smooth signals ----
-            switches_smooth = gaussian_filter1d(switches_per_trial, sigma=smooth_sigma)
+            
+            # ---- Smooth signals (for Plot 1) ----
+            # NOTE: successList and switches_per_trial must be lists/arrays of the same length (num_trials)
+            switches_smooth = gaussian_filter1d(switches_per_trial.astype(float), sigma=smooth_sigma)
             success_smooth  = gaussian_filter1d(successList.astype(float), sigma=smooth_sigma)
+            
+            # Append to global lists for Plot 1
+            all_switches.extend(switches_smooth)
+            all_success.extend(success_smooth)
+            
+        # Convert to np arrays for plotting
+        all_switches = np.array(all_switches)
+        all_success = np.array(all_success)
+        session_total_switches = np.array(session_total_switches)
+        
+        # ============================================================
+        # (1) GLOBAL LINE GRAPH: switches vs success
+        # ============================================================
+        
+        plt.figure(figsize=(12, 5))
+        plt.plot(all_switches, label="Switches (smoothed)")
+        plt.plot(all_success, label="Success (smoothed)")
+        plt.title("Switching vs Success Across All Sessions")
+        plt.xlabel("Trial (all sessions concatenated)")
+        plt.ylabel("Value (Smoothed)")
+        plt.legend()
+        plt.grid(True)
+        plt.tight_layout()
+        plt.show()
+        plt.savefig("switching_vs_success_line_plot.png")
     
-            # ------------------------------------------------------------
-            #  Plot 1: Success Rate per Trial
-            # ------------------------------------------------------------
-            plt.figure(figsize=(10, 4))
-            plt.plot(success_smooth)
-            plt.title(f"Session {session_idx + 1}: Success Rate (smoothed)")
-            plt.xlabel("Trial")
-            plt.ylabel("Success Probability")
-            plt.grid(True)
-            plt.tight_layout()
-            plt.show()
-    
-            # ------------------------------------------------------------
-            #  Plot 2: Switches per Trial
-            # ------------------------------------------------------------
-            plt.figure(figsize=(10, 4))
-            plt.plot(switches_smooth)
-            plt.title(f"Session {session_idx + 1}: Switches per Trial (smoothed)")
-            plt.xlabel("Trial")
-            plt.ylabel("Switch Count")
-            plt.grid(True)
-            plt.tight_layout()
-            plt.show()
+        
+        # ============================================================
+        # (2) GLOBAL HISTOGRAM OF SWITCHES PER SESSION
+        # ============================================================
+        
+        # Determine bins based on max switch count
+        max_switches = int(np.max(session_total_switches))
+        bins = np.arange(0, max_switches + 2) - 0.5 # Bins centered on integers [0, 1, 2, ...]
+        
+        hist_counts, bin_edges = np.histogram(session_total_switches, bins=bins)
+        
+        # Smooth histogram values for aesthetics (as done in the original code's Plot 2)
+        hist_smooth = gaussian_filter1d(hist_counts.astype(float), sigma=1)
+        
+        # Plotting: use bin centers for the x-axis, excluding the last edge
+        bin_centers = (bin_edges[:-1] + bin_edges[1:]) / 2
+        
+        plt.figure(figsize=(10, 4))
+        # Use bar plot centered on the integer number of switches
+        plt.bar(bin_centers, hist_smooth, width=1.0, align='center') 
+        
+        plt.title("Histogram of Total Switches Per Session (smoothed)")
+        plt.xlabel("Total Switches per Session")
+        plt.ylabel("Number of Sessions")
+        plt.xticks(np.arange(0, max_switches + 1)) # Ensure integer ticks on x-axis
+        plt.tight_layout()
+        plt.show()
+        plt.savefig("switches_per_session_histogram.png") 
             
 
 
