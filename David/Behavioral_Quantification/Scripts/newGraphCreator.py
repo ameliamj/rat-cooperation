@@ -213,6 +213,31 @@ class dataAnalysisRegular:
 
         return up_x, up_y, down_x, down_y
     
+    def generateHeatmap(self, bodypart = 3):
+        x = []
+        y = []
+        
+        for i, exp in enumerate(self.experiments):
+            pos = exp.pos
+        
+            x0 = pos.data[0, 0, bodypart, :]
+            x1 = pos.data[1, 0, bodypart, :]
+            y0 = pos.data[0, 1, bodypart, :]
+            y1 = pos.data[1, 1, bodypart, :]
+        
+            # Extend x with both x0 and x1
+            x.extend(x0.tolist())
+            x.extend(x1.tolist())
+        
+            # Extend y with both y0 and y1
+            y.extend(y0.tolist())
+            y.extend(y1.tolist())
+        
+        print("x: ", x)
+        
+        return x, y
+        
+    
     def generateGazingAndInteractingHeatmapData(self, bodypart = 3):
         """
         Generate concatenated gaze and intearction location heatmap data.
@@ -1054,6 +1079,23 @@ graphs = createGraphs()
 
 
 #
+# Generate Comparison of Coop vs. Non Coop Heatmap
+#
+xCoop, yCoop = data.generateHeatmap()
+xNonCoop, yNonCoop = data.generateHeatmap()
+
+# Make heatmaps
+H_coop = graphs.makeHeatmap(xCoop, yCoop)
+H_nonCoop = graphs.makeHeatmap(xNonCoop, yNonCoop)
+
+# Save heatmaps
+graphs.saveHeatmap(H_coop, "Cooperative Rat Heatmap", "cooperative_rat_heatmap.png")
+graphs.saveHeatmap(H_nonCoop, "Non-Cooperative Rat Heatmap", "non_cooperative_rat_heatmap.png")
+
+
+
+'''
+#
 # Gazing at Locations: Coop vs Non-Coop
 #
 
@@ -1067,7 +1109,7 @@ graphs.plot_bar_comparison(
     ylabel="Gazing Frames",
     title="Gazing Comparison: Cooperative vs Non-Cooperative Sessions",
     filename="gazing_comparison_barplot.png"
-)
+)'''
 
 
 '''
