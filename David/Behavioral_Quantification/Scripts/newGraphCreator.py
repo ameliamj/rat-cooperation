@@ -1073,7 +1073,6 @@ ratPairs = ['KL001Y-KL001G', 'KL007Y-KL007G'] #
 data = dataAnalysisRegular(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, dates, sessions, ratPairs, prefix = "", save=True)
 data2 = dataAnalysisRegular(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, dates, sessions, ratPairs, prefix = "", save=True)
 
-
 # Create the graph object
 graphs = createGraphs()
 
@@ -1082,15 +1081,28 @@ graphs = createGraphs()
 # Generate Comparison of Coop vs. Non Coop Heatmap
 #
 xCoop, yCoop = data.generateHeatmap()
-xNonCoop, yNonCoop = data.generateHeatmap()
+xNonCoop, yNonCoop = data2.generateHeatmap()
 
 # Make heatmaps
 H_coop = graphs.makeHeatmap(xCoop, yCoop)
 H_nonCoop = graphs.makeHeatmap(xNonCoop, yNonCoop)
 
+# Compute difference (Coop - NonCoop)
+H_diff = None
+if H_coop is not None and H_nonCoop is not None:
+    # Ensure same shape
+    if H_coop.shape == H_nonCoop.shape:
+        H_diff = H_coop - H_nonCoop
+    else:
+        print("Heatmap shapes differ, cannot compute difference.")
+
 # Save heatmaps
 graphs.saveHeatmap(H_coop, "Cooperative Rat Heatmap", "cooperative_rat_heatmap.png")
 graphs.saveHeatmap(H_nonCoop, "Non-Cooperative Rat Heatmap", "non_cooperative_rat_heatmap.png")
+graphs.saveHeatmap(H_diff, "Difference Heatmap (Coop - NonCoop)", "difference_heatmap.png")
+
+
+print("Finished Saving Heatmaps")
 
 
 
