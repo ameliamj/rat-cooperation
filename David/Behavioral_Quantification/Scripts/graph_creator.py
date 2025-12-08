@@ -32,6 +32,8 @@ from scipy.stats import ttest_ind
 from mpl_toolkits.mplot3d import Axes3D
 from datetime import datetime
 from scipy.stats import pearsonr
+from scipy.ndimage import gaussian_filter1d
+
 
 import csv
 import os
@@ -10979,8 +10981,75 @@ class multiFileGraphs:
         plt.show()
         plt.close()
 
+    def switchingHistogram(self, smooth_sigma=3):
+        """
+        For each session:
+        - Computes trial-by-trial switches (rat changes lever 1↔2).
+        - Computes trial-by-trial success (0/1).
+        - Smooths both using Gaussian filter (sigma adjustable).
+        - Produces TWO separate plots per session:
+            (1) Success rate (smoothed)
+            (2) Switches per trial (smoothed)
+        """
+    
+        for session_idx, exp in enumerate(self.experiments):
+            lev = exp.lev
+    
+            # Trial-by-trial lever presses (list of [rat0_lever, rat1_lever])
+            trialLeverLocations = lev.returnRatLeverLocationPerTrial()
+    
+            # 0/1 success list
+            successList = np.array(lev.returnSuccessList())
+    
+            num_trials = len(trialLeverLocations)
+    
+            # ---- Compute switch count per trial ----
+            switches_per_trial = [0]  # trial 0 cannot be a switch
+    
+            for t in range(1, num_trials):
+                prev = trialLeverLocations[t - 1]
+                curr = trialLeverLocations[t]
+    
+                sw = 0
+                # Rat 0 switch?
+                if prev[0] != 0 and curr[0] != 0 and prev[0] != curr[0]:
+                    sw += 1
+                # Rat 1 switch?
+                if prev[1] != 0 and curr[1] != 0 and prev[1] != curr[1]:
+                    sw += 1
+    
+                switches_per_trial.append(sw)
+    
+            switches_per_trial = np.array(switches_per_trial)
+    
+            # ---- Smooth signals ----
+            switches_smooth = gaussian_filter1d(switches_per_trial, sigma=smooth_sigma)
+            success_smooth  = gaussian_filter1d(successList.astype(float), sigma=smooth_sigma)
+    
+            # ------------------------------------------------------------
+            #  Plot 1: Success Rate per Trial
+            # ------------------------------------------------------------
+            plt.figure(figsize=(10, 4))
+            plt.plot(success_smooth)
+            plt.title(f"Session {session_idx + 1}: Success Rate (smoothed)")
+            plt.xlabel("Trial")
+            plt.ylabel("Success Probability")
+            plt.grid(True)
+            plt.tight_layout()
+            plt.show()
+    
+            # ------------------------------------------------------------
+            #  Plot 2: Switches per Trial
+            # ------------------------------------------------------------
+            plt.figure(figsize=(10, 4))
+            plt.plot(switches_smooth)
+            plt.title(f"Session {session_idx + 1}: Switches per Trial (smoothed)")
+            plt.xlabel("Trial")
+            plt.ylabel("Switch Count")
+            plt.grid(True)
+            plt.tight_layout()
+            plt.show()
             
-
 
 
 #Testing Multi File Graphs
@@ -11106,7 +11175,9 @@ initialNanList = [0.3]
 '''
 
 #print("Start MultiFileGraphs Regular")
-#experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, dates, sessions, ratPairs, prefix = "", save=True)
+experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, dates, sessions, ratPairs, prefix = "", save=True)
+experiment.switchingHistogram()
+
 #experiment.howDoesTrackSwitchingImpactSuccess()
 
 #experiment.analyzeHeatmapDifferences()
