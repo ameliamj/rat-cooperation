@@ -233,7 +233,7 @@ class dataAnalysisRegular:
             y.extend(y0.tolist())
             y.extend(y1.tolist())
         
-        print("x: ", x)
+        #print("x: ", x)
         
         return x, y
         
@@ -1071,7 +1071,7 @@ ratPairs = ['KL001Y-KL001G', 'KL007Y-KL007G'] #
 
 # Create the data generation object
 data = dataAnalysisRegular(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, dates, sessions, ratPairs, prefix = "", save=True)
-data2 = dataAnalysisRegular(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, dates, sessions, ratPairs, prefix = "", save=True)
+data2 = dataAnalysisRegular(mag_files2, lev_files2, pos_files2, fpsList2, totFramesList2, initialNanList2, dates2, sessions2, ratPairs2, prefix = "", save=True)
 
 # Create the graph object
 graphs = createGraphs()
