@@ -583,6 +583,49 @@ class dataAnalysisRegular:
 
         return results
         
+    def gazingData(self, sortByKL=True, save_csv=True, csv_path="gazing_data.csv"):
+        isKL = []
+        percentGazing = []
+    
+        # for CSV
+        rows = []
+    
+        for exp in self.experiments:
+            ratPair = exp.ratPair
+            pos = exp.pos
+    
+            numFramesGazing = pos.returnTotalFramesGazing()
+            numFrames = pos.returnNumFrames()
+            pg = numFramesGazing / numFrames
+    
+            if ratPair and ratPair[0:2] == "KL":
+                isKLTemp = True
+            else:
+                isKLTemp = False
+    
+            isKL.append(isKLTemp)
+            percentGazing.append(pg)
+    
+            rows.append({
+                "percentGazing": pg,
+                "isKL": isKLTemp,
+                "sessionID": exp.sessionID,
+                "levFile": exp.lev_file,
+                "ratPair": exp.ratPair,
+                "date": exp.date,
+                "familiarity": exp.familiarity,
+                "trainingPartner": exp.trainingPartner
+            })
+    
+        if save_csv:
+            df = pd.DataFrame(rows)
+            df.to_csv(csv_path, index=False)
+    
+        if sortByKL:
+            return percentGazing, isKL
+        else:
+            return percentGazing
+
 
 class createGraphs:
     def __init__(self, arena_width=1392, arena_height=640):
@@ -941,6 +984,91 @@ class createGraphs:
         plt.show()
         plt.close()
     
+    def barGraphGazing(self,
+                       gazeCoop,
+                       gazeNonCoop,
+                       isKL,
+                       save_path,
+                       title="Gazing Per Session",
+                       ylabel="Percent Gazing"):
+
+        gazeCoop = np.array(gazeCoop)
+        gazeNonCoop = np.array(gazeNonCoop)
+        isKL = np.array(isKL)
+
+        gazeKL = gazeCoop[isKL]
+        gazeEB = gazeCoop[~isKL]
+
+        means = [
+            np.mean(gazeKL),
+            np.mean(gazeEB),
+            np.mean(gazeNonCoop)
+        ]
+
+        x = np.array([0, 1, 2])
+        labels = ["KL (Coop)", "EB (Coop)", "Other (Non-Coop)"]
+
+        fig, ax = plt.subplots(figsize=(6, 6))
+
+        # ---- Bars ----
+        ax.bar(x[0], means[0], color="tab:blue", alpha=0.6)
+        ax.bar(x[1], means[1], color="tab:orange", alpha=0.6)
+        ax.bar(x[2], means[2], color="gray", alpha=0.6)
+
+        # ---- Scatter with jitter ----
+        jitter = 0.08
+
+        kl_scatter = ax.scatter(
+            np.random.normal(x[0], jitter, size=len(gazeKL)),
+            gazeKL,
+            color="tab:blue",
+            alpha=0.8,
+            label="KL (Coop)"
+        )
+
+        eb_scatter = ax.scatter(
+            np.random.normal(x[1], jitter, size=len(gazeEB)),
+            gazeEB,
+            color="tab:orange",
+            alpha=0.8,
+            label="EB (Coop)"
+        )
+
+        other_scatter = ax.scatter(
+            np.random.normal(x[2], jitter, size=len(gazeNonCoop)),
+            gazeNonCoop,
+            color="gray",
+            alpha=0.8,
+            label="Other (Non-Coop)"
+        )
+
+        # ---- Axes formatting ----
+        ax.set_xticks(x)
+        ax.set_xticklabels(labels, rotation=15)
+        ax.set_ylabel(ylabel)
+        ax.set_title(title)
+
+        # ---- Split legends ----
+        legend_coop = ax.legend(
+            handles=[kl_scatter, eb_scatter],
+            loc="upper left",
+            frameon=False,
+            title="Cooperative"
+        )
+        ax.add_artist(legend_coop)
+
+        ax.legend(
+            handles=[other_scatter],
+            loc="upper right",
+            frameon=False,
+            title="Non-Cooperative"
+        )
+
+        plt.tight_layout()
+        plt.savefig(save_path, dpi=300)
+        plt.close()
+        
+    
 #DATA ANALYSIS GENERATION
 #
 #
@@ -949,6 +1077,8 @@ class createGraphs:
 
 filtered = "/gpfs/radev/project/saxena/drb83/rat-cooperation/David/Behavioral_Quantification/Sorted_Data_Files/Filtered.csv"
 minReq = "/gpfs/radev/project/saxena/drb83/rat-cooperation/David/Behavioral_Quantification/Sorted_Data_Files/dyed_preds_min_requirements_valid.csv"
+minReqTesting = "/gpfs/radev/project/saxena/drb83/rat-cooperation/David/Behavioral_Quantification/Sorted_Data_Files/only_PairedTesting_filtered_partiallyValid.csv"
+minReqTraining = "/gpfs/radev/project/saxena/drb83/rat-cooperation/David/Behavioral_Quantification/Sorted_Data_Files/only_TrainingCooperation_filtered_partiallyValid.csv" 
 minReqComp = "/gpfs/radev/project/saxena/drb83/rat-cooperation/David/Behavioral_Quantification/Sorted_Data_Files/comp_minReq_valid.csv"
 minReqIneq = "/gpfs/radev/project/saxena/drb83/rat-cooperation/David/Behavioral_Quantification/Sorted_Data_Files/ineq_minReq_valid.csv"
 minReqNonCoop = "/gpfs/radev/project/saxena/drb83/rat-cooperation/David/Behavioral_Quantification/Sorted_Data_Files/nonCoop_minReq_valid.csv"
@@ -1061,7 +1191,7 @@ dates = arr[6]
 sessions = arr[7]
 ratPairs = arr[8]     
 
-arr = minRequirementsComp()
+arr = minRequirementsNonCoop()
 lev_files2 = arr[0]
 mag_files2 = arr[1]
 pos_files2 = arr[2]
@@ -1113,6 +1243,30 @@ graphs = createGraphs()
 
 
 #
+# Gaze Graphs: Coop vs NonCoop
+#
+gazePerSessionCoop, isKL = data.gazingData(
+    csv_path="coop_gazing.csv"
+)
+
+gazePerSessionNonCoop = data2.gazingData(
+    sortByKL=False,
+    csv_path="noncoop_gazing.csv"
+)
+
+
+graphs.barGraphGazing(
+    gazePerSessionCoop,
+    gazePerSessionNonCoop,
+    isKL,
+    save_path="gazing_coop_vs_nonCoop.png",
+    title="Gazing Behavior by Pair Type"
+)
+
+
+
+'''
+#
 # Generate Comparison of Coop vs. Non Coop Heatmap
 #
 xCoop, yCoop = data.generateHeatmap()
@@ -1142,6 +1296,7 @@ graphs.saveDifferenceHeatmap(
 
 
 print("Finished Saving Heatmaps")
+'''
 
 
 
