@@ -586,7 +586,9 @@ class dataAnalysisRegular:
     def gazingData(self, sortByKL=True, save_csv=True, csv_path="gazing_data.csv"):
         isKL = []
         percentGazing = []
-    
+        
+        print("Entering Gazing Data")
+        
         # for CSV
         rows = []
     
@@ -594,7 +596,7 @@ class dataAnalysisRegular:
             ratPair = exp.ratPair
             pos = exp.pos
     
-            numFramesGazing = (pos.returnTotalFramesGazing(0) + pos.returnTotalFramesGazing(1)) / 2
+            numFramesGazing = (pos.returnTotalFramesGazing(mouseID=0) + pos.returnTotalFramesGazing(mouseID=1)) / 2
             numFrames = pos.returnNumFrames()
             pg = numFramesGazing / numFrames
     
