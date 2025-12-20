@@ -1086,7 +1086,8 @@ minReqIneq = "/gpfs/radev/project/saxena/drb83/rat-cooperation/David/Behavioral_
 minReqNonCoop = "/gpfs/radev/project/saxena/drb83/rat-cooperation/David/Behavioral_Quantification/Sorted_Data_Files/nonCoop_minReq_valid.csv"
 
 def getFiltered():
-    fe = fileExtractor(filtered)
+    print("TESTING\n")
+    fe = fileExtractor(minReqTesting)
     fe.data = fe.deleteBadNaN()
     fpsList, totFramesList = fe.returnFPSandTotFrames()
     initial_nan_list = fe.returnNaNPercentage()
