@@ -660,6 +660,51 @@ class levLoader:
         
         return res
 
+    def returnRatLeverLocationPerTrial(self):
+        '''
+        Returns a list of the first lever pressed per rat for each trial in the session.
+    
+        Output format:
+            result[trial_index] = [rat0_first_lever, rat1_first_lever]
+    
+        - Trials are processed in chronological order (1 → self.numTotalTrials).
+        - For each rat (RatID 0 and 1), the function finds the FIRST lever press 
+          in that trial, determined by sorting presses by AbsTime.
+        - If a rat does not press a lever in a given trial, the value is 0.
+        - If a trial has no presses from either rat, the trial's entry is [0, 0].
+    
+        Returns:
+            A list of length self.numTotalTrials, where each element is a 2-item list.
+        """
+        '''
+        
+        # Ensure data is sorted by AbsTime
+        df = self.data.sort_values("AbsTime")
+    
+        # Output list: one entry per trial
+        # Each entry: [rat0_first_lever, rat1_first_lever]
+        result = [[0, 0] for _ in range(self.numTotalTrials)]
+    
+        # Group by trials for efficiency
+        grouped = df.groupby("TrialNum")
+    
+        for trial_num, trial_df in grouped:
+            # TrialNum might start at 1
+            idx = trial_num - 1  
+    
+            # For each rat (0 and 1)
+            for rat in (0, 1):
+                rat_df = trial_df[trial_df["RatID"] == rat]
+    
+                if len(rat_df) == 0:
+                    continue  # no presses by this rat in this trial
+    
+                # Already sorted by AbsTime, so take first
+                first_press = rat_df.iloc[0]
+                result[idx][rat] = first_press["LeverNum"]
+    
+        return result
+
     def returnAvgRepresses_FirstMouse(self, returnArr = False):
         """
         For each trial, find the first mouse to press a lever and count how many total times
