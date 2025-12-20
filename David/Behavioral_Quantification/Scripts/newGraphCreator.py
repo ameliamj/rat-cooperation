@@ -594,7 +594,7 @@ class dataAnalysisRegular:
             ratPair = exp.ratPair
             pos = exp.pos
     
-            numFramesGazing = pos.returnTotalFramesGazing()
+            numFramesGazing = (pos.returnTotalFramesGazing(0) + pos.returnTotalFramesGazing(1)) / 2
             numFrames = pos.returnNumFrames()
             pg = numFramesGazing / numFrames
     
