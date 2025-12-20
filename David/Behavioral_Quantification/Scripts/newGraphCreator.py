@@ -616,7 +616,7 @@ class dataAnalysisRegular:
                 "ratPair": exp.ratPair,
                 "date": exp.date,
                 "familiarity": exp.familiarity,
-                "trainingPartner": exp.trainingPartner
+                "transparency": exp.transparency
             })
     
         if save_csv:
