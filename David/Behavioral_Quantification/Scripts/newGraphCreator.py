@@ -29,7 +29,7 @@ from scipy.ndimage import gaussian_filter
 
 
 class dataAnalysisRegular:
-    def __init__(self, magFiles: List[str], levFiles: List[str], posFiles: List[str], fpsList: List[int], totFramesList: List[int], initialNanList: List[int], dates: List[int], sessions: List[int], ratPairs: List[int], fiberFiles = None, prefix = "", save = True):
+    def __init__(self, magFiles: List[str], levFiles: List[str], posFiles: List[str], fpsList: List[int], totFramesList: List[int], initialNanList: List[int], dates: List[int], sessions: List[int], ratPairs: List[int], familarity: List[str], transparency: List[str], sessionType: List[str], fiberFiles = None, prefix = "", save = True):
         self.experiments = []
         self.prefix = prefix
         self.save = save
@@ -61,7 +61,7 @@ class dataAnalysisRegular:
                 if (fiberFiles is not None and fiberFiles[i] is not None):
                     exp = singleExperiment(magFiles[i], levFiles[i], posFiles[i], fpsList[i], totFramesList[i], initialNanList[i], fp_files=fiberFiles[i])
                 else:
-                    exp = singleExperiment(magFiles[i], levFiles[i], posFiles[i], fpsList[i], totFramesList[i], initialNanList[i], date = dates[i], sessionID = sessions[i], ratPair=ratPairs[i])
+                    exp = singleExperiment(magFiles[i], levFiles[i], posFiles[i], fpsList[i], totFramesList[i], initialNanList[i], date = dates[i], sessionID = sessions[i], ratPair=ratPairs[i], trainingPartner=familarity[i], transparency=transparency[i], videoType=sessionType[i])
                 mag_missing = [col for col in exp.mag.categories if col not in exp.mag.data.columns]
                 lev_missing = [col for col in exp.lev.categories if col not in exp.lev.data.columns]
                 
@@ -616,7 +616,8 @@ class dataAnalysisRegular:
                 "ratPair": exp.ratPair,
                 "date": exp.date,
                 "familiarity": exp.familiarity,
-                "transparency": exp.transparency
+                "transparency": exp.transparency,
+                "sessionType": exp.sessionType
             })
     
         if save_csv:
@@ -1001,63 +1002,110 @@ class createGraphs:
         gazeKL = gazeCoop[isKL]
         gazeEB = gazeCoop[~isKL]
 
-        means = [
-            np.mean(gazeKL),
-            np.mean(gazeEB),
-            np.mean(gazeNonCoop)
-        ]
+        mean_coop = np.mean(gazeCoop)
+        mean_non = np.mean(gazeNonCoop)
 
-        x = np.array([0, 1, 2])
-        labels = ["KL (Coop)", "EB (Coop)", "Other (Non-Coop)"]
+        x_coop = 0
+        x_non = 1
+        bar_width = 0.4
+        jitter = 0.06
 
         fig, ax = plt.subplots(figsize=(6, 6))
 
-        # ---- Bars ----
-        ax.bar(x[0], means[0], color="tab:blue", alpha=0.6)
-        ax.bar(x[1], means[1], color="tab:orange", alpha=0.6)
-        ax.bar(x[2], means[2], color="gray", alpha=0.6)
-
-        # ---- Scatter with jitter ----
-        jitter = 0.08
-
-        kl_scatter = ax.scatter(
-            np.random.normal(x[0], jitter, size=len(gazeKL)),
-            gazeKL,
-            color="tab:blue",
-            alpha=0.8,
-            label="KL (Coop)"
+        # ---- Bars (overall means) ----
+        ax.bar(
+            x_coop,
+            mean_coop,
+            width=bar_width,
+            color="lightgray",
+            edgecolor="black",
+            zorder=1
         )
 
-        eb_scatter = ax.scatter(
-            np.random.normal(x[1], jitter, size=len(gazeEB)),
-            gazeEB,
-            color="tab:orange",
-            alpha=0.8,
-            label="EB (Coop)"
+        ax.bar(
+            x_non,
+            mean_non,
+            width=bar_width,
+            color="gray",
+            edgecolor="black",
+            zorder=1
         )
+
+        # ---- Scatter points ----
+        kl_scatter = None
+        eb_scatter = None
+
+        if len(gazeKL) > 0:
+            kl_scatter = ax.scatter(
+                np.random.normal(x_coop, jitter, size=len(gazeKL)),
+                gazeKL,
+                color="tab:blue",
+                alpha=0.8,
+                label="KL (Coop)",
+                zorder=2
+            )
+
+        if len(gazeEB) > 0:
+            eb_scatter = ax.scatter(
+                np.random.normal(x_coop, jitter, size=len(gazeEB)),
+                gazeEB,
+                color="tab:orange",
+                alpha=0.8,
+                label="EB (Coop)",
+                zorder=2
+            )
 
         other_scatter = ax.scatter(
-            np.random.normal(x[2], jitter, size=len(gazeNonCoop)),
+            np.random.normal(x_non, jitter, size=len(gazeNonCoop)),
             gazeNonCoop,
-            color="gray",
-            alpha=0.8,
-            label="Other (Non-Coop)"
+            color="black",
+            alpha=0.7,
+            label="Other (Non-Coop)",
+            zorder=2
         )
 
+        # ---- Dashed subgroup means on Coop bar ----
+        if len(gazeKL) > 0:
+            ax.hlines(
+                np.mean(gazeKL),
+                x_coop - bar_width / 2,
+                x_coop + bar_width / 2,
+                colors="tab:blue",
+                linestyles="dashed",
+                linewidth=2
+            )
+
+        if len(gazeEB) > 0:
+            ax.hlines(
+                np.mean(gazeEB),
+                x_coop - bar_width / 2,
+                x_coop + bar_width / 2,
+                colors="tab:orange",
+                linestyles="dashed",
+                linewidth=2
+            )
+
         # ---- Axes formatting ----
-        ax.set_xticks(x)
-        ax.set_xticklabels(labels, rotation=15)
+        ax.set_xticks([x_coop, x_non])
+        ax.set_xticklabels(["Coop", "Non-Coop"])
         ax.set_ylabel(ylabel)
         ax.set_title(title)
 
-        # ---- Split legends ----
-        legend_coop = ax.legend(
-            handles=[kl_scatter, eb_scatter],
-            loc="upper left",
-            frameon=False,
-            title="Cooperative"
-        )
-        ax.add_artist(legend_coop)
+        # ---- Legends ----
+        coop_handles = []
+        if kl_scatter is not None:
+            coop_handles.append(kl_scatter)
+        if eb_scatter is not None:
+            coop_handles.append(eb_scatter)
+
+        if coop_handles:
+            legend_coop = ax.legend(
+                handles=coop_handles,
+                loc="upper left",
+                frameon=False,
+                title="Cooperative"
+            )
+            ax.add_artist(legend_coop)
 
         ax.legend(
             handles=[other_scatter],
@@ -1119,8 +1167,9 @@ def minRequirements():
     ratPairs = fe.getRatPairList()
     familiarity = fe.getFamiliarityList()
     transparency = fe.getBarrierTransparencyList()
+    sessionTypes = fe.getSessionType()
     #print("initial_nan_list: ", initial_nan_list)
-    return [fe.getLevsDatapath(), fe.getMagsDatapath(), fe.getPosDatapath(), fpsList, totFramesList, initial_nan_list, dates, sessions, ratPairs, familiarity, transparency]
+    return [fe.getLevsDatapath(), fe.getMagsDatapath(), fe.getPosDatapath(), fpsList, totFramesList, initial_nan_list, dates, sessions, ratPairs, familiarity, transparency, sessionTypes]
 
 def minRequirementsComp():
     fe = fileExtractor(minReqComp)
@@ -1174,8 +1223,9 @@ def minRequirementsNonCoop():
     ratPairs = fe.getRatPairList()
     familiarity = fe.getFamiliarityList()
     transparency = fe.getBarrierTransparencyList()
+    sessionTypes = fe.getSessionType()
     #print("initial_nan_list: ", initial_nan_list)
-    return [None, None, fe.getPosDatapath(), fpsList, totFramesList, initial_nan_list, dates, sessions, ratPairs, familiarity, transparency]
+    return [None, None, fe.getPosDatapath(), fpsList, totFramesList, initial_nan_list, dates, sessions, ratPairs, familiarity, transparency, sessionTypes]
 
 
 
@@ -1192,7 +1242,10 @@ totFramesList = arr[4]
 initialNanList = arr[5]
 dates = arr[6]
 sessions = arr[7]
-ratPairs = arr[8]     
+ratPairs = arr[8]    
+familarity = arr[9]
+transparency = arr[10]
+sessionTypes = arr[11]
 
 arr = minRequirementsNonCoop()
 lev_files2 = arr[0]
@@ -1203,7 +1256,11 @@ totFramesList2 = arr[4]
 initialNanList2 = arr[5]
 dates2 = arr[6]
 sessions2 = arr[7]
-ratPairs2 = arr[8]      
+ratPairs2 = arr[8]
+familarity2 = arr[9]
+transparency2 = arr[10]
+sessionTypes2 = arr[11]
+
 
 
 #Test
@@ -1238,8 +1295,8 @@ print("lev_files2: ", lev_files2)
 
 
 # Create the data generation object
-data = dataAnalysisRegular(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, dates, sessions, ratPairs, prefix = "", save=True)
-data2 = dataAnalysisRegular(mag_files2, lev_files2, pos_files2, fpsList2, totFramesList2, initialNanList2, dates2, sessions2, ratPairs2, prefix = "", save=True)
+data = dataAnalysisRegular(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, dates, sessions, ratPairs, familarity, transparency, sessionTypes, prefix = "", save=True)
+data2 = dataAnalysisRegular(mag_files2, lev_files2, pos_files2, fpsList2, totFramesList2, initialNanList2, dates2, sessions2, ratPairs2, familarity2, transparency2, sessionTypes2, prefix = "", save=True)
 
 # Create the graph object
 graphs = createGraphs()
@@ -1251,12 +1308,12 @@ graphs = createGraphs()
 suffix = "testing"
 
 gazePerSessionCoop, isKL = data.gazingData(
-    csv_path="coop_gazing_{suffix}.csv"
+    csv_path= f"coop_gazing_{suffix}.csv"
 )
 
 gazePerSessionNonCoop = data2.gazingData(
     sortByKL=False,
-    csv_path="noncoop_gazing_{suffix}.csv"
+    csv_path = f"noncoop_gazing_{suffix}.csv"
 )
 
 
@@ -1264,8 +1321,8 @@ graphs.barGraphGazing(
     gazePerSessionCoop,
     gazePerSessionNonCoop,
     isKL,
-    save_path="gazing_coop_vs_nonCoop_{suffix}.png",
-    title="Gazing Behavior by Pair Type"
+    save_path = f"gazing_coop_vs_nonCoop_{suffix}.png",
+    title = "Gazing Behavior by Pair Type"
 )
 
 

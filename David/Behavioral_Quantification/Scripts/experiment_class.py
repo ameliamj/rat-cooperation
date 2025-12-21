@@ -14,12 +14,13 @@ from pos_class import posLoader
 from fiberPhotoClass import fiberPhotoLoader
 
 class singleExperiment:
-    def __init__(self, mag_file, lev_file, pos_file, fps = 30, endFrame = 25182, initialNan = 0.1, fp_files = None, fiberPhoto = "False", trainingPartner = "None", transparency = "None", ratPair = "", numSessionsBefore = 0, sessionID = "BLANK", rat1 = "rat1", rat2 = "rat2", date = "01/01/2000", hasLevMag = True):
+    def __init__(self, mag_file, lev_file, pos_file, fps = 30, endFrame = 25182, initialNan = 0.1, fp_files = None, fiberPhoto = "False", trainingPartner = "None", transparency = "None", ratPair = "", numSessionsBefore = 0, sessionID = "BLANK", rat1 = "rat1", rat2 = "rat2", date = "01/01/2000", videoType = "Coop", hasLevMag = True):
         self.mag_file = mag_file
         self.lev_file = lev_file
         self.pos_file = pos_file
         
         #Session Data
+        self.videoType = videoType #Coop (cooperation), Ineq (inequity), or Comp (competition)
         self.familiarity = trainingPartner
         self.transparency = transparency
         self.ratPair = ratPair

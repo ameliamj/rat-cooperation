@@ -128,10 +128,15 @@ class fileExtractor:
         - OR levers is not TRUE
         - OR mags is not TRUE
         """
-        self.data = self.data[
+        '''self.data = self.data[
             (self.data['trial type'] == 'coop') &
             (self.data['levers'] == True) &
             (self.data['mags'] == True) &
+            (self.data['pred'] == True)
+        ]'''
+        
+        self.data = self.data[
+            ((self.data['trial type'] == 'ineq') | (self.data['trial type'] == 'comp')) &
             (self.data['pred'] == True)
         ]
         
@@ -140,7 +145,7 @@ class fileExtractor:
         df_copy = self.data.copy()
         if (saveFile):
             print("Saved File")
-            df_copy.to_csv("coop_minReq_valid.csv", index=False)
+            df_copy.to_csv("nonCoop_minReq_valid.csv", index=False)
             
     def onlyFiberPhoto(self, saveFile = True):
         self.data = self.data[
@@ -756,6 +761,16 @@ class fileExtractor:
         
         return initial_nan_column
     
+    def getSessionType(self):
+        """
+        Returns a list of familiarity values for each session in self.data.
+        Maps 'TP' (Training Partners) to 0 and 'UF' (Unfamiliar) to 1.
+        Calls writeNewFixedFile to ensure familiarity column is populated.
+        """
+        self.writeNewFixedFile()  # Ensure familiarity is set
+        sessionType_map = {'coop': 'cooperation', 'comp': 'competition', 'ineq': 'inequity'}
+        return [sessionType_map.get(row['trial type'], 1) for _, row in self.data.iterrows()]
+    
     def getFamiliarityList(self):
         """
         Returns a list of familiarity values for each session in self.data.
@@ -989,8 +1004,8 @@ def saveAllCSVs():
 #saveAllCSVs()
 
 
-#fe = fileExtractor(fixedExpanded)
-#fe.deleteOnlyFullyInvalid(saveFile=True)
+fe = fileExtractor(fixedExpanded)
+fe.deleteOnlyFullyInvalid(saveFile=True)
 
 
 
