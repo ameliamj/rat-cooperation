@@ -20,7 +20,7 @@ class singleExperiment:
         self.pos_file = pos_file
         
         #Session Data
-        self.videoType = videoType #Coop (cooperation), Ineq (inequity), or Comp (competition)
+        self.sessionType = videoType #Coop (cooperation), Ineq (inequity), or Comp (competition)
         self.familiarity = trainingPartner
         self.transparency = transparency
         self.ratPair = ratPair
