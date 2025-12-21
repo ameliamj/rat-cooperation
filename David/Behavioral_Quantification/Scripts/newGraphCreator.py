@@ -1086,8 +1086,8 @@ minReqIneq = "/gpfs/radev/project/saxena/drb83/rat-cooperation/David/Behavioral_
 minReqNonCoop = "/gpfs/radev/project/saxena/drb83/rat-cooperation/David/Behavioral_Quantification/Sorted_Data_Files/nonCoop_minReq_valid.csv"
 
 def getFiltered():
-    print("TRAINING\n")
-    fe = fileExtractor(minReqTraining)
+    print("TESTING\n")
+    fe = fileExtractor(minReqTesting)
     fe.data = fe.deleteBadNaN()
     fpsList, totFramesList = fe.returnFPSandTotFrames()
     initial_nan_list = fe.returnNaNPercentage()
@@ -1248,7 +1248,7 @@ graphs = createGraphs()
 #
 # Gaze Graphs: Coop vs NonCoop
 #
-suffix = "training"
+suffix = "testing"
 
 gazePerSessionCoop, isKL = data.gazingData(
     csv_path="coop_gazing_{suffix}.csv"
