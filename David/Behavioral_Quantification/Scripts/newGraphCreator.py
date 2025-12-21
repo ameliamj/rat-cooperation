@@ -1248,7 +1248,7 @@ graphs = createGraphs()
 #
 # Gaze Graphs: Coop vs NonCoop
 #
-suffix = "gazing"
+suffix = "training"
 
 gazePerSessionCoop, isKL = data.gazingData(
     csv_path="coop_gazing_{suffix}.csv"
