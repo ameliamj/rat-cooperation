@@ -1152,7 +1152,7 @@ def getFiltered():
     return [fe.getLevsDatapath(), fe.getMagsDatapath(), fe.getPosDatapath(), fpsList, totFramesList, initial_nan_list, dates, sessions, ratPairs, familiarity, transparency]
 
 def minRequirements():
-    fe = fileExtractor(minReq)
+    fe = fileExtractor(minReqTesting)
     fe.data = fe.deleteBadNaN()
     fe.deleteOnlyFullyInvalid()
     #fe.filterOutBadNums()
