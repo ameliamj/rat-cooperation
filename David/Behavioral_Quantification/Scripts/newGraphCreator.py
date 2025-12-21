@@ -1248,13 +1248,15 @@ graphs = createGraphs()
 #
 # Gaze Graphs: Coop vs NonCoop
 #
+suffix = "gazing"
+
 gazePerSessionCoop, isKL = data.gazingData(
-    csv_path="coop_gazing.csv"
+    csv_path="coop_gazing_{suffix}.csv"
 )
 
 gazePerSessionNonCoop = data2.gazingData(
     sortByKL=False,
-    csv_path="noncoop_gazing.csv"
+    csv_path="noncoop_gazing_{suffix}.csv"
 )
 
 
@@ -1262,7 +1264,7 @@ graphs.barGraphGazing(
     gazePerSessionCoop,
     gazePerSessionNonCoop,
     isKL,
-    save_path="gazing_coop_vs_nonCoop.png",
+    save_path="gazing_coop_vs_nonCoop_{suffix}.png",
     title="Gazing Behavior by Pair Type"
 )
 
