@@ -1152,7 +1152,7 @@ def getFiltered():
     return [fe.getLevsDatapath(), fe.getMagsDatapath(), fe.getPosDatapath(), fpsList, totFramesList, initial_nan_list, dates, sessions, ratPairs, familiarity, transparency]
 
 def minRequirements():
-    fe = fileExtractor(minReqTesting)
+    fe = fileExtractor(minReq)
     fe.data = fe.deleteBadNaN()
     fe.deleteOnlyFullyInvalid()
     #fe.filterOutBadNums()
@@ -1305,7 +1305,7 @@ graphs = createGraphs()
 #
 # Gaze Graphs: Coop vs NonCoop
 #
-suffix = "testing"
+suffix = "normal"
 
 gazePerSessionCoop, isKL = data.gazingData(
     csv_path= f"coop_gazing_{suffix}.csv"
