@@ -995,10 +995,18 @@ class createGraphs:
                        title="Gazing Per Session",
                        ylabel="Percent Gazing"):
 
-        gazeCoop = np.array(gazeCoop)
-        gazeNonCoop = np.array(gazeNonCoop)
-        isKL = np.array(isKL)
-
+        gazeCoop = np.asarray(gazeCoop, dtype=float)
+        gazeNonCoop = np.asarray(gazeNonCoop, dtype=float)
+        
+        isKL = np.asarray(isKL).astype(bool)
+        
+        if len(isKL) != len(gazeCoop):
+            print("isKL: ", isKL)
+            print("gazeCoop: ", gazeCoop)
+            raise ValueError(
+                f"isKL length ({len(isKL)}) must match gazeCoop length ({len(gazeCoop)})"
+            )
+        
         gazeKL = gazeCoop[isKL]
         gazeEB = gazeCoop[~isKL]
 
