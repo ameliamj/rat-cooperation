@@ -1161,7 +1161,7 @@ def getFiltered():
     return [fe.getLevsDatapath(), fe.getMagsDatapath(), fe.getPosDatapath(), fpsList, totFramesList, initial_nan_list, dates, sessions, ratPairs, familiarity, transparency]
 
 def minRequirements():
-    fe = fileExtractor(minReq)
+    fe = fileExtractor(minReqTraining)
     fe.data = fe.deleteBadNaN()
     #fe.deleteOnlyFullyInvalid()
     #fe.filterOutBadNums()
@@ -1314,7 +1314,7 @@ graphs = createGraphs()
 #
 # Gaze Graphs: Coop vs NonCoop
 #
-suffix = "normal"
+suffix = "training"
 
 print("SUFFIX is: ", suffix)
 
