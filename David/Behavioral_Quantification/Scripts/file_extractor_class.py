@@ -101,6 +101,11 @@ class fileExtractor:
         
         return self.data
     
+    def keepOnlyPred(self):
+        self.data = self.data[self.data['pred'] == True]
+        
+        return self.data
+    
     def deleteInvalid(self, saveFile = False): # gets rid of all rows where trial type != coop, or levers = false, or mags = false
         """
         Remove rows where:
