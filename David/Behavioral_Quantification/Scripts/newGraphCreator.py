@@ -588,6 +588,7 @@ class dataAnalysisRegular:
         percentGazing = []
         
         print("Entering Gazing Data")
+        print("Num Exps is: ", len(self.experiments))
         
         # for CSV
         rows = []
@@ -1216,8 +1217,8 @@ def minRequirementsIneq():
     return [None, None, fe.getPosDatapath(), fpsList, totFramesList, initial_nan_list, dates, sessions, ratPairs, familiarity, transparency]
 
 def minRequirementsNonCoop():
-    fe = fileExtractor(minReq)
-    #fe.data = fe.deleteBadNaN()
+    fe = fileExtractor(minReqNonCoop)
+    fe.data = fe.deleteBadNaN()
     #fe.deleteOnlyFullyInvalid()
     #fe.filterOutBadNums()
     fpsList, totFramesList = fe.returnFPSandTotFrames()
@@ -1298,8 +1299,8 @@ ratPairs = ['KL001Y-KL001G', 'KL007Y-KL007G'] #
 #
 #
 
-print("lev_files: ", lev_files)
-print("lev_files2: ", lev_files2)
+print("pos_files: ", pos_files)
+print("pos_files2: ", pos_files2)
 
 
 # Create the data generation object
@@ -1314,6 +1315,8 @@ graphs = createGraphs()
 # Gaze Graphs: Coop vs NonCoop
 #
 suffix = "normal"
+
+print("SUFFIX is: ", suffix)
 
 gazePerSessionCoop, isKL = data.gazingData(
     csv_path= f"coop_gazing_{suffix}.csv"
