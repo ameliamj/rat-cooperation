@@ -27,6 +27,9 @@ from scipy.stats import linregress, sem
 from scipy.stats import ttest_ind, f_oneway
 from scipy.ndimage import gaussian_filter
 
+NORMAL = 0
+LEVER = 1
+MAG = 2
 
 class dataAnalysisRegular:
     def __init__(self, magFiles: List[str], levFiles: List[str], posFiles: List[str], fpsList: List[int], totFramesList: List[int], initialNanList: List[int], dates: List[int], sessions: List[int], ratPairs: List[int], familarity: List[str], transparency: List[str], sessionType: List[str], fiberFiles = None, prefix = "", save = True):
@@ -583,9 +586,11 @@ class dataAnalysisRegular:
 
         return results
         
-    def gazingData(self, sortByKL=True, save_csv=True, csv_path="gazing_data.csv"):
+    def gazingData(self, sortByKL=True, save_csv=True, gazingType = 0, csv_path="gazing_data.csv"):
         isKL = []
         percentGazing = []
+        
+        #Gazing Type: 0 = Normal, 1 = Lever, 2 = Mag
         
         print("Entering Gazing Data")
         print("Num Exps is: ", len(self.experiments))
@@ -597,7 +602,13 @@ class dataAnalysisRegular:
             ratPair = exp.ratPair
             pos = exp.pos
     
-            numFramesGazing = (pos.returnTotalFramesGazing(mouseID=0) + pos.returnTotalFramesGazing(mouseID=1)) / 2
+            if (gazingType == 0):
+                numFramesGazing = (pos.returnTotalFramesGazing(mouseID=0) + pos.returnTotalFramesGazing(mouseID=1)) / 2
+            elif (gazingType == 1):
+                numFramesGazing = (np.sum(pos.returnIsLookingAtObjects(0)) + np.sum(pos.returnIsLookingAtObjects(1))) / 2
+            elif (gazingType == 2):
+                numFramesGazing = (np.sum(pos.returnIsLookingAtObjects(0, target="mag")) + np.sum(pos.returnIsLookingAtObjects(1, target="mag"))) / 2
+            
             numFrames = pos.returnNumFrames()
             pg = numFramesGazing / numFrames
     
@@ -629,7 +640,7 @@ class dataAnalysisRegular:
             return percentGazing, isKL
         else:
             return percentGazing
-
+        
 
 class createGraphs:
     def __init__(self, arena_width=1392, arena_height=640):
@@ -1127,6 +1138,129 @@ class createGraphs:
         plt.savefig(save_path, dpi=300)
         plt.close()
         
+    def barGraphGazingAll(self,
+                      gazeCoopDict,
+                      gazeNonCoopDict,
+                      isKL,
+                      save_path,
+                      title="Amount of gaze at object",
+                      ylabel="Percent Gazing"):
+
+        categories = ["other", "lever", "mag"]
+        labels = ["Other animal", "Lever", "Mag"]
+    
+        isKL = np.asarray(isKL).astype(bool)
+    
+        # ---- Compute means ----
+        coop_means = [np.mean(gazeCoopDict[c]) for c in categories]
+        non_means  = [np.mean(gazeNonCoopDict[c]) for c in categories]
+    
+        x = np.arange(len(categories))
+        bar_width = 0.35
+        jitter = 0.05
+    
+        fig, ax = plt.subplots(figsize=(7, 6))
+    
+        # ---- Bars ----
+        coop_bars = ax.bar(
+            x - bar_width / 2,
+            coop_means,
+            width=bar_width,
+            color="dimgray",
+            edgecolor="black",
+            label="Success periods",
+            zorder=1
+        )
+    
+        non_bars = ax.bar(
+            x + bar_width / 2,
+            non_means,
+            width=bar_width,
+            color="lightgray",
+            edgecolor="black",
+            label="Not success periods",
+            zorder=1
+        )
+    
+        # ---- Scatter (Coop: KL vs EB) ----
+        for i, c in enumerate(categories):
+            gaze = np.asarray(gazeCoopDict[c], dtype=float)
+    
+            gazeKL = gaze[isKL]
+            gazeEB = gaze[~isKL]
+    
+            if len(gazeKL) > 0:
+                ax.scatter(
+                    np.random.normal(x[i] - bar_width / 2, jitter, size=len(gazeKL)),
+                    gazeKL,
+                    color="tab:blue",
+                    alpha=0.8,
+                    zorder=2,
+                    label="KL (Coop)" if i == 0 else None
+                )
+    
+            if len(gazeEB) > 0:
+                ax.scatter(
+                    np.random.normal(x[i] - bar_width / 2, jitter, size=len(gazeEB)),
+                    gazeEB,
+                    color="tab:orange",
+                    alpha=0.8,
+                    zorder=2,
+                    label="EB (Coop)" if i == 0 else None
+                )
+    
+        # ---- Scatter (Non-Coop) ----
+        for i, c in enumerate(categories):
+            gaze = np.asarray(gazeNonCoopDict[c], dtype=float)
+    
+            ax.scatter(
+                np.random.normal(x[i] + bar_width / 2, jitter, size=len(gaze)),
+                gaze,
+                color="black",
+                alpha=0.6,
+                zorder=2,
+                label="Other (Non-Coop)" if i == 0 else None
+            )
+    
+        # ---- Axes formatting ----
+        ax.set_xticks(x)
+        ax.set_xticklabels(labels)
+        ax.set_ylabel(ylabel)
+        ax.set_title(title)
+    
+        # ---- Legends (match example layout) ----
+        handles, labels_ = ax.get_legend_handles_labels()
+    
+        coop_handles = []
+        noncoop_handles = []
+    
+        for h, l in zip(handles, labels_):
+            if "Coop" in l or "KL" in l or "EB" in l:
+                coop_handles.append((h, l))
+            else:
+                noncoop_handles.append((h, l))
+    
+        if coop_handles:
+            ax.legend(
+                [h for h, _ in coop_handles],
+                [l for _, l in coop_handles],
+                loc="upper left",
+                frameon=False
+            )
+    
+        if noncoop_handles:
+            ax.legend(
+                [h for h, _ in noncoop_handles],
+                [l for _, l in noncoop_handles],
+                loc="upper right",
+                frameon=False
+            )
+    
+        plt.tight_layout()
+        plt.savefig(save_path, dpi=300)
+        plt.close()
+
+    
     
 #DATA ANALYSIS GENERATION
 #
@@ -1161,7 +1295,7 @@ def getFiltered():
     return [fe.getLevsDatapath(), fe.getMagsDatapath(), fe.getPosDatapath(), fpsList, totFramesList, initial_nan_list, dates, sessions, ratPairs, familiarity, transparency]
 
 def minRequirements():
-    fe = fileExtractor(minReqTesting)
+    fe = fileExtractor(minReq)
     fe.data = fe.deleteBadNaN()
     fe.data = fe.keepOnlyPred()
     #fe.deleteOnlyFullyInvalid()
@@ -1316,20 +1450,66 @@ graphs = createGraphs()
 #
 # Gaze Graphs: Coop vs NonCoop
 #
-suffix = "testing"
+
+gazingType = LEVER
+suffix = "normal"
 
 print("SUFFIX is: ", suffix)
 
+
+# ---- Coop ----
 gazePerSessionCoop, isKL = data.gazingData(
     csv_path= f"coop_gazing_{suffix}.csv"
 )
 
+gazePerSessionCoopLever, isKL = data.gazingData(gazingType=LEVER,
+    csv_path= f"coop_gazing_lever_{suffix}.csv"
+)
+
+gazePerSessionCoopMag, isKL = data.gazingData(gazingType=MAG,
+    csv_path= f"coop_gazing_mag_{suffix}.csv"
+)
+
+# ---- Non-Coop ----
 gazePerSessionNonCoop = data2.gazingData(
     sortByKL=False,
     csv_path = f"noncoop_gazing_{suffix}.csv"
 )
 
+gazePerSessionNonCoopLever = data2.gazingData(
+    sortByKL=False, gazingType=LEVER,
+    csv_path = f"noncoop_gazing_{suffix}.csv"
+)
 
+gazePerSessionNonCoopMag = data2.gazingData(
+    sortByKL=False, gazingType=MAG,
+    csv_path = f"noncoop_gazing_{suffix}.csv"
+)
+
+gazeCoop = {
+    "other": gazePerSessionCoop,
+    "lever": gazePerSessionCoopLever,
+    "mag":   gazePerSessionCoopMag
+}
+
+gazeNonCoop = {
+    "other": gazePerSessionNonCoop,
+    "lever": gazePerSessionNonCoopLever,
+    "mag":   gazePerSessionNonCoopMag
+}
+
+
+graphs.barGraphGazingAll(
+    gazeCoopDict=gazeCoop,
+    gazeNonCoopDict=gazeNonCoop,
+    isKL=isKL,
+    save_path=f"gazing_coop_vs_noncoop_{suffix}.png",
+    title="Amount of Gaze at Object",
+    ylabel="Percent Gazing"
+)
+
+
+'''
 graphs.barGraphGazing(
     gazePerSessionCoop,
     gazePerSessionNonCoop,
@@ -1337,7 +1517,7 @@ graphs.barGraphGazing(
     save_path = f"gazing_coop_vs_nonCoop_{suffix}.png",
     title = "Gazing Behavior by Pair Type"
 )
-
+'''
 
 
 '''
