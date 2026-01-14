@@ -683,7 +683,7 @@ class levLoader:
     
         # Output list: one entry per trial
         # Each entry: [rat0_first_lever, rat1_first_lever]
-        result = [[0, 0] for _ in range(self.numTotalTrials)]
+        result = [[0, 0] for _ in range(self.returnNumTotalTrials()]
     
         # Group by trials for efficiency
         grouped = df.groupby("TrialNum")
