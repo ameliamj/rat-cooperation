@@ -10988,6 +10988,7 @@ class multiFileGraphs:
         (1) Scatter plot: each session is one point
             x-axis = total number of switches
             y-axis = success percentage for that session
+            Includes linear trendline and R^2
         
         (2) Histogram: distribution of total switches per session,
             chunked into ~20 bins
@@ -11001,7 +11002,7 @@ class multiFileGraphs:
         for exp in self.experiments:
             lev = exp.lev
             
-            # Trial-by-trial lever presses (list of [rat0_lever, rat1_lever])
+            # Trial-by-trial lever presses
             trialLeverLocations = lev.returnRatLeverLocationPerTrial()
             num_trials = len(trialLeverLocations)
             
@@ -11020,48 +11021,66 @@ class multiFileGraphs:
                 if prev[1] != 0 and curr[1] != 0 and prev[1] != curr[1]:
                     session_switches_count += 1
             
-            # Store per-session metrics
             session_total_switches.append(session_switches_count)
             session_success_pct.append(lev.returnSuccessPercentage())
         
         # Convert to numpy arrays
-        session_total_switches = np.array(session_total_switches)
-        session_success_pct = np.array(session_success_pct)
+        x = np.array(session_total_switches, dtype=float)
+        y = np.array(session_success_pct, dtype=float)
         
-        if len(session_total_switches) == 0:
+        # Remove any NaNs (safety)
+        valid = ~np.isnan(x) & ~np.isnan(y)
+        x = x[valid]
+        y = y[valid]
+        
+        if len(x) == 0:
             print("No valid sessions found — skipping switching histogram.")
             return
         
         # ============================================================
-        # (1) SESSION-LEVEL SCATTER: switches vs success
+        # (1) SCATTER + TRENDLINE
         # ============================================================
         
+        # Linear fit: y = m*x + b
+        m, b = np.polyfit(x, y, 1)
+        y_fit = m * x + b
+        
+        # R^2 calculation
+        ss_res = np.sum((y - y_fit) ** 2)
+        ss_tot = np.sum((y - np.mean(y)) ** 2)
+        r_squared = 1 - ss_res / ss_tot if ss_tot != 0 else np.nan
+        
+        # Plot
         plt.figure(figsize=(8, 6))
-        plt.scatter(session_total_switches, session_success_pct, alpha=0.7)
+        plt.scatter(x, y, alpha=0.7, label="Sessions")
+        
+        # Trendline (sorted for clean line)
+        order = np.argsort(x)
+        plt.plot(
+            x[order],
+            y_fit[order],
+            linestyle='--',
+            linewidth=2,
+            label=f"Linear fit (R² = {r_squared:.3f})"
+        )
         
         plt.title("Session-Level Relationship Between Switching and Success")
         plt.xlabel("Total Switches per Session")
         plt.ylabel("Success Percentage")
+        plt.legend()
         plt.grid(True)
         plt.tight_layout()
-        plt.savefig("switching_vs_success_scatter.png")
+        plt.savefig("switching_vs_success_scatter_with_trend.png")
         plt.show()
         
         # ============================================================
-        # (2) HISTOGRAM: total switches per session (chunked)
+        # (2) HISTOGRAM (CHUNKED)
         # ============================================================
         
-        # Use ~20 bins (or fewer if data is small)
-        num_bins = min(20, len(session_total_switches))
+        num_bins = min(20, len(x))
         
-        hist_counts, bin_edges = np.histogram(
-            session_total_switches,
-            bins=num_bins
-        )
-        
-        # Optional smoothing for aesthetics
+        hist_counts, bin_edges = np.histogram(x, bins=num_bins)
         hist_smooth = gaussian_filter1d(hist_counts.astype(float), sigma=1)
-        
         bin_centers = (bin_edges[:-1] + bin_edges[1:]) / 2
         
         plt.figure(figsize=(10, 4))
@@ -11079,6 +11098,7 @@ class multiFileGraphs:
         plt.tight_layout()
         plt.savefig("switches_per_session_histogram.png")
         plt.show()
+
 
             
 
