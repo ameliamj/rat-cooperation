@@ -3278,9 +3278,9 @@ def getGroupRatPairsIneqComp():
     
     return [None, None, fe.getPosDatapath(grouped = True), fpsList, totFramesList, rat1names, rat2names, sessionIDs, dates, ratPairs]
 
-data = getGroupRatPairs()
-pairGraphs = MicePairGraphs(data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7], data[8], data[9])
-pairGraphs.compareGazeVsMaxSuccess()
+#data = getGroupRatPairs()
+#pairGraphs = MicePairGraphs(data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7], data[8], data[9])
+#pairGraphs.compareGazeVsMaxSuccess()
 #pairGraphs.holdEventsOverTime()
 
 #pairGraphs.doesEarlyGazingResultinLaterSuccess()
@@ -10988,6 +10988,8 @@ class multiFileGraphs:
         (1) A line graph comparing switching vs. success (concatenated across sessions)
         (2) A histogram: number of sessions with each number of switches using sliding window technique
         """
+        
+        print("Start Switching Histogram")
         
         all_switches = []
         all_success = []
