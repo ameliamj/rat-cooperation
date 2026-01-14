@@ -10987,6 +10987,8 @@ class multiFileGraphs:
         
         (1) A line graph comparing switching vs. success (concatenated across sessions)
         (2) A histogram: number of sessions with each number of switches using sliding window technique
+        
+        switching – 
         """
         
         print("Start Switching Histogram")
@@ -11005,7 +11007,8 @@ class multiFileGraphs:
             
             # NOTE: Assuming returnSuccessPercentage() returns a list/array of 0s and 1s 
             # representing success on each trial, not just a single percentage value.
-            successList = np.array(lev.returnSuccessPercentage())
+            successList = np.array(lev.returnSuccessTrials())
+            successList[successList == -1] = np.nan
             
             num_trials = len(trialLeverLocations)
             
@@ -11051,6 +11054,10 @@ class multiFileGraphs:
         all_success = np.array(all_success)
         session_total_switches = np.array(session_total_switches)
         
+        if len(session_total_switches) == 0:
+            print("No valid sessions found — skipping switching histogram.")
+            return
+        
         # ============================================================
         # (1) GLOBAL LINE GRAPH: switches vs success
         # ============================================================
@@ -11064,8 +11071,8 @@ class multiFileGraphs:
         plt.legend()
         plt.grid(True)
         plt.tight_layout()
-        plt.show()
         plt.savefig("switching_vs_success_line_plot.png")
+        plt.show()
     
         
         # ============================================================
@@ -11093,8 +11100,8 @@ class multiFileGraphs:
         plt.ylabel("Number of Sessions")
         plt.xticks(np.arange(0, max_switches + 1)) # Ensure integer ticks on x-axis
         plt.tight_layout()
-        plt.show()
         plt.savefig("switches_per_session_histogram.png") 
+        plt.show()
             
 
 
