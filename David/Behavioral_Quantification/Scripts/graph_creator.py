@@ -11007,7 +11007,7 @@ class multiFileGraphs:
             
             # NOTE: Assuming returnSuccessPercentage() returns a list/array of 0s and 1s 
             # representing success on each trial, not just a single percentage value.
-            successList = np.array(lev.returnSuccessTrials())
+            successList = np.array(lev.returnSuccessTrials(), dtype=float)
             successList[successList == -1] = np.nan
             
             num_trials = len(trialLeverLocations)
