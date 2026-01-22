@@ -1337,8 +1337,9 @@ def minRequirementsComp():
     ratPairs = fe.getRatPairList()
     familiarity = fe.getFamiliarityList()
     transparency = fe.getBarrierTransparencyList()
+    sessionTypes = fe.getSessionType()
     #print("initial_nan_list: ", initial_nan_list)
-    return [None, None, fe.getPosDatapath(), fpsList, totFramesList, initial_nan_list, dates, sessions, ratPairs, familiarity, transparency]
+    return [None, None, fe.getPosDatapath(), fpsList, totFramesList, initial_nan_list, dates, sessions, ratPairs, familiarity, transparency, sessionTypes]
 
 def minRequirementsIneq():
     fe = fileExtractor(minReqIneq)
@@ -1356,8 +1357,9 @@ def minRequirementsIneq():
     ratPairs = fe.getRatPairList()
     familiarity = fe.getFamiliarityList()
     transparency = fe.getBarrierTransparencyList()
+    sessionTypes = fe.getSessionType()
     #print("initial_nan_list: ", initial_nan_list)
-    return [None, None, fe.getPosDatapath(), fpsList, totFramesList, initial_nan_list, dates, sessions, ratPairs, familiarity, transparency]
+    return [None, None, fe.getPosDatapath(), fpsList, totFramesList, initial_nan_list, dates, sessions, ratPairs, familiarity, transparency, sessionTypes]
 
 def minRequirementsNonCoop():
     fe = fileExtractor(minReqNonCoop)
