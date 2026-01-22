@@ -11118,7 +11118,7 @@ class multiFileGraphs:
         session_means_o_to_p = [[], []]
         
         for exp in self.experiments:
-            lev = exp.lev.data
+            lev = exp.lev.data.dropna(subset=['RatID', 'AbsTime'])
             pos = exp.pos
             fps = exp.fps
             window_frames = int(window_sec * fps)
