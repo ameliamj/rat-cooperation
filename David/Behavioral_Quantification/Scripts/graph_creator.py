@@ -11099,6 +11099,100 @@ class multiFileGraphs:
         plt.savefig("switches_per_session_histogram.png")
         plt.show()
 
+    def gazingBeforeAfterLeverPress(self, window_sec = 5):
+        """
+        Traces relative frequency of gazing -5 to +5s around lever presses.
+        - Plot 1: Gaze from the Pressing Rat to the Other Rat.
+        - Plot 2: Gaze from the Other Rat to the Pressing Rat.
+        """
+        print("Start Gaze Frequency Analysis")
+    
+        # Storage for windows across all sessions
+        # Structure: [condition][session_idx] = [trial_windows]
+        # condition 0 = Success, 1 = Unsuccessful
+        p_to_o_data = [[], []] 
+        o_to_p_data = [[], []]
+        
+        # Store session-level means for the scatter overlay
+        session_means_p_to_o = [[], []]
+        session_means_o_to_p = [[], []]
+        
+        for exp in self.experiments:
+            lev = exp.lev.data
+            pos = exp.pos
+            fps = exp.fps
+            window_frames = int(window_sec * fps)
+            
+            gaze_data = {
+                0: np.array(pos.returnIsGazing(0)),
+                1: np.array(pos.returnIsGazing(1))
+            }
+            
+            # 1. Identify Anchor Presses
+            succ_presses = lev[(lev['coopSucc'] == 1) & (lev['Hit'] == 1)]
+            unsucc_trials = lev[lev['coopSucc'] == 0]
+            first_unsucc_presses = unsucc_trials.sort_values('AbsTime').groupby('TrialNum').head(1)
+            
+            # 2. Extract windows for this session
+            for cond_idx, press_df in enumerate([succ_presses, first_unsucc_presses]):
+                sess_p_to_o = []
+                sess_o_to_p = []
+                
+                for _, row in press_df.iterrows():
+                    presser_id = int(row['RatID'])
+                    other_id = 1 - presser_id
+                    center_frame = int(row['AbsTime'] * fps)
+                    start, end = center_frame - window_frames, center_frame + window_frames + 1
+                    
+                    if start >= 0 and end <= len(gaze_data[0]):
+                        sess_p_to_o.append(gaze_data[presser_id][start:end])
+                        sess_o_to_p.append(gaze_data[other_id][start:end])
+                
+                # Aggregate session data
+                if sess_p_to_o:
+                    p_to_o_data[cond_idx].extend(sess_p_to_o)
+                    o_to_p_data[cond_idx].extend(sess_o_to_p)
+                    # Save session mean for scattering
+                    session_means_p_to_o[cond_idx].append(np.mean(sess_p_to_o, axis=0))
+                    session_means_o_to_p[cond_idx].append(np.mean(sess_o_to_p, axis=0))
+    
+        time_axis = np.linspace(-window_sec, window_sec, (2 * window_frames) + 1)
+        plot_configs = [
+            (p_to_o_data, session_means_p_to_o, "Presser_to_Partner", "Gaze: Pressing Rat → Partner"),
+            (o_to_p_data, session_means_o_to_p, "Partner_to_Presser", "Gaze: Partner → Pressing Rat")
+        ]
+    
+        for all_data, sess_means, filename, title in plot_configs:
+            plt.figure(figsize=(10, 6))
+            
+            colors = ['teal', 'indianred']
+            labels = ['Successful', 'Unsuccessful']
+            
+            for cond_idx in range(2):
+                if all_data[cond_idx]:
+                    # Calculate grand mean across all trials
+                    grand_mean = np.mean(all_data[cond_idx], axis=0)
+                    
+                    # Plot the main trend line
+                    plt.plot(time_axis, grand_mean, color=colors[cond_idx], 
+                             linewidth=3, label=f"{labels[cond_idx]} (Mean)", zorder=5)
+                    
+                    # Scatter individual session means as light background points
+                    for s_mean in sess_means[cond_idx]:
+                        plt.scatter(time_axis[::fps], s_mean[::fps], color=colors[cond_idx], 
+                                    alpha=0.1, s=10, marker='o', edgecolors='none')
+            
+            plt.axvline(0, color='black', linestyle='--', alpha=0.5)
+            plt.title(title)
+            plt.xlabel("Time from Press (s)")
+            plt.ylabel("Gaze Frequency")
+            plt.legend()
+            plt.grid(True, alpha=0.2)
+            plt.tight_layout()
+            plt.savefig(f"gaze_{filename}.png")
+            plt.show()
+    
+        print("Gaze analysis complete. Two figures saved.")
 
             
 
