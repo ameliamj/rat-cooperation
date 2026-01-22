@@ -91,7 +91,15 @@ class dataAnalysisRegular:
                 exp = singleExperiment(None, None, posFiles[i], fpsList[i], totFramesList[i], initialNanList[i], date = dates[i], sessionID = sessions[i], ratPair=ratPairs[i])
                 self.experiments.append(exp)
             
-        
+    def restrict_to_first_n_sessions(self, n=10):
+        # sort experiments by date
+        self.experiments = sorted(
+            self.experiments,
+            key=lambda exp: exp.date
+        )
+        # keep only first n
+        self.experiments = self.experiments[:n]
+    
     def _filterToLeverPressTrials(self, original_list, lev):
         """
         Filters a list of length lev.returnNumTotalTrials() down to only those trials
@@ -1295,7 +1303,7 @@ def getFiltered():
     return [fe.getLevsDatapath(), fe.getMagsDatapath(), fe.getPosDatapath(), fpsList, totFramesList, initial_nan_list, dates, sessions, ratPairs, familiarity, transparency]
 
 def minRequirements():
-    fe = fileExtractor(minReq)
+    fe = fileExtractor(minReqTraining)
     fe.data = fe.deleteBadNaN()
     fe.data = fe.keepOnlyPred()
     #fe.deleteOnlyFullyInvalid()
@@ -1392,6 +1400,37 @@ familarity = arr[9]
 transparency = arr[10]
 sessionTypes = arr[11]
 
+
+arr = minRequirementsComp()
+lev_files_comp = arr[0]
+mag_files_comp = arr[1]
+pos_files_comp = arr[2]
+fpsList_comp = arr[3]
+totFramesList_comp = arr[4]
+initialNanList_comp = arr[5]
+dates_comp = arr[6]
+sessions_comp = arr[7]
+ratPairs_comp = arr[8]    
+familarity_comp = arr[9]
+transparency_comp = arr[10]
+sessionTypes_comp = arr[11]
+
+
+arr = minRequirementsIneq()
+lev_files_ineq = arr[0]
+mag_files_ineq = arr[1]
+pos_files_ineq = arr[2]
+fpsList_ineq = arr[3]
+totFramesList_ineq = arr[4]
+initialNanList_ineq = arr[5]
+dates_ineq = arr[6]
+sessions_ineq = arr[7]
+ratPairs_ineq = arr[8]    
+familarity_ineq = arr[9]
+transparency_ineq = arr[10]
+sessionTypes_ineq = arr[11]
+
+
 arr = minRequirementsNonCoop()
 lev_files2 = arr[0]
 mag_files2 = arr[1]
@@ -1441,6 +1480,19 @@ print("pos_files2: ", pos_files2)
 
 # Create the data generation object
 data = dataAnalysisRegular(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, dates, sessions, ratPairs, familarity, transparency, sessionTypes, prefix = "", save=True)
+data_comp = dataAnalysisRegular(
+    mag_files_comp, lev_files_comp, pos_files_comp, fpsList_comp,
+    totFramesList_comp, initialNanList_comp, dates_comp, sessions_comp,
+    ratPairs_comp, familarity_comp, transparency_comp, sessionTypes_comp,
+    prefix="", save=True
+)
+
+data_ineq = dataAnalysisRegular(
+    mag_files_ineq, lev_files_ineq, pos_files_ineq, fpsList_ineq,
+    totFramesList_ineq, initialNanList_ineq, dates_ineq, sessions_ineq,
+    ratPairs_ineq, familarity_ineq, transparency_ineq, sessionTypes_ineq,
+    prefix="", save=True
+)
 data2 = dataAnalysisRegular(mag_files2, lev_files2, pos_files2, fpsList2, totFramesList2, initialNanList2, dates2, sessions2, ratPairs2, familarity2, transparency2, sessionTypes2, prefix = "", save=True)
 
 # Create the graph object
@@ -1451,7 +1503,74 @@ graphs = createGraphs()
 # Gaze Graphs: Coop vs NonCoop
 #
 
-gazingType = LEVER
+
+#First 10 Sessions Normal, Comp, Ineq --> Bar Graph and Ineq: 
+    
+#Only First 10 Sessions
+# normal coop
+data.restrict_to_first_n_sessions(10)
+
+# competition
+data_comp.restrict_to_first_n_sessions(10)
+
+# inequality
+data_ineq.restrict_to_first_n_sessions(10)
+
+#Extract Gazing Data
+gaze_coop, isKL_coop = data.gazingData(sortByKL=True, save_csv=False)
+gaze_comp, isKL_comp = data_comp.gazingData(sortByKL=True, save_csv=False)
+gaze_ineq, isKL_ineq = data_ineq.gazingData(sortByKL=True, save_csv=False)
+
+def barGraphAvgGazeThreeTypes(gaze_lists, labels, save_path):
+    means = [np.mean(g) for g in gaze_lists]
+
+    fig, ax = plt.subplots(figsize=(6, 6))
+    ax.bar(labels, means, color=["gray", "lightgray", "darkgray"], edgecolor="black")
+    ax.set_ylabel("Percent Gazing")
+    ax.set_title("Average Gazing (First 10 Sessions)")
+    plt.tight_layout()
+    plt.savefig(save_path, dpi=300)
+    plt.close()    
+
+
+barGraphAvgGazeThreeTypes(
+    [gaze_coop, gaze_comp, gaze_ineq],
+    ["Coop", "Comp", "Ineq"],
+    "avg_gaze_first10_coop_vs_nonCoop.png"
+)
+
+def lineGraphGazeOverTime(gaze_lists, labels, save_path):
+    fig, ax = plt.subplots(figsize=(7, 6))
+
+    for gaze, label in zip(gaze_lists, labels):
+        x = np.arange(len(gaze))
+        ax.plot(x, gaze, marker="o", label=label)
+
+        slope, intercept, *_ = linregress(x, gaze)
+        ax.plot(x, intercept + slope * x, linestyle="--")
+
+    ax.set_xlabel("Session (Chronological)")
+    ax.set_ylabel("Percent Gazing")
+    ax.set_title("Gazing Over Time (First 10 Sessions)")
+    ax.legend(frameon=False)
+
+    plt.tight_layout()
+    plt.savefig(save_path, dpi=300)
+    plt.close()
+
+
+lineGraphGazeOverTime(
+    [gaze_coop, gaze_comp, gaze_ineq],
+    ["Coop", "Comp", "Ineq"],
+    "gaze_over_time_first10_coop_vs_nonCoop.png"
+)
+
+
+
+
+
+
+'''gazingType = LEVER
 suffix = "normal"
 
 print("SUFFIX is: ", suffix)
@@ -1506,7 +1625,7 @@ graphs.barGraphGazingAll(
     save_path=f"gazing_coop_vs_noncoop_{suffix}.png",
     title="Amount of Gaze at Object",
     ylabel="Percent Gazing"
-)
+)'''
 
 
 '''
