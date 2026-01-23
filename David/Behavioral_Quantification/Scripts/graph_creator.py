@@ -11117,6 +11117,10 @@ class multiFileGraphs:
         session_means_p_to_o = [[], []]
         session_means_o_to_p = [[], []]
         
+        PRE = 150
+        POST = 150
+        TOTAL = PRE + POST
+        
         for exp in self.experiments:
             # 1. Drop NaNs and reset the index to ensure a clean, contiguous DataFrame
             lev = exp.lev.data.dropna(subset=['RatID', 'AbsTime']).copy()
@@ -11148,11 +11152,19 @@ class multiFileGraphs:
                     presser_id = int(row['RatID'])
                     other_id = 1 - presser_id
                     center_frame = int(row['AbsTime'] * fps)
-                    start, end = center_frame - window_frames, center_frame + window_frames + 1
+                    start, end = center_frame - PRE, center_frame + POST
                     
                     if start >= 0 and end <= len(gaze_data[0]):
-                        sess_p_to_o.append(gaze_data[presser_id][start:end])
-                        sess_o_to_p.append(gaze_data[other_id][start:end])
+                        p_to_o_window = gaze_data[presser_id][start:end]
+                        o_to_p_window = gaze_data[other_id][start:end]
+                    else:
+                        continue
+                    
+                    if len(p_to_o_window) != TOTAL or len(o_to_p_window) != TOTAL:
+                        continue
+                    
+                    sess_p_to_o.append(p_to_o_window)
+                    sess_o_to_p.append(o_to_p_window)
                 
                 # Aggregate session data
                 if sess_p_to_o:
@@ -11167,12 +11179,16 @@ class multiFileGraphs:
             (p_to_o_data, session_means_p_to_o, "Presser_to_Partner", "Gaze: Pressing Rat → Partner"),
             (o_to_p_data, session_means_o_to_p, "Partner_to_Presser", "Gaze: Partner → Pressing Rat")
         ]
-    
+        
         for all_data, sess_means, filename, title in plot_configs:
             plt.figure(figsize=(10, 6))
             
-            colors = ['teal', 'indianred']
+            colors = ['teal', 'indianred']  
             labels = ['Successful', 'Unsuccessful']
+            
+            print("all_data: ", all_data)
+            for myList in all_data:
+                print("len is: ", len(myList))
             
             for cond_idx in range(2):
                 if all_data[cond_idx]:
