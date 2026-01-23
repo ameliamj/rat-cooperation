@@ -1495,6 +1495,15 @@ print("pos_files2: ", pos_files2)
 
 # Create the data generation object
 data = dataAnalysisRegular(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, dates, sessions, ratPairs, familarity, transparency, sessionTypes, prefix = "", save=True)
+
+data_full = dataAnalysisRegular(
+    mag_files, lev_files, pos_files,
+    fpsList, totFramesList, initialNanList,
+    dates, sessions, ratPairs,
+    familarity, transparency, sessionTypes,
+    prefix="", save=True
+)
+
 data_comp = dataAnalysisRegular(
     mag_files_comp, lev_files_comp, pos_files_comp, fpsList_comp,
     totFramesList_comp, initialNanList_comp, dates_comp, sessions_comp,
@@ -1525,6 +1534,8 @@ graphs = createGraphs()
 # normal coop
 data.restrict_to_first_n_sessions(10)
 
+print("data.lev_files: ", data.lev_files)
+
 # competition
 data_comp.restrict_to_first_n_sessions(10)
 
@@ -1535,6 +1546,8 @@ data_ineq.restrict_to_first_n_sessions(10)
 gaze_coop, isKL_coop = data.gazingData(sortByKL=True, save_csv=False)
 gaze_comp, isKL_comp = data_comp.gazingData(sortByKL=True, save_csv=False)
 gaze_ineq, isKL_ineq = data_ineq.gazingData(sortByKL=True, save_csv=False)
+gaze_full, isKL_full = data_full.gazingData(sortByKL=True, save_csv=False)
+
 
 def save_session_level_gaze_csv(
     data_obj,
@@ -1585,16 +1598,21 @@ save_session_level_gaze_csv(
     csv_path="gaze_sessions_ineq_first10.csv"
 )
 
-kl_indices = [i for i in range(len(isKL_coop)) if not isKL_coop[i]][:10]
-gaze_kl = [gaze_coop[i] for i in kl_indices]
-isKL_kl = [isKL_coop[i] for i in kl_indices]
+N_KL = 10
+
+kl_indices_full = [i for i, v in enumerate(isKL_full) if v][:N_KL]
+print("kl_indices_full: ", kl_indices_full)
+
+gaze_kl = [gaze_full[i] for i in kl_indices_full]
+isKL_kl = [isKL_full[i] for i in kl_indices_full]
 
 save_session_level_gaze_csv(
-    data,
+    data_full,
     gaze_kl,
     isKL_kl,
     label="KL",
-    csv_path="gaze_sessions_kl_first10.csv"
+    csv_path="gaze_sessions_kl_first10.csv",
+    indices=kl_indices_full
 )
 
 def barGraphAvgGazeThreeTypes(gaze_lists, labels, save_path):
