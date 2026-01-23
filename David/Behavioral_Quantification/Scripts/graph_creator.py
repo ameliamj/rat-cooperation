@@ -11131,6 +11131,10 @@ class multiFileGraphs:
             
             pos = exp.pos
             fps = exp.fps
+            
+            print(fps, type(fps))
+
+            
             window_frames = int(window_sec * 30)
             
             gaze_data = {
@@ -11174,7 +11178,7 @@ class multiFileGraphs:
                     session_means_p_to_o[cond_idx].append(np.mean(sess_p_to_o, axis=0))
                     session_means_o_to_p[cond_idx].append(np.mean(sess_o_to_p, axis=0))
     
-        time_axis = np.linspace(-PRE / fps, POST / fps, TOTAL)
+        time_axis = np.linspace(-PRE / 30, POST / 30, TOTAL)
         print("time_axis:", len(time_axis))
 
 
@@ -11206,7 +11210,7 @@ class multiFileGraphs:
                     
                     # Scatter individual session means as light background points
                     for s_mean in sess_means[cond_idx]:
-                        plt.scatter(time_axis[::fps], s_mean[::fps], color=colors[cond_idx], 
+                        plt.scatter(time_axis[::30], s_mean[::30], color=colors[cond_idx], 
                                     alpha=0.1, s=10, marker='o', edgecolors='none')
             
             plt.axvline(0, color='black', linestyle='--', alpha=0.5)
