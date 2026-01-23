@@ -11127,7 +11127,7 @@ class multiFileGraphs:
             
             pos = exp.pos
             fps = exp.fps
-            window_frames = int(window_sec * fps)
+            window_frames = int(window_sec * 30)
             
             gaze_data = {
                 0: np.array(pos.returnIsGazing(0)),
