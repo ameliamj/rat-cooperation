@@ -33,9 +33,22 @@ MAG = 2
 
 class dataAnalysisRegular:
     def __init__(self, magFiles: List[str], levFiles: List[str], posFiles: List[str], fpsList: List[int], totFramesList: List[int], initialNanList: List[int], dates: List[int], sessions: List[int], ratPairs: List[int], familarity: List[str], transparency: List[str], sessionType: List[str], fiberFiles = None, prefix = "", save = True):
-        self.experiments = []
+        self.mag_files = mag_files
+        self.lev_files = lev_files
+        self.pos_files = pos_files
+        self.fpsList = fpsList
+        self.totFramesList = totFramesList
+        self.initialNanList = initialNanList
+        self.dates = dates
+        self.sessions = sessions
+        self.ratPairs = ratPairs
+        self.familarity = familarity
+        self.transparency = transparency
+        self.sessionTypes = sessionTypes
         self.prefix = prefix
         self.save = save
+        
+        self.experiments = []
         self.NUM_BINS = 30 # Number of time bins for trial chunking
         self.labelSize = 17
         self.titleSize = 18
