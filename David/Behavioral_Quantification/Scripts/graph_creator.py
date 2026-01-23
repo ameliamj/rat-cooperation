@@ -11174,7 +11174,10 @@ class multiFileGraphs:
                     session_means_p_to_o[cond_idx].append(np.mean(sess_p_to_o, axis=0))
                     session_means_o_to_p[cond_idx].append(np.mean(sess_o_to_p, axis=0))
     
-        time_axis = np.linspace(-window_sec, window_sec, (2 * window_frames) + 1)
+        time_axis = np.linspace(-PRE / fps, POST / fps, TOTAL)
+        print("time_axis:", len(time_axis))
+
+
         plot_configs = [
             (p_to_o_data, session_means_p_to_o, "Presser_to_Partner", "Gaze: Pressing Rat → Partner"),
             (o_to_p_data, session_means_o_to_p, "Partner_to_Presser", "Gaze: Partner → Pressing Rat")
@@ -11194,6 +11197,8 @@ class multiFileGraphs:
                 if all_data[cond_idx]:
                     # Calculate grand mean across all trials
                     grand_mean = np.mean(all_data[cond_idx], axis=0)
+                    print("grand_mean:", grand_mean.shape)
+
                     
                     # Plot the main trend line
                     plt.plot(time_axis, grand_mean, color=colors[cond_idx], 
