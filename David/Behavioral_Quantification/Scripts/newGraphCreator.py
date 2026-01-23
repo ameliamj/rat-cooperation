@@ -1614,15 +1614,18 @@ def lineGraphGazeOverTime(
 
     for gaze, label, isEB in zip(gaze_lists, labels, isEB_lists):
         x = np.arange(len(gaze))
+        gaze_array = np.array(gaze)
 
         # Plot data
         if label == "Coop" and isEB is not None:
-            # EB vs non-EB points
-            ax.scatter(x[~isEB], np.array(gaze)[~isEB],
+            isEB = np.array(isEB, dtype=bool) 
+        
+            ax.scatter(x[~isEB], gaze_array[~isEB],
                        color="black", label="Coop (non-EB)")
-            ax.scatter(x[isEB], np.array(gaze)[isEB],
+            ax.scatter(x[isEB], gaze_array[isEB],
                        color="red", label="Coop (EB)")
             base_color = "black"
+                    
         else:
             line, = ax.plot(x, gaze, marker="o", label=label)
             base_color = line.get_color()
