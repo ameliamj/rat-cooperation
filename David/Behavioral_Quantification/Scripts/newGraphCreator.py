@@ -1523,6 +1523,55 @@ gaze_coop, isKL_coop = data.gazingData(sortByKL=True, save_csv=False)
 gaze_comp, isKL_comp = data_comp.gazingData(sortByKL=True, save_csv=False)
 gaze_ineq, isKL_ineq = data_ineq.gazingData(sortByKL=True, save_csv=False)
 
+def save_session_level_gaze_csv(
+    data_obj,
+    gaze,
+    isKL,
+    label,
+    csv_path
+):
+    rows = []
+
+    for i in range(len(gaze)):
+        rows.append({
+            "label": label,                           # coop / comp / ineq
+            "date": data_obj.dates[i],
+            "gaze_percent": gaze[i],
+            "lev_file": data_obj.lev_files[i],
+            "session": data_obj.sessions[i],
+            "ratPair": data_obj.ratPairs[i],
+            "familiarity": data_obj.familarity[i],
+            "transparency": data_obj.transparency[i],
+            "isKL": bool(isKL[i]) if isKL is not None else np.nan
+        })
+
+    df = pd.DataFrame(rows)
+    df.to_csv(csv_path, index=False)
+
+save_session_level_gaze_csv(
+    data,
+    gaze_coop,
+    isKL_coop,
+    label="coop",
+    csv_path="gaze_sessions_coop_first10.csv"
+)
+
+save_session_level_gaze_csv(
+    data_comp,
+    gaze_comp,
+    isKL_comp,
+    label="comp",
+    csv_path="gaze_sessions_comp_first10.csv"
+)
+
+save_session_level_gaze_csv(
+    data_ineq,
+    gaze_ineq,
+    isKL_ineq,
+    label="ineq",
+    csv_path="gaze_sessions_ineq_first10.csv"
+)
+
 def barGraphAvgGazeThreeTypes(gaze_lists, labels, save_path):
     means = [np.mean(g) for g in gaze_lists]
 
@@ -1541,15 +1590,38 @@ barGraphAvgGazeThreeTypes(
     "avg_gaze_first10_coop_vs_nonCoop.png"
 )
 
-def lineGraphGazeOverTime(gaze_lists, labels, save_path):
+def lineGraphGazeOverTime(
+    gaze_lists,
+    labels,
+    isEB_lists,
+    save_path,
+    csv_path):
+    
     fig, ax = plt.subplots(figsize=(7, 6))
 
-    for gaze, label in zip(gaze_lists, labels):
+    for gaze, label, isEB in zip(gaze_lists, labels, isEB_lists):
         x = np.arange(len(gaze))
-        ax.plot(x, gaze, marker="o", label=label)
 
+        # Plot data
+        if label == "Coop" and isEB is not None:
+            # EB vs non-EB points
+            ax.scatter(x[~isEB], np.array(gaze)[~isEB],
+                       color="black", label="Coop (non-EB)")
+            ax.scatter(x[isEB], np.array(gaze)[isEB],
+                       color="red", label="Coop (EB)")
+            base_color = "black"
+        else:
+            line, = ax.plot(x, gaze, marker="o", label=label)
+            base_color = line.get_color()
+
+        # Trendline (same color as condition)
         slope, intercept, *_ = linregress(x, gaze)
-        ax.plot(x, intercept + slope * x, linestyle="--")
+        ax.plot(
+            x,
+            intercept + slope * x,
+            linestyle="--",
+            color=base_color
+        )
 
     ax.set_xlabel("Session (Chronological)")
     ax.set_ylabel("Percent Gazing")
@@ -1561,11 +1633,15 @@ def lineGraphGazeOverTime(gaze_lists, labels, save_path):
     plt.close()
 
 
+
 lineGraphGazeOverTime(
     [gaze_coop, gaze_comp, gaze_ineq],
     ["Coop", "Comp", "Ineq"],
-    "gaze_over_time_first10_coop_vs_nonCoop.png"
+    [isKL_coop, None, None],  # or isEB_coop
+    "gaze_over_time_first10_coop_vs_nonCoop.png",
+    "gaze_over_time_first10_coop_vs_nonCoop.csv"
 )
+
 
 
 
