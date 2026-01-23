@@ -1585,11 +1585,23 @@ save_session_level_gaze_csv(
     csv_path="gaze_sessions_ineq_first10.csv"
 )
 
+kl_indices = [i for i in range(len(isKL_coop)) if not isKL_coop[i]][:10]
+gaze_kl = [gaze_coop[i] for i in kl_indices]
+isKL_kl = [isKL_coop[i] for i in kl_indices]
+
+save_session_level_gaze_csv(
+    data,
+    gaze_kl,
+    isKL_kl,
+    label="KL",
+    csv_path="gaze_sessions_kl_first10.csv"
+)
+
 def barGraphAvgGazeThreeTypes(gaze_lists, labels, save_path):
     means = [np.mean(g) for g in gaze_lists]
 
     fig, ax = plt.subplots(figsize=(6, 6))
-    ax.bar(labels, means, color=["gray", "lightgray", "darkgray"], edgecolor="black")
+    ax.bar(labels, means, color = ["navy", "skyblue", "gray", "dimgray"], edgecolor="black")
     ax.set_ylabel("Percent Gazing")
     ax.set_title("Average Gazing (First 10 Sessions)")
     plt.tight_layout()
@@ -1598,9 +1610,9 @@ def barGraphAvgGazeThreeTypes(gaze_lists, labels, save_path):
 
 
 barGraphAvgGazeThreeTypes(
-    [gaze_coop, gaze_comp, gaze_ineq],
-    ["Coop", "Comp", "Ineq"],
-    "avg_gaze_first10_coop_vs_nonCoop.png"
+    [gaze_coop, gaze_kl, gaze_comp, gaze_ineq],  # added gaze_kl
+    ["Coop EB", "Coop KL", "Comp", "Ineq"],
+    "avg_gaze_first10_coop_vs_nonCoop_KL.png"
 )
 
 def lineGraphGazeOverTime(
@@ -1651,8 +1663,8 @@ def lineGraphGazeOverTime(
 
 
 lineGraphGazeOverTime(
-    [gaze_coop, gaze_comp, gaze_ineq],
-    ["Coop", "Comp", "Ineq"],
+    [gaze_coop, gaze_kl, gaze_comp, gaze_ineq],
+    ["Coop EB", "Coop KL", "Comp", "Ineq"],
     [isKL_coop, None, None],  # or isEB_coop
     "gaze_over_time_first10_coop_vs_nonCoop.png",
     "gaze_over_time_first10_coop_vs_nonCoop.csv"
