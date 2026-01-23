@@ -11132,7 +11132,7 @@ class multiFileGraphs:
             pos = exp.pos
             fps = exp.fps
             
-            print(fps, type(fps))
+            #print(fps, type(fps))
 
             
             window_frames = int(window_sec * 30)
@@ -11193,15 +11193,15 @@ class multiFileGraphs:
             colors = ['teal', 'indianred']  
             labels = ['Successful', 'Unsuccessful']
             
-            print("all_data: ", all_data)
-            for myList in all_data:
-                print("len is: ", len(myList))
+            #print("all_data: ", all_data)
+            #for myList in all_data:
+                #print("len is: ", len(myList))
             
             for cond_idx in range(2):
                 if all_data[cond_idx]:
                     # Calculate grand mean across all trials
                     grand_mean = np.mean(all_data[cond_idx], axis=0)
-                    print("grand_mean:", grand_mean.shape)
+                    #print("grand_mean:", grand_mean.shape)
 
                     
                     # Plot the main trend line
@@ -11209,11 +11209,12 @@ class multiFileGraphs:
                              linewidth=3, label=f"{labels[cond_idx]} (Mean)", zorder=5)
                     
                     # Scatter individual session means as light background points
-                    for s_mean in sess_means[cond_idx]:
+                    '''for s_mean in sess_means[cond_idx]:
                         plt.scatter(time_axis[::30], s_mean[::30], color=colors[cond_idx], 
-                                    alpha=0.1, s=10, marker='o', edgecolors='none')
+                                    alpha=0.1, s=10, marker='o', edgecolors='none')'''
             
             plt.axvline(0, color='black', linestyle='--', alpha=0.5)
+            #plt.ylim(0, 0.02)
             plt.title(title)
             plt.xlabel("Time from Press (s)")
             plt.ylabel("Gaze Frequency")
