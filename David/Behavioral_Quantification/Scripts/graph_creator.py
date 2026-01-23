@@ -11118,7 +11118,13 @@ class multiFileGraphs:
         session_means_o_to_p = [[], []]
         
         for exp in self.experiments:
-            lev = exp.lev.data.dropna(subset=['RatID', 'AbsTime'])
+            # 1. Drop NaNs and reset the index to ensure a clean, contiguous DataFrame
+            lev = exp.lev.data.dropna(subset=['RatID', 'AbsTime']).copy()
+            
+            # 2. Force RatID to be numeric (converts any 'strings' to actual NaNs, then drops them)
+            lev['RatID'] = pd.to_numeric(lev['RatID'], errors='coerce')
+            lev = lev.dropna(subset=['RatID'])
+            
             pos = exp.pos
             fps = exp.fps
             window_frames = int(window_sec * fps)
