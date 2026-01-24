@@ -1554,21 +1554,25 @@ def save_session_level_gaze_csv(
     gaze,
     isKL,
     label,
-    csv_path
+    csv_path,
+    indices=None
 ):
     rows = []
 
-    for i in range(len(gaze)):
+    if indices is None:
+        indices = range(len(gaze))
+
+    for row_i, data_i in enumerate(indices):
         rows.append({
-            "label": label,                           # coop / comp / ineq
-            "date": data_obj.dates[i],
-            "gaze_percent": gaze[i],
-            "lev_file": data_obj.lev_files[i],
-            "session": data_obj.sessions[i],
-            "ratPair": data_obj.ratPairs[i],
-            "familiarity": data_obj.familarity[i],
-            "transparency": data_obj.transparency[i],
-            "isKL": bool(isKL[i]) if isKL is not None else np.nan
+            "label": label,
+            "date": data_obj.dates[data_i],
+            "gaze_percent": gaze[row_i],
+            "lev_file": data_obj.lev_files[data_i],
+            "session": data_obj.sessions[data_i],
+            "ratPair": data_obj.ratPairs[data_i],
+            "familiarity": data_obj.familarity[data_i],
+            "transparency": data_obj.transparency[data_i],
+            "isKL": bool(isKL[row_i]) if isKL is not None else np.nan
         })
 
     df = pd.DataFrame(rows)
@@ -1605,6 +1609,8 @@ print("kl_indices_full: ", kl_indices_full)
 
 gaze_kl = [gaze_full[i] for i in kl_indices_full]
 isKL_kl = [isKL_full[i] for i in kl_indices_full]
+
+print("Test: ", gaze_kl[0], data_full.sessions[kl_indices_full[0]])
 
 save_session_level_gaze_csv(
     data_full,
