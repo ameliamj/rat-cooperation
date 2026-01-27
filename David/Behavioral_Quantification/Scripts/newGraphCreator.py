@@ -1561,6 +1561,11 @@ gaze_comp, isKL_comp = data_comp.gazingData(sortByKL=True, save_csv=False, getIn
 gaze_ineq, isKL_ineq = data_ineq.gazingData(sortByKL=True, save_csv=False, getInteractions=interactions)
 gaze_full, isKL_full = data_full.gazingData(sortByKL=True, save_csv=False, getInteractions=interactions)
 
+print("gaze_full: ", gaze_full)
+print("len: ", len(gaze_full))
+print("isKLFull: ", isKL_full)
+print("len: ", len(isKL_full))
+
 
 def save_session_level_gaze_csv(
     data_obj,
@@ -1617,13 +1622,13 @@ save_session_level_gaze_csv(
 
 N_KL = 10
 
-kl_indices_full = [i for i, v in enumerate(isKL_full) if not v][:N_KL] #These are actually EB indices
-print("kl_indices_full: ", kl_indices_full)
+eb_indices_full = [i for i, v in enumerate(isKL_full) if not v][:N_KL] #These are actually EB indices
+print("eb_indices_full: ", eb_indices_full)
 
-gaze_eb = [gaze_full[i] for i in kl_indices_full]
-isKL_eb = [isKL_full[i] for i in kl_indices_full]
+gaze_eb = [gaze_full[i] for i in eb_indices_full]
+isKL_eb = [isKL_full[i] for i in eb_indices_full]
 
-print("Test: ", gaze_eb[0], data_full.sessions[kl_indices_full[0]])
+print("Test: ", gaze_eb[0], data_full.sessions[eb_indices_full[0]])
 
 save_session_level_gaze_csv(
     data_full,
@@ -1631,7 +1636,7 @@ save_session_level_gaze_csv(
     isKL_eb,
     label="EB",
     csv_path=f"{prefixGazeOrInteractions}_sessions_EB_first10.csv",
-    indices=kl_indices_full
+    indices=eb_indices_full
 )
 
 def barGraphAvgGazeThreeTypes(gaze_lists, labels, save_path):
