@@ -11099,11 +11099,16 @@ class multiFileGraphs:
         plt.savefig("switches_per_session_histogram.png")
         plt.show()
 
-    def gazingBeforeAfterLeverPress(self, window_sec = 5):
+    def gazingBeforeAfterLeverPress(self, window_sec = 10):
         """
         Traces relative frequency of gazing -5 to +5s around lever presses.
         - Plot 1: Gaze from the Pressing Rat to the Other Rat.
         - Plot 2: Gaze from the Other Rat to the Pressing Rat.
+        
+        In each plot 3 lines:
+            1) Gazing centered around the first press in successful trials
+            2) Gazing cenetered around the press that makes the trial successful in successful trials
+            3) Gazing around the first press is unsuccessful trials 
         """
         print("Start Gaze Frequency Analysis")
     
@@ -11143,12 +11148,19 @@ class multiFileGraphs:
             }
             
             # 1. Identify Anchor Presses
+            succ_trials = lev[lev['coopSucc'] == 1]
+            first_succ_presses = (
+                succ_trials
+                .sort_values('AbsTime')
+                .groupby('TrialNum')
+                .head(1)
+            )
             succ_presses = lev[(lev['coopSucc'] == 1) & (lev['Hit'] == 1)]
             unsucc_trials = lev[lev['coopSucc'] == 0]
             first_unsucc_presses = unsucc_trials.sort_values('AbsTime').groupby('TrialNum').head(1)
             
             # 2. Extract windows for this session
-            for cond_idx, press_df in enumerate([succ_presses, first_unsucc_presses]):
+            for cond_idx, press_df in enumerate([first_succ_presses, succ_presses, first_unsucc_presses]):
                 sess_p_to_o = []
                 sess_o_to_p = []
                 
@@ -11191,13 +11203,13 @@ class multiFileGraphs:
             plt.figure(figsize=(10, 6))
             
             colors = ['teal', 'indianred']  
-            labels = ['Successful', 'Unsuccessful']
+            labels = ['Successful (First)', 'Successful (Second)', 'Unsuccessful']
             
             #print("all_data: ", all_data)
             #for myList in all_data:
                 #print("len is: ", len(myList))
             
-            for cond_idx in range(2):
+            for cond_idx in range(3):
                 if all_data[cond_idx]:
                     # Calculate grand mean across all trials
                     grand_mean = np.mean(all_data[cond_idx], axis=0)
