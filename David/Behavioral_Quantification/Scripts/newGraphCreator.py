@@ -1604,7 +1604,7 @@ save_session_level_gaze_csv(
 
 N_KL = 10
 
-kl_indices_full = [i for i, v in enumerate(isKL_full) if v][:N_KL]
+kl_indices_full = [i for i, v in enumerate(isKL_full) if not v][:N_KL] #These are actually EB indices
 print("kl_indices_full: ", kl_indices_full)
 
 gaze_kl = [gaze_full[i] for i in kl_indices_full]
@@ -1616,8 +1616,8 @@ save_session_level_gaze_csv(
     data_full,
     gaze_kl,
     isKL_kl,
-    label="KL",
-    csv_path="gaze_sessions_kl_first10.csv",
+    label="EB",
+    csv_path="gaze_sessions_EB_first10.csv",
     indices=kl_indices_full
 )
 
@@ -1642,23 +1642,23 @@ barGraphAvgGazeThreeTypes(
 def lineGraphGazeOverTime(
     gaze_lists,
     labels,
-    isEB_lists,
+    isKL_lists,
     save_path,
     csv_path):
     
     fig, ax = plt.subplots(figsize=(7, 6))
 
-    for gaze, label, isEB in zip(gaze_lists, labels, isEB_lists):
+    for gaze, label, isKL in zip(gaze_lists, labels, isKL_lists):
         x = np.arange(len(gaze))
         gaze_array = np.array(gaze)
 
         # Plot data
-        if label == "Coop" and isEB is not None:
-            isEB = np.array(isEB, dtype=bool) 
+        if (label == "Coop EB" or label == "Coop KL") and isKL is not None:
+            isKL = np.array(isKL, dtype=bool) 
         
-            ax.scatter(x[~isEB], gaze_array[~isEB],
-                       color="black", label="Coop (non-EB)")
-            ax.scatter(x[isEB], gaze_array[isEB],
+            ax.scatter(x[~isKL], gaze_array[~isKL],
+                       color="black", label="Coop (KL)")
+            ax.scatter(x[isKL], gaze_array[isKL],
                        color="red", label="Coop (EB)")
             base_color = "black"
                     
@@ -1689,7 +1689,7 @@ def lineGraphGazeOverTime(
 lineGraphGazeOverTime(
     [gaze_coop, gaze_kl, gaze_comp, gaze_ineq],
     ["Coop EB", "Coop KL", "Comp", "Ineq"],
-    [isKL_coop, None, None],  # or isEB_coop
+    [isKL_coop, isKL_kl, None, None],  # or isEB_coop
     "gaze_over_time_first10_coop_vs_nonCoop.png",
     "gaze_over_time_first10_coop_vs_nonCoop.csv"
 )
