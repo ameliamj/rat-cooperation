@@ -646,6 +646,7 @@ class dataAnalysisRegular:
             else:
                 numFramesInteracting = pos.returnTotalFramesInteracting()
                 pg = numFramesInteracting / numFrames
+                percentGazing.append(pg)
     
             rows.append({
                 "percentGazing": pg,
