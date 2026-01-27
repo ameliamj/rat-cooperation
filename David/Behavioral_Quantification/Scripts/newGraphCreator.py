@@ -607,7 +607,7 @@ class dataAnalysisRegular:
 
         return results
         
-    def gazingData(self, sortByKL=True, save_csv=True, gazingType = 0, csv_path="gazing_data.csv"):
+    def gazingData(self, sortByKL=True, save_csv=True, gazingType = 0, csv_path="gazing_data.csv", getInteractions = False):
         isKL = []
         percentGazing = []
         
@@ -622,24 +622,30 @@ class dataAnalysisRegular:
         for exp in self.experiments:
             ratPair = exp.ratPair
             pos = exp.pos
-    
-            if (gazingType == 0):
-                numFramesGazing = (pos.returnTotalFramesGazing(mouseID=0) + pos.returnTotalFramesGazing(mouseID=1)) / 2
-            elif (gazingType == 1):
-                numFramesGazing = (np.sum(pos.returnIsLookingAtObjects(0)) + np.sum(pos.returnIsLookingAtObjects(1))) / 2
-            elif (gazingType == 2):
-                numFramesGazing = (np.sum(pos.returnIsLookingAtObjects(0, target="mag")) + np.sum(pos.returnIsLookingAtObjects(1, target="mag"))) / 2
             
-            numFrames = pos.returnNumFrames()
-            pg = numFramesGazing / numFrames
-    
             if ratPair and ratPair[0:2] == "KL":
                 isKLTemp = True
             else:
                 isKLTemp = False
     
             isKL.append(isKLTemp)
-            percentGazing.append(pg)
+            numFrames = pos.returnNumFrames()
+            
+            if (not getInteractions):
+                if (gazingType == 0):
+                    numFramesGazing = (pos.returnTotalFramesGazing(mouseID=0) + pos.returnTotalFramesGazing(mouseID=1)) / 2
+                elif (gazingType == 1):
+                    numFramesGazing = (np.sum(pos.returnIsLookingAtObjects(0)) + np.sum(pos.returnIsLookingAtObjects(1))) / 2
+                elif (gazingType == 2):
+                    numFramesGazing = (np.sum(pos.returnIsLookingAtObjects(0, target="mag")) + np.sum(pos.returnIsLookingAtObjects(1, target="mag"))) / 2
+                
+                pg = numFramesGazing / numFrames
+        
+                percentGazing.append(pg)
+            
+            else:
+                numFramesInteracting = pos.returnTotalFramesInteracting()
+                pg = numFramesInteracting / numFrames
     
             rows.append({
                 "percentGazing": pg,
@@ -1536,6 +1542,13 @@ data.restrict_to_first_n_sessions(10)
 
 print("data.lev_files: ", data.lev_files)
 
+#
+# Set Data
+#
+prefixGazeOrInteractions = "interactions"
+interactions = True  #True for interactions, false for gaze
+
+
 # competition
 data_comp.restrict_to_first_n_sessions(10)
 
@@ -1543,10 +1556,10 @@ data_comp.restrict_to_first_n_sessions(10)
 data_ineq.restrict_to_first_n_sessions(10)
 
 #Extract Gazing Data
-gaze_coop, isKL_coop = data.gazingData(sortByKL=True, save_csv=False)
-gaze_comp, isKL_comp = data_comp.gazingData(sortByKL=True, save_csv=False)
-gaze_ineq, isKL_ineq = data_ineq.gazingData(sortByKL=True, save_csv=False)
-gaze_full, isKL_full = data_full.gazingData(sortByKL=True, save_csv=False)
+gaze_coop, isKL_coop = data.gazingData(sortByKL=True, save_csv=False, getInteractions=interactions)
+gaze_comp, isKL_comp = data_comp.gazingData(sortByKL=True, save_csv=False, getInteractions=interactions)
+gaze_ineq, isKL_ineq = data_ineq.gazingData(sortByKL=True, save_csv=False, getInteractions=interactions)
+gaze_full, isKL_full = data_full.gazingData(sortByKL=True, save_csv=False, getInteractions=interactions)
 
 
 def save_session_level_gaze_csv(
@@ -1583,7 +1596,7 @@ save_session_level_gaze_csv(
     gaze_coop,
     isKL_coop,
     label="coop",
-    csv_path="gaze_sessions_coop_first10.csv"
+    csv_path=f"{prefixGazeOrInteractions}_sessions_coop_first10.csv"
 )
 
 save_session_level_gaze_csv(
@@ -1591,7 +1604,7 @@ save_session_level_gaze_csv(
     gaze_comp,
     isKL_comp,
     label="comp",
-    csv_path="gaze_sessions_comp_first10.csv"
+    csv_path=f"{prefixGazeOrInteractions}_sessions_comp_first10.csv"
 )
 
 save_session_level_gaze_csv(
@@ -1599,7 +1612,7 @@ save_session_level_gaze_csv(
     gaze_ineq,
     isKL_ineq,
     label="ineq",
-    csv_path="gaze_sessions_ineq_first10.csv"
+    csv_path=f"{prefixGazeOrInteractions}_sessions_ineq_first10.csv"
 )
 
 N_KL = 10
@@ -1617,7 +1630,7 @@ save_session_level_gaze_csv(
     gaze_eb,
     isKL_eb,
     label="EB",
-    csv_path="gaze_sessions_EB_first10.csv",
+    csv_path=f"{prefixGazeOrInteractions}_sessions_EB_first10.csv",
     indices=kl_indices_full
 )
 
@@ -1626,8 +1639,10 @@ def barGraphAvgGazeThreeTypes(gaze_lists, labels, save_path):
 
     fig, ax = plt.subplots(figsize=(6, 6))
     ax.bar(labels, means, color = ["navy", "skyblue", "gray", "dimgray"], edgecolor="black")
-    ax.set_ylabel("Percent Gazing")
-    ax.set_title("Average Gazing (First 10 Sessions)")
+    #ax.set_ylabel("Percent Gazing")
+    #ax.set_title("Average Gazing (First 10 Sessions)")
+    ax.set_ylabel("Percent Interacting")
+    ax.set_title("Average Interacting (First 10 Sessions)")
     plt.tight_layout()
     plt.savefig(save_path, dpi=300)
     plt.close()    
@@ -1636,7 +1651,7 @@ def barGraphAvgGazeThreeTypes(gaze_lists, labels, save_path):
 barGraphAvgGazeThreeTypes(
     [gaze_coop, gaze_eb, gaze_comp, gaze_ineq],  # added gaze_kl
     ["Coop KL", "Coop EB", "Comp", "Ineq"],
-    "avg_gaze_first10_coop_vs_nonCoop_KL.png"
+    f"avg_{prefixGazeOrInteractions}_first10_coop_vs_nonCoop_KL.png"
 )
 
 def lineGraphGazeOverTime(
@@ -1690,8 +1705,8 @@ lineGraphGazeOverTime(
     [gaze_coop, gaze_eb, gaze_comp, gaze_ineq],
     ["Coop KL", "Coop EB", "Comp", "Ineq"],
     [isKL_coop, isKL_eb, None, None],  # or isEB_coop
-    "gaze_over_time_first10_coop_vs_nonCoop.png",
-    "gaze_over_time_first10_coop_vs_nonCoop.csv"
+    f"{prefixGazeOrInteractions}_over_time_first10_coop_vs_nonCoop.png",
+    f"{prefixGazeOrInteractions}_over_time_first10_coop_vs_nonCoop.csv"
 )
 
 
