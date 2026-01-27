@@ -11115,12 +11115,12 @@ class multiFileGraphs:
         # Storage for windows across all sessions
         # Structure: [condition][session_idx] = [trial_windows]
         # condition 0 = Success, 1 = Unsuccessful
-        p_to_o_data = [[], []] 
-        o_to_p_data = [[], []]
+        p_to_o_data = [[], [], []]
+        o_to_p_data = [[], [], []]
         
         # Store session-level means for the scatter overlay
-        session_means_p_to_o = [[], []]
-        session_means_o_to_p = [[], []]
+        session_means_p_to_o = [[], [], []]
+        session_means_o_to_p = [[], [], []]
         
         PRE = 150
         POST = 150
@@ -11202,7 +11202,7 @@ class multiFileGraphs:
         for all_data, sess_means, filename, title in plot_configs:
             plt.figure(figsize=(10, 6))
             
-            colors = ['teal', 'indianred']  
+            colors = ['teal', 'royalblue', 'indianred']  
             labels = ['Successful (First)', 'Successful (Second)', 'Unsuccessful']
             
             #print("all_data: ", all_data)
