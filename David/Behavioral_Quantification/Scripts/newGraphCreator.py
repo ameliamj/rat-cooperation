@@ -1607,15 +1607,15 @@ N_KL = 10
 kl_indices_full = [i for i, v in enumerate(isKL_full) if not v][:N_KL] #These are actually EB indices
 print("kl_indices_full: ", kl_indices_full)
 
-gaze_kl = [gaze_full[i] for i in kl_indices_full]
-isKL_kl = [isKL_full[i] for i in kl_indices_full]
+gaze_eb = [gaze_full[i] for i in kl_indices_full]
+isKL_eb = [isKL_full[i] for i in kl_indices_full]
 
-print("Test: ", gaze_kl[0], data_full.sessions[kl_indices_full[0]])
+print("Test: ", gaze_eb[0], data_full.sessions[kl_indices_full[0]])
 
 save_session_level_gaze_csv(
     data_full,
-    gaze_kl,
-    isKL_kl,
+    gaze_eb,
+    isKL_eb,
     label="EB",
     csv_path="gaze_sessions_EB_first10.csv",
     indices=kl_indices_full
@@ -1634,8 +1634,8 @@ def barGraphAvgGazeThreeTypes(gaze_lists, labels, save_path):
 
 
 barGraphAvgGazeThreeTypes(
-    [gaze_coop, gaze_kl, gaze_comp, gaze_ineq],  # added gaze_kl
-    ["Coop EB", "Coop KL", "Comp", "Ineq"],
+    [gaze_coop, gaze_eb, gaze_comp, gaze_ineq],  # added gaze_kl
+    ["Coop KL", "Coop EB", "Comp", "Ineq"],
     "avg_gaze_first10_coop_vs_nonCoop_KL.png"
 )
 
@@ -1687,9 +1687,9 @@ def lineGraphGazeOverTime(
 
 
 lineGraphGazeOverTime(
-    [gaze_coop, gaze_kl, gaze_comp, gaze_ineq],
-    ["Coop EB", "Coop KL", "Comp", "Ineq"],
-    [isKL_coop, isKL_kl, None, None],  # or isEB_coop
+    [gaze_coop, gaze_eb, gaze_comp, gaze_ineq],
+    ["Coop KL", "Coop EB", "Comp", "Ineq"],
+    [isKL_coop, isKL_eb, None, None],  # or isEB_coop
     "gaze_over_time_first10_coop_vs_nonCoop.png",
     "gaze_over_time_first10_coop_vs_nonCoop.csv"
 )
