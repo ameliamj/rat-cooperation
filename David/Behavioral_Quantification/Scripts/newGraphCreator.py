@@ -1330,11 +1330,11 @@ def getFiltered():
     return [fe.getLevsDatapath(), fe.getMagsDatapath(), fe.getPosDatapath(), fpsList, totFramesList, initial_nan_list, dates, sessions, ratPairs, familiarity, transparency]
 
 def minRequirements():
-    fe = fileExtractor(minReqTraining)
+    fe = fileExtractor(minReq)
     fe.data = fe.deleteBadNaN()
     fe.data = fe.keepOnlyPred()
     #fe.deleteOnlyFullyInvalid()
-    #fe.filterOutBadNums()
+    #fe.filterOutBadNums()x
     fpsList, totFramesList = fe.returnFPSandTotFrames()
     initial_nan_list = fe.returnNaNPercentage()
     dates = fe.getDatesList()
@@ -1543,8 +1543,8 @@ graphs = createGraphs()
 #
 # Set Data
 #
-prefix = "interactions"
-interactions = True  #True for interactions, false for gaze
+prefix = "gazing" #interactions or gazing
+interactions = False  #True for interactions, false for gaze
     
 
 ############################################################
@@ -1597,7 +1597,7 @@ def first_n_indices_per_ratpair(ratPairs, dates, n):
 
     return keep_indices
 
-N = 10
+'''N = 10
 
 keep_idx_coop = first_n_indices_per_ratpair(
     ratPairs=data.ratPairs,
@@ -1616,9 +1616,7 @@ keep_idx_ineq = first_n_indices_per_ratpair(
     ratPairs=data_ineq.ratPairs,
     dates=data_ineq.dates,
     n=N
-)
-
-exit()
+)'''
 
 def save_session_level_gaze_csv(
     data_obj,
@@ -1654,7 +1652,7 @@ save_session_level_gaze_csv(
     gaze_coop,
     isKL_coop,
     label="coop",
-    csv_path=f"{prefix}_sessions_coop_first10.csv"
+    csv_path=f"{prefix}_sessions_coop.csv"
 )
 
 save_session_level_gaze_csv(
@@ -1662,7 +1660,7 @@ save_session_level_gaze_csv(
     gaze_comp,
     isKL_comp,
     label="comp",
-    csv_path=f"{prefix}_sessions_comp_first10.csv"
+    csv_path=f"{prefix}_sessions_comp.csv"
 )
 
 save_session_level_gaze_csv(
@@ -1670,7 +1668,7 @@ save_session_level_gaze_csv(
     gaze_ineq,
     isKL_ineq,
     label="ineq",
-    csv_path=f"{prefix}_sessions_ineq_first10.csv"
+    csv_path=f"{prefix}_sessions_ineq.csv"
 )
 
 
