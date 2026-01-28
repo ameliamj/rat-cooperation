@@ -11323,6 +11323,145 @@ class multiFileGraphs:
         return pct_after_gaze, pct_after_no_gaze
             
 
+    def gazingAtLeverBeforeAfterLeverPress(self, window_sec = 10):
+        """
+        Traces relative frequency of gazing -5 to +5s around lever presses.
+        - Plot 1: Gaze from the Pressing Rat to the Other Rat.
+        - Plot 2: Gaze from the Other Rat to the Pressing Rat.
+        
+        In each plot 3 lines:
+            1) Gazing centered around the first press in successful trials
+            2) Gazing cenetered around the press that makes the trial successful in successful trials
+            3) Gazing around the first press is unsuccessful trials 
+        """
+        print("Start Gaze Frequency Analysis")
+    
+        # Storage for windows across all sessions
+        # Structure: [condition][session_idx] = [trial_windows]
+        # condition 0 = Success, 1 = Unsuccessful
+        p_to_o_data = [[], [], []]
+        o_to_p_data = [[], [], []]
+        
+        # Store session-level means for the scatter overlay
+        session_means_p_to_o = [[], [], []]
+        session_means_o_to_p = [[], [], []]
+        
+        PRE = 150
+        POST = 150
+        TOTAL = PRE + POST
+        
+        for exp in self.experiments:
+            # 1. Drop NaNs and reset the index to ensure a clean, contiguous DataFrame
+            lev = exp.lev.data.dropna(subset=['RatID', 'AbsTime']).copy()
+            
+            # 2. Force RatID to be numeric (converts any 'strings' to actual NaNs, then drops them)
+            lev['RatID'] = pd.to_numeric(lev['RatID'], errors='coerce')
+            lev = lev.dropna(subset=['RatID'])
+            
+            pos = exp.pos
+            fps = exp.fps
+            
+            #print(fps, type(fps))
+
+            
+            window_frames = int(window_sec * 30)
+            
+            gaze_data = {
+                0: np.array(pos.returnIsLookingAtObjects(0)),
+                1: np.array(pos.returnIsLookingAtObjects(1))
+            }
+            
+            # 1. Identify Anchor Presses
+            succ_trials = lev[lev['coopSucc'] == 1]
+            first_succ_presses = (
+                succ_trials
+                .sort_values('AbsTime')
+                .groupby('TrialNum')
+                .head(1)
+            )
+            succ_presses = lev[(lev['coopSucc'] == 1) & (lev['Hit'] == 1)]
+            unsucc_trials = lev[lev['coopSucc'] == 0]
+            first_unsucc_presses = unsucc_trials.sort_values('AbsTime').groupby('TrialNum').head(1)
+            
+            # 2. Extract windows for this session
+            for cond_idx, press_df in enumerate([first_succ_presses, succ_presses, first_unsucc_presses]):
+                sess_p_to_o = []
+                sess_o_to_p = []
+                
+                for _, row in press_df.iterrows():
+                    presser_id = int(row['RatID'])
+                    other_id = 1 - presser_id
+                    center_frame = int(row['AbsTime'] * fps)
+                    start, end = center_frame - PRE, center_frame + POST
+                    
+                    if start >= 0 and end <= len(gaze_data[0]):
+                        p_to_o_window = gaze_data[presser_id][start:end]
+                        o_to_p_window = gaze_data[other_id][start:end]
+                    else:
+                        continue
+                    
+                    if len(p_to_o_window) != TOTAL or len(o_to_p_window) != TOTAL:
+                        continue
+                    
+                    sess_p_to_o.append(p_to_o_window)
+                    sess_o_to_p.append(o_to_p_window)
+                
+                # Aggregate session data
+                if sess_p_to_o:
+                    p_to_o_data[cond_idx].extend(sess_p_to_o)
+                    o_to_p_data[cond_idx].extend(sess_o_to_p)
+                    # Save session mean for scattering
+                    session_means_p_to_o[cond_idx].append(np.mean(sess_p_to_o, axis=0))
+                    session_means_o_to_p[cond_idx].append(np.mean(sess_o_to_p, axis=0))
+    
+        time_axis = np.linspace(-PRE / 30, POST / 30, TOTAL)
+        print("time_axis:", len(time_axis))
+
+
+        plot_configs = [
+            (p_to_o_data, session_means_p_to_o, "Presser_to_Lever", "Gaze: Pressing Rat → Lever"),
+            (o_to_p_data, session_means_o_to_p, "Partner_to_Lever", "Gaze: Partner → Lever")
+        ]
+        
+        for all_data, sess_means, filename, title in plot_configs:
+            plt.figure(figsize=(10, 6))
+            
+            colors = ['teal', 'royalblue', 'indianred']  
+            labels = ['Successful (First)', 'Successful (Hit)', 'Unsuccessful']
+            
+            #print("all_data: ", all_data)
+            #for myList in all_data:
+                #print("len is: ", len(myList))
+            
+            for cond_idx in range(3):
+                if all_data[cond_idx]:
+                    # Calculate grand mean across all trials
+                    grand_mean = np.mean(all_data[cond_idx], axis=0)
+                    #print("grand_mean:", grand_mean.shape)
+
+                    
+                    # Plot the main trend line
+                    plt.plot(time_axis, grand_mean, color=colors[cond_idx], 
+                             linewidth=3, label=f"{labels[cond_idx]} (Mean)", zorder=5)
+                    
+                    # Scatter individual session means as light background points
+                    '''for s_mean in sess_means[cond_idx]:
+                        plt.scatter(time_axis[::30], s_mean[::30], color=colors[cond_idx], 
+                                    alpha=0.1, s=10, marker='o', edgecolors='none')'''
+            
+            plt.axvline(0, color='black', linestyle='--', alpha=0.5)
+            #plt.ylim(0, 0.02)
+            plt.title(title)
+            plt.xlabel("Time from Press (s)")
+            plt.ylabel("Gaze at Lever Frequency")
+            plt.legend()
+            plt.grid(True, alpha=0.2)
+            plt.tight_layout()
+            plt.savefig(f"gazeAtLever_{filename}.png")
+            plt.show()
+    
+        print("Gaze analysis complete. Two figures saved.")
+
 
 #Testing Multi File Graphs
 #
@@ -11448,7 +11587,8 @@ initialNanList = [0.3]
 
 #print("Start MultiFileGraphs Regular")
 experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, dates, sessions, ratPairs, prefix = "", save=True)
-experiment.successAfterPreviousGaze()
+experiment.gazingAtLeverBeforeAfterLeverPress()
+#experiment.successAfterPreviousGaze()
 #experiment.gazingBeforeAfterLeverPress()
 
 #experiment.switchingHistogram()
