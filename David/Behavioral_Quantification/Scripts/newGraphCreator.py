@@ -26,6 +26,8 @@ from scipy import stats
 from scipy.stats import linregress, sem
 from scipy.stats import ttest_ind, f_oneway
 from scipy.ndimage import gaussian_filter
+from collections import Counter
+
 
 NORMAL = 0
 LEVER = 1
@@ -1506,9 +1508,7 @@ print("pos_files2: ", pos_files2)
 
 
 # Create the data generation object
-data = dataAnalysisRegular(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, dates, sessions, ratPairs, familarity, transparency, sessionTypes, prefix = "", save=True)
-
-data_full = dataAnalysisRegular(
+data = dataAnalysisRegular(
     mag_files, lev_files, pos_files,
     fpsList, totFramesList, initialNanList,
     dates, sessions, ratPairs,
@@ -1529,6 +1529,7 @@ data_ineq = dataAnalysisRegular(
     ratPairs_ineq, familarity_ineq, transparency_ineq, sessionTypes_ineq,
     prefix="", save=True
 )
+
 data2 = dataAnalysisRegular(mag_files2, lev_files2, pos_files2, fpsList2, totFramesList2, initialNanList2, dates2, sessions2, ratPairs2, familarity2, transparency2, sessionTypes2, prefix = "", save=True)
 
 # Create the graph object
@@ -1539,39 +1540,85 @@ graphs = createGraphs()
 # Gaze Graphs: Coop vs NonCoop
 #
 
-
-#First 10 Sessions Normal, Comp, Ineq --> Bar Graph and Ineq: 
-    
-#Only First 10 Sessions
-# normal coop
-data.restrict_to_first_n_sessions(10)
-
-print("data.lev_files: ", data.lev_files)
-
 #
 # Set Data
 #
-prefixGazeOrInteractions = "interactions"
+prefix = "interactions"
 interactions = True  #True for interactions, false for gaze
+    
 
+############################################################
+# --------- PART 1: SESSION COUNTS PER RAT PAIR ------------
+############################################################
 
-# competition
-data_comp.restrict_to_first_n_sessions(10)
+def count_sessions_per_ratpair(data_obj, label):
+    counts = Counter(data_obj.ratPairs)
+    print(f"\nSession counts for {label}:")
+    for rp, n in counts.items():
+        print(f"  {rp}: {n}")
+    return counts
 
-# inequality
-data_ineq.restrict_to_first_n_sessions(10)
+counts_coop = count_sessions_per_ratpair(data, "Coop")
+counts_comp = count_sessions_per_ratpair(data_comp, "Comp")
+counts_ineq = count_sessions_per_ratpair(data_ineq, "Ineq")
+
+############################################################
+# ------------------ EXTRACT GAZE / INTERACTIONS ------------
+############################################################
 
 #Extract Gazing Data
 gaze_coop, isKL_coop = data.gazingData(sortByKL=True, save_csv=False, getInteractions=interactions)
 gaze_comp, isKL_comp = data_comp.gazingData(sortByKL=True, save_csv=False, getInteractions=interactions)
 gaze_ineq, isKL_ineq = data_ineq.gazingData(sortByKL=True, save_csv=False, getInteractions=interactions)
-gaze_full, isKL_full = data_full.gazingData(sortByKL=True, save_csv=False, getInteractions=interactions)
 
-print("gaze_full: ", gaze_full)
-print("len: ", len(gaze_full))
-print("isKLFull: ", isKL_full)
-print("len: ", len(isKL_full))
+print("gaze_coop: ", gaze_coop)
 
+############################################################
+# ------------------ Keep First 10 Sessions per Rat Pair ------------
+############################################################
+
+def first_n_indices_per_ratpair(ratPairs, dates, n):
+    """
+    Returns a flat list of indices corresponding to the first n
+    chronological sessions for each rat pair.
+    """
+    ratpair_to_indices = {}
+
+    # collect indices per rat pair
+    for i, rp in enumerate(ratPairs):
+        ratpair_to_indices.setdefault(rp, []).append(i)
+
+    keep_indices = []
+
+    # sort chronologically within each rat pair
+    for rp, inds in ratpair_to_indices.items():
+        inds_sorted = sorted(inds, key=lambda i: dates[i])
+        keep_indices.extend(inds_sorted[:n])
+
+    return keep_indices
+
+N = 10
+
+keep_idx_coop = first_n_indices_per_ratpair(
+    ratPairs=data.ratPairs,
+    dates=data.dates,
+    n=N
+)
+print("keep_idx_coop: ", keep_idx_coop)
+
+keep_idx_comp = first_n_indices_per_ratpair(
+    ratPairs=data_comp.ratPairs,
+    dates=data_comp.dates,
+    n=N
+)
+
+keep_idx_ineq = first_n_indices_per_ratpair(
+    ratPairs=data_ineq.ratPairs,
+    dates=data_ineq.dates,
+    n=N
+)
+
+exit()
 
 def save_session_level_gaze_csv(
     data_obj,
@@ -1607,7 +1654,7 @@ save_session_level_gaze_csv(
     gaze_coop,
     isKL_coop,
     label="coop",
-    csv_path=f"{prefixGazeOrInteractions}_sessions_coop_first10.csv"
+    csv_path=f"{prefix}_sessions_coop_first10.csv"
 )
 
 save_session_level_gaze_csv(
@@ -1615,7 +1662,7 @@ save_session_level_gaze_csv(
     gaze_comp,
     isKL_comp,
     label="comp",
-    csv_path=f"{prefixGazeOrInteractions}_sessions_comp_first10.csv"
+    csv_path=f"{prefix}_sessions_comp_first10.csv"
 )
 
 save_session_level_gaze_csv(
@@ -1623,49 +1670,115 @@ save_session_level_gaze_csv(
     gaze_ineq,
     isKL_ineq,
     label="ineq",
-    csv_path=f"{prefixGazeOrInteractions}_sessions_ineq_first10.csv"
+    csv_path=f"{prefix}_sessions_ineq_first10.csv"
 )
 
-N_KL = 10
 
-eb_indices_full = [i for i, v in enumerate(isKL_full) if not v][:N_KL] #These are actually EB indices
-print("eb_indices_full: ", eb_indices_full)
+############################################################
+# --------- BAR PLOT: COOP vs COMP vs INEQ -----------------
+############################################################
 
-gaze_eb = [gaze_full[i] for i in eb_indices_full]
-isKL_eb = [isKL_full[i] for i in eb_indices_full]
-
-print("Test: ", gaze_eb[0], data_full.sessions[eb_indices_full[0]])
-
-save_session_level_gaze_csv(
-    data_full,
-    gaze_eb,
-    isKL_eb,
-    label="EB",
-    csv_path=f"{prefixGazeOrInteractions}_sessions_EB_first10.csv",
-    indices=eb_indices_full
-)
-
-def barGraphAvgGazeThreeTypes(gaze_lists, labels, save_path):
+def barGraphAvgGazeThreeTypes(
+    gaze_lists,
+    isKL_lists,
+    labels,
+    bar_colors,
+    save_path
+):
     means = [np.mean(g) for g in gaze_lists]
+    x = np.arange(len(labels))
 
     fig, ax = plt.subplots(figsize=(6, 6))
-    ax.bar(labels, means, color = ["navy", "skyblue", "gray", "dimgray"], edgecolor="black")
-    #ax.set_ylabel("Percent Gazing")
-    #ax.set_title("Average Gazing (First 10 Sessions)")
+
+    # bars
+    ax.bar(x, means, color=bar_colors, edgecolor="black", zorder=1)
+
+    # scatter individual points
+    for i, (gaze, isKL) in enumerate(zip(gaze_lists, isKL_lists)):
+        jitter = np.random.normal(0, 0.04, size=len(gaze))
+        colors = ["black" if v else "red" for v in isKL]
+
+        ax.scatter(
+            np.full(len(gaze), x[i]) + jitter,
+            gaze,
+            c=colors,
+            s=35,
+            zorder=2
+        )
+
+    ax.set_xticks(x)
+    ax.set_xticklabels(labels)
     ax.set_ylabel("Percent Interacting")
-    ax.set_title("Average Interacting (First 10 Sessions)")
+    ax.set_title("Average Interacting (First 10 Sessions per Rat Pair)")
+
     plt.tight_layout()
     plt.savefig(save_path, dpi=300)
-    plt.close()    
+    plt.close()
 
 
 barGraphAvgGazeThreeTypes(
-    [gaze_coop, gaze_eb, gaze_comp, gaze_ineq],  # added gaze_kl
-    ["Coop KL", "Coop EB", "Comp", "Ineq"],
-    f"avg_{prefixGazeOrInteractions}_first10_coop_vs_nonCoop_KL.png"
+    gaze_lists=[gaze_coop, gaze_comp, gaze_ineq],
+    isKL_lists=[isKL_coop, isKL_comp, isKL_ineq],
+    labels=["Coop", "Comp", "Ineq"],
+    bar_colors=["navy", "gray", "dimgray"],
+    save_path=f"avg_{prefix}_first10_per_ratpair.png"
 )
 
-def lineGraphGazeOverTime(
+
+
+############################################################
+# --------- LINE PLOT: AVERAGED BY SESSION INDEX -----------
+############################################################
+
+def average_gaze_by_session_index(data_obj, gaze, n_sessions=10):
+    ratpair_to_gaze = {}
+    for rp, g in zip(data_obj.ratPairs, gaze):
+        ratpair_to_gaze.setdefault(rp, []).append(g)
+
+    avg_by_session = []
+    for i in range(n_sessions):
+        vals = [
+            g_list[i]
+            for g_list in ratpair_to_gaze.values()
+            if len(g_list) > i
+        ]
+        avg_by_session.append(np.mean(vals))
+
+    return avg_by_session
+
+gaze_coop_avg = average_gaze_by_session_index(data, gaze_coop)
+gaze_comp_avg = average_gaze_by_session_index(data_comp, gaze_comp)
+gaze_ineq_avg = average_gaze_by_session_index(data_ineq, gaze_ineq)
+
+
+def lineGraphGazeOverTime(gaze_lists, labels, save_path):
+    fig, ax = plt.subplots(figsize=(7, 6))
+
+    for gaze, label in zip(gaze_lists, labels):
+        x = np.arange(len(gaze))
+        line, = ax.plot(x, gaze, marker="o", label=label)
+
+        slope, intercept, *_ = linregress(x, gaze)
+        ax.plot(x, intercept + slope * x, linestyle="--", color=line.get_color())
+
+    ax.set_xlabel("Session Number")
+    ax.set_ylabel("Percent Interacting")
+    ax.set_title("Interacting Over Time (First 10 Sessions per Rat Pair)")
+    ax.legend(frameon=False)
+
+    plt.tight_layout()
+    plt.savefig(save_path, dpi=300)
+    plt.close()
+
+
+lineGraphGazeOverTime(
+    [gaze_coop_avg, gaze_comp_avg, gaze_ineq_avg],
+    ["Coop", "Comp", "Ineq"],
+    f"{prefix}_over_time_first10_per_ratpair.png"
+)
+
+
+'''def lineGraphGazeOverTime(
     gaze_lists,
     labels,
     isKL_lists,
@@ -1723,7 +1836,7 @@ lineGraphGazeOverTime(
     [isKL_coop, isKL_eb, None, None],  # or isEB_coop
     f"{prefixGazeOrInteractions}_over_time_first10_coop_vs_nonCoop.png",
     f"{prefixGazeOrInteractions}_over_time_first10_coop_vs_nonCoop.csv"
-)
+)'''
 
 
 
