@@ -613,6 +613,11 @@ class dataAnalysisRegular:
         
         #Gazing Type: 0 = Normal, 1 = Lever, 2 = Mag
         
+        word = "Gazing"
+        if (getInteractions):
+            word = "Interacting"
+            
+        
         print("Entering Gazing Data")
         print("Num Exps is: ", len(self.experiments))
         
@@ -649,7 +654,7 @@ class dataAnalysisRegular:
                 percentGazing.append(pg)
     
             rows.append({
-                "percentGazing": pg,
+                f"percent{word}": pg,
                 "isKL": isKLTemp,
                 "sessionID": exp.sessionID,
                 "levFile": exp.lev_file,
@@ -1669,6 +1674,8 @@ def lineGraphGazeOverTime(
     
     fig, ax = plt.subplots(figsize=(7, 6))
 
+    word = "Interacting"
+
     for gaze, label, isKL in zip(gaze_lists, labels, isKL_lists):
         x = np.arange(len(gaze))
         gaze_array = np.array(gaze)
@@ -1676,12 +1683,13 @@ def lineGraphGazeOverTime(
         # Plot data
         if (label == "Coop EB" or label == "Coop KL") and isKL is not None:
             isKL = np.array(isKL, dtype=bool) 
-        
-            ax.scatter(x[~isKL], gaze_array[~isKL],
-                       color="black", label="Coop (KL)")
-            ax.scatter(x[isKL], gaze_array[isKL],
-                       color="red", label="Coop (EB)")
-            base_color = "black"
+            
+            kl_label = "Coop (KL)" if label == "Coop KL" else None
+            eb_label = "Coop (EB)" if label == "Coop EB" else None
+            
+            ax.scatter(x[isKL], gaze_array[isKL], color="black", label=kl_label)
+            ax.scatter(x[~isKL], gaze_array[~isKL], color="red", label=eb_label)
+            base_color = "black" if label == "Coop KL" else "red"
                     
         else:
             line, = ax.plot(x, gaze, marker="o", label=label)
@@ -1697,9 +1705,11 @@ def lineGraphGazeOverTime(
         )
 
     ax.set_xlabel("Session (Chronological)")
-    ax.set_ylabel("Percent Gazing")
-    ax.set_title("Gazing Over Time (First 10 Sessions)")
-    ax.legend(frameon=False)
+    ax.set_ylabel(f"Percent {word}")
+    ax.set_title(f"{word} Over Time (First 10 Sessions)")
+    handles, labels = ax.get_legend_handles_labels()
+    by_label = dict(zip(labels, handles))
+    ax.legend(by_label.values(), by_label.keys(), frameon=False, loc='upper right')
 
     plt.tight_layout()
     plt.savefig(save_path, dpi=300)
