@@ -11238,6 +11238,89 @@ class multiFileGraphs:
     
         print("Gaze analysis complete. Two figures saved.")
 
+    def successAfterPreviousGaze(self):
+        """
+        Compares success rates of trials depending on whether in the previous trial
+        the presser gazed at the partner or not, and plots a bar chart.
+        
+        Output:
+        - Percent success after previous gaze
+        - Percent success after previous no gaze
+        """
+        print("Start Trial-to-Trial Gaze Analysis")
+        
+        all_prev_gaze_success = []
+        all_prev_no_gaze_success = []
+        
+        for exp in self.experiments:
+            lev = exp.lev.data.dropna(subset=['RatID', 'AbsTime']).copy()
+            lev['RatID'] = pd.to_numeric(lev['RatID'], errors='coerce')
+            lev = lev.dropna(subset=['RatID'])
+            
+            pos = exp.pos
+            fps = exp.fps
+            
+            # Gather all trials for this experiment
+            trials = sorted(lev['TrialNum'].unique())
+            
+            # Store gaze info for each trial per presser
+            trial_gaze = {}
+            trial_success = {}
+            
+            for trial in trials:
+                trial_df = lev[lev['TrialNum'] == trial]
+                presser_id = int(trial_df.iloc[0]['RatID'])  # assume single presser per trial
+                
+                # Trial start and end frames
+                trial_start_time = trial_df['TrialTime'].min()
+                trial_end_time = trial_df['TrialTime'].max()  # inclusive, ends at last lever press
+                
+                start_frame = int(trial_start_time * fps)
+                end_frame = int(trial_end_time * fps)
+                
+                gaze_array = np.array(pos.returnIsGazing(presser_id))
+                if end_frame > len(gaze_array):
+                    end_frame = len(gaze_array)
+                
+                gaze_window = gaze_array[start_frame:end_frame]
+                trial_gaze[trial] = gaze_window.any()  # True if gazed at partner anytime in trial
+                trial_success[trial] = int(trial_df['coopSucc'].max())  # trial success
+        
+            # Compare success rates based on previous trial gaze
+            for i in range(1, len(trials)):
+                prev_trial = trials[i-1]
+                curr_trial = trials[i]
+                
+                if trial_gaze[prev_trial]:
+                    all_prev_gaze_success.append(trial_success[curr_trial])
+                else:
+                    all_prev_no_gaze_success.append(trial_success[curr_trial])
+        
+        # Compute percentages
+        pct_after_gaze = 100 * np.mean(all_prev_gaze_success) if all_prev_gaze_success else np.nan
+        pct_after_no_gaze = 100 * np.mean(all_prev_no_gaze_success) if all_prev_no_gaze_success else np.nan
+        
+        print(f"Success rate after previous gaze: {pct_after_gaze:.2f}%")
+        print(f"Success rate after previous no gaze: {pct_after_no_gaze:.2f}%")
+        
+        # --- Bar plot ---
+        plt.figure(figsize=(6,5))
+        bars = [pct_after_gaze, pct_after_no_gaze]
+        labels = ['Previous Gaze', 'Previous No Gaze']
+        colors = ['teal', 'indianred']
+        
+        plt.bar(labels, bars, color=colors, alpha=0.8)
+        plt.ylabel("Success Rate (%)")
+        plt.ylim(0, 100)
+        plt.title("Trial Success Rate Based on Previous Trial Gaze")
+        
+        for i, val in enumerate(bars):
+            plt.text(i, val + 2, f"{val:.1f}%", ha='center', fontweight='bold')
+        
+        plt.tight_layout()
+        plt.show()
+        
+        return pct_after_gaze, pct_after_no_gaze
             
 
 
@@ -11365,7 +11448,8 @@ initialNanList = [0.3]
 
 #print("Start MultiFileGraphs Regular")
 experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, dates, sessions, ratPairs, prefix = "", save=True)
-experiment.gazingBeforeAfterLeverPress()
+experiment.successAfterPreviousGaze()
+#experiment.gazingBeforeAfterLeverPress()
 
 #experiment.switchingHistogram()
 
