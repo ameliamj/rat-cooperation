@@ -1578,33 +1578,38 @@ print("gaze_coop: ", gaze_coop)
 ############################################################
 
 def first_n_indices_per_ratpair(ratPairs, dates, n):
-    """
-    Returns a flat list of indices corresponding to the first n
-    chronological sessions for each rat pair.
-    """
+    keep_indices = []
     ratpair_to_indices = {}
 
-    # collect indices per rat pair
-    for i, rp in enumerate(ratPairs):
-        ratpair_to_indices.setdefault(rp, []).append(i)
+    # Step 1: iterate through ratPairs and collect indices
+    for i in range(len(ratPairs)):
+        rp = ratPairs[i]
+        if rp not in ratpair_to_indices:
+            ratpair_to_indices[rp] = []
+        ratpair_to_indices[rp].append(i)
 
-    keep_indices = []
+    # Step 2: for each rat pair, sort indices chronologically
+    for rp in ratpair_to_indices:
+        inds = ratpair_to_indices[rp]
 
-    # sort chronologically within each rat pair
-    for rp, inds in ratpair_to_indices.items():
-        inds_sorted = sorted(inds, key=lambda i: dates[i])
+        inds_sorted = sorted(
+            inds,
+            key=lambda idx: dates[idx]
+        )
+
+        # Step 3: keep first n (or fewer if < n)
         keep_indices.extend(inds_sorted[:n])
 
     return keep_indices
 
-'''N = 10
+N = 10
 
 keep_idx_coop = first_n_indices_per_ratpair(
     ratPairs=data.ratPairs,
     dates=data.dates,
     n=N
 )
-print("keep_idx_coop: ", keep_idx_coop)
+print("keep_idx_coop:", keep_idx_coop)
 
 keep_idx_comp = first_n_indices_per_ratpair(
     ratPairs=data_comp.ratPairs,
@@ -1616,7 +1621,15 @@ keep_idx_ineq = first_n_indices_per_ratpair(
     ratPairs=data_ineq.ratPairs,
     dates=data_ineq.dates,
     n=N
-)'''
+)
+
+def debug_check(indices, ratPairs):
+    c = Counter([ratPairs[i] for i in indices])
+    print(c)
+    
+debug_check(keep_idx_coop, data.ratPairs)
+
+
 
 def save_session_level_gaze_csv(
     data_obj,
@@ -1671,6 +1684,7 @@ save_session_level_gaze_csv(
     csv_path=f"{prefix}_sessions_ineq.csv"
 )
 
+exit()
 
 ############################################################
 # --------- BAR PLOT: COOP vs COMP vs INEQ -----------------
