@@ -1551,7 +1551,7 @@ interactions = False  #True for interactions, false for gaze
 # --------- PART 1: SESSION COUNTS PER RAT PAIR ------------
 ############################################################
 
-def count_sessions_per_ratpair(data_obj, label):
+'''def count_sessions_per_ratpair(data_obj, label):
     counts = Counter(data_obj.ratPairs)
     print(f"\nSession counts for {label}:")
     for rp, n in counts.items():
@@ -1560,7 +1560,7 @@ def count_sessions_per_ratpair(data_obj, label):
 
 counts_coop = count_sessions_per_ratpair(data, "Coop")
 counts_comp = count_sessions_per_ratpair(data_comp, "Comp")
-counts_ineq = count_sessions_per_ratpair(data_ineq, "Ineq")
+counts_ineq = count_sessions_per_ratpair(data_ineq, "Ineq")'''
 
 ############################################################
 # ------------------ EXTRACT GAZE / INTERACTIONS ------------
@@ -1577,7 +1577,7 @@ print("gaze_coop: ", gaze_coop)
 # ------------------ Keep First 10 Sessions per Rat Pair ------------
 ############################################################
 
-def first_n_indices_per_ratpair(ratPairs, dates, n):
+'''def first_n_indices_per_ratpair(ratPairs, dates, n):
     keep_indices = []
     ratpair_to_indices = {}
 
@@ -1627,7 +1627,7 @@ def debug_check(indices, ratPairs):
     c = Counter([ratPairs[i] for i in indices])
     print(c)
     
-debug_check(keep_idx_coop, data.ratPairs)
+debug_check(keep_idx_coop, data.ratPairs)'''
 
 
 
