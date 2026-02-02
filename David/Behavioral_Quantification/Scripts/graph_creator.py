@@ -11211,14 +11211,35 @@ class multiFileGraphs:
             
             for cond_idx in range(3):
                 if all_data[cond_idx]:
-                    # Calculate grand mean across all trials
-                    grand_mean = np.mean(all_data[cond_idx], axis=0)
-                    #print("grand_mean:", grand_mean.shape)
-
-                    
-                    # Plot the main trend line
-                    plt.plot(time_axis, grand_mean, color=colors[cond_idx], 
-                             linewidth=3, label=f"{labels[cond_idx]} (Mean)", zorder=5)
+                    # Convert to array: (n_trials, time)
+                    data_arr = np.array(all_data[cond_idx])
+            
+                    # Grand mean
+                    grand_mean = np.mean(data_arr, axis=0)
+            
+                    # Standard error of the mean
+                    sem = np.std(data_arr, axis=0, ddof=1) / np.sqrt(data_arr.shape[0])
+            
+                    # Shaded SEM band
+                    plt.fill_between(
+                        time_axis,
+                        grand_mean - sem,
+                        grand_mean + sem,
+                        color=colors[cond_idx],
+                        alpha=0.25,
+                        linewidth=0,
+                        zorder=2
+                    )
+            
+                    # Mean line
+                    plt.plot(
+                        time_axis,
+                        grand_mean,
+                        color=colors[cond_idx],
+                        linewidth=3,
+                        label=f"{labels[cond_idx]} (Mean ± SEM)",
+                        zorder=5
+                    )
                     
                     # Scatter individual session means as light background points
                     '''for s_mean in sess_means[cond_idx]:
@@ -11435,14 +11456,36 @@ class multiFileGraphs:
             
             for cond_idx in range(3):
                 if all_data[cond_idx]:
-                    # Calculate grand mean across all trials
-                    grand_mean = np.mean(all_data[cond_idx], axis=0)
-                    #print("grand_mean:", grand_mean.shape)
-
+                    # Convert to array: shape = (n_trials, time)
+                    data_arr = np.array(all_data[cond_idx])
                     
-                    # Plot the main trend line
-                    plt.plot(time_axis, grand_mean, color=colors[cond_idx], 
-                             linewidth=3, label=f"{labels[cond_idx]} (Mean)", zorder=5)
+                    # Grand mean across trials
+                    grand_mean = np.mean(data_arr, axis=0)
+                    
+                    # Standard error of the mean
+                    sem = np.std(data_arr, axis=0, ddof=1) / np.sqrt(data_arr.shape[0])
+                    
+                    # Shaded SEM
+                    plt.fill_between(
+                        time_axis,
+                        grand_mean - sem,
+                        grand_mean + sem,
+                        color=colors[cond_idx],
+                        alpha=0.25,
+                        linewidth=0,
+                        zorder=2
+                    )
+                    
+                    # Mean line
+                    plt.plot(
+                        time_axis,
+                        grand_mean,
+                        color=colors[cond_idx],
+                        linewidth=3,
+                        label=f"{labels[cond_idx]} (Mean ± SEM)",
+                        zorder=5
+                    )
+
                     
                     # Scatter individual session means as light background points
                     '''for s_mean in sess_means[cond_idx]:
@@ -11587,9 +11630,9 @@ initialNanList = [0.3]
 
 #print("Start MultiFileGraphs Regular")
 experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, dates, sessions, ratPairs, prefix = "", save=True)
-#experiment.gazingAtLeverBeforeAfterLeverPress()
+experiment.gazingAtLeverBeforeAfterLeverPress()
 #experiment.successAfterPreviousGaze()
-experiment.gazingBeforeAfterLeverPress()
+#experiment.gazingBeforeAfterLeverPress()
 
 #experiment.switchingHistogram()
 
