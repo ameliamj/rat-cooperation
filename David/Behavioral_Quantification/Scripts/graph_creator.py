@@ -11299,7 +11299,7 @@ class multiFileGraphs:
                 start_frame = int(trial_start_time * fps)
                 end_frame = int(trial_end_time * fps)
                 
-                gaze_array = np.array(pos.returnIsGazing(presser_id))
+                gaze_array = np.array(pos.returnIsGazing(presser_id, minDist=0))
                 if end_frame > len(gaze_array):
                     end_frame = len(gaze_array)
                 
@@ -11389,8 +11389,8 @@ class multiFileGraphs:
             window_frames = int(window_sec * 30)
             
             gaze_data = {
-                0: np.array(pos.returnIsLookingAtObjects(0)),
-                1: np.array(pos.returnIsLookingAtObjects(1))
+                0: np.array(pos.returnIsLookingAtObjects(0, useMinDist=False)),
+                1: np.array(pos.returnIsLookingAtObjects(1, useMinDist=False))
             }
             
             # 1. Identify Anchor Presses
@@ -11631,9 +11631,9 @@ initialNanList = [0.3]
 
 #print("Start MultiFileGraphs Regular")
 experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, dates, sessions, ratPairs, prefix = "", save=True)
-#experiment.gazingAtLeverBeforeAfterLeverPress()
-experiment.successAfterPreviousGaze()
-#experiment.gazingBeforeAfterLeverPress()
+experiment.gazingAtLeverBeforeAfterLeverPress()
+#experiment.successAfterPreviousGaze()
+experiment.gazingBeforeAfterLeverPress()
 
 #experiment.switchingHistogram()
 
