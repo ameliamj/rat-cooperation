@@ -11339,6 +11339,7 @@ class multiFileGraphs:
             plt.text(i, val + 2, f"{val:.1f}%", ha='center', fontweight='bold')
         
         plt.tight_layout()
+        plt.savefig("success_after_gaze_or_not.png")
         plt.show()
         
         return pct_after_gaze, pct_after_no_gaze
@@ -11631,8 +11632,8 @@ initialNanList = [0.3]
 #print("Start MultiFileGraphs Regular")
 experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, dates, sessions, ratPairs, prefix = "", save=True)
 #experiment.gazingAtLeverBeforeAfterLeverPress()
-#experiment.successAfterPreviousGaze()
-experiment.gazingBeforeAfterLeverPress()
+experiment.successAfterPreviousGaze()
+#experiment.gazingBeforeAfterLeverPress()
 
 #experiment.switchingHistogram()
 
