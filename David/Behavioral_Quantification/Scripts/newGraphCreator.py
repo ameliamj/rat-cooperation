@@ -1665,7 +1665,7 @@ interactions = False  #True for interactions, false for gaze
 #gaze_ineq, isKL_ineq = data_ineq.gazingData(sortByKL=True, save_csv=False, getInteractions=interactions)
 '''
 
-socialGazing, levGazing, magGazing, socialGazingAtLev_list, socialGazingAtMag_list, socialGazingAtCenter_list, avgLengthSocialGaze, isKL = data_comp.allGazingData()
+socialGazing, levGazing, magGazing, socialGazingAtLev_list, socialGazingAtMag_list, socialGazingAtCenter_list, avgLengthSocialGaze, isKL = data.allGazingData()
 
 def save_session_level_gaze_csv(
     data_obj,
@@ -1684,7 +1684,7 @@ def save_session_level_gaze_csv(
     rows = []
 
     if indices is None:
-        indices = range(len(gaze))
+        indices = range(len(socialGaze))
 
     for row_i, data_i in enumerate(indices):
         rows.append({
@@ -2158,79 +2158,3 @@ graphs.saveHeatmap(H_up, "Up-preferring Group Heatmap", "up_heatmap.png")
 graphs.saveHeatmap(H_down, "Down-preferring Group Heatmap", "down_heatmap.png")
 '''
         
-
-        
-        
-        
-        ############################################################
-        # ------------------ Keep First 10 Sessions per Rat Pair ------------
-        ############################################################
-
-        '''def first_n_indices_per_ratpair(ratPairs, dates, n):
-            keep_indices = []
-            ratpair_to_indices = {}
-
-            # Step 1: iterate through ratPairs and collect indices
-            for i in range(len(ratPairs)):
-                rp = ratPairs[i]
-                if rp not in ratpair_to_indices:
-                    ratpair_to_indices[rp] = []
-                ratpair_to_indices[rp].append(i)
-
-            # Step 2: for each rat pair, sort indices chronologically
-            for rp in ratpair_to_indices:
-                inds = ratpair_to_indices[rp]
-
-                inds_sorted = sorted(
-                    inds,
-                    key=lambda idx: dates[idx]
-                )
-
-                # Step 3: keep first n (or fewer if < n)
-                keep_indices.extend(inds_sorted[:n])
-
-            return keep_indices
-
-        N = 10
-
-        keep_idx_coop = first_n_indices_per_ratpair(
-            ratPairs=data.ratPairs,
-            dates=data.dates,
-            n=N
-        )
-        print("keep_idx_coop:", keep_idx_coop)
-
-        keep_idx_comp = first_n_indices_per_ratpair(
-            ratPairs=data_comp.ratPairs,
-            dates=data_comp.dates,
-            n=N
-        )
-
-        keep_idx_ineq = first_n_indices_per_ratpair(
-            ratPairs=data_ineq.ratPairs,
-            dates=data_ineq.dates,
-            n=N
-        )
-
-        def debug_check(indices, ratPairs):
-            c = Counter([ratPairs[i] for i in indices])
-            print(c)
-            
-        debug_check(keep_idx_coop, data.ratPairs)'''
-        
-        
-        ############################################################
-        # --------- PART 1: SESSION COUNTS PER RAT PAIR ------------
-        ############################################################
-
-        '''def count_sessions_per_ratpair(data_obj, label):
-            counts = Counter(data_obj.ratPairs)
-            print(f"\nSession counts for {label}:")
-            for rp, n in counts.items():
-                print(f"  {rp}: {n}")
-            return counts
-
-        counts_coop = count_sessions_per_ratpair(data, "Coop")
-        counts_comp = count_sessions_per_ratpair(data_comp, "Comp")
-        counts_ineq = count_sessions_per_ratpair(data_ineq, "Ineq")'''
-   
