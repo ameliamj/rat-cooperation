@@ -1623,7 +1623,7 @@ data = dataAnalysisRegular(
     prefix="", save=True
 )
 
-'''data_comp = dataAnalysisRegular(
+data_comp = dataAnalysisRegular(
     mag_files_comp, lev_files_comp, pos_files_comp, fpsList_comp,
     totFramesList_comp, initialNanList_comp, dates_comp, sessions_comp,
     ratPairs_comp, familarity_comp, transparency_comp, sessionTypes_comp,
@@ -1637,6 +1637,7 @@ data_ineq = dataAnalysisRegular(
     prefix="", save=True
 )
 
+'''
 data2 = dataAnalysisRegular(mag_files2, lev_files2, pos_files2, fpsList2, totFramesList2, initialNanList2, dates2, sessions2, ratPairs2, familarity2, transparency2, sessionTypes2, prefix = "", save=True)
 ''''''
 
@@ -1664,7 +1665,7 @@ interactions = False  #True for interactions, false for gaze
 #gaze_ineq, isKL_ineq = data_ineq.gazingData(sortByKL=True, save_csv=False, getInteractions=interactions)
 '''
 
-socialGazing, levGazing, magGazing, socialGazingAtLev_list, socialGazingAtMag_list, socialGazingAtCenter_list, avgLengthSocialGaze, isKL = data.allGazingData()
+socialGazing, levGazing, magGazing, socialGazingAtLev_list, socialGazingAtMag_list, socialGazingAtCenter_list, avgLengthSocialGaze, isKL = data_comp.allGazingData()
 
 def save_session_level_gaze_csv(
     data_obj,
