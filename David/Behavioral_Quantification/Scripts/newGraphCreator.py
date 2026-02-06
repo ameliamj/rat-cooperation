@@ -677,6 +677,113 @@ class dataAnalysisRegular:
             return percentGazing
         
 
+    def allGazingData(self, save_csv=True, csv_path="gazing_data.csv"):
+        socialGazing = []
+        levGazing = []
+        magGazing = []
+        socialGazingAtLev_list = []
+        socialGazingAtMag_list = []
+        socialGazingAtCenter_list = []
+        avgLengthSocialGaze = []
+        isKL = []
+    
+        print("Entering Gazing Data")
+        print("Num Exps is:", len(self.experiments))
+    
+        rows = []
+    
+        for exp in self.experiments:
+            ratPair = exp.ratPair
+            pos = exp.pos
+            
+            if ratPair and ratPair[0:2] == "KL":
+                isKLTemp = True
+            else:
+                isKLTemp = False
+    
+            isKL.append(isKLTemp)
+            
+            numFrames = pos.returnNumFrames()
+    
+            gaze0 = pos.returnIsGazing(mouseID=0)
+            gaze1 = pos.returnIsGazing(mouseID=1)
+    
+            loc0 = pos.returnMouseLocation(0)
+            loc1 = pos.returnMouseLocation(1)
+    
+            lev_mask_0 = np.array([l in ("lev_top", "lev_bottom") for l in loc0])
+            lev_mask_1 = np.array([l in ("lev_top", "lev_bottom") for l in loc1])
+    
+            mag_mask_0 = np.array([l in ("mag_top", "mag_bottom") for l in loc0])
+            mag_mask_1 = np.array([l in ("mag_top", "mag_bottom") for l in loc1])
+    
+            mid_mask_0 = np.array([l == "mid" for l in loc0])
+            mid_mask_1 = np.array([l == "mid" for l in loc1])
+    
+            # raw frame counts
+            socialGazingFrames = (np.sum(gaze0) + np.sum(gaze1)) / 2
+            levGazeFrames = (np.sum(pos.returnIsLookingAtObjects(0)) +
+                              np.sum(pos.returnIsLookingAtObjects(1))) / 2
+            magGazeFrames = (np.sum(pos.returnIsLookingAtObjects(0, target="mag")) +
+                              np.sum(pos.returnIsLookingAtObjects(1, target="mag"))) / 2
+    
+            socialGazingAtLev = (
+                np.sum(gaze0 & lev_mask_0) +
+                np.sum(gaze1 & lev_mask_1)
+            ) / 2
+    
+            socialGazingAtMag = (
+                np.sum(gaze0 & mag_mask_0) +
+                np.sum(gaze1 & mag_mask_1)
+            ) / 2
+    
+            socialGazingAtCenter = (
+                np.sum(gaze0 & mid_mask_0) +
+                np.sum(gaze1 & mid_mask_1)
+            ) / 2
+    
+            # proportions
+            socialGazePG = socialGazingFrames / numFrames
+            levGazePG = levGazeFrames / numFrames
+            magGazePG = magGazeFrames / numFrames
+    
+            avgGazeLength = (pos.returnAverageGazeLength(0) + pos.returnAverageGazeLength(1)) / 2
+    
+            socialGazing.append(socialGazePG)
+            levGazing.append(levGazePG)
+            magGazing.append(magGazePG)
+    
+            socialGazingAtLev_list.append(socialGazingAtLev / numFrames)
+            socialGazingAtMag_list.append(socialGazingAtMag / numFrames)
+            socialGazingAtCenter_list.append(socialGazingAtCenter / numFrames)
+            
+            avgLengthSocialGaze.append(avgGazeLength)
+    
+            rows.append({
+                "sessionID": exp.sessionID,
+                "levFile": exp.lev_file,
+                "ratPair": exp.ratPair,
+                "date": exp.date,
+                "familiarity": exp.familiarity,
+                "transparency": exp.transparency,
+                "sessionType": exp.sessionType,
+                "isKL": isKL,
+                "socialGazing": socialGazePG,
+                "levGazing": levGazePG,
+                "magGazing": magGazePG,
+                "socialGazingAtLev": socialGazingAtLev / numFrames,
+                "socialGazingAtMag": socialGazingAtMag / numFrames,
+                "socialGazingAtCenter": socialGazingAtCenter / numFrames,
+                "avgSocialGazeLength": avgGazeLength
+            })
+    
+        if save_csv:
+            df = pd.DataFrame(rows)
+            df.to_csv(csv_path, index=False)
+    
+        return socialGazing, levGazing, magGazing, socialGazingAtLev_list, socialGazingAtMag_list, socialGazingAtCenter_list, avgLengthSocialGaze, isKL
+
+
 class createGraphs:
     def __init__(self, arena_width=1392, arena_height=640):
         self.arena_width = arena_width
@@ -1516,7 +1623,7 @@ data = dataAnalysisRegular(
     prefix="", save=True
 )
 
-data_comp = dataAnalysisRegular(
+'''data_comp = dataAnalysisRegular(
     mag_files_comp, lev_files_comp, pos_files_comp, fpsList_comp,
     totFramesList_comp, initialNanList_comp, dates_comp, sessions_comp,
     ratPairs_comp, familarity_comp, transparency_comp, sessionTypes_comp,
@@ -1531,6 +1638,7 @@ data_ineq = dataAnalysisRegular(
 )
 
 data2 = dataAnalysisRegular(mag_files2, lev_files2, pos_files2, fpsList2, totFramesList2, initialNanList2, dates2, sessions2, ratPairs2, familarity2, transparency2, sessionTypes2, prefix = "", save=True)
+''''''
 
 # Create the graph object
 graphs = createGraphs()
@@ -1545,95 +1653,28 @@ graphs = createGraphs()
 #
 prefix = "gazing" #interactions or gazing
 interactions = False  #True for interactions, false for gaze
-    
-
-############################################################
-# --------- PART 1: SESSION COUNTS PER RAT PAIR ------------
-############################################################
-
-'''def count_sessions_per_ratpair(data_obj, label):
-    counts = Counter(data_obj.ratPairs)
-    print(f"\nSession counts for {label}:")
-    for rp, n in counts.items():
-        print(f"  {rp}: {n}")
-    return counts
-
-counts_coop = count_sessions_per_ratpair(data, "Coop")
-counts_comp = count_sessions_per_ratpair(data_comp, "Comp")
-counts_ineq = count_sessions_per_ratpair(data_ineq, "Ineq")'''
 
 ############################################################
 # ------------------ EXTRACT GAZE / INTERACTIONS ------------
 ############################################################
 
 #Extract Gazing Data
-gaze_coop, isKL_coop = data.gazingData(sortByKL=True, save_csv=False, getInteractions=interactions)
-gaze_comp, isKL_comp = data_comp.gazingData(sortByKL=True, save_csv=False, getInteractions=interactions)
-gaze_ineq, isKL_ineq = data_ineq.gazingData(sortByKL=True, save_csv=False, getInteractions=interactions)
+#gaze_coop, isKL_coop = data.gazingData(sortByKL=True, save_csv=False, getInteractions=interactions)
+#gaze_comp, isKL_comp = data_comp.gazingData(sortByKL=True, save_csv=False, getInteractions=interactions)
+#gaze_ineq, isKL_ineq = data_ineq.gazingData(sortByKL=True, save_csv=False, getInteractions=interactions)
+'''
 
-print("gaze_coop: ", gaze_coop)
-
-############################################################
-# ------------------ Keep First 10 Sessions per Rat Pair ------------
-############################################################
-
-'''def first_n_indices_per_ratpair(ratPairs, dates, n):
-    keep_indices = []
-    ratpair_to_indices = {}
-
-    # Step 1: iterate through ratPairs and collect indices
-    for i in range(len(ratPairs)):
-        rp = ratPairs[i]
-        if rp not in ratpair_to_indices:
-            ratpair_to_indices[rp] = []
-        ratpair_to_indices[rp].append(i)
-
-    # Step 2: for each rat pair, sort indices chronologically
-    for rp in ratpair_to_indices:
-        inds = ratpair_to_indices[rp]
-
-        inds_sorted = sorted(
-            inds,
-            key=lambda idx: dates[idx]
-        )
-
-        # Step 3: keep first n (or fewer if < n)
-        keep_indices.extend(inds_sorted[:n])
-
-    return keep_indices
-
-N = 10
-
-keep_idx_coop = first_n_indices_per_ratpair(
-    ratPairs=data.ratPairs,
-    dates=data.dates,
-    n=N
-)
-print("keep_idx_coop:", keep_idx_coop)
-
-keep_idx_comp = first_n_indices_per_ratpair(
-    ratPairs=data_comp.ratPairs,
-    dates=data_comp.dates,
-    n=N
-)
-
-keep_idx_ineq = first_n_indices_per_ratpair(
-    ratPairs=data_ineq.ratPairs,
-    dates=data_ineq.dates,
-    n=N
-)
-
-def debug_check(indices, ratPairs):
-    c = Counter([ratPairs[i] for i in indices])
-    print(c)
-    
-debug_check(keep_idx_coop, data.ratPairs)'''
-
-
+socialGazing, levGazing, magGazing, socialGazingAtLev_list, socialGazingAtMag_list, socialGazingAtCenter_list, avgLengthSocialGaze, isKL = data.allGazingData()
 
 def save_session_level_gaze_csv(
     data_obj,
-    gaze,
+    socialGaze,
+    leverGaze,
+    magGaze,
+    socialGazeAtLev,
+    socialGazeAtMag,
+    socialGazeAtCenter,
+    avgLengthSocialGaze,
     isKL,
     label,
     csv_path,
@@ -1648,12 +1689,18 @@ def save_session_level_gaze_csv(
         rows.append({
             "label": label,
             "date": data_obj.dates[data_i],
-            "gaze_percent": gaze[row_i],
             "lev_file": data_obj.lev_files[data_i],
             "session": data_obj.sessions[data_i],
             "ratPair": data_obj.ratPairs[data_i],
             "familiarity": data_obj.familarity[data_i],
             "transparency": data_obj.transparency[data_i],
+            "social_gaze": socialGaze[row_i],
+            "lever_gaze": leverGaze[row_i],
+            "mag_gaze": magGaze[row_i],
+            "social_gaze_at_lev": socialGazeAtLev[row_i],
+            "social_gaze_at_mag": socialGazeAtMag[row_i],
+            "social_gaze_at_center": socialGazeAtCenter[row_i],
+            "avg_social_gaze_length": avgLengthSocialGaze,
             "isKL": bool(isKL[row_i]) if isKL is not None else np.nan
         })
 
@@ -1662,12 +1709,13 @@ def save_session_level_gaze_csv(
 
 save_session_level_gaze_csv(
     data,
-    gaze_coop,
-    isKL_coop,
+    socialGazing,
+    levGazing, magGazing, socialGazingAtLev_list, socialGazingAtMag_list, socialGazingAtCenter_list, avgLengthSocialGaze, isKL,
     label="coop",
-    csv_path=f"{prefix}_sessions_coop.csv"
+    csv_path=f"coop_sessions_allGazeData.csv"
 )
 
+'''
 save_session_level_gaze_csv(
     data_comp,
     gaze_comp,
@@ -1682,7 +1730,7 @@ save_session_level_gaze_csv(
     isKL_ineq,
     label="ineq",
     csv_path=f"{prefix}_sessions_ineq.csv"
-)
+)'''
 
 exit()
 
@@ -1758,9 +1806,9 @@ def average_gaze_by_session_index(data_obj, gaze, n_sessions=10):
 
     return avg_by_session
 
-gaze_coop_avg = average_gaze_by_session_index(data, gaze_coop)
-gaze_comp_avg = average_gaze_by_session_index(data_comp, gaze_comp)
-gaze_ineq_avg = average_gaze_by_session_index(data_ineq, gaze_ineq)
+#gaze_coop_avg = average_gaze_by_session_index(data, gaze_coop)
+#gaze_comp_avg = average_gaze_by_session_index(data_comp, gaze_comp)
+#gaze_ineq_avg = average_gaze_by_session_index(data_ineq, gaze_ineq)
 
 
 def lineGraphGazeOverTime(gaze_lists, labels, save_path):
@@ -1783,11 +1831,13 @@ def lineGraphGazeOverTime(gaze_lists, labels, save_path):
     plt.close()
 
 
+'''
 lineGraphGazeOverTime(
     [gaze_coop_avg, gaze_comp_avg, gaze_ineq_avg],
     ["Coop", "Comp", "Ineq"],
     f"{prefix}_over_time_first10_per_ratpair.png"
 )
+'''
 
 
 '''def lineGraphGazeOverTime(
@@ -2110,4 +2160,76 @@ graphs.saveHeatmap(H_down, "Down-preferring Group Heatmap", "down_heatmap.png")
 
         
         
+        
+        ############################################################
+        # ------------------ Keep First 10 Sessions per Rat Pair ------------
+        ############################################################
+
+        '''def first_n_indices_per_ratpair(ratPairs, dates, n):
+            keep_indices = []
+            ratpair_to_indices = {}
+
+            # Step 1: iterate through ratPairs and collect indices
+            for i in range(len(ratPairs)):
+                rp = ratPairs[i]
+                if rp not in ratpair_to_indices:
+                    ratpair_to_indices[rp] = []
+                ratpair_to_indices[rp].append(i)
+
+            # Step 2: for each rat pair, sort indices chronologically
+            for rp in ratpair_to_indices:
+                inds = ratpair_to_indices[rp]
+
+                inds_sorted = sorted(
+                    inds,
+                    key=lambda idx: dates[idx]
+                )
+
+                # Step 3: keep first n (or fewer if < n)
+                keep_indices.extend(inds_sorted[:n])
+
+            return keep_indices
+
+        N = 10
+
+        keep_idx_coop = first_n_indices_per_ratpair(
+            ratPairs=data.ratPairs,
+            dates=data.dates,
+            n=N
+        )
+        print("keep_idx_coop:", keep_idx_coop)
+
+        keep_idx_comp = first_n_indices_per_ratpair(
+            ratPairs=data_comp.ratPairs,
+            dates=data_comp.dates,
+            n=N
+        )
+
+        keep_idx_ineq = first_n_indices_per_ratpair(
+            ratPairs=data_ineq.ratPairs,
+            dates=data_ineq.dates,
+            n=N
+        )
+
+        def debug_check(indices, ratPairs):
+            c = Counter([ratPairs[i] for i in indices])
+            print(c)
+            
+        debug_check(keep_idx_coop, data.ratPairs)'''
+        
+        
+        ############################################################
+        # --------- PART 1: SESSION COUNTS PER RAT PAIR ------------
+        ############################################################
+
+        '''def count_sessions_per_ratpair(data_obj, label):
+            counts = Counter(data_obj.ratPairs)
+            print(f"\nSession counts for {label}:")
+            for rp, n in counts.items():
+                print(f"  {rp}: {n}")
+            return counts
+
+        counts_coop = count_sessions_per_ratpair(data, "Coop")
+        counts_comp = count_sessions_per_ratpair(data_comp, "Comp")
+        counts_ineq = count_sessions_per_ratpair(data_ineq, "Ineq")'''
    

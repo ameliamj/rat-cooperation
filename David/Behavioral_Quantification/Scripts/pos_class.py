@@ -340,7 +340,7 @@ class posLoader:
     
         return gaze_line.intersects(rect_poly)
     
-    def returnIsLookingAtObjects(self, ratID, target="lever", useMinDist=True, returnToporBottom=True):
+    def returnIsLookingAtObjects(self, ratID, target="lever", useMinDist=False, returnToporBottom=True):
         """
         Return boolean arrays indicating whether mouseID is gazing/interacting 
         with each lever or magazine across frames.
