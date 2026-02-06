@@ -1665,7 +1665,7 @@ interactions = False  #True for interactions, false for gaze
 #gaze_ineq, isKL_ineq = data_ineq.gazingData(sortByKL=True, save_csv=False, getInteractions=interactions)
 '''
 
-socialGazing, levGazing, magGazing, socialGazingAtLev_list, socialGazingAtMag_list, socialGazingAtCenter_list, avgLengthSocialGaze, isKL = data.allGazingData()
+socialGazing, levGazing, magGazing, socialGazingAtLev_list, socialGazingAtMag_list, socialGazingAtCenter_list, avgLengthSocialGaze, isKL = data_comp.allGazingData()
 
 def save_session_level_gaze_csv(
     data_obj,
@@ -1712,8 +1712,8 @@ save_session_level_gaze_csv(
     data,
     socialGazing,
     levGazing, magGazing, socialGazingAtLev_list, socialGazingAtMag_list, socialGazingAtCenter_list, avgLengthSocialGaze, isKL,
-    label="coop",
-    csv_path=f"coop_sessions_allGazeData.csv"
+    label="comp",
+    csv_path=f"comp_sessions_allGazeData.csv"
 )
 
 '''
