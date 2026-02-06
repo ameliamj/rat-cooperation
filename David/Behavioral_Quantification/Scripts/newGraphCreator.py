@@ -1709,7 +1709,7 @@ def save_session_level_gaze_csv(
     df.to_csv(csv_path, index=False)
 
 save_session_level_gaze_csv(
-    data,
+    data_comp,
     socialGazing,
     levGazing, magGazing, socialGazingAtLev_list, socialGazingAtMag_list, socialGazingAtCenter_list, avgLengthSocialGaze, isKL,
     label="comp",
