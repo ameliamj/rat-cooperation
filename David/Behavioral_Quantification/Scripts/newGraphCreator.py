@@ -722,10 +722,10 @@ class dataAnalysisRegular:
     
             # raw frame counts
             socialGazingFrames = (np.sum(gaze0) + np.sum(gaze1)) / 2
-            levGazeFrames = (np.sum(pos.returnIsLookingAtObjects(0)) +
-                              np.sum(pos.returnIsLookingAtObjects(1))) / 2
-            magGazeFrames = (np.sum(pos.returnIsLookingAtObjects(0, target="mag")) +
-                              np.sum(pos.returnIsLookingAtObjects(1, target="mag"))) / 2
+            levGazeFrames = (np.sum(pos.returnIsLookingAtObjects(0, useMinDist=False)) +
+                              np.sum(pos.returnIsLookingAtObjects(1, useMinDist=False))) / 2
+            magGazeFrames = (np.sum(pos.returnIsLookingAtObjects(0, target="mag", useMinDist=False)) +
+                              np.sum(pos.returnIsLookingAtObjects(1, target="mag", useMinDist=False))) / 2
     
             socialGazingAtLev = (
                 np.sum(gaze0 & lev_mask_0) +
@@ -1665,8 +1665,8 @@ interactions = False  #True for interactions, false for gaze
 #gaze_ineq, isKL_ineq = data_ineq.gazingData(sortByKL=True, save_csv=False, getInteractions=interactions)
 '''
 
-dataObj = data_ineq
-myLabel = "ineq"
+dataObj = data
+myLabel = "coop"
 
 socialGazing, levGazing, magGazing, socialGazingAtLev_list, socialGazingAtMag_list, socialGazingAtCenter_list, avgLengthSocialGaze, isKL = dataObj.allGazingData()
 
