@@ -1665,7 +1665,11 @@ interactions = False  #True for interactions, false for gaze
 #gaze_ineq, isKL_ineq = data_ineq.gazingData(sortByKL=True, save_csv=False, getInteractions=interactions)
 '''
 
-socialGazing, levGazing, magGazing, socialGazingAtLev_list, socialGazingAtMag_list, socialGazingAtCenter_list, avgLengthSocialGaze, isKL = data_ineq.allGazingData()
+dataObj = data_ineq
+myLabel = "ineq"
+
+socialGazing, levGazing, magGazing, socialGazingAtLev_list, socialGazingAtMag_list, socialGazingAtCenter_list, avgLengthSocialGaze, isKL = dataObj.allGazingData()
+
 
 def save_session_level_gaze_csv(
     data_obj,
@@ -1690,7 +1694,7 @@ def save_session_level_gaze_csv(
         rows.append({
             "label": label,
             "date": data_obj.dates[data_i],
-            "lev_file": data_obj.lev_files[data_i],
+            #"lev_file": data_obj.lev_files[data_i],
             "session": data_obj.sessions[data_i],
             "ratPair": data_obj.ratPairs[data_i],
             "familiarity": data_obj.familarity[data_i],
@@ -1712,9 +1716,14 @@ save_session_level_gaze_csv(
     data_ineq,
     socialGazing,
     levGazing, magGazing, socialGazingAtLev_list, socialGazingAtMag_list, socialGazingAtCenter_list, avgLengthSocialGaze, isKL,
-    label="ineq",
-    csv_path=f"ineq_sessions_allGazeData.csv"
+    label=myLabel,
+    csv_path=f"{myLabel}_sessions_allGazeData.csv"
 )
+
+print("sessions: ", dataObj.sessions)
+print("familiarity: ", dataObj.familarity)
+print("transparency: ", dataObj.transparency)
+
 
 '''
 save_session_level_gaze_csv(
