@@ -1437,7 +1437,7 @@ def getFiltered():
     return [fe.getLevsDatapath(), fe.getMagsDatapath(), fe.getPosDatapath(), fpsList, totFramesList, initial_nan_list, dates, sessions, ratPairs, familiarity, transparency]
 
 def minRequirements():
-    fe = fileExtractor(minReq)
+    fe = fileExtractor(minReqTesting)
     fe.data = fe.deleteBadNaN()
     fe.data = fe.keepOnlyPred()
     #fe.deleteOnlyFullyInvalid()
@@ -1705,7 +1705,7 @@ def save_session_level_gaze_csv(
             "social_gaze_at_lev": socialGazeAtLev[row_i],
             "social_gaze_at_mag": socialGazeAtMag[row_i],
             "social_gaze_at_center": socialGazeAtCenter[row_i],
-            "avg_social_gaze_length": avgLengthSocialGaze,
+            "avg_social_gaze_length": avgLengthSocialGaze[row_i],
             "isKL": bool(isKL[row_i]) if isKL is not None else np.nan
         })
 
