@@ -862,7 +862,7 @@ class dataAnalysisRegular:
                 'familiarity': exp.familiarity,
                 'transparency': exp.transparency,
                 'sessionType': exp.sessionType,
-                '%nan error': exp.nanErrorPercentagePercentage,
+                '%nan error': exp.nanErrorPercentage,
                 '% interacting': pct_interacting,
                 '% interacting at lev': pct_int_lev,
                 '% interacting at center': pct_int_center,
