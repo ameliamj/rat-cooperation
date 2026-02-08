@@ -1437,7 +1437,7 @@ def getFiltered():
     return [fe.getLevsDatapath(), fe.getMagsDatapath(), fe.getPosDatapath(), fpsList, totFramesList, initial_nan_list, dates, sessions, ratPairs, familiarity, transparency]
 
 def minRequirements():
-    fe = fileExtractor(minReqTraining)
+    fe = fileExtractor(minReq)
     fe.data = fe.deleteBadNaN()
     fe.data = fe.keepOnlyPred()
     #fe.deleteOnlyFullyInvalid()
@@ -1689,6 +1689,9 @@ def save_session_level_gaze_csv(
 
     if indices is None:
         indices = range(len(socialGaze))
+        
+    print("len(socialGaze): ", len(socialGaze))
+    print("len(data_obj.dates): ", len(data_obj.dates))
 
     for row_i, data_i in enumerate(indices):
         rows.append({
@@ -1713,7 +1716,7 @@ def save_session_level_gaze_csv(
     df.to_csv(csv_path, index=False)
 
 save_session_level_gaze_csv(
-    data_ineq,
+    dataObj,
     socialGazing,
     levGazing, magGazing, socialGazingAtLev_list, socialGazingAtMag_list, socialGazingAtCenter_list, avgLengthSocialGaze, isKL,
     label=myLabel,
