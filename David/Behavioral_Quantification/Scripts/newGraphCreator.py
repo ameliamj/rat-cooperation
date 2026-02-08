@@ -34,7 +34,7 @@ LEVER = 1
 MAG = 2
 
 class dataAnalysisRegular:
-    def __init__(self, magFiles: List[str], levFiles: List[str], posFiles: List[str], fpsList: List[int], totFramesList: List[int], initialNanList: List[int], dates: List[int], sessions: List[int], ratPairs: List[int], familarity: List[str], transparency: List[str], sessionType: List[str], fiberFiles = None, prefix = "", save = True):
+    def __init__(self, magFiles: List[str], levFiles: List[str], posFiles: List[str], fpsList: List[int], totFramesList: List[int], initialNanList: List[int], dates: List[int], sessions: List[int], ratPairs: List[int], familarity: List[str], transparency: List[str], sessionType: List[str], nanPercentages: List[int], fiberFiles = None, prefix = "", save = True):
         self.mag_files = mag_files
         self.lev_files = lev_files
         self.pos_files = pos_files
@@ -47,6 +47,7 @@ class dataAnalysisRegular:
         self.familarity = familarity
         self.transparency = transparency
         self.sessionTypes = sessionTypes
+        self.nanPercentages = nanPercentages
         self.prefix = prefix
         self.save = save
         
@@ -79,7 +80,7 @@ class dataAnalysisRegular:
                 if (fiberFiles is not None and fiberFiles[i] is not None):
                     exp = singleExperiment(magFiles[i], levFiles[i], posFiles[i], fpsList[i], totFramesList[i], initialNanList[i], fp_files=fiberFiles[i])
                 else:
-                    exp = singleExperiment(magFiles[i], levFiles[i], posFiles[i], fpsList[i], totFramesList[i], initialNanList[i], date = dates[i], sessionID = sessions[i], ratPair=ratPairs[i], trainingPartner=familarity[i], transparency=transparency[i], videoType=sessionType[i])
+                    exp = singleExperiment(magFiles[i], levFiles[i], posFiles[i], fpsList[i], totFramesList[i], initialNanList[i], date = dates[i], sessionID = sessions[i], ratPair=ratPairs[i], trainingPartner=familarity[i], transparency=transparency[i], videoType=sessionType[i], nanPercentage = nanPercentages[i])
                 mag_missing = [col for col in exp.mag.categories if col not in exp.mag.data.columns]
                 lev_missing = [col for col in exp.lev.categories if col not in exp.lev.data.columns]
                 
@@ -783,6 +784,107 @@ class dataAnalysisRegular:
     
         return socialGazing, levGazing, magGazing, socialGazingAtLev_list, socialGazingAtMag_list, socialGazingAtCenter_list, avgLengthSocialGaze, isKL
 
+    def allInteractingData(self, save_csv=True, csv_path="interacting_data.csv"):
+        interacting_list = []
+        interacting_lev_list = []
+        interacting_center_list = []
+        interacting_mag_list = []
+        avg_proximity_list = []
+        avg_distance_moved_list = []
+
+        print("Entering Interacting Data")
+        print("Num Exps is:", len(self.experiments))
+
+        rows = []
+
+        for exp in self.experiments:
+            pos = exp.pos
+
+            # 2. Get Interaction Data
+            # returnIsInteracting returns a list of 0s and 1s; convert to boolean array
+            is_interacting = np.array(pos.returnIsInteracting(), dtype=bool)
+            num_frames = pos.returnNumFrames()
+            
+            # Calculate total % interacting
+            pct_interacting = np.sum(is_interacting) / num_frames
+
+            # 3. Get Locations and create masks
+            loc0 = pos.returnMouseLocation(0)
+            loc1 = pos.returnMouseLocation(1)
+
+            # Define boolean masks for each region for both rats
+            # Check if rat is in "lev_top" or "lev_bottom"
+            is_lev_0 = np.array([l in ("lev_top", "lev_bottom") for l in loc0])
+            is_lev_1 = np.array([l in ("lev_top", "lev_bottom") for l in loc1])
+            
+            # Check if rat is in "mag_top" or "mag_bottom"
+            is_mag_0 = np.array([l in ("mag_top", "mag_bottom") for l in loc0])
+            is_mag_1 = np.array([l in ("mag_top", "mag_bottom") for l in loc1])
+            
+            # Check if rat is in "mid"
+            is_mid_0 = np.array([l == "mid" for l in loc0])
+            is_mid_1 = np.array([l == "mid" for l in loc1])
+
+            # Combine masks: Interaction at a zone counts if they are interacting AND 
+            # at least one of them is in that zone (usually both are, as they are close)
+            lev_mask = is_lev_0 | is_lev_1
+            mag_mask = is_mag_0 | is_mag_1
+            mid_mask = is_mid_0 | is_mid_1
+
+            # 4. Calculate % interacting at specific zones
+            pct_int_lev = np.sum(is_interacting & lev_mask) / num_frames
+            pct_int_mag = np.sum(is_interacting & mag_mask) / num_frames
+            pct_int_center = np.sum(is_interacting & mid_mask) / num_frames
+
+            # 5. Calculate Average Proximity
+            # returnInterMouseDistance returns an array of distances per frame
+            avg_proximity = np.mean(pos.returnInterMouseDistance())
+
+            # 6. Calculate Average Distance Moved
+            # Averaging the standardized distance moved (pixels/frame) of both rats
+            dist0 = pos.returnStandardizedDistanceMoved(0)
+            dist1 = pos.returnStandardizedDistanceMoved(1)
+            avg_distance_moved = (dist0 + dist1) / 2
+
+            # Append to lists (for return)
+            interacting_list.append(pct_interacting)
+            interacting_lev_list.append(pct_int_lev)
+            interacting_center_list.append(pct_int_center)
+            interacting_mag_list.append(pct_int_mag)
+            avg_proximity_list.append(avg_proximity)
+            avg_distance_moved_list.append(avg_distance_moved)
+
+            # Append to rows (for CSV)
+            rows.append({
+                'session': exp.sessionID,
+                'date': exp.date,
+                'ratPair': exp.ratPair,
+                'familiarity': exp.familiarity,
+                'transparency': exp.transparency,
+                'sessionType': exp.sessionType,
+                '%nan error': exp.nanErrorPercentagePercentage,
+                '% interacting': pct_interacting,
+                '% interacting at lev': pct_int_lev,
+                '% interacting at center': pct_int_center,
+                '% interacting at mag': pct_int_mag,
+                'avg proximity': avg_proximity,
+                'rat0 distance moved': dist0,
+                'rat1 distance moved': dist1,
+                'avg distance moved': avg_distance_moved,
+                'pos_file': exp.pos_file
+            })
+
+        if save_csv:
+            columns = ['session', 'date', 'ratPair', 'familiarity', 'transparency', 
+                       'sessionType', '%nan error', '% interacting', 
+                       '% interacting at lev', '% interacting at center', 
+                       '% interacting at mag', 'avg proximity', 'rat0 distance moved', 'rat1 distance moved'
+                       'avg distance moved', 'pos_file']
+            df = pd.DataFrame(rows, columns=columns)
+            df.to_csv(csv_path, index=False)
+
+        return interacting_list, interacting_lev_list, interacting_center_list, interacting_mag_list, avg_proximity_list, avg_distance_moved_list
+
 
 class createGraphs:
     def __init__(self, arena_width=1392, arena_height=640):
@@ -1412,6 +1514,8 @@ class createGraphs:
 
 filtered = "/gpfs/radev/project/saxena/drb83/rat-cooperation/David/Behavioral_Quantification/Sorted_Data_Files/Filtered.csv"
 minReq = "/gpfs/radev/project/saxena/drb83/rat-cooperation/David/Behavioral_Quantification/Sorted_Data_Files/dyed_preds_min_requirements_valid.csv"
+minReq_updated = "/gpfs/radev/project/saxena/drb83/rat-cooperation/David/Behavioral_Quantification/Sorted_Data_Files/coop_minReq_valid.csv"
+
 minReqTesting = "/gpfs/radev/project/saxena/drb83/rat-cooperation/David/Behavioral_Quantification/Sorted_Data_Files/only_PairedTesting_filtered_partiallyValid.csv"
 minReqTraining = "/gpfs/radev/project/saxena/drb83/rat-cooperation/David/Behavioral_Quantification/Sorted_Data_Files/only_TrainingCooperation_filtered_partiallyValid.csv" 
 minReqComp = "/gpfs/radev/project/saxena/drb83/rat-cooperation/David/Behavioral_Quantification/Sorted_Data_Files/comp_minReq_valid.csv"
@@ -1454,8 +1558,9 @@ def minRequirements():
     familiarity = fe.getFamiliarityList()
     transparency = fe.getBarrierTransparencyList()
     sessionTypes = fe.getSessionType()
+    nanPercentages = fe.returnNaNPercentage()
     #print("initial_nan_list: ", initial_nan_list)
-    return [fe.getLevsDatapath(), fe.getMagsDatapath(), fe.getPosDatapath(), fpsList, totFramesList, initial_nan_list, dates, sessions, ratPairs, familiarity, transparency, sessionTypes]
+    return [fe.getLevsDatapath(), fe.getMagsDatapath(), fe.getPosDatapath(), fpsList, totFramesList, initial_nan_list, dates, sessions, ratPairs, familiarity, transparency, sessionTypes, nanPercentages]
 
 def minRequirementsComp():
     fe = fileExtractor(minReqComp)
@@ -1472,8 +1577,9 @@ def minRequirementsComp():
     familiarity = fe.getFamiliarityList()
     transparency = fe.getBarrierTransparencyList()
     sessionTypes = fe.getSessionType()
+    nanPercentages = fe.returnNaNPercentage()
     #print("initial_nan_list: ", initial_nan_list)
-    return [None, None, fe.getPosDatapath(), fpsList, totFramesList, initial_nan_list, dates, sessions, ratPairs, familiarity, transparency, sessionTypes]
+    return [None, None, fe.getPosDatapath(), fpsList, totFramesList, initial_nan_list, dates, sessions, ratPairs, familiarity, transparency, sessionTypes, nanPercentages]
 
 def minRequirementsIneq():
     fe = fileExtractor(minReqIneq)
@@ -1492,8 +1598,9 @@ def minRequirementsIneq():
     familiarity = fe.getFamiliarityList()
     transparency = fe.getBarrierTransparencyList()
     sessionTypes = fe.getSessionType()
+    nanPercentages = fe.returnNaNPercentage()
     #print("initial_nan_list: ", initial_nan_list)
-    return [None, None, fe.getPosDatapath(), fpsList, totFramesList, initial_nan_list, dates, sessions, ratPairs, familiarity, transparency, sessionTypes]
+    return [None, None, fe.getPosDatapath(), fpsList, totFramesList, initial_nan_list, dates, sessions, ratPairs, familiarity, transparency, sessionTypes, nanPercentages]
 
 def minRequirementsNonCoop():
     fe = fileExtractor(minReqNonCoop)
@@ -1535,6 +1642,7 @@ ratPairs = arr[8]
 familarity = arr[9]
 transparency = arr[10]
 sessionTypes = arr[11]
+nanPercentages = arr[12]
 
 
 arr = minRequirementsComp()
@@ -1550,6 +1658,8 @@ ratPairs_comp = arr[8]
 familarity_comp = arr[9]
 transparency_comp = arr[10]
 sessionTypes_comp = arr[11]
+nanPercentages_comp = arr[12]
+
 
 
 arr = minRequirementsIneq()
@@ -1565,6 +1675,7 @@ ratPairs_ineq = arr[8]
 familarity_ineq = arr[9]
 transparency_ineq = arr[10]
 sessionTypes_ineq = arr[11]
+nanPercentages_comp = arr[12]
 
 
 arr = minRequirementsNonCoop()
