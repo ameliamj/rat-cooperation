@@ -1776,8 +1776,8 @@ interactions = False  #True for interactions, false for gaze
 #gaze_ineq, isKL_ineq = data_ineq.gazingData(sortByKL=True, save_csv=False, getInteractions=interactions)
 '''
 
-dataObj = data_ineq
-myLabel = "ineq"
+dataObj = data
+myLabel = "coop"
 
 dataObj.allInteractingData(csv_path=f"{myLabel}_allInteractingAndOtherData.csv")
 
