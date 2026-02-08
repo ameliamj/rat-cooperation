@@ -104,7 +104,7 @@ class dataAnalysisRegular:
             if ((len(posFiles) != len(fpsList)) or (len(posFiles) != len(totFramesList)) or len(posFiles) != len(initialNanList)):
                 raise ValueError("Different number of posFiles, fpsList, totFramesList, or initialNanList values")
             for i in range(len(posFiles)):
-                exp = singleExperiment(None, None, posFiles[i], fpsList[i], totFramesList[i], initialNanList[i], date = dates[i], sessionID = sessions[i], ratPair=ratPairs[i])
+                exp = singleExperiment(None, None, posFiles[i], fpsList[i], totFramesList[i], initialNanList[i], date = dates[i], sessionID = sessions[i], ratPair=ratPairs[i], trainingPartner=familarity[i], transparency=transparency[i], videoType=sessionType[i], nanPercentage = nanPercentages[i])
                 self.experiments.append(exp)
             
     def restrict_to_first_n_sessions(self, n=10):
@@ -1725,8 +1725,6 @@ print("pos_files: ", pos_files)
 
 print("nanPercentages: ", nanPercentages)
 print("nanPercentagesIneq: ", nanPercentages_ineq)
-
-exit()
 
 # Create the data generation object
 data = dataAnalysisRegular(
