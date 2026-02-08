@@ -878,7 +878,7 @@ class dataAnalysisRegular:
             columns = ['session', 'date', 'ratPair', 'familiarity', 'transparency', 
                        'sessionType', '%nan error', '% interacting', 
                        '% interacting at lev', '% interacting at center', 
-                       '% interacting at mag', 'avg proximity', 'rat0 distance moved', 'rat1 distance moved'
+                       '% interacting at mag', 'avg proximity', 'rat0 distance moved', 'rat1 distance moved',
                        'avg distance moved', 'pos_file']
             df = pd.DataFrame(rows, columns=columns)
             df.to_csv(csv_path, index=False)
