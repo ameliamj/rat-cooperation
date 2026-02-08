@@ -1722,8 +1722,11 @@ ratPairs = ['KL001Y-KL001G', 'KL007Y-KL007G'] #
 #
 
 print("pos_files: ", pos_files)
-print("pos_files2: ", pos_files2)
 
+print("nanPercentages: ", nanPercentages)
+print("nanPercentagesIneq: ", nanPercentages_ineq)
+
+exit()
 
 # Create the data generation object
 data = dataAnalysisRegular(
@@ -1776,8 +1779,8 @@ interactions = False  #True for interactions, false for gaze
 #gaze_ineq, isKL_ineq = data_ineq.gazingData(sortByKL=True, save_csv=False, getInteractions=interactions)
 '''
 
-dataObj = data
-myLabel = "coop"
+dataObj = data_ineq
+myLabel = "ineq"
 
 dataObj.allInteractingData(csv_path=f"{myLabel}_allInteractingAndOtherData.csv")
 
