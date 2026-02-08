@@ -1779,6 +1779,10 @@ interactions = False  #True for interactions, false for gaze
 dataObj = data
 myLabel = "coop"
 
+dataObj.allInteractingData(csv_path=f"{myLabel}_allInteractingAndOtherData.csv")
+
+
+'''
 socialGazing, levGazing, magGazing, socialGazingAtLev_list, socialGazingAtMag_list, socialGazingAtCenter_list, avgLengthSocialGaze, isKL = dataObj.allGazingData()
 
 
@@ -1837,7 +1841,7 @@ save_session_level_gaze_csv(
 print("sessions: ", dataObj.sessions)
 print("familiarity: ", dataObj.familarity)
 print("transparency: ", dataObj.transparency)
-
+'''
 
 '''
 save_session_level_gaze_csv(
