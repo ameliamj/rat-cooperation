@@ -1675,7 +1675,7 @@ ratPairs_ineq = arr[8]
 familarity_ineq = arr[9]
 transparency_ineq = arr[10]
 sessionTypes_ineq = arr[11]
-nanPercentages_comp = arr[12]
+nanPercentages_ineq = arr[12]
 
 
 arr = minRequirementsNonCoop()
@@ -1730,21 +1730,21 @@ data = dataAnalysisRegular(
     mag_files, lev_files, pos_files,
     fpsList, totFramesList, initialNanList,
     dates, sessions, ratPairs,
-    familarity, transparency, sessionTypes,
+    familarity, transparency, sessionTypes, nanPercentages,
     prefix="", save=True
 )
 
 data_comp = dataAnalysisRegular(
     mag_files_comp, lev_files_comp, pos_files_comp, fpsList_comp,
     totFramesList_comp, initialNanList_comp, dates_comp, sessions_comp,
-    ratPairs_comp, familarity_comp, transparency_comp, sessionTypes_comp,
+    ratPairs_comp, familarity_comp, transparency_comp, sessionTypes_comp, nanPercentages_comp,
     prefix="", save=True
 )
 
 data_ineq = dataAnalysisRegular(
     mag_files_ineq, lev_files_ineq, pos_files_ineq, fpsList_ineq,
     totFramesList_ineq, initialNanList_ineq, dates_ineq, sessions_ineq,
-    ratPairs_ineq, familarity_ineq, transparency_ineq, sessionTypes_ineq,
+    ratPairs_ineq, familarity_ineq, transparency_ineq, sessionTypes_ineq, nanPercentages_ineq,
     prefix="", save=True
 )
 
