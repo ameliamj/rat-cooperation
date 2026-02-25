@@ -2995,11 +2995,11 @@ class MicePairGraphs:
     def gazeAroundLeverPressAcrossLearning(
         self,
         window_sec=5,
-        sample_times_sec=(-3, 0, 3),
-        gaze_mode="lever",
-        anchor_type="first_press_each_trial",
-        min_sessions_per_pair=1,
-        save_csv=False,
+        sample_times_sec=(-3, 0, 3), # Relative times (in seconds) to extract gaze metrics around each anchor event
+        gaze_mode="lever", #"social" or "lever"
+        anchor_type="first_press_each_trial", # "first_press_each_trial", "all_presses", or "success_hit"
+        min_sessions_per_pair=4, # Minimum number of sessions required for a rat pair to be included in the analysis
+        save_csv=False, 
         csv_path="gaze_around_press_across_learning.csv",
     ):
         """
@@ -3554,7 +3554,7 @@ pairGraphs = MicePairGraphs(data[0], data[1], data[2], data[3], data[4], data[5]
 pairGraphs.gazeAroundLeverPressAcrossLearning(
     window_sec=5,
     sample_times_sec=(-3, 0, 3),     
-    gaze_mode="lever",
+    gaze_mode="social",
     anchor_type="first_press_each_trial",   
     min_sessions_per_pair=1,
     save_csv=False,
