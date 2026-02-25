@@ -3185,10 +3185,11 @@ class MicePairGraphs:
             # Per-rat-pair light lines
             for per_pair_vals in pair_lines_by_time[t_sec]:
                 y = np.array(per_pair_vals, dtype=float)
+                x_pair = np.arange(len(y)) + 1
                 valid = ~np.isnan(y)
                 if np.any(valid):
                     ax.plot(
-                        x_full[valid],
+                        x_pair[valid],
                         y[valid] * 100,
                         color=color,
                         alpha=0.2,
@@ -3554,9 +3555,9 @@ pairGraphs = MicePairGraphs(data[0], data[1], data[2], data[3], data[4], data[5]
 pairGraphs.gazeAroundLeverPressAcrossLearning(
     window_sec=5,
     sample_times_sec=(-3, 0, 3),     
-    gaze_mode="social",
+    gaze_mode="lever",
     anchor_type="first_press_each_trial",   
-    min_sessions_per_pair=1,
+    min_sessions_per_pair=5,
     save_csv=False,
     csv_path="gaze_around_press_across_learning.csv"
 )
@@ -11975,7 +11976,6 @@ experiment.expandedSynchronizationStrategyGraphs()
 '''
 
 # ---------------------------------------------------------------------------------------------------------
-
 
 
 
