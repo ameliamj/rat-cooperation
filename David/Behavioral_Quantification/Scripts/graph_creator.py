@@ -2992,6 +2992,277 @@ class MicePairGraphs:
     
         return ax
 
+    def gazeAroundLeverPressAcrossLearning(
+        self,
+        window_sec=5,
+        sample_times_sec=(-3, 0, 3),
+        gaze_mode="lever",
+        anchor_type="first_press_each_trial",
+        min_sessions_per_pair=1,
+        save_csv=False,
+        csv_path="gaze_around_press_across_learning.csv",
+    ):
+        """
+        Quantify event-locked gaze around lever presses and track it across learning.
+
+        For each rat-pair (group), this method computes session-level gaze frequency at
+        specific time offsets from lever-press anchors (default: -3s, 0s, +3s). It then
+        plots those metrics across session index with:
+        1) Thin per-rat-pair trajectories
+        2) Cohort mean +/- SEM trajectory
+
+        Parameters
+        ----------
+        window_sec : int or float
+            Half-window around each anchor event, in seconds.
+        sample_times_sec : tuple
+            Relative times (seconds) to extract from each event-locked window.
+        gaze_mode : str
+            "social"  -> uses pos.returnIsGazing()
+            "lever"   -> uses pos.returnIsLookingAtObjects(useMinDist=False)
+        anchor_type : str
+            "first_press_each_trial", "all_presses", or "success_hit"
+        min_sessions_per_pair : int
+            Skip groups with fewer sessions than this count.
+        save_csv : bool
+            If True, writes long-format session-level values.
+        csv_path : str
+            Path for session-level output table.
+        """
+        print("\nStarting gazeAroundLeverPressAcrossLearning")
+
+        if not self.experimentGroups:
+            print("No experiment groups found.")
+            return pd.DataFrame()
+
+        if gaze_mode not in {"social", "lever"}:
+            raise ValueError("gaze_mode must be 'social' or 'lever'")
+
+        if anchor_type not in {"first_press_each_trial", "all_presses", "success_hit"}:
+            raise ValueError(
+                "anchor_type must be one of: "
+                "'first_press_each_trial', 'all_presses', 'success_hit'"
+            )
+
+        # Keep only offsets that fit inside the requested window.
+        sample_times_sec = tuple(t for t in sample_times_sec if abs(t) <= window_sec)
+        if len(sample_times_sec) == 0:
+            raise ValueError("No sample times fall within +/- window_sec.")
+
+        max_sessions = max(len(group) for group in self.experimentGroups)
+        # Aggregate per session-index across all rat-pair groups
+        pooled_by_time = {t: [[] for _ in range(max_sessions)] for t in sample_times_sec}
+        # Per-group trajectories (used for thin gray background lines)
+        pair_lines_by_time = {t: [] for t in sample_times_sec}
+
+        rows = []
+
+        for group_idx, group in enumerate(self.experimentGroups):
+            if len(group) < min_sessions_per_pair:
+                print(
+                    f"Skipping group {group_idx}: only {len(group)} session(s), "
+                    f"minimum required is {min_sessions_per_pair}."
+                )
+                continue
+
+            group_vals = {t: [np.nan] * len(group) for t in sample_times_sec}
+
+            for session_idx, exp in enumerate(group):
+                lev_df = exp.lev.data if exp.lev is not None else None
+                if lev_df is None or lev_df.empty:
+                    continue
+
+                lev = lev_df.dropna(subset=["RatID", "AbsTime"]).copy()
+                if lev.empty:
+                    continue
+
+                lev["RatID"] = pd.to_numeric(lev["RatID"], errors="coerce")
+                lev = lev.dropna(subset=["RatID"])
+                if lev.empty:
+                    continue
+
+                if anchor_type == "first_press_each_trial":
+                    press_df = (
+                        lev.sort_values("AbsTime")
+                        .groupby("TrialNum", as_index=False)
+                        .head(1)
+                    )
+                elif anchor_type == "all_presses":
+                    press_df = lev.sort_values("AbsTime")
+                else:  # "success_hit"
+                    if "coopSucc" not in lev.columns or "Hit" not in lev.columns:
+                        continue
+                    press_df = lev[(lev["coopSucc"] == 1) & (lev["Hit"] == 1)].sort_values("AbsTime")
+
+                if press_df.empty:
+                    continue
+
+                pos = exp.pos
+                fps = exp.fps
+                pre = int(round(window_sec * fps))
+                post = int(round(window_sec * fps))
+                total = pre + post
+                center_idx = pre
+
+                if gaze_mode == "social":
+                    gaze_data = {
+                        0: np.array(pos.returnIsGazing(0), dtype=float),
+                        1: np.array(pos.returnIsGazing(1), dtype=float),
+                    }
+                else:
+                    gaze_data = {
+                        0: np.array(pos.returnIsLookingAtObjects(0, useMinDist=False), dtype=float),
+                        1: np.array(pos.returnIsLookingAtObjects(1, useMinDist=False), dtype=float),
+                    }
+
+                per_time_values = {t: [] for t in sample_times_sec}
+                valid_anchor_count = 0
+
+                for _, row in press_df.iterrows():
+                    presser_id = int(row["RatID"])
+                    if presser_id not in (0, 1):
+                        continue
+
+                    center_frame = int(round(row["AbsTime"] * fps))
+                    start = center_frame - pre
+                    end = center_frame + post
+                    if start < 0 or end > len(gaze_data[presser_id]):
+                        continue
+
+                    event_window = gaze_data[presser_id][start:end]
+                    if len(event_window) != total:
+                        continue
+
+                    valid_anchor_count += 1
+                    for t_sec in sample_times_sec:
+                        rel_idx = center_idx + int(round(t_sec * fps))
+                        if 0 <= rel_idx < total:
+                            per_time_values[t_sec].append(event_window[rel_idx])
+
+                if valid_anchor_count == 0:
+                    continue
+
+                for t_sec in sample_times_sec:
+                    values = per_time_values[t_sec]
+                    if not values:
+                        continue
+
+                    session_val = float(np.mean(values))
+                    group_vals[t_sec][session_idx] = session_val
+                    pooled_by_time[t_sec][session_idx].append(session_val)
+
+                row = {
+                    "group_idx": group_idx,
+                    "session_idx": session_idx,
+                    "ratPair": exp.ratPair,
+                    "sessionID": exp.sessionID,
+                    "date": exp.date,
+                    "anchor_type": anchor_type,
+                    "gaze_mode": gaze_mode,
+                    "num_valid_anchors": valid_anchor_count,
+                }
+                for t_sec in sample_times_sec:
+                    row[f"gaze_at_{t_sec:+g}s"] = group_vals[t_sec][session_idx]
+                rows.append(row)
+
+            for t_sec in sample_times_sec:
+                pair_lines_by_time[t_sec].append(group_vals[t_sec])
+
+        if not rows:
+            print("No valid event-locked gaze data found.")
+            return pd.DataFrame()
+
+        # Plot learning trajectories for each sampled time point.
+        fig, ax = plt.subplots(figsize=(10, 6))
+        color_map = {-3: "teal", 0: "royalblue", 3: "indianred"}
+        x_full = np.arange(max_sessions) + 1
+
+        for t_sec in sample_times_sec:
+            color = color_map.get(int(t_sec), None)
+            if color is None:
+                color = cm.viridis((t_sec - min(sample_times_sec)) / (max(sample_times_sec) - min(sample_times_sec) + 1e-8))
+
+            # Per-rat-pair light lines
+            for per_pair_vals in pair_lines_by_time[t_sec]:
+                y = np.array(per_pair_vals, dtype=float)
+                valid = ~np.isnan(y)
+                if np.any(valid):
+                    ax.plot(
+                        x_full[valid],
+                        y[valid] * 100,
+                        color=color,
+                        alpha=0.2,
+                        linewidth=1
+                    )
+
+            # Cohort mean +/- SEM
+            means = []
+            sems = []
+            for sess_idx in range(max_sessions):
+                vals = pooled_by_time[t_sec][sess_idx]
+                if len(vals) == 0:
+                    means.append(np.nan)
+                    sems.append(np.nan)
+                else:
+                    means.append(float(np.mean(vals)))
+                    sems.append(float(sem(vals)) if len(vals) > 1 else 0.0)
+
+            means = np.array(means, dtype=float)
+            sems = np.array(sems, dtype=float)
+            valid = ~np.isnan(means)
+            if not np.any(valid):
+                continue
+
+            x = x_full[valid]
+            y = means[valid] * 100
+            y_sem = sems[valid] * 100
+
+            ax.plot(
+                x,
+                y,
+                marker="o",
+                linewidth=3,
+                color=color,
+                label=f"{t_sec:+g}s",
+                zorder=5,
+            )
+            ax.fill_between(
+                x,
+                y - y_sem,
+                y + y_sem,
+                color=color,
+                alpha=0.2,
+                linewidth=0,
+                zorder=4,
+            )
+
+        gaze_label = "Social Gaze" if gaze_mode == "social" else "Lever Gaze"
+        ax.set_title(
+            f"{gaze_label} Around Lever Press Across Learning\n"
+            f"Anchor: {anchor_type.replace('_', ' ')}"
+        )
+        ax.set_xlabel("Session Index")
+        ax.set_ylabel("Event-Locked Gaze Frequency (%)")
+        ax.grid(True, alpha=0.2)
+        ax.legend(title="Relative Time")
+        ax.spines["top"].set_visible(False)
+        ax.spines["right"].set_visible(False)
+        plt.tight_layout()
+
+        filename = (
+            f"{self.prefix}gazeAroundPressAcrossLearning_"
+            f"{gaze_mode}_{anchor_type}.png"
+        )
+        if self.save:
+            plt.savefig(filename, dpi=300, bbox_inches="tight")
+        plt.show()
+        plt.close()
+
+        out_df = pd.DataFrame(rows)
+        if save_csv:
+            out_df.to_csv(csv_path, index=False)
+        return out_df
+
 
     def holdEventsOverTime(self):
         '''
@@ -3278,8 +3549,18 @@ def getGroupRatPairsIneqComp():
     
     return [None, None, fe.getPosDatapath(grouped = True), fpsList, totFramesList, rat1names, rat2names, sessionIDs, dates, ratPairs]
 
-#data = getGroupRatPairs()
-#pairGraphs = MicePairGraphs(data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7], data[8], data[9])
+data = getGroupRatPairs()
+pairGraphs = MicePairGraphs(data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7], data[8], data[9])
+pairGraphs.gazeAroundLeverPressAcrossLearning(
+    window_sec=5,
+    sample_times_sec=(-3, 0, 3),     
+    gaze_mode="lever",
+    anchor_type="first_press_each_trial",   
+    min_sessions_per_pair=1,
+    save_csv=False,
+    csv_path="gaze_around_press_across_learning.csv"
+)
+
 #pairGraphs.compareGazeVsMaxSuccess()
 #pairGraphs.holdEventsOverTime()
 
@@ -11345,7 +11626,7 @@ class multiFileGraphs:
         return pct_after_gaze, pct_after_no_gaze
             
 
-    def gazingAtLeverBeforeAfterLeverPress(self, window_sec = 10):
+    def gazingAtLeverBeforeAfterLeverPress(self, window_sec = 5):
         """
         Traces relative frequency of gazing -5 to +5s around lever presses.
         - Plot 1: Gaze from the Pressing Rat to the Other Rat.
@@ -11368,8 +11649,8 @@ class multiFileGraphs:
         session_means_p_to_o = [[], [], []]
         session_means_o_to_p = [[], [], []]
         
-        PRE = 150
-        POST = 150
+        PRE = 30 * window_sec
+        POST = 30 * window_sec
         TOTAL = PRE + POST
         
         for exp in self.experiments:
@@ -11694,7 +11975,6 @@ experiment.expandedSynchronizationStrategyGraphs()
 '''
 
 # ---------------------------------------------------------------------------------------------------------
-
 
 
 
