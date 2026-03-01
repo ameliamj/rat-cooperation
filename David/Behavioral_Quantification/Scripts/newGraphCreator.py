@@ -2259,8 +2259,6 @@ graphs.plot_scatter(
   
 
 
-
-
 # Generate left/right position data
 '''
 left_x, left_y, right_x, right_y = data.generateLeftRightHeatmapData()
@@ -2367,6 +2365,6 @@ def summarize_coop_sessions_by_ratpair_and_threshold(
 # Summarize ALL cooperative sessions by rat pair and threshold
 threshold_summary_df = summarize_coop_sessions_by_ratpair_and_threshold(
     data,
-    csv_path=None, #"coop_sessions_by_ratpair_threshold.csv"
+    csv_path="coop_sessions_by_ratpair_threshold.csv", #"coop_sessions_by_ratpair_threshold.csv"
     only_coop=True
 )
