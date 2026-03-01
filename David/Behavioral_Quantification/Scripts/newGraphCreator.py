@@ -727,7 +727,7 @@ class dataAnalysisRegular:
                               np.sum(pos.returnIsLookingAtObjects(1, useMinDist=False))) / 2
             magGazeFrames = (np.sum(pos.returnIsLookingAtObjects(0, target="mag", useMinDist=False)) +
                               np.sum(pos.returnIsLookingAtObjects(1, target="mag", useMinDist=False))) / 2
-    
+
             socialGazingAtLev = (
                 np.sum(gaze0 & lev_mask_0) +
                 np.sum(gaze1 & lev_mask_1)
@@ -1513,8 +1513,8 @@ class createGraphs:
 #Real
 
 filtered = "/gpfs/radev/project/saxena/drb83/rat-cooperation/David/Behavioral_Quantification/Sorted_Data_Files/Filtered.csv"
-minReq = "/gpfs/radev/project/saxena/drb83/rat-cooperation/David/Behavioral_Quantification/Sorted_Data_Files/dyed_preds_min_requirements_valid.csv"
-minReq_updated = "/gpfs/radev/project/saxena/drb83/rat-cooperation/David/Behavioral_Quantification/Sorted_Data_Files/coop_minReq_valid.csv"
+minReq = "/gpfs/radev/project/saxena/drb83/rat-cooperation/David/Behavioral_Quantification/Sorted_Data_Files/dyed_preds_min_requirements_valid.csv" 
+minReq_updated = "/gpfs/radev/project/saxena/drb83/rat-cooperation/David/Behavioral_Quantification/Sorted_Data_Files/coop_minReq_valid.csv" #Same as above but without the requirement for having lever and mag files I think, I forget
 
 minReqTesting = "/gpfs/radev/project/saxena/drb83/rat-cooperation/David/Behavioral_Quantification/Sorted_Data_Files/only_PairedTesting_filtered_partiallyValid.csv"
 minReqTraining = "/gpfs/radev/project/saxena/drb83/rat-cooperation/David/Behavioral_Quantification/Sorted_Data_Files/only_TrainingCooperation_filtered_partiallyValid.csv" 
@@ -1751,7 +1751,7 @@ data_ineq = dataAnalysisRegular(
 
 '''
 data2 = dataAnalysisRegular(mag_files2, lev_files2, pos_files2, fpsList2, totFramesList2, initialNanList2, dates2, sessions2, ratPairs2, familarity2, transparency2, sessionTypes2, prefix = "", save=True)
-''''''
+'''
 
 # Create the graph object
 graphs = createGraphs()
@@ -1775,12 +1775,12 @@ interactions = False  #True for interactions, false for gaze
 #gaze_coop, isKL_coop = data.gazingData(sortByKL=True, save_csv=False, getInteractions=interactions)
 #gaze_comp, isKL_comp = data_comp.gazingData(sortByKL=True, save_csv=False, getInteractions=interactions)
 #gaze_ineq, isKL_ineq = data_ineq.gazingData(sortByKL=True, save_csv=False, getInteractions=interactions)
-'''
+
 
 dataObj = data_comp
 myLabel = "comp"
 
-dataObj.allInteractingData(csv_path=f"{myLabel}_allInteractingAndOtherData.csv")
+#dataObj.allInteractingData(csv_path=f"{myLabel}_allInteractingAndOtherData.csv")
 
 
 '''
@@ -1861,7 +1861,6 @@ save_session_level_gaze_csv(
     csv_path=f"{prefix}_sessions_ineq.csv"
 )'''
 
-exit()
 
 ############################################################
 # --------- BAR PLOT: COOP vs COMP vs INEQ -----------------
@@ -1905,13 +1904,13 @@ def barGraphAvgGazeThreeTypes(
     plt.close()
 
 
-barGraphAvgGazeThreeTypes(
+'''barGraphAvgGazeThreeTypes(
     gaze_lists=[gaze_coop, gaze_comp, gaze_ineq],
     isKL_lists=[isKL_coop, isKL_comp, isKL_ineq],
     labels=["Coop", "Comp", "Ineq"],
     bar_colors=["navy", "gray", "dimgray"],
     save_path=f"avg_{prefix}_first10_per_ratpair.png"
-)
+)'''
 
 
 
@@ -2286,3 +2285,88 @@ graphs.saveHeatmap(H_up, "Up-preferring Group Heatmap", "up_heatmap.png")
 graphs.saveHeatmap(H_down, "Down-preferring Group Heatmap", "down_heatmap.png")
 '''
         
+
+
+
+
+
+
+
+
+
+def summarize_coop_sessions_by_ratpair_and_threshold(
+    data_obj,
+    csv_path="coop_sessions_by_ratpair_threshold.csv",
+    only_coop=True
+):
+    """
+    Summarize session counts by rat pair and lever success threshold.
+
+    Output columns:
+      - ratPair
+      - total_sessions
+      - threshold_<value>_sessions (one column per observed threshold)
+    """
+    rows = []
+    all_thresholds = set()
+
+    # First pass: gather per-session threshold records
+    per_pair_records = {}
+    for exp in data_obj.experiments:
+        session_type = str(getattr(exp, "sessionType", ""))
+        if only_coop and ("coop" not in session_type.lower()):
+            continue
+
+        if not hasattr(exp, "lev") or exp.lev is None:
+            continue
+
+        rat_pair = getattr(exp, "ratPair", None)
+        if rat_pair is None:
+            continue
+
+        threshold = getattr(exp.lev, "threshold", None)
+        if threshold is None:
+            threshold = exp.lev.returnSuccThreshold()
+
+        # Normalize threshold key so 1 and 1.0 are grouped together
+        try:
+            threshold_key = f"{float(threshold):g}"
+        except Exception:
+            threshold_key = str(threshold)
+
+        all_thresholds.add(threshold_key)
+        if rat_pair not in per_pair_records:
+            per_pair_records[rat_pair] = []
+        per_pair_records[rat_pair].append(threshold_key)
+
+    # Second pass: build output rows sorted by rat pair
+    sorted_thresholds = sorted(all_thresholds, key=lambda x: float(x) if str(x).replace(".", "", 1).isdigit() else str(x))
+    for rat_pair in sorted(per_pair_records.keys()):
+        threshold_list = per_pair_records[rat_pair]
+        row = {
+            "ratPair": rat_pair,
+            "total_sessions": len(threshold_list)
+        }
+        for th in sorted_thresholds:
+            row[f"threshold_{th}_sessions"] = threshold_list.count(th)
+        rows.append(row)
+
+    df = pd.DataFrame(rows)
+    if not df.empty:
+        df = df.sort_values(by=["ratPair"]).reset_index(drop=True)
+
+    print("\nCoop Sessions by Rat Pair and Threshold:")
+    print(df.to_string(index=False))
+
+    if csv_path is not None:
+        df.to_csv(csv_path, index=False)
+        print(f"Saved threshold summary CSV: {csv_path}")
+
+    return df
+
+# Summarize ALL cooperative sessions by rat pair and threshold
+threshold_summary_df = summarize_coop_sessions_by_ratpair_and_threshold(
+    data,
+    csv_path=None, #"coop_sessions_by_ratpair_threshold.csv"
+    only_coop=True
+)
