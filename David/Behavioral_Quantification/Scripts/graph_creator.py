@@ -11980,9 +11980,9 @@ initialNanList = [0.3]
 #experiment.gazingBeforeAfterLeverPress()
 print("Start MultiFileGraphs Regular")
 experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, dates, sessions, ratPairs, prefix = "GazeFigures_", save = True, saveAsPDF = True)
-experiment.gazingInSuccessVsFailureTrials()
+#experiment.gazingInSuccessVsFailureTrials()
 experiment.percentGazingvsSuccess(minDist=150)
-experiment.gazingBeforeAfterLeverPress(window_sec=5)
+#experiment.gazingBeforeAfterLeverPress(window_sec=5)
 
 #experiment.switchingHistogram()
 
