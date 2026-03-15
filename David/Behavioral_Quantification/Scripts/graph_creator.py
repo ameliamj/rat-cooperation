@@ -2927,7 +2927,6 @@ class MicePairGraphs:
         plt.show()
         plt.close()
 
-
     def lineGraphOverTime(self, nestedYDataList, label="Metric Over Time", color="#1f77b4", multiplyBy100=True, ax=None):
         #nestedYDataList = [[exp1_group1, exp2_group1, exp3_group1, ...], [exp1_group2, exp2_group2, exp3_group2, ...], ...]
         
@@ -3264,7 +3263,6 @@ class MicePairGraphs:
             out_df.to_csv(csv_path, index=False)
         return out_df
 
-
     def holdEventsOverTime(self):
         '''
         Hold event definition: 
@@ -3550,9 +3548,10 @@ def getGroupRatPairsIneqComp():
     
     return [None, None, fe.getPosDatapath(grouped = True), fpsList, totFramesList, rat1names, rat2names, sessionIDs, dates, ratPairs]
 
-data = getGroupRatPairs()
-pairGraphs = MicePairGraphs(data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7], data[8], data[9])
-pairGraphs.gazeAroundLeverPressAcrossLearning(
+#data = getGroupRatPairs()
+#pairGraphs = MicePairGraphs(data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7], data[8], data[9])
+
+'''pairGraphs.gazeAroundLeverPressAcrossLearning(
     window_sec=5,
     sample_times_sec=(-3, 0, 3),     
     gaze_mode="lever",
@@ -3560,7 +3559,7 @@ pairGraphs.gazeAroundLeverPressAcrossLearning(
     min_sessions_per_pair=5,
     save_csv=False,
     csv_path="gaze_around_press_across_learning.csv"
-)
+)'''
 
 #pairGraphs.compareGazeVsMaxSuccess()
 #pairGraphs.holdEventsOverTime()
@@ -3628,10 +3627,11 @@ pairGraphs.boxplot_IPI_last_to_success()'''
 
 
 class multiFileGraphs:
-    def __init__(self, magFiles: List[str], levFiles: List[str], posFiles: List[str], fpsList: List[int], totFramesList: List[int], initialNanList: List[int], dates: List[int], sessions: List[int], ratPairs: List[int], fiberFiles = None, prefix = "", save = True):
+    def __init__(self, magFiles: List[str], levFiles: List[str], posFiles: List[str], fpsList: List[int], totFramesList: List[int], initialNanList: List[int], dates: List[int], sessions: List[int], ratPairs: List[int], fiberFiles = None, prefix = "", save = True, saveAsPDF = False):
         self.experiments = []
         self.prefix = prefix
         self.save = save
+        self.saveAsPDF = saveAsPDF
         self.NUM_BINS = 30 # Number of time bins for trial chunking
         self.labelSize = 17
         self.titleSize = 18
@@ -3680,6 +3680,68 @@ class multiFileGraphs:
             self.experiments.append(exp)
         
         print(f"Deleted {deleted_count} experiment(s) due to missing categories.")
+        
+    def _saveCurrentFigure(self, baseFileName):
+        if (not self.save):
+            return
+        ext = "pdf" if self.saveAsPDF else "png"
+        plt.savefig(f"{self.prefix}{baseFileName}.{ext}")
+    
+    def gazingInSuccessVsFailureTrials(self):
+        gaze_success = {'succ': [], 'fail': []}
+        
+        for exp_idx, exp in enumerate(self.experiments):
+            lev = exp.lev
+            pos = exp.pos
+            fps = exp.fps
+            
+            trial_starts = lev.returnTimeStartTrials()
+            trial_ends = lev.returnTimeEndTrials()
+            og_succ_trials = lev.returnSuccessTrials()
+            succ_trials = self._filterToLeverPressTrials(og_succ_trials, lev)
+            isGazing0 = pos.returnIsGazing(0)
+            isGazing1 = pos.returnIsGazing(1)
+            
+            max_trials = min(len(trial_starts), len(trial_ends), len(succ_trials))
+            
+            for trial_idx in range(max_trials):
+                t_begin = trial_starts[trial_idx]
+                t_end = trial_ends[trial_idx]
+                succ = succ_trials[trial_idx]
+                
+                if (t_begin == None or t_end == None or succ == None):
+                    continue
+                
+                if any(np.isnan(t) for t in [t_begin, t_end, succ]):
+                    print(f"[Exp {exp_idx}, Trial {trial_idx}] Skipped: NaN in timings (begin={t_begin}, end={t_end})")
+                    continue
+                
+                frameStart = int(t_begin * fps)
+                frameEnd = int(t_end * fps)
+                
+                trial_length = frameEnd - frameStart
+                if (trial_length <= 0):
+                    continue
+                
+                numGazing0 = np.sum(isGazing0[frameStart:frameEnd])
+                numGazing1 = np.sum(isGazing1[frameStart:frameEnd])
+                
+                gaze_percentage = (numGazing0 + numGazing1) / 2 / trial_length * 100
+                (gaze_success['succ'] if succ else gaze_success['fail']).append(gaze_percentage)
+        
+        labels = ['Unsuccessful', 'Successful']
+        data = [gaze_success['fail'], gaze_success['succ']]
+        means = [np.mean(d) if len(d) > 0 else 0 for d in data]
+        std_errs = [np.std(d) / np.sqrt(len(d)) if len(d) > 1 else 0 for d in data]
+        
+        plt.figure(figsize=(6, 5))
+        plt.bar(labels, means, yerr=std_errs, color=['red', 'green'], edgecolor='black', capsize=5)
+        plt.ylabel('% Gaze During Trial', fontsize=self.labelSize)
+        plt.title('Gazing in Success vs. Failure Trials', fontsize=self.titleSize)
+        plt.tight_layout()
+        self._saveCurrentFigure("Gaze_Success_Comparison")
+        plt.show()
+        plt.close()
       
     def _plot_scatter_curved(self, x_data, y_data, filename, title, x_label, y_label=None, color_data=None):
         """Plots a scatter plot with curved (exponential) or linear fit and R² value, optionally with color data."""
@@ -10346,7 +10408,7 @@ class multiFileGraphs:
         plt.plot(x, line, color='red', linestyle='--', label=f'Fit: y={slope:.2f}x+{intercept:.2f}')
         plt.xlabel('Average Gaze Percentage',fontsize=16)
         plt.ylabel('Success Percentage',fontsize=16)
-        plt.title('Gaze Behavior vs. Success',fontsize=17)
+        plt.title('Gaze % vs. Success %',fontsize=17)
         plt.text(0.95, 0.95, f'$R^2$ = {r_value**2:.3f}', transform=plt.gca().transAxes,
          fontsize=15, verticalalignment='top', horizontalalignment='right')
         plt.xticks(fontsize = 15)
@@ -10354,8 +10416,8 @@ class multiFileGraphs:
         #plt.legend()
         plt.grid(True)
         plt.tight_layout()
+        self._saveCurrentFigure(f"gazePercentage_vs_Success_minDist{minDist}")
         plt.show()
-        plt.savefig(f"{self.prefix}gazePercentage_vs_Success_minDist{minDist}.png")
         plt.close()
         
         df = pd.DataFrame(metadata)
@@ -11477,8 +11539,8 @@ class multiFileGraphs:
 
 
         plot_configs = [
-            (p_to_o_data, session_means_p_to_o, "Presser_to_Partner", "Gaze: Pressing Rat → Partner"),
-            (o_to_p_data, session_means_o_to_p, "Partner_to_Presser", "Gaze: Partner → Pressing Rat")
+            (p_to_o_data, session_means_p_to_o, "Presser_to_Partner", "Gaze: Pressing Rat --> Partner"),
+            (o_to_p_data, session_means_o_to_p, "Partner_to_Presser", "Gaze: Partner --> Pressing Rat")
         ]
         
         for all_data, sess_means, filename, title in plot_configs:
@@ -11536,7 +11598,7 @@ class multiFileGraphs:
             plt.legend()
             plt.grid(True, alpha=0.2)
             plt.tight_layout()
-            plt.savefig(f"gaze_{filename}.png")
+            self._saveCurrentFigure(f"gaze_{filename}")
             plt.show()
     
         print("Gaze analysis complete. Two figures saved.")
@@ -11916,6 +11978,11 @@ initialNanList = [0.3]
 #experiment.gazingAtLeverBeforeAfterLeverPress()
 #experiment.successAfterPreviousGaze()
 #experiment.gazingBeforeAfterLeverPress()
+print("Start MultiFileGraphs Regular")
+experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, dates, sessions, ratPairs, prefix = "GazeFigures_", save = True, saveAsPDF = True)
+experiment.gazingInSuccessVsFailureTrials()
+experiment.percentGazingvsSuccess(minDist=150)
+experiment.gazingBeforeAfterLeverPress(window_sec=5)
 
 #experiment.switchingHistogram()
 
@@ -11976,6 +12043,4 @@ experiment.expandedSynchronizationStrategyGraphs()
 '''
 
 # ---------------------------------------------------------------------------------------------------------
-
-
 
