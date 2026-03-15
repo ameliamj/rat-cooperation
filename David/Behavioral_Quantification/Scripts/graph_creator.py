@@ -5147,7 +5147,7 @@ class multiFileGraphs:
                      ha='center', va='bottom', fontsize=10)
     
         plt.tight_layout()
-        plt.savefig(f"{self.prefix}compareAverageVelocityGazevsNotGazing.png")
+        self._saveCurrentFigure("compareAverageVelocityGazevsNotGazing")
         plt.show()
             
     def makeHeatmapLocation(self):
@@ -11980,9 +11980,10 @@ initialNanList = [0.3]
 #experiment.gazingBeforeAfterLeverPress()
 print("Start MultiFileGraphs Regular")
 experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, dates, sessions, ratPairs, prefix = "GazeFigures_", save = True, saveAsPDF = True)
+experiment.compareAverageVelocityGazevsNot()
 #experiment.gazingInSuccessVsFailureTrials()
 #experiment.percentGazingvsSuccess(minDist=150)
-experiment.gazingBeforeAfterLeverPress(window_sec=5)
+#experiment.gazingBeforeAfterLeverPress(window_sec=5)
 
 #experiment.switchingHistogram()
 
@@ -12043,4 +12044,3 @@ experiment.expandedSynchronizationStrategyGraphs()
 '''
 
 # ---------------------------------------------------------------------------------------------------------
-
