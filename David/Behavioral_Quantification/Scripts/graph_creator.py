@@ -11603,6 +11603,88 @@ class multiFileGraphs:
     
         print("Gaze analysis complete. Two figures saved.")
 
+
+    def gazingSecondPresserAlignedToFirstPress(self, window_sec = 5):
+        """
+        Second-presser's gaze at the lever aligned to the FIRST press,
+        using ONLY successful trials (first press of successful trials).
+        """
+        print("Start Second-Presser Gaze (successful trials only), aligned to first press")
+
+        PRE = 30 * window_sec
+        POST = 30 * window_sec
+        TOTAL = PRE + POST
+
+        all_windows = []
+
+        for exp in self.experiments:
+            lev = exp.lev.data.dropna(subset=['RatID', 'AbsTime']).copy()
+            lev['RatID'] = pd.to_numeric(lev['RatID'], errors='coerce')
+            lev = lev.dropna(subset=['RatID'])
+
+            pos = exp.pos
+            fps = exp.fps
+
+            gaze_data = {
+                0: np.array(pos.returnIsLookingAtObjects(0, useMinDist=False)),
+                1: np.array(pos.returnIsLookingAtObjects(1, useMinDist=False))
+            }
+
+            # first press of successful trials (one anchor per successful trial)
+            succ_trials = lev[lev['coopSucc'] == 1]
+            first_succ_presses = (
+                succ_trials
+                .sort_values('AbsTime')
+                .groupby('TrialNum')
+                .head(1)
+            )
+
+            for _, row in first_succ_presses.iterrows():
+                trial_num = row['TrialNum']
+                # find presses in this trial sorted by time
+                presses_in_trial = lev[lev['TrialNum'] == trial_num].sort_values('AbsTime')
+                # find a press that occurs after the anchor (second press)
+                presses_after = presses_in_trial[presses_in_trial['AbsTime'] > row['AbsTime']]
+                if len(presses_after) == 0:
+                    continue
+                second_row = presses_after.iloc[0]
+                second_presser_id = int(second_row['RatID'])
+
+                center_frame = int(row['AbsTime'] * fps)
+                start, end = center_frame - PRE, center_frame + POST
+                if start < 0 or end > len(gaze_data[0]):
+                    continue
+
+                window = gaze_data[second_presser_id][start:end]
+                if len(window) != TOTAL:
+                    continue
+
+                all_windows.append(window)
+
+        if len(all_windows) == 0:
+            print("No valid windows found for second presser aligned to first press.")
+            return
+
+        data_arr = np.array(all_windows)  # shape (n_trials, time)
+        grand_mean = np.mean(data_arr, axis=0)
+        sem = np.std(data_arr, axis=0, ddof=1) / np.sqrt(data_arr.shape[0])
+
+        time_axis = np.linspace(-PRE / 30, POST / 30, TOTAL)
+
+        plt.figure(figsize=(10, 6))
+        plt.fill_between(time_axis, grand_mean - sem, grand_mean + sem, color='teal', alpha=0.25)
+        plt.plot(time_axis, grand_mean, color='teal', linewidth=3, label='Second-Presser (Mean ± SEM)')
+        plt.axvline(0, color='black', linestyle='--', alpha=0.5)
+        plt.title("Second-Presser Gaze at Lever (Successful Trials) — Aligned to First Press")
+        plt.xlabel("Time from First Press (s)")
+        plt.ylabel("Gaze at Lever Frequency")
+        plt.legend()
+        plt.grid(True, alpha=0.2)
+        plt.tight_layout()
+        plt.savefig("gazeSecondPresserAlignedToFirstPress.png")
+        plt.show()
+        print("Second-presser gaze analysis complete. Figure saved.")
+
     def successAfterPreviousGaze(self):
         """
         Compares success rates of trials depending on whether in the previous trial
@@ -11980,7 +12062,7 @@ initialNanList = [0.3]
 #experiment.gazingBeforeAfterLeverPress()
 print("Start MultiFileGraphs Regular")
 experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, dates, sessions, ratPairs, prefix = "GazeFigures_", save = True, saveAsPDF = True)
-experiment.compareAverageVelocityGazevsNot()
+experiment.gazingSecondPresserAlignedToFirstPress()
 #experiment.gazingInSuccessVsFailureTrials()
 #experiment.percentGazingvsSuccess(minDist=150)
 #experiment.gazingBeforeAfterLeverPress(window_sec=5)
