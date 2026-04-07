@@ -11,7 +11,7 @@ import numpy as np
 import pandas as pd
 import math
 import networkx as nx
-#import os
+import os
 
 from experiment_class import singleExperiment
 from collections import defaultdict
@@ -3656,6 +3656,13 @@ class multiFileGraphs:
         
         
         for i in range(len(magFiles)):
+            missing_files = [f for f in (magFiles[i], levFiles[i], posFiles[i]) if not os.path.isfile(f)]
+            if missing_files:
+                deleted_count += 1
+                print(f"Skipping experiment {i} due to missing file(s):")
+                for mf in missing_files:
+                    print(f"  Missing: {mf}")
+                continue
             if (fiberFiles is not None and fiberFiles[i] is not None):
                 exp = singleExperiment(magFiles[i], levFiles[i], posFiles[i], fpsList[i], totFramesList[i], initialNanList[i], fp_files=fiberFiles[i])
             else:

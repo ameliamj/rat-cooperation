@@ -308,7 +308,6 @@ class posLoader:
         return result
     
     
-    
     #Gazing at Lev or Mag Code
     def _gaze_intersects_rect(self, gaze_origin, gaze_vector, rectBL, rectTR, useMinDist=True, minDist=150):
         """
@@ -1559,18 +1558,41 @@ h5_file = "/Users/david/Downloads/041824_Cam3_TrNum5_Coop_KL007Y-KL007G.predicti
 lev_file = "/Users/david/Downloads/041824_Cam3_TrNum5_Coop_KL007Y-KL007G_lever (1).csv"
 video_file = "/Users/david/Downloads/041824_Cam3_TrNum5_Coop_KL007Y-KL007G.mp4"
 
-'''
-loader = posLoader(h5_file)
-arr = loader.returnBodyArea(1)
-print("arr: ", arr)
-print("max(arr): ", max(arr))
-print("averageSize = ", np.mean(arr))
+
+'''loader = posLoader(h5_file)
+arr = loader.returnIsGazing(0)
+
+# Check whether gaze and interaction are mutually exclusive
+for mouseID in (0, 1):
+    gaze = np.array(loader.returnIsGazing(mouseID), dtype=bool)
+    interact = np.array(loader.returnIsInteracting(), dtype=bool)
+    if len(gaze) != len(interact):
+        print(f"Rat {mouseID}: length mismatch (gaze={len(gaze)}, interact={len(interact)})")
+        continue
+    overlap = gaze & interact
+    n_overlap = int(np.sum(overlap))
+    print(f"Rat {mouseID}: gaze frames={int(gaze.sum())}, interact frames={int(interact.sum())}, "
+          f"overlap frames={n_overlap} -> mutually exclusive: {n_overlap == 0}")
+    if n_overlap > 0:
+        print(f"  first overlapping frames: {np.where(overlap)[0][:20]}")
+
+with open("gazing_output.txt", "w") as f:
+    for val in arr:
+        f.write(f"{val}\n")'''
+
+#print ("avgGazeLength: ", loader.returnAverageGazeLength(0))
+#print ("avgGazeLength: ", loader.returnAverageGazeLength(1))
+
+#arr = loader.returnBodyArea(1)
+#print("arr: ", arr)
+#print("max(arr): ", max(arr))
+#print("averageSize = ", np.mean(arr))
 #print("percentValid = ", percent)
 
 #loader.plot_rat_heatmap()
-lev = levLoader(lev_file)
-mag = magLoader(mag_file)
-'''
+#lev = levLoader(lev_file)
+#mag = magLoader(mag_file)
+
 
 #plot_single_frame(video_file, loader, frame_idx=12512, mouseID=0)
 
