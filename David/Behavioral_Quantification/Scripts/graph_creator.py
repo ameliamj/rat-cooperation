@@ -3686,7 +3686,64 @@ class multiFileGraphs:
             return
         ext = "pdf" if self.saveAsPDF else "png"
         plt.savefig(f"{self.prefix}{baseFileName}.{ext}")
-    
+
+    def checkGazeInteractionOverlap(self):
+        """
+        For every session, check how many frames overlap between
+        returnIsGazing and returnIsInteracting (for each rat).
+        Prints per-session counts and a summary across all sessions.
+        """
+        total_overlap_r0 = 0
+        total_overlap_r1 = 0
+        total_gaze_r0 = 0
+        total_gaze_r1 = 0
+        total_interact = 0
+        sessions_with_overlap = 0
+        per_session = []
+
+        for exp_idx, exp in enumerate(self.experiments):
+            pos = exp.pos
+            try:
+                gaze0 = np.array(pos.returnIsGazing(0), dtype=bool)
+                gaze1 = np.array(pos.returnIsGazing(1), dtype=bool)
+                interact = np.array(pos.returnIsInteracting(), dtype=bool)
+            except Exception as e:
+                print(f"[Exp {exp_idx}] Error computing gaze/interact: {e}")
+                continue
+
+            if len(gaze0) != len(interact) or len(gaze1) != len(interact):
+                print(f"[Exp {exp_idx}] Length mismatch: gaze0={len(gaze0)}, "
+                      f"gaze1={len(gaze1)}, interact={len(interact)}")
+                continue
+
+            overlap0 = int(np.sum(gaze0 & interact))
+            overlap1 = int(np.sum(gaze1 & interact))
+            g0 = int(gaze0.sum())
+            g1 = int(gaze1.sum())
+            ic = int(interact.sum())
+
+            total_overlap_r0 += overlap0
+            total_overlap_r1 += overlap1
+            total_gaze_r0 += g0
+            total_gaze_r1 += g1
+            total_interact += ic
+            if overlap0 > 0 or overlap1 > 0:
+                sessions_with_overlap += 1
+
+            session_label = getattr(exp, 'sessionID', exp_idx)
+            per_session.append((session_label, overlap0, overlap1, g0, g1, ic))
+            print(f"[Session {session_label}] gaze0={g0}, gaze1={g1}, interact={ic}, "
+                  f"overlap_r0={overlap0}, overlap_r1={overlap1}")
+
+        n = len(self.experiments)
+        print("\n===== Gaze/Interaction Overlap Summary =====")
+        print(f"Sessions checked: {n}")
+        print(f"Sessions with any overlap: {sessions_with_overlap}")
+        print(f"Total overlap frames (rat 0): {total_overlap_r0} / {total_gaze_r0} gaze frames")
+        print(f"Total overlap frames (rat 1): {total_overlap_r1} / {total_gaze_r1} gaze frames")
+        print(f"Total interaction frames: {total_interact}")
+        return per_session
+
     def gazingInSuccessVsFailureTrials(self):
         gaze_success = {'succ': [], 'fail': []}
         
@@ -12062,7 +12119,8 @@ initialNanList = [0.3]
 #experiment.gazingBeforeAfterLeverPress()
 print("Start MultiFileGraphs Regular")
 experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, dates, sessions, ratPairs, prefix = "GazeFigures_", save = True, saveAsPDF = True)
-experiment.gazingSecondPresserAlignedToFirstPress()
+experiment.checkGazeInteractionOverlap()
+#experiment.gazingSecondPresserAlignedToFirstPress()
 #experiment.gazingInSuccessVsFailureTrials()
 #experiment.percentGazingvsSuccess(minDist=150)
 #experiment.gazingBeforeAfterLeverPress(window_sec=5)
