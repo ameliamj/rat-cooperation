@@ -3663,6 +3663,7 @@ class multiFileGraphs:
                 for mf in missing_files:
                     print(f"  Missing: {mf}")
                 continue
+            print(f"[multiFileGraphs] loading pos file: {posFiles[i]}")
             if (fiberFiles is not None and fiberFiles[i] is not None):
                 exp = singleExperiment(magFiles[i], levFiles[i], posFiles[i], fpsList[i], totFramesList[i], initialNanList[i], fp_files=fiberFiles[i])
             else:
