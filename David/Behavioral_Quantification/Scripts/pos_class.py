@@ -760,36 +760,42 @@ class posLoader:
         # Return the minimum of the two
         return min(dist1, dist2)
     
-    def returnInteractionDistance(self):        
+    def returnInteractionDistance(self):
         # Assumes self.data is shape: (2, 2, 5, num_frames)
         num_frames = self.data.shape[3]
         distances = []
-    
+
         for frame in range(num_frames):
-            rat_id = 0
-            other_id = 1
-            
-            # Get (x, y) position of nose of rat 0 at this frame
-            nose0 = self.data[rat_id, :, self.NOSE_INDEX, frame]
-    
-            # Get all body parts of rat 1 at this frame
-            hb1 = self.data[other_id, :, self.HB_INDEX, frame]
-            nose1 = self.data[other_id, :, self.NOSE_INDEX, frame]
-            tb1 = self.data[other_id, :, self.TB_INDEX, frame]
-            earL1 = self.data[other_id, :, self.earL_INDEX, frame]
-            earR1 = self.data[other_id, :, self.earR_INDEX, frame]
-    
-            # Stack all body parts of rat 1
-            body_parts_other = np.stack([hb1, nose1, tb1, earL1, earR1], axis=0)
-    
-            # Compute Euclidean distances from nose0 to each of rat 1's body parts
-            dists = np.linalg.norm(body_parts_other - nose0, axis=1)
-    
-            # Get minimum distance
-            min_dist = np.min(dists)
-                
-            distances.append(min_dist)
-    
+            # Get nose positions for both rats
+            nose0 = self.data[0, :, self.NOSE_INDEX, frame]
+            nose1 = self.data[1, :, self.NOSE_INDEX, frame]
+
+            # Get all body parts of rat 1
+            body_parts_1 = np.stack([
+                self.data[1, :, self.HB_INDEX, frame],
+                self.data[1, :, self.NOSE_INDEX, frame],
+                self.data[1, :, self.TB_INDEX, frame],
+                self.data[1, :, self.earL_INDEX, frame],
+                self.data[1, :, self.earR_INDEX, frame]
+            ], axis=0)
+
+            # Get all body parts of rat 0
+            body_parts_0 = np.stack([
+                self.data[0, :, self.HB_INDEX, frame],
+                self.data[0, :, self.NOSE_INDEX, frame],
+                self.data[0, :, self.TB_INDEX, frame],
+                self.data[0, :, self.earL_INDEX, frame],
+                self.data[0, :, self.earR_INDEX, frame]
+            ], axis=0)
+
+            # Min distance from rat 0's nose to any body part of rat 1
+            min_dist_0_to_1 = np.min(np.linalg.norm(body_parts_1 - nose0, axis=1))
+
+            # Min distance from rat 1's nose to any body part of rat 0
+            min_dist_1_to_0 = np.min(np.linalg.norm(body_parts_0 - nose1, axis=1))
+
+            distances.append(min(min_dist_0_to_1, min_dist_1_to_0))
+
         return distances
     
     def distanceFromWall(self, ratID, t):
