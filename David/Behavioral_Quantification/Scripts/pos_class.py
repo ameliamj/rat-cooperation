@@ -236,34 +236,60 @@ class posLoader:
             return still_mask
         else:
             '''
-            Alternate definition: gaze intersects body for minFramesStill consecutive frames
+            Alternate definition: frame t is marked True if it belongs to a run of
+            at least minFramesStill consecutive frames where gaze intersects body
+            (looks in both directions, not just backward).
             '''
             num_frames = self.data.shape[-1]
-            #print("num_frames (isStill): ", num_frames)
             still_mask = np.zeros(num_frames, dtype=bool)
-    
+
             other_mouse = 1 - mouseID
-            for t in range(self.minFramesStill, num_frames):
-                #print("t: ", t)
-                intersected_all = True
-    
-                for tau in range(t - self.minFramesStill, t):
-                    # Get the gaze origin and direction
-                    gaze_origin = self.data[mouseID, :, self.HB_INDEX, tau]       # shape (2,)
-                    gaze_vector = self.returnGazeVector(mouseID)[:, tau]          # shape (2,)
-                    
-                    # Get the target body (2, 5) for the other mouse at frame tau
-                    target_body = self.data[other_mouse, :, :, tau]               # shape (2, 5)
-    
-                    # Check for intersection
-                    if not self._gaze_intersects_body(gaze_origin, gaze_vector, target_body, minDist=minDist):
-                        intersected_all = False
-                        break
-    
-                if intersected_all:
-                    still_mask[t] = True
-    
+            gaze_vector = self.returnGazeVector(mouseID)
+
+            # Pre-compute per-frame gaze intersection
+            intersects = np.zeros(num_frames, dtype=bool)
+            for t in range(num_frames):
+                gaze_origin = self.data[mouseID, :, self.HB_INDEX, t]
+                gaze_vec = gaze_vector[:, t]
+                target_body = self.data[other_mouse, :, :, t]
+                intersects[t] = self._gaze_intersects_body(gaze_origin, gaze_vec, target_body, minDist=minDist)
+
+            # Mark frames that belong to a consecutive run of length >= minFramesStill
+            run_start = 0
+            for t in range(num_frames + 1):
+                if t < num_frames and intersects[t]:
+                    continue
+                # End of a run: frames [run_start, t)
+                if t - run_start >= self.minFramesStill:
+                    still_mask[run_start:t] = True
+                run_start = t + 1
+
             return still_mask
+
+            # OLD DEFINITION (backward-only):
+            # '''
+            # Alternate definition: gaze intersects body for minFramesStill consecutive frames
+            # '''
+            # num_frames = self.data.shape[-1]
+            # still_mask = np.zeros(num_frames, dtype=bool)
+            #
+            # other_mouse = 1 - mouseID
+            # for t in range(self.minFramesStill, num_frames):
+            #     intersected_all = True
+            #
+            #     for tau in range(t - self.minFramesStill, t):
+            #         gaze_origin = self.data[mouseID, :, self.HB_INDEX, tau]
+            #         gaze_vector = self.returnGazeVector(mouseID)[:, tau]
+            #         target_body = self.data[other_mouse, :, :, tau]
+            #
+            #         if not self._gaze_intersects_body(gaze_origin, gaze_vector, target_body, minDist=minDist):
+            #             intersected_all = False
+            #             break
+            #
+            #     if intersected_all:
+            #         still_mask[t] = True
+            #
+            # return still_mask
     
     
     def returnIsGazing(self, mouseID, test = False, alternateDef = True, minDist=150):

@@ -3655,17 +3655,7 @@ class multiFileGraphs:
             raise ValueError("Diff Length of fiberFiles")
         
         
-        SKIP_POS_FILES = {
-            "/gpfs/radev/pi/saxena/aj764/PairedTestingSessions/051024_EB023B-021R-019Y_TimeOut_CNO/Tracking/h5_corrected/051024_Cam1_TrNum7_Coop_EB023B-EB021R.predictions.h5",
-            "/gpfs/radev/pi/saxena/aj764/PairedTestingSessions/053124_EB027Y-029R-023B_TimeOut_CNO/Tracking/h5_corrected/053124_Cam1_TrNum12_Coop_EB027Y-EB003B.predictions.h5",
-        }
-
         for i in range(len(magFiles)):
-            if posFiles[i] in SKIP_POS_FILES:
-                deleted_count += 1
-                print(f"Skipping corrupted h5 file: {posFiles[i]}")
-                continue
-
             missing_files = [f for f in (magFiles[i], levFiles[i], posFiles[i]) if not os.path.isfile(f)]
             if missing_files:
                 deleted_count += 1
@@ -12136,8 +12126,8 @@ initialNanList = [0.3]
 #experiment.successAfterPreviousGaze()
 #experiment.gazingBeforeAfterLeverPress()
 print("Start MultiFileGraphs Regular")
-#experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, dates, sessions, ratPairs, prefix = "GazeFigures_", save = True, saveAsPDF = True)
-#experiment.checkGazeInteractionOverlap()
+experiment = multiFileGraphs(mag_files, lev_files, pos_files, fpsList, totFramesList, initialNanList, dates, sessions, ratPairs, prefix = "GazeFigures_", save = True, saveAsPDF = True)
+experiment.checkGazeInteractionOverlap()
 #experiment.gazingSecondPresserAlignedToFirstPress()
 #experiment.gazingInSuccessVsFailureTrials()
 #experiment.percentGazingvsSuccess(minDist=150)
