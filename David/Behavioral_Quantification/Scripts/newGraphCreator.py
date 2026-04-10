@@ -1780,7 +1780,7 @@ interactions = False  #True for interactions, false for gaze
 dataObj = data_comp
 myLabel = "comp" #coop, comp, ineq, or noncoop or whatever you want to call it
 
-dataObj.allInteractingData(csv_path=f"{myLabel}_allGazingData.csv")
+dataObj.allGazingData(csv_path=f"{myLabel}_actuallyAllGazingData.csv")
 #dataObj.allInteractingData(csv_path=f"{myLabel}_allInteractingAndOtherData.csv")
 
 
