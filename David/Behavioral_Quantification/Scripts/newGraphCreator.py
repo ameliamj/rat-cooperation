@@ -1795,8 +1795,8 @@ interactions = False  #True for interactions, false for gaze
 dataObj = data_ineq
 myLabel = "ineq" #coop, comp, ineq, or noncoop or whatever you want to call it
 
-dataObj.allGazingData(csv_path=f"{myLabel}_allGazingData.csv")
-#dataObj.allInteractingData(csv_path=f"{myLabel}_allInteractingAndOtherData.csv")
+#dataObj.allGazingData(csv_path=f"{myLabel}_allGazingData.csv")
+dataObj.allInteractingData(csv_path=f"{myLabel}_allInteractingAndOtherData.csv")
 
 
 '''
