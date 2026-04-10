@@ -1847,7 +1847,8 @@ def save_session_level_gaze_csv(
     df = pd.DataFrame(rows)
     df.to_csv(csv_path, index=False)
 
-save_session_level_gaze_csv(
+
+'''save_session_level_gaze_csv(
     dataObj,
     socialGazing,
     levGazing, magGazing, socialGazingAtLev_list, socialGazingAtMag_list, socialGazingAtCenter_list, avgLengthSocialGaze, isKL,
@@ -1857,7 +1858,7 @@ save_session_level_gaze_csv(
 
 print("sessions: ", dataObj.sessions)
 print("familiarity: ", dataObj.familarity)
-print("transparency: ", dataObj.transparency)
+print("transparency: ", dataObj.transparency)'''
 
 
 '''
@@ -1868,6 +1869,7 @@ save_session_level_gaze_csv(
     label="comp",
     csv_path=f"{prefix}_sessions_comp.csv"
 )
+'''
 
 save_session_level_gaze_csv(
     data_ineq,
@@ -1875,7 +1877,7 @@ save_session_level_gaze_csv(
     isKL_ineq,
     label="ineq",
     csv_path=f"{prefix}_sessions_ineq.csv"
-)'''
+)
 
 
 ############################################################
