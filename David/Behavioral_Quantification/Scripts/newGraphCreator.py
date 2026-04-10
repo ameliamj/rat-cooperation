@@ -1792,8 +1792,8 @@ interactions = False  #True for interactions, false for gaze
 #gaze_ineq, isKL_ineq = data_ineq.gazingData(sortByKL=True, save_csv=False, getInteractions=interactions)
 
 
-dataObj = data
-myLabel = "coop" #coop, comp, ineq, or noncoop or whatever you want to call it
+dataObj = data_comp
+myLabel = "comp" #coop, comp, ineq, or noncoop or whatever you want to call it
 
 #dataObj.allGazingData(csv_path=f"{myLabel}_allGazingData.csv")
 #dataObj.allInteractingData(csv_path=f"{myLabel}_allInteractingAndOtherData.csv")
@@ -1848,7 +1848,7 @@ def save_session_level_gaze_csv(
     df.to_csv(csv_path, index=False)
 
 
-'''save_session_level_gaze_csv(
+save_session_level_gaze_csv(
     dataObj,
     socialGazing,
     levGazing, magGazing, socialGazingAtLev_list, socialGazingAtMag_list, socialGazingAtCenter_list, avgLengthSocialGaze, isKL,
@@ -1858,7 +1858,7 @@ def save_session_level_gaze_csv(
 
 print("sessions: ", dataObj.sessions)
 print("familiarity: ", dataObj.familarity)
-print("transparency: ", dataObj.transparency)'''
+print("transparency: ", dataObj.transparency)
 
 
 '''
@@ -1871,13 +1871,13 @@ save_session_level_gaze_csv(
 )
 '''
 
-save_session_level_gaze_csv(
+'''save_session_level_gaze_csv(
     data_ineq,
     gaze_ineq,
     isKL_ineq,
     label="ineq",
     csv_path=f"{prefix}_sessions_ineq.csv"
-)
+)'''
 
 
 ############################################################
