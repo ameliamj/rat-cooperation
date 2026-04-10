@@ -77,14 +77,22 @@ class dataAnalysisRegular:
             
             
             for i in range(len(magFiles)):
-                if (fiberFiles is not None and fiberFiles[i] is not None):
-                    exp = singleExperiment(magFiles[i], levFiles[i], posFiles[i], fpsList[i], totFramesList[i], initialNanList[i], fp_files=fiberFiles[i])
-                else:
-                    exp = singleExperiment(magFiles[i], levFiles[i], posFiles[i], fpsList[i], totFramesList[i], initialNanList[i], date = dates[i], sessionID = sessions[i], ratPair=ratPairs[i], trainingPartner=familarity[i], transparency=transparency[i], videoType=sessionType[i], nanPercentage = nanPercentages[i])
+                try:
+                    if (fiberFiles is not None and fiberFiles[i] is not None):
+                        exp = singleExperiment(magFiles[i], levFiles[i], posFiles[i], fpsList[i], totFramesList[i], initialNanList[i], fp_files=fiberFiles[i])
+                    else:
+                        exp = singleExperiment(magFiles[i], levFiles[i], posFiles[i], fpsList[i], totFramesList[i], initialNanList[i], date = dates[i], sessionID = sessions[i], ratPair=ratPairs[i], trainingPartner=familarity[i], transparency=transparency[i], videoType=sessionType[i], nanPercentage = nanPercentages[i])
+                except Exception as e:
+                    deleted_count += 1
+                    print(f"Skipping experiment {i} due to error loading files:")
+                    print(f"  pos: {posFiles[i]}")
+                    print(f"  Error: {e}")
+                    continue
+
                 mag_missing = [col for col in exp.mag.categories if col not in exp.mag.data.columns]
                 lev_missing = [col for col in exp.lev.categories if col not in exp.lev.data.columns]
-                
-                
+
+
                 if mag_missing or lev_missing:
                     deleted_count += 1
                     print("Skipping experiment due to missing categories:")
@@ -95,7 +103,7 @@ class dataAnalysisRegular:
                         print(f"  LevFile missing: {lev_missing}")
                         print(f"  Lev File: {levFiles[i]}")
                     continue
-                
+
                 self.experiments.append(exp)
             
             print(f"Deleted {deleted_count} experiment(s) due to missing categories.")
@@ -104,7 +112,14 @@ class dataAnalysisRegular:
             if ((len(posFiles) != len(fpsList)) or (len(posFiles) != len(totFramesList)) or len(posFiles) != len(initialNanList)):
                 raise ValueError("Different number of posFiles, fpsList, totFramesList, or initialNanList values")
             for i in range(len(posFiles)):
-                exp = singleExperiment(None, None, posFiles[i], fpsList[i], totFramesList[i], initialNanList[i], date = dates[i], sessionID = sessions[i], ratPair=ratPairs[i], trainingPartner=familarity[i], transparency=transparency[i], videoType=sessionType[i], nanPercentage = nanPercentages[i])
+                try:
+                    exp = singleExperiment(None, None, posFiles[i], fpsList[i], totFramesList[i], initialNanList[i], date = dates[i], sessionID = sessions[i], ratPair=ratPairs[i], trainingPartner=familarity[i], transparency=transparency[i], videoType=sessionType[i], nanPercentage = nanPercentages[i])
+                except Exception as e:
+                    deleted_count += 1
+                    print(f"Skipping experiment {i} due to error loading files:")
+                    print(f"  pos: {posFiles[i]}")
+                    print(f"  Error: {e}")
+                    continue
                 self.experiments.append(exp)
             
     def restrict_to_first_n_sessions(self, n=10):
@@ -1780,7 +1795,7 @@ interactions = False  #True for interactions, false for gaze
 dataObj = data_comp
 myLabel = "comp" #coop, comp, ineq, or noncoop or whatever you want to call it
 
-dataObj.allGazingData(csv_path=f"{myLabel}_actuallyAllGazingData.csv")
+dataObj.allGazingData(csv_path=f"{myLabel}_allGazingData.csv")
 #dataObj.allInteractingData(csv_path=f"{myLabel}_allInteractingAndOtherData.csv")
 
 
