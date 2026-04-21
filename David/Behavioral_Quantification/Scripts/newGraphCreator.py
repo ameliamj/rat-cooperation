@@ -1853,13 +1853,12 @@ save_session_level_gaze_csv(
     socialGazing,
     levGazing, magGazing, socialGazingAtLev_list, socialGazingAtMag_list, socialGazingAtCenter_list, avgLengthSocialGaze, isKL,
     label=myLabel,
-    csv_path=f"{myLabel}_sessions_allGazeData2.csv"
+    csv_path=f"{myLabel}_sessions_allGazeData_uncorrectedData.csv"
 )
 
 print("sessions: ", dataObj.sessions)
 print("familiarity: ", dataObj.familarity)
 print("transparency: ", dataObj.transparency)
-
 
 '''
 save_session_level_gaze_csv(
@@ -2381,8 +2380,8 @@ def summarize_coop_sessions_by_ratpair_and_threshold(
     return df
 
 # Summarize ALL cooperative sessions by rat pair and threshold
-threshold_summary_df = summarize_coop_sessions_by_ratpair_and_threshold(
+'''threshold_summary_df = summarize_coop_sessions_by_ratpair_and_threshold(
     data,
     csv_path="coop_sessions_by_ratpair_threshold.csv", #"coop_sessions_by_ratpair_threshold.csv"
     only_coop=True
-)
+)'''

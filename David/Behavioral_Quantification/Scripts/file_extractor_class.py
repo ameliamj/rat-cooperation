@@ -672,7 +672,7 @@ class fileExtractor:
             folder = "PairedTestingSessions" if row["test/train"] == "test" else "Training_COOPERATION"
             #zero = "" if row["test/train"] == "test" else "0" 
             zero = ""
-            return f"{base_path}/{folder}/{zero}{row['session']}/Tracking/h5_corrected/{row['vid']}.predictions.h5" if pd.isna(row["vid"]) == False and pd.isna(row["session"]) == False else None
+            return f"{base_path}/{folder}/{zero}{row['session']}/Tracking/h5_uncorrected/{row['vid']}.predictions.h5" if pd.isna(row["vid"]) == False and pd.isna(row["session"]) == False else None
         if not grouped:
             return [
                 construct_path(row)
