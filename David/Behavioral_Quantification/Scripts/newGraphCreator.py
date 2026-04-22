@@ -1796,11 +1796,11 @@ dataObj = data_ineq
 myLabel = "ineq" #coop, comp, ineq, or noncoop or whatever you want to call it
 
 #dataObj.allGazingData(csv_path=f"{myLabel}_allGazingData.csv")
-dataObj.allInteractingData(csv_path=f"{myLabel}_allInteractingAndOtherData.csv")
+dataObj.allInteractingData(csv_path=f"{myLabel}_allInteractingAndOtherData_uncorrectedData.csv")
 
 
 
-socialGazing, levGazing, magGazing, socialGazingAtLev_list, socialGazingAtMag_list, socialGazingAtCenter_list, avgLengthSocialGaze, isKL = dataObj.allGazingData()
+#socialGazing, levGazing, magGazing, socialGazingAtLev_list, socialGazingAtMag_list, socialGazingAtCenter_list, avgLengthSocialGaze, isKL = dataObj.allGazingData()
 
 
 def save_session_level_gaze_csv(
