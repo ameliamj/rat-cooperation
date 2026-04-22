@@ -272,23 +272,23 @@ class posLoader:
             # '''
             # num_frames = self.data.shape[-1]
             # still_mask = np.zeros(num_frames, dtype=bool)
-            #
+            
             # other_mouse = 1 - mouseID
             # for t in range(self.minFramesStill, num_frames):
             #     intersected_all = True
-            #
+            
             #     for tau in range(t - self.minFramesStill, t):
             #         gaze_origin = self.data[mouseID, :, self.HB_INDEX, tau]
             #         gaze_vector = self.returnGazeVector(mouseID)[:, tau]
             #         target_body = self.data[other_mouse, :, :, tau]
-            #
+            
             #         if not self._gaze_intersects_body(gaze_origin, gaze_vector, target_body, minDist=minDist):
             #             intersected_all = False
             #             break
-            #
+            
             #     if intersected_all:
             #         still_mask[t] = True
-            #
+            
             # return still_mask
     
     
@@ -408,15 +408,21 @@ class posLoader:
             if self._gaze_intersects_rect(gorigin, gvec, rects[1][0], rects[1][1], useMinDist):
                 bot_hits[t] = True
     
-        # Enforce self.minFramesStill consecutive hits
-        res1 = np.zeros(num_frames, dtype=bool)
-        res2 = np.zeros(num_frames, dtype=bool)
-    
-        for t in range(self.minFramesStill, num_frames):
-            if np.all(top_hits[t - self.minFramesStill:t]):
-                res1[t] = True
-            if np.all(bot_hits[t - self.minFramesStill:t]):
-                res2[t] = True
+        # Enforce self.minFramesStill consecutive hits (bidirectional runs)
+        # Mark all frames in any run of consecutive hits >= minFramesStill
+        def mark_runs(hits):
+            result = np.zeros(len(hits), dtype=bool)
+            run_start = 0
+            for t in range(len(hits) + 1):
+                if t < len(hits) and hits[t]:
+                    continue
+                if t - run_start >= self.minFramesStill:
+                    result[run_start:t] = True
+                run_start = t + 1
+            return result
+
+        res1 = mark_runs(top_hits)
+        res2 = mark_runs(bot_hits)
         
         if (returnToporBottom):
             res = np.logical_or(res1, res2)
