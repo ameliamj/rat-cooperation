@@ -243,7 +243,8 @@ class BTimeSeries:
 
     def save(self, output: Path) -> None:
         out = output / "B_timeseries"
-        out.mkdir(parents=True, exist_ok=True)
+        for layout in ("merged", "first_vs_second"):
+            (out / layout).mkdir(parents=True, exist_ok=True)
         labels = {
             "orientation_deg": ("Orientation to partner", "Angle (degrees)"),
             "speed_px_1s": ("Head-base displacement", "Pixels in preceding 1 s"),
@@ -259,6 +260,7 @@ class BTimeSeries:
                 for weighting in ("trial", "session"):
                     fig, ax = plt.subplots(figsize=(8.3, 4.4), constrained_layout=True)
                     plotted = False
+                    binary_peak = 0.0
                     for role in roles:
                         sums = np.zeros(len(self.offsets))
                         counts = np.zeros(len(self.offsets))
@@ -300,6 +302,9 @@ class BTimeSeries:
                             lower, upper = mean - sem, mean + sem
                             if feature in ("is_gazing", "interacting"):
                                 lower, upper = np.clip(lower, 0, 1), np.clip(upper, 0, 1)
+                                visible_upper = np.where(np.isfinite(upper), upper, mean)
+                                if np.isfinite(visible_upper).any():
+                                    binary_peak = max(binary_peak, float(np.nanmax(visible_upper)))
                             ax.fill_between(self.offsets, lower, upper, color=color, alpha=0.22,
                                             linewidth=0)
                             ax.plot(self.offsets, mean, label={"merged": "Both rats", "first": "First presser",
@@ -313,10 +318,10 @@ class BTimeSeries:
                     ax.set(xlim=(-5, 5), xlabel="Time from cooperative press (s)", ylabel=labels[feature][1],
                            title=f"{labels[feature][0]} | {weighting}-weighted | {layout.replace('_', ' ')}\nMean ± SEM")
                     if feature in ("is_gazing", "interacting"):
-                        ax.set_ylim(-0.02, 1.02)
+                        ax.set_ylim(0, min(1.02, max(0.001, binary_peak * 1.1)))
                     if plotted and layout == "first_vs_second":
                         ax.legend(frameon=False)
-                    fig.savefig(out / f"{feature}__{layout}__{weighting}.png", dpi=200)
+                    fig.savefig(out / layout / f"{feature}__{layout}__{weighting}.png", dpi=200)
                     plt.close(fig)
         pd.DataFrame(rows).to_csv(output / "B_timeseries.csv", index=False)
         LOG.info("Saved 16 B time-series plots to %s", out)
