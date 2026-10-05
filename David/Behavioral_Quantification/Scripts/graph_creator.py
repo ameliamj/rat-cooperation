@@ -8164,6 +8164,85 @@ class multiFileGraphs:
         plt.savefig(f"{self.prefix}gazeDifferenceHeatmap.png", bbox_inches='tight')
         plt.show()
 
+    def interactionVsGazeHeatmap(self, exp_index=0, bin_size=5, sigma=1.5):
+        """
+        For a single session, produce a side-by-side heatmap of where gazing
+        happens vs where interaction happens, plus a difference panel.
+        """
+        from scipy.ndimage import gaussian_filter
+
+        width, height = 1392, 640
+        hm_h, hm_w = height // bin_size, width // bin_size
+
+        exp = self.experiments[exp_index]
+        pos = exp.pos
+        num_frames = exp.endFrame
+
+        isGazing0 = pos.returnIsGazing(0)
+        isGazing1 = pos.returnIsGazing(1)
+        isInteracting = np.array(pos.returnIsInteracting(), dtype=bool)
+
+        heatmap_gaze = np.zeros((hm_h, hm_w))
+        heatmap_interact = np.zeros((hm_h, hm_w))
+
+        for t in range(num_frames):
+            for rat_id in [0, 1]:
+                x, y = pos.returnRatHBPosition(rat_id, t)
+                if np.isnan(x) or np.isnan(y):
+                    continue
+                xb = int(min(max(x // bin_size, 0), hm_w - 1))
+                yb = int(min(max(y // bin_size, 0), hm_h - 1))
+
+                gazing = isGazing0[t] if rat_id == 0 else isGazing1[t]
+                if gazing:
+                    heatmap_gaze[yb, xb] += 1
+                if isInteracting[t]:
+                    heatmap_interact[yb, xb] += 1
+
+        heatmap_gaze = gaussian_filter(heatmap_gaze, sigma=sigma)
+        heatmap_interact = gaussian_filter(heatmap_interact, sigma=sigma)
+
+        # Normalize each to [0, 1]
+        if heatmap_gaze.max() > 0:
+            heatmap_gaze /= heatmap_gaze.max()
+        if heatmap_interact.max() > 0:
+            heatmap_interact /= heatmap_interact.max()
+
+        # Difference: interaction - gazing
+        heatmap_diff = heatmap_interact - heatmap_gaze
+
+        fig, axes = plt.subplots(1, 3, figsize=(20, 5))
+        extent = [0, width, height, 0]
+
+        im0 = axes[0].imshow(heatmap_gaze, cmap='magma', origin='upper',
+                             extent=extent, aspect='auto')
+        axes[0].set_title('Gazing', fontsize=self.titleSize)
+        fig.colorbar(im0, ax=axes[0], fraction=0.046)
+
+        im1 = axes[1].imshow(heatmap_interact, cmap='magma', origin='upper',
+                             extent=extent, aspect='auto')
+        axes[1].set_title('Interaction', fontsize=self.titleSize)
+        fig.colorbar(im1, ax=axes[1], fraction=0.046)
+
+        vmax = max(np.abs(heatmap_diff.min()), np.abs(heatmap_diff.max()))
+        if vmax == 0:
+            vmax = 1
+        im2 = axes[2].imshow(heatmap_diff, cmap='seismic', origin='upper',
+                             extent=extent, aspect='auto', vmin=-vmax, vmax=vmax)
+        axes[2].set_title('Interaction − Gazing', fontsize=self.titleSize)
+        fig.colorbar(im2, ax=axes[2], fraction=0.046)
+
+        for ax in axes:
+            ax.set_xlabel('X (px)', fontsize=self.labelSize)
+            ax.set_ylabel('Y (px)', fontsize=self.labelSize)
+
+        session_label = getattr(exp, 'sessionID', f'exp_{exp_index}')
+        fig.suptitle(f'Interaction vs Gazing — {session_label}', fontsize=self.titleSize + 2)
+        plt.tight_layout()
+        self._saveCurrentFigure(f"interactionVsGaze_session_{exp_index}")
+        plt.show()
+        plt.close()
+
     def _plot_single_heatmap(self, heatmap, width, height, bin_size, title, filename):
         heatmap_log = np.log1p(heatmap)
     
